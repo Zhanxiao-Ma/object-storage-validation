@@ -40,7 +40,12 @@ class SdkIntegrationTest(unittest.TestCase):
         cls.targets = []
         commands = [("java", ["java", "-Xmx256m", "-jar", str(ROOT/"drivers/java/target/sdk-worker-0.1.0.jar"), "s3"]),
                     ("cpp", [str(ROOT/"drivers/cpp/build/osv-cpp-s3")])]
+        languages = os.environ.get("OSV_S3_TEST_LANGUAGES", "java,cpp").split(",")
+        if not languages or set(languages) - {"java", "cpp"}:
+            raise ValueError("OSV_S3_TEST_LANGUAGES must select java,cpp")
         for language, command in commands:
+            if language not in languages:
+                continue
             worker = Worker({"command": command, "language": language, "api": "s3"}, 30)
             try:
                 cls.targets.append({"id": language, "provider": "moto-local-only", "language": language,
@@ -55,11 +60,14 @@ class SdkIntegrationTest(unittest.TestCase):
             manifest = directory/"manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "targets": self.targets,
                 "workload": {"object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
-                             "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
+                             "profile": "complete", "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
-            self.assertEqual(len(report["summary"]), 10)
-            self.assertEqual(len(report["samples"]), 110)
+            self.assertEqual(report["coverage"]["profile"], "complete")
+            self.assertEqual(len(report["coverage"]["catalog"]), 32)
+            self.assertFalse([case for case in report["cases"] if case["status"] == "fail"], report["cases"])
+            self.assertEqual(len(report["summary"]), 5*len(self.targets))
+            self.assertEqual(len(report["samples"]), 55*len(self.targets))
             self.assertFalse([case for case in report["cases"] if case["status"] == "fail"], report["cases"])
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
@@ -67,6 +75,8 @@ class SdkIntegrationTest(unittest.TestCase):
 
     def test_cross_sdk_real_producer_and_consumer(self):
         """Feed Java-produced bytes to C++ GET and reverse the direction; expect exact independent bytes and Range output."""
+        if len(self.targets) != 2:
+            self.skipTest("cross-SDK check requires both language workers")
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             expected = bytes(range(256))*13+b"independent-tail"

@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "id": "obs-cpp-s3",
+      "provider": "obs",
+      "language": "cpp",
+      "api": "s3",
+      "sdk": "aws-sdk-cpp",
+      "sdk_version": "1.11.675",
+      "command": [
+        "drivers/cpp/build/osv-cpp-s3"
+      ],
+      "env": {
+        "OSV_ENDPOINT": "https://obs.cn-north-4.myhuaweicloud.com",
+        "OSV_REGION": "cn-north-4",
+        "OSV_BUCKET": "replace-test-bucket",
+        "OSV_PATH_STYLE": "false",
+        "OSV_RETRIES": "0",
+        "OSV_CONNECTIONS": "16"
+      }
+    },
+    {
+      "id": "obs-cpp-native",
+      "provider": "obs",
+      "language": "cpp",
+      "api": "native",
+      "sdk": "huaweicloud-sdk-c-obs",
+      "sdk_version": "3.26.6",
+      "command": [
+        "drivers/cpp/build/osv-cpp-obs"
+      ],
+      "env": {
+        "OSV_ENDPOINT": "https://obs.cn-north-4.myhuaweicloud.com",
+        "OSV_REGION": "cn-north-4",
+        "OSV_BUCKET": "replace-test-bucket",
+        "OSV_RETRIES": "sdk-default",
+        "OSV_CONNECTIONS": "16",
+        "OSV_PATH_STYLE": "false",
+        "LD_LIBRARY_PATH": "/replace-with-obs-runtime-directory"
+      }
+    }
+  ],
+  "workload": {
+    "object_size": 8388608,
+    "range_size": 65536,
+    "part_size": 8388608,
+    "requests": 100,
+    "concurrency": 4,
+    "rounds": 3,
+    "warmup_requests": 4,
+    "operations": [
+      "get",
+      "range",
+      "put",
+      "head",
+      "list"
+    ],
+    "seed": 1729
+  },
+  "comparisons": [
+    {
+      "s3": "obs-cpp-s3",
+      "native": "obs-cpp-native",
+      "same_storage_and_network_confirmed": false,
+      "min_samples": 100,
+      "min_throughput_ratio": 0.9,
+      "max_p95_ratio": 1.1
+    }
+  ]
+}

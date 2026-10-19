@@ -1,3 +1,4 @@
+#include "stream_io.h"
 #include <nlohmann/json.hpp>
 #include <chrono>
 #include <cstdlib>
@@ -39,9 +40,8 @@ static int64_t length(const std::shared_ptr<std::iostream>& stream) {
     stream->seekg(0,std::ios::end); auto size=stream->tellg(); stream->seekg(0); return size;
 }
 static void save(const json& q,const std::shared_ptr<std::iostream>& stream) {
-    std::ofstream output(q.at("output_path").get<std::string>(),std::ios::binary|std::ios::trunc);
-    if(!output || !stream) throw std::runtime_error("cannot open response stream");
-    output<<stream->rdbuf(); output.close(); if(!output) throw std::runtime_error("response write failed");
+    if (!stream) throw std::runtime_error("cannot open response stream");
+    save_response_body(*stream, q.at("output_path").get<std::string>());
 }
 
 #ifdef OSV_OSS

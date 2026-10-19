@@ -35,3 +35,6 @@ Worker 是长驻进程：标准输入、标准输出使用一行一个 JSON，�
 
 自定义 worker 可用于复用既有项目的生产存储接口，但必须真实调用生产代码；本项目自带的
 独立 SDK worker 不代表业务引擎完整链路已通过。
+
+C++ 调用 OBS C SDK 时，`language=cpp` 描述调用端，`sdk_language=c` 描述实际 SDK。
+`worker_info` 保留 SDK 版本、源码提交、鉴权模式和不可配置的重试策略；不得把 C SDK 标为厂商 C++ SDK。

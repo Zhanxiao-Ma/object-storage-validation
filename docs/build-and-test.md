@@ -82,13 +82,14 @@ Moto 不验证所有签名、厂商语义或性能。上述通过只证明本地
 选择 `examples/java-oss.json`、`java-obs.json`、`java-tos.json`、`cpp-oss.json` 、`cpp-tos.json`、`java-cos.json` 或 `cpp-cos.json`。
 替换示例 endpoint、region、bucket，并从外部凭据管理方式继承认证环境变量。
 确认两端连接同一区域、桶、存储类型和网络，再启用对比条件标志。
-不要把未经测量的 SDK 或厂商写成已通过；当前没有 C++ OBS 原生驱动。
+不要把未经测量的 SDK 或厂商写成已通过；C++ OBS 原生驱动调用官方 C SDK。
 
 ## GitHub Actions
 
 `.github/workflows/check.yml` 在 push 与 pull request 时运行框架测试、自检、示例配置检查及 Java 构建。
 构建使用与本地一致的资源监控入口；首次授权需要包含 `workflow` scope 才能推送工作流文件。
-当前 CI 不包含 C++ 构建与可选 SDK 集成测试；这两部分需要准备依赖并按上述命令单独验证。
+CI 还会从固定源码构建官方 OBS C SDK 和 C++ 原生驱动，并运行其 HTTP 契约测试。
+AWS C++、OSS/TOS/COS C++ 构建及 Moto 集成测试仍需按上述命令单独验证。
 
 ## 腾讯云 COS C++ 原生 SDK
 
@@ -126,3 +127,70 @@ fixture 仅回放独立指定的固定响应，不实现对象存储状态机；
 C++ SDK 的 `SetCheckMD5(false)` 仅用于 Range：整对象 ETag 不能与局部响应体 MD5 比较；
 完整 GET 仍使用 SDK 默认校验，并有错误 ETag 的失败测试。框架性能测试继续独立校验实际读取字节。
 真实 COS S3/native 对照仍需配置实际端点和凭据。Java 契约测试已纳入 CI，C++ 需本地构建后验证。
+
+## 华为 OBS C SDK 与 C++ 原生驱动
+
+从 [官方仓库](https://github.com/huaweicloud/huaweicloud-sdk-c-obs) 获取源码。
+本次验证固定提交 `927c5320d10c9dfc14e4b20fd2eb210daeca166e`；`inc/request.h` 中的 SDK 版本及请求 User-Agent 均为 `3.26.6`。
+该快照顶层 CMake 的 `LIBOBS_VER_*` 字段与 User-Agent 版本不同，报告采用实际请求使用的 SDK 版本，并记录源码提交。
+验证环境为 Linux x86_64、GCC 13.3；官方 C SDK 的预编译依赖单独保留其许可证，不纳入本仓库。
+
+```bash
+python3 scripts/build.py command -- cmake -S /path/to/obs-sdk -B .deps/obs-sdk-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+python3 scripts/build.py command -- cmake --build .deps/obs-sdk-build --parallel '{jobs}'
+python3 scripts/obs_runtime.py --source /path/to/obs-sdk --library .deps/obs-sdk-build/lib/libeSDKOBS.so --output .deps/obs-runtime
+python3 scripts/build.py cpp --prefix /path/to/sdk-install --obs-source /path/to/obs-sdk --obs-library /absolute/path/to/.deps/obs-runtime/libeSDKOBS.so
+```
+
+`obs_runtime.py` 在新目录中链接该 SDK 的现有依赖，不覆盖系统库。SDK 源码与构建出的库必须来自同一快照。
+C++ 包含上游 C 头文件时，针对其中的成员/类型同名问题，仅在该头文件范围屏蔽 GCC 13+ 的 `-Wchanges-meaning` 诊断。
+未修改官方 SDK 源码，也未对整个驱动启用 `-fpermissive`。
+
+仅构建原生驱动时可加 `--without-s3`，无需安装 AWS SDK，但仍需 nlohmann_json 3.11+。
+C SDK 的全部动态依赖必须可被加载；在 manifest 的原生目标中设置 `LD_LIBRARY_PATH` 为上述运行库目录的绝对路径。
+S3 目标继承或配置它自己的 AWS SDK 库路径，两侧不共享替换后的 libcurl/OpenSSL。
+
+原生配置约束：
+
+- `OSV_ENDPOINT` 默认是服务域名 URL，例如 `https://obs.cn-north-4.myhuaweicloud.com`。
+- `OSV_PATH_STYLE=false`。这版 C SDK 的 Path Style 会选 S3 API，驱动直接拒绝该配置。
+- 使用完整桶自定义域名时设置 `OSV_CNAME=true`；loopback 测试使用此模式，不依赖外部 DNS。
+- `OSV_RETRIES=sdk-default`。SDK 内置重试不可通过公开 options 配置，源码循环预算不是每次实际请求次数；不提供故障重试性能结论。
+- 开启 TLS 证书链与主机名校验；自定义信任根可通过 `OSV_CA_BUNDLE` 指定。
+- `OSV_CONNECTIONS` 设置 SDK/libcurl 缓存连接数，不能将其解释为整个压测的并发上限。
+
+配置同桶对照使用 `examples/cpp-obs.json`，保持地域、桶、网络及存储类型一致，保留重试策略差异。
+
+```bash
+OSV_RUN_OBS_TESTS=1 OSV_OBS_LIBRARY_PATH=/absolute/path/to/.deps/obs-runtime python3 -m unittest discover -s tests/integration -p test_obs_sdk.py -v
+```
+
+七项契约测试使用真实 C++ 驱动与官方 C SDK，覆盖 OBS 鉴权/临时凭据、完整读取、首末/中间 Range、
+零字节对象、HEAD、删除、404/403、分页与重复 marker、分块参数、回调写入失败以及无效重试/Path Style 配置。
+固定 HTTP fixture 不实现对象存储状态机，不能作为 OBS 实云兼容性、鉴权成功或性能结论。
+
+## 分层测试与档位回归
+
+```bash
+python3 -m unittest discover -s tests -v
+python3 -m osv run examples/selftest.json --profile normal --output results/normal-selftest
+python3 -m osv run examples/selftest.json --profile complete --output results/complete-selftest
+# 已安装 AWS SDK 时构建共享响应流回归；--without-s3 可单独构建标准库回归
+python3 scripts/build.py cpp --without-s3 --with-tests
+ctest --test-dir drivers/cpp/build --output-on-failure
+```
+
+真实 AWS Java/C++ SDK 对 Moto 的集成测试现在执行 complete 档，包括 1001 个键的汇总分页、
+空对象读写、覆盖写和分块边界。按前文安装 Moto 并构建 worker 后：
+
+```bash
+OSV_RUN_SDK_TESTS=1 python3 -m unittest discover -s tests/integration -p test_s3_sdk.py -v
+```
+
+默认需要 java 与 cpp；可设 `OSV_S3_TEST_LANGUAGES=java` 仅验证 Java，跨语言互读测试会明确跳过。
+此测试通常数十秒到数分钟，逐请求受配置的 timeout_seconds 限制；不访问实云。
+GitHub Actions 自动执行两档框架自检、Java AWS SDK 完善档、COS Java 契约与 OBS C SDK 契约测试。
+
+共享 C++ 响应保存回归覆盖空流、二进制、恰好一个缓冲区、多缓冲区、旧文件截断、
+输入 bad/fail 状态、无法打开输出文件与 /dev/full 写入失败。
+这是 worker 的 IO 正确性验证，不是模拟对象存储协议。

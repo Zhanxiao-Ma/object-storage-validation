@@ -38,6 +38,16 @@ class Suite:
     name: str
     required_operations: frozenset
     execute: object
+    catalog: tuple = ()
+
+
+@dataclass(frozen=True)
+class Profile:
+    """Select reusable suites without binding test breadth to a language or SDK."""
+    name: str
+    suites: tuple
+    description: str
+    exclusions: tuple = ()
 
 
 class Registry:
@@ -45,6 +55,7 @@ class Registry:
     def __init__(self):
         self.operations = {}
         self.suites = {}
+        self.profiles = {}
 
     def _add(self, items, item):
         if not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_.-]{0,63}", item.name) or item.name in items:
@@ -60,9 +71,29 @@ class Registry:
             raise ValueError("operation requires callable prepare and verify")
         self._add(self.operations, operation)
 
+    def add_profile(self, profile):
+        if not profile.suites or len(set(profile.suites)) != len(profile.suites):
+            raise ValueError("profile requires unique suite names")
+        if any(name not in self.suites for name in profile.suites):
+            raise ValueError("profile references unknown suite")
+        # Profiles declare suites, not SDK operations.
+        if not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_.-]{0,63}", profile.name) or profile.name in self.profiles:
+            raise ValueError("invalid or duplicate profile name")
+        self.profiles[profile.name] = profile
+
     def add_suite(self, suite):
         if not callable(suite.execute):
             raise ValueError("suite requires callable execute")
+        if suite.catalog:
+            names = set()
+            for case in suite.catalog:
+                if (not isinstance(case, dict) or not all(isinstance(case.get(key), str) and case[key]
+                        for key in ("case", "purpose", "expected", "source", "reference"))
+                        or type(case.get("gate")) is not bool):
+                    raise ValueError("suite catalog requires case, purpose, expected, source, reference and boolean gate")
+                if case["case"] in names:
+                    raise ValueError("duplicate catalog case")
+                names.add(case["case"])
         self._add(self.suites, suite)
 
 
@@ -75,6 +106,8 @@ def build_registry(config):
             "verified_mib_s" if name in ("get", "range", "put") else "verified_ops_s"))
     registry.add_suite(Suite("baseline", BASE_OPERATIONS,
         lambda ctx: validate_baseline(ctx.worker, ctx.prefix, ctx.directory, ctx.payload, ctx.workload["part_size"])))
+    from .suites import register_suites
+    register_suites(registry)
     plugins = config.get("plugins", [])
     if not isinstance(plugins, list) or not all(isinstance(p, str) and re.fullmatch(r"[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", p) for p in plugins):
         raise ValueError("plugins must be importable Python module names")

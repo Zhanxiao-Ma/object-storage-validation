@@ -61,6 +61,9 @@ def execute(q):
             content.extend(data)
         key.parent.mkdir(parents=True, exist_ok=True)
         key.write_bytes(content)
+        for part in parts.iterdir():
+            part.unlink()
+        parts.rmdir()
     elif op == "mp_abort":
         parts = root/".uploads"/q["upload_id"]
         if parts.exists():

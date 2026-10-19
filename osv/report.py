@@ -80,9 +80,42 @@ def markdown(report):
     lines = ["# Object Storage Validation", "",
              "结论仅适用于本次 SDK、配置和合成负载；不代表引擎实际链路已验证。",
              "未执行真实云测试时，不得将本地自检用于厂商接入结论。", "",
-             "## 兼容性", "", "| Target | Case | Status |", "|---|---|---|"]
+             "## 兼容性", "", "| Target | Case | Status | Detail |", "|---|---|---|---|"]
+    # Record runtime identity and actual retry policy before interpreting performance ratios.
+    lines[5:5] = ["## 驱动配置", "", "| Target | Caller | SDK | SDK language | Version | Retry policy |",
+                  "|---|---|---|---|---|---|"]
+    configuration = []
+    def cell(value):
+        return str(value).replace("|", "\\|").replace("\n", " ")
+    for target in report.get("targets", []):
+        info = target.get("worker_info", {})
+        values = [target["id"], target["language"], target["sdk"],
+                  info.get("sdk_language", info.get("language", "未记录")),
+                  info.get("sdk_version", target["sdk_version"]), info.get("retries", "未记录")]
+        configuration.append("| " + " | ".join(cell(value) for value in values) + " |")
+    lines[9:9] = configuration + ["", "完整驱动配置与源码版本见 report.json 的 worker_info。", ""]
+    coverage = report.get("coverage", {})
+    if coverage:
+        position = lines.index("## 兼容性")
+        inventory = ["## 测试档位与覆盖", "", f"档位：**{cell(coverage['profile'])}**；目录版本：{coverage['catalog_version']}。",
+                     cell(coverage["description"]), "", "| Target | Planned | Pass | Fail | Observation | Not run |",
+                     "|---|---|---|---|---|---|"]
+        planned = {(c["suite"], c["case"]) for c in coverage["catalog"]}
+        for target in report["targets"]:
+            rows = [r for r in report["cases"] if r["target"] == target["id"] and (r.get("suite"), r["case"]) in planned]
+            counts = [sum(r["status"] == status for r in rows) for status in ("pass", "fail", "observation")]
+            inventory.append("| "+" | ".join(map(str, [target["id"], len(planned), *counts, len(planned)-len(rows)]))+" |")
+        inventory += ["", "### 用例来源与预期", "", "| Suite / Case | 预期 | 参考场景 |", "|---|---|---|"]
+        for case in coverage["catalog"]:
+            inventory.append(f"| {cell(case['suite'])} / {cell(case['case'])} | {cell(case['expected'])} | [{cell(case['reference'])}]({case['source']}) |")
+        if coverage["uncatalogued_suites"]:
+            inventory += ["", "未声明逐项目录的自定义 Suite："+", ".join(coverage["uncatalogued_suites"])]
+        inventory += ["", "### 不在本档位覆盖范围", ""]
+        inventory += ["- "+cell(item) for item in coverage["exclusions"]]
+        inventory += ["", "档位控制兼容性用例范围；性能负载由 workload 单独配置。参考上游场景，不执行上游测试程序。", ""]
+        lines[position:position] = inventory
     for row in report["cases"]:
-        lines.append(f'| {row["target"]} | {row["case"]} | {row["status"]} |')
+        lines.append(f'| {row["target"]} | {row["case"]} | {row["status"]} | {cell(row.get("error", row.get("behavior", "—")))} |')
     lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", "",
               "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s |",
               "|---|---|---|---|---|---|---|---|"]

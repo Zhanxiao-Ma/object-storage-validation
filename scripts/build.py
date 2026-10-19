@@ -59,7 +59,13 @@ def main():
     parser.add_argument("--tos-source", help="optional official TOS C++ SDK source checkout")
     parser.add_argument("--cos-source", help="optional official COS C++ SDK source checkout")
     parser.add_argument("--cos-library", help="libcossdk.a built from --cos-source")
+    parser.add_argument("--with-tests", action="store_true", help="build C++ response IO regression checks")
+    parser.add_argument("--without-s3", action="store_true", help="build native workers without an installed AWS SDK")
+    parser.add_argument("--obs-source", help="optional official Huawei OBS C SDK source checkout")
+    parser.add_argument("--obs-library", help="libeSDKOBS.so built from --obs-source")
     args, remainder = parser.parse_known_args()
+    if bool(args.obs_source) != bool(args.obs_library):
+        parser.error("--obs-source and --obs-library must be supplied together")
     if bool(args.cos_source) != bool(args.cos_library):
         parser.error("--cos-source and --cos-library must be supplied together")
     if args.target != "command" and remainder:
@@ -76,6 +82,8 @@ def main():
         commands = [["mvn", "-B", "-T", str(jobs), "-f", str(root/"drivers/java/pom.xml"), "package"]]
     elif args.target == "cpp":
         configure = ["cmake", "-S", str(root/"drivers/cpp"), "-B", str(root/"drivers/cpp/build"), "-DCMAKE_BUILD_TYPE=Release"]
+        configure.append("-DOSV_BUILD_TESTS="+("ON" if args.with_tests else "OFF"))
+        configure.append("-DOSV_BUILD_S3="+("OFF" if args.without_s3 else "ON"))
         if args.prefix:
             configure.append("-DCMAKE_PREFIX_PATH="+args.prefix)
         if args.oss_source:
@@ -84,6 +92,8 @@ def main():
             configure.append("-DOSV_TOS_SOURCE="+args.tos_source)
         if args.cos_source:
             configure.extend(["-DOSV_COS_SOURCE="+args.cos_source, "-DOSV_COS_LIBRARY="+args.cos_library])
+        if args.obs_source:
+            configure.extend(["-DOSV_OBS_SOURCE="+args.obs_source, "-DOSV_OBS_LIBRARY="+args.obs_library])
         commands = [configure, ["cmake", "--build", str(root/"drivers/cpp/build"), "--parallel", str(jobs)]]
     else:
         argv = remainder[1:] if remainder and remainder[0] == "--" else remainder

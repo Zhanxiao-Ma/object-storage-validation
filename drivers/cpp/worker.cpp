@@ -1,3 +1,4 @@
+#include "stream_io.h"
 #include <aws/core/Aws.h>
 #include <aws/core/VersionConfig.h>
 #include <aws/core/auth/AWSCredentials.h>
@@ -94,11 +95,7 @@ public:
             }
             auto outcome = client->GetObject(request);
             checked(outcome);
-            std::ofstream output(q.at("output_path").get<std::string>(), std::ios::binary | std::ios::trunc);
-            if (!output) throw std::runtime_error("cannot open output_path");
-            output << outcome.GetResult().GetBody().rdbuf();
-            output.close();
-            if (!output) throw std::runtime_error("failed writing response body");
+            save_response_body(outcome.GetResult().GetBody(), q.at("output_path").get<std::string>());
         } else if (op == "head") {
             Aws::S3::Model::HeadObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);

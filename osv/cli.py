@@ -19,7 +19,7 @@ from .scenarios import Context, build_registry, require_ok
 from .report import summarize, comparisons, markdown
 
 
-def load_config(path):
+def load_config(path, profile_override=None):
     config = json.loads(Path(path).read_text())
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
@@ -51,10 +51,15 @@ def load_config(path):
         if not isinstance(spec.get("tool"), str) or not spec["tool"]:
             raise ValueError("external tool requires a nonempty tool label")
     workload = config.get("workload", {})
+    if profile_override is not None:
+        workload = {**workload, "profile": profile_override}
+        workload.pop("compatibility_suites", None)
+    if "profile" in workload and "compatibility_suites" in workload:
+        raise ValueError("choose profile or compatibility_suites, not both")
     defaults = {"object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
                 "requests": 100, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 3, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
-                "seed": 1729, "operations": ["get", "range", "put", "head"]}
+                "seed": 1729, "list_objects": 1001, "operations": ["get", "range", "put", "head"]}
     workload = {**defaults, **workload}
     for key in ("object_size", "range_size", "requests", "concurrency", "rounds", "part_size", "timeout_seconds"):
         if type(workload[key]) is not int or workload[key] <= 0:
@@ -64,6 +69,13 @@ def load_config(path):
     if workload["range_size"] > workload["object_size"]:
         raise ValueError("range_size must not exceed object_size")
     registry = build_registry(config)
+    if "compatibility_suites" not in workload:
+        profile = workload.setdefault("profile", "normal")
+        if not isinstance(profile, str) or profile not in registry.profiles:
+            raise ValueError("unknown profile; registered: " + ", ".join(registry.profiles))
+        workload["compatibility_suites"] = list(registry.profiles[profile].suites)
+    if type(workload["list_objects"]) is not int or not 1001 <= workload["list_objects"] <= 10000:
+        raise ValueError("list_objects must be an integer between 1001 and 10000")
     for field, choices, default in (("operations", registry.operations, None),
                                     ("compatibility_suites", registry.suites, ["baseline"])):
         selected = workload.setdefault(field, default)
@@ -89,6 +101,20 @@ def load_config(path):
     return config
 
 
+def coverage(config, registry):
+    """Publish the selected case inventory before execution, including explicit scope gaps."""
+    from .suites import CATALOG_VERSION
+    workload = config["workload"]
+    selected = workload["compatibility_suites"]
+    profile = registry.profiles.get(workload.get("profile"))
+    return {"catalog_version": CATALOG_VERSION, "profile": profile.name if profile else "custom",
+            "description": profile.description if profile else "自选 Suite；不对应内置档位",
+            "suites": selected,
+            "catalog": [{**case, "suite": name} for name in selected for case in registry.suites[name].catalog],
+            "uncatalogued_suites": [name for name in selected if not registry.suites[name].catalog],
+            "exclusions": list(profile.exclusions) if profile else ["自选 Suite 未声明档位覆盖范围"]}
+
+
 def redactor(config):
     secrets = set()
     for name, value in os.environ.items():
@@ -100,6 +126,15 @@ def redactor(config):
         return text
     return redact
 
+
+
+def cleanup_objects(worker, prefix):
+    """Delete only objects returned inside this run prefix, checking the entire listing before mutations."""
+    keys = require_ok(worker.call({"op": "list", "prefix": prefix})).get("keys", [])
+    if any(not isinstance(key, str) or not key.startswith(prefix) for key in keys):
+        raise ValueError("refusing cleanup outside this run prefix")
+    for key in keys:
+        require_ok(worker.call({"op": "delete", "key": key}))
 
 
 def run(config, output_dir):
@@ -114,6 +149,7 @@ def run(config, output_dir):
               "workload": config["workload"], "targets": [], "cases": [], "samples": [],
               "batches": [], "external": [], "summary": [], "comparisons": [],
               "plugins": config.get("plugins", []),
+              "coverage": coverage(config, registry),
               "operation_metrics": {name: registry.operations[name].throughput_metric for name in config["workload"]["operations"]}}
     workload = config["workload"]
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
@@ -152,9 +188,22 @@ def run(config, output_dir):
                             not isinstance(case, dict) or not isinstance(case.get("case"), str)
                             or case.get("status") not in ("pass", "fail", "observation") for case in cases):
                             raise ValueError("suite must return nonempty valid case results")
+                        catalog = registry.suites[name].catalog
+                        actual_names = [case["case"] for case in cases]
+                        if len(set(actual_names)) != len(actual_names):
+                            raise ValueError("suite returned duplicate case names")
+                        if catalog and set(actual_names) != {case["case"] for case in catalog}:
+                            raise ValueError("suite results differ from declared case catalog")
+                        if catalog:
+                            metadata = {case["case"]: case for case in catalog}
+                            for result in cases:
+                                if result["status"] == "observation" and metadata[result["case"]]["gate"]:
+                                    raise ValueError("required gate cannot be downgraded to observation")
                         if not any(case["status"] in ("pass", "fail") for case in cases):
                             raise ValueError("suite must return at least one semantic gate")
                         report["cases"].extend({**case, "target": ident, "suite": name} for case in cases)
+                    # Compatibility data must not change the performance dataset between profiles.
+                    cleanup_objects(workers[0], prefix+ident+"/")
                     require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/perf", "body_path": str(body)}))
                 except Exception as error:
                     report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
@@ -207,11 +256,7 @@ def run(config, output_dir):
             for ident, workers in pools.items():
                 if workers:
                     try:
-                        listing = require_ok(workers[0].call({"op": "list", "prefix": prefix+ident+"/"}))
-                        for key in listing.get("keys", []):
-                            if not key.startswith(prefix+ident+"/"):
-                                raise ValueError("refusing cleanup outside this run prefix")
-                            require_ok(workers[0].call({"op": "delete", "key": key}))
+                        cleanup_objects(workers[0], prefix+ident+"/")
                     except Exception as error:
                         report["cases"].append({"target": ident, "case": "cleanup", "status": "fail", "error": str(error)})
                 for worker in workers:
@@ -236,16 +281,23 @@ def run(config, output_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("check", "run"):
+    for name in ("check", "catalog", "run"):
         command = commands.add_parser(name)
         command.add_argument("manifest")
+        command.add_argument("--profile", help="select registered test profile; overrides manifest suite selection")
         if name == "run":
             command.add_argument("--output", required=True)
     args = parser.parse_args()
     try:
-        config = load_config(args.manifest)
+        config = load_config(args.manifest, args.profile)
+        if args.command == "catalog":
+            print(json.dumps(coverage(config, build_registry(config)), indent=2, ensure_ascii=False))
+            return
         if args.command == "check":
-            print("Manifest valid. No SDK or cloud operation executed.")
+            registry = build_registry(config)
+            selected = coverage(config, registry)
+            print(f"Manifest valid. Profile={selected['profile']}; suites={','.join(selected['suites'])}; "
+                  f"catalogued cases={len(selected['catalog'])}. No SDK or cloud operation executed.")
             return
         report = run(config, Path(args.output))
         print(Path(args.output) / "report.md")

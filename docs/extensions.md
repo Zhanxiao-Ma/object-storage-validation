@@ -17,6 +17,7 @@
 - `Operation`：一个可测量请求，声明名称、所需操作、请求生成器、结果校验器及对比指标。
 - `Suite`：一组兼容性检查，可以执行多步真实操作，返回具有名称与状态的检查结果。
 - `Context`：提供本次运行隔离前缀、独立预期数据、本地文件路径、负载配置和 worker。
+- `Profile`：一组可复用的 Suite 名称、描述及未覆盖范围，独立于语言和 SDK。
 - `Registry`：按运行创建，禁止覆盖已注册名称；插件间不共享运行状态。
 
 `Operation.prepare(ctx)` 返回请求；`verify(ctx, request, result)` 必须独立校验实际结果，
@@ -56,3 +57,23 @@ python3 -m unittest discover -s tests -v
 
 测试覆盖独立插件进入真实调度/报告、Python 第三种语言驱动、能力缺失、重复注册、
 未知场景、指标选择以及清理边界。Python 本地驱动仅验证框架，不构成云端 SDK 兼容性证据。
+
+## 新增测试档位
+
+在插件的 `register(registry)` 中先注册 Suite，再组合 Profile：
+
+```python
+from osv.scenarios import Profile
+
+def register(registry):
+    registry.add_profile(Profile(
+        "smoke", ("core_objects",), "复用基础对象语义",
+        ("不包含扩展分块边界或高级 S3 功能",)))
+```
+
+随后用 `--profile smoke` 选择。不需要修改 CLI 的档位枚举。
+Suite 可在第四个参数 `catalog` 声明元数据元组；每项包含 `case`、`purpose`、`expected`、
+`source`、`reference` 与布尔 `gate`，建议再声明 `operations`。
+有目录时，结果必须覆盖全部声明的 case 且无重复，必测 gate 不能返回 observation。
+目录会进入 JSON/Markdown，便于审核来源、预期与未执行项。
+旧的无 catalog 插件仍可运行，但报告明确标出未声明逐项目录的 Suite。

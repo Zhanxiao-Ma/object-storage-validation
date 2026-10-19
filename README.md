@@ -1,7 +1,7 @@
 # Object Storage Validation
 
 面向分析型工作负载的对象存储兼容性与 SDK 性能对照工具。
-用同一配置编排真实 SDK worker 与现有开源压测工具，输出 JSON 原始结果和 Markdown 报告。
+参考 JuiceFS objbench 的分层设计，用统一用例调用真实 Java/C++ SDK，输出 JSON 原始结果和 Markdown 报告。
 
 ## 验证什么
 
@@ -16,11 +16,11 @@
 | Language | S3 | Native |
 |---|---|---|
 | Java | AWS SDK v2 | OSS、OBS、TOS、腾讯云 COS |
-| C++ | AWS SDK for C++ | OSS、TOS、腾讯云 COS；OBS 原生尚未实现 |
+| C++ | AWS SDK for C++ | OSS、TOS、腾讯云 COS、华为 OBS C SDK |
 | Python reference | 无 | 真实本地文件 IO，仅自检框架，不是 S3 模拟器 |
 
-**C++ OBS 原生 SDK 对照尚未实现。**不能用 Java 或 Go 的结果补填 C++ 对比列。
-华为原生侧通常使用 OBS C SDK；即使从 C++ 调用，也必须如实标注 SDK 类型。
+C++ 的 OBS 原生驱动链接官方 OBS C SDK，报告分别记录调用端语言 `cpp` 与 SDK 语言 `c`。
+不能用 Java 或 Go 的结果补填 C++ 对比列。
 
 ## 快速自检：不访问云
 
@@ -88,18 +88,46 @@ C++ COS 的构建步骤及本地 HTTP 契约测试见 [构建与验证](docs/bui
 C++ COS SDK 的连接池参数控制每 host 最大空闲连接数，区别于其他 SDK 的总连接上限，报告中单独注明。
 当前每 lane 串行操作，不使用该参数推断整个负载的并发数。
 
-## 集成已有开源工具
+## 华为 OBS：C++ 调用官方 C SDK
 
-参考 `examples/external.json`。自行安装上游二进制/环境后，使用参数数组调用，禁止 shell 拼接。
+`examples/cpp-obs.json` 对比同一 C++ 负载下的 AWS SDK for C++ 与官方 OBS C SDK。
+驱动通过流式回调完成读写、Range、HEAD、LIST、DELETE 和分块操作；不重写签名或用 S3 替代原生请求。
+固定使用 `OBS_OBS_TYPE`，拒绝 Path Style，避免 C SDK 自动使用 S3 鉴权。
 
-| Tool | 用途 | 证据边界 |
+当前验证源码的 SDK 版本为 `3.26.6`，版本及源码提交记录在 `worker_info`。
+此 C SDK 没有公开的重试次数设置；原生目标必须使用 `OSV_RETRIES=sdk-default`，不能声称重试已关闭。
+S3 侧的重试次数仍按配置生效。比较报告需保留该差异，不能据此推断相同故障重试条件下的性能。
+
+官方 C SDK 及其依赖独立构建，通过 `--obs-source` / `--obs-library` 接入，步骤见 [构建与验证](docs/build-and-test.md)。
+原生目标的 `LD_LIBRARY_PATH` 应单独配置为 OBS 运行库目录，避免替换 S3 侧的网络/加密依赖。
+
+## 测试档位
+
+```bash
+# 默认正常档，或显式指定
+python3 -m osv run examples/selftest.json --profile normal --output results/normal-001
+# 同一套驱动执行更广的对象边界用例
+python3 -m osv run examples/selftest.json --profile complete --output results/complete-001
+# 换成 Java/C++ manifest 即执行对应真实 SDK；check 只校验配置
+python3 -m osv check examples/java-oss.json --profile complete
+# 输出逐项用例目录，不启动 SDK 或访问云
+python3 -m osv catalog examples/java-oss.json --profile complete
+```
+
+| 档位 | 当前兼容性目录 | 参考范围 |
 |---|---|---|
-| [JuiceFS objbench](https://juicefs.com/docs/zh/community/performance_evaluation_guide/) | S3/原生 Go 后端基础功能与吞吐初筛 | Go 的端到端实现，不是 Java/C++ SDK 结论 |
-| [MinIO Warp](https://github.com/minio/warp) | 并发、混合与随机 Range S3 压测 | MinIO Go 客户端，不是 AWS Java/C++ |
-| [Ceph s3-tests](https://github.com/ceph/s3-tests) | 筛选协议边界用例 | Boto 用例，不等价于业务生产路径 |
+| `normal` 正常档（默认） | 13 个门槛 + 1 个行为观察 | objbench 基础对象读写、空对象、Range、特殊键名、列举、删除、分块；取消检查先上传数据 |
+| `complete` 完善档 | 29 个门槛 + 3 个行为观察，包含正常档 | 再参考 s3-tests 的覆盖写、分页规模列举、编码与分块边界 |
 
-上游 stdout/stderr 独立保存，只作为 supplementary evidence，不自动转换为 SDK 通过结果。
-不 vendoring 或改写这些项目源码；它们分别遵循各自许可证。
+档位只选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
+不依赖其二进制或 Python/Go SDK。完善档不等于 Ceph 全量覆盖，未实现范围在报告中明确列出。
+逐项目录、来源、性能口径与未覆盖项见 [测试范围](docs/test-scope.md)。
+
+manifest 可设置 `workload.profile`；原有 `workload.compatibility_suites` 保留为自选模式，不能同时设置。
+CLI `--profile` 显式覆盖 manifest 中的两种选择。性能大小/并发/次数/操作单独由 workload 配置，
+不会因切换档位而自动提高压力。完善档列举用例默认写入 1001 个对象，可配置 `list_objects` 为 1001–10000。
+
+历史外部命令入口保留用于用户自定义辅助任务（`examples/external.json`），不是档位的实现或执行依赖。
 
 ## 结果与限制
 
@@ -122,8 +150,10 @@ Apache-2.0。SDK 及外部工具保持各自许可证；本项目不包含内部
 
 ## 扩展性
 
-语言驱动通过版本化 JSONL 协议接入，不限制为 Java/C++。测试功能通过 `Operation` 与 `Suite`
+语言驱动通过版本化 JSONL 协议接入，不限制为 Java/C++。测试功能通过 `Operation`、`Suite` 与 `Profile`
 注册，新增场景无需改调度器；需要新 SDK 操作时再扩展驱动能力。能力缺失产生明确失败证据。
 接口、插件示例及兼容策略见 [扩展说明](docs/extensions.md)。
 
-GitHub Actions 工作流位于 `.github/workflows/check.yml`，在 push 与 pull request 时执行框架测试和 Java 构建。
+GitHub Actions 工作流位于 `.github/workflows/check.yml`，在 push 与 pull request 时执行框架测试、Java 构建/COS 契约测试及 OBS C SDK/C++ 驱动构建与契约测试。
+
+实际测试范围、与 objbench/s3-tests 的覆盖差异和报告口径见 [测试范围与报告](docs/test-scope.md)。
