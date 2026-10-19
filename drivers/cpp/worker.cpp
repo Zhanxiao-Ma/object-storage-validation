@@ -1,4 +1,7 @@
 #include "stream_io.h"
+#include "object_metadata.h"
+#include <aws/s3/model/CreateBucketRequest.h>
+#include <aws/s3/model/HeadBucketRequest.h>
 #include <aws/core/Aws.h>
 #include <aws/core/VersionConfig.h>
 #include <aws/core/auth/AWSCredentials.h>
@@ -42,13 +45,14 @@ static std::string required(const char* name) {
 class SdkError : public std::runtime_error {
 public:
     int status;
-    SdkError(int code, const std::string& message) : std::runtime_error(message), status(code) {}
+    std::string error_code;
+    SdkError(int code, const std::string& message, const std::string& name) : std::runtime_error(message), status(code), error_code(name) {}
 };
 
 template<class Outcome> static void checked(const Outcome& outcome) {
     if (!outcome.IsSuccess()) {
         auto& error = outcome.GetError();
-        throw SdkError(static_cast<int>(error.GetResponseCode()), error.GetMessage().c_str());
+        throw SdkError(static_cast<int>(error.GetResponseCode()), error.GetMessage().c_str(), error.GetExceptionName().c_str());
     }
 }
 
@@ -79,7 +83,35 @@ public:
         std::string op = q.at("op"), key = q.value("key", "");
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
-        if (op == "put") {
+        if (op == "bucket_create") {
+            Aws::S3::Model::HeadBucketRequest head; head.SetBucket(bucket);
+            auto exists=client->HeadBucket(head);
+            if(!exists.IsSuccess()) {
+                if(static_cast<int>(exists.GetError().GetResponseCode())!=404) checked(exists);
+                Aws::S3::Model::CreateBucketRequest request; request.SetBucket(bucket);
+                if(required("OSV_REGION")!="us-east-1") {
+                    Aws::S3::Model::CreateBucketConfiguration config;
+                    config.SetLocationConstraint(Aws::S3::Model::BucketLocationConstraintMapper::GetBucketLocationConstraintForName(required("OSV_REGION")));
+                    request.SetCreateBucketConfiguration(config);
+                }
+                checked(client->CreateBucket(request));
+            }
+        } else if (op == "list_page") {
+            Aws::S3::Model::ListObjectsV2Request request; request.SetBucket(bucket); request.SetPrefix(q.value("prefix", ""));
+            request.SetMaxKeys(q.value("max_keys",1000));
+            if(q.contains("marker")) request.SetStartAfter(q.at("marker").get<std::string>());
+            if(q.contains("token")) request.SetContinuationToken(q.at("token").get<std::string>());
+            if(q.contains("delimiter")) request.SetDelimiter(q.at("delimiter").get<std::string>());
+            if(q.contains("encoding_type")) request.SetEncodingType(Aws::S3::Model::EncodingTypeMapper::GetEncodingTypeForName(q.at("encoding_type").get<std::string>()));
+            auto outcome=client->ListObjectsV2(request); checked(outcome);
+            const auto& page=outcome.GetResult(); json keys=json::array(),objects=json::array(),prefixes=json::array();
+            for(const auto& object:page.GetContents()) {
+                std::string name=object.GetKey().c_str(); keys.push_back(name);
+                objects.push_back({{"key",name},{"size",object.GetSize()},{"last_modified_ms",object.GetLastModified().Millis()},{"etag",std::string(object.GetETag().c_str())}});
+            }
+            for(const auto& prefix:page.GetCommonPrefixes()) prefixes.push_back(std::string(prefix.GetPrefix().c_str()));
+            return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.GetIsTruncated()},{"next_token",std::string(page.GetNextContinuationToken().c_str())},{"prefix",std::string(page.GetPrefix().c_str())},{"delimiter",std::string(page.GetDelimiter().c_str())},{"max_keys",page.GetMaxKeys()}};
+        } else if (op == "put") {
             Aws::S3::Model::PutObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
@@ -100,7 +132,7 @@ public:
             Aws::S3::Model::HeadObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             auto outcome = client->HeadObject(request); checked(outcome);
-            return {{"size", outcome.GetResult().GetContentLength()}};
+            return {{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())}};
         } else if (op == "delete") {
             Aws::S3::Model::DeleteObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key); checked(client->DeleteObject(request));
@@ -163,17 +195,17 @@ int main() {
             auto start = std::chrono::steady_clock::now();
             json response;
             try {
-                auto request = json::parse(line); response = worker.execute(request);
+                auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");
                 }
                 response["ok"] = true;
             } catch (const SdkError& error) {
-                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}};
+                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}, {"status_code",error.status},{"error_code",error.error_code}};
             } catch (const std::exception& error) {
                 response = {{"ok", false}, {"error", error.what()}, {"error_kind", "worker_error"}};
             }

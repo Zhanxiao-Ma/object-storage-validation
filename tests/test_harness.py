@@ -20,8 +20,8 @@ def config(directory):
     return {"schema_version": 1, "targets": [{
         "id": "local", "provider": "filesystem", "language": "python", "api": "local",
         "sdk": "reference", "sdk_version": "1", "command": [sys.executable, str(ROOT/"drivers/reference.py")],
-        "env": {"OSV_REFERENCE_ROOT": str(directory/"objects")}}],
-        "workload": {"object_size": 256, "range_size": 17, "part_size": 128,
+        "env": {"OSV_REFERENCE_ROOT": str(directory/"objects"), "OSV_REFERENCE_MIN_PART_SIZE":"128"}}],
+        "workload": {"performance_model":"operations", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
                      "requests": 7, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
                      "operations": ["get", "range", "put", "head", "list"]}}
 
@@ -62,6 +62,15 @@ class HarnessTest(unittest.TestCase):
         """A worker that never responds must time out and be reaped, not hang the test run."""
         with self.assertRaises(TimeoutError):
             Worker({"command":[sys.executable,"-c","import time; time.sleep(60)"]},timeout=.1)
+
+    def test_failed_worker_exposes_sanitized_initialization_reason(self):
+        """Exit a real worker with a diagnostic containing inherited credentials; expect useful reason with the secret redacted."""
+        with patch.dict(os.environ,{"OSV_SECRET_KEY":"never-print-this-test-secret"}):
+            with self.assertRaises(RuntimeError) as caught:
+                Worker({"command":[sys.executable,"-c","import os,sys; print('invalid endpoint '+os.environ['OSV_SECRET_KEY'],file=sys.stderr); raise SystemExit(2)"]},timeout=5)
+        self.assertIn("invalid endpoint",str(caught.exception))
+        self.assertIn("[REDACTED]",str(caught.exception))
+        self.assertNotIn("never-print-this-test-secret",str(caught.exception))
 
     def test_worker_identity_mismatch_is_rejected(self):
         """A real Python reference process must never be accepted as C++ SDK evidence."""

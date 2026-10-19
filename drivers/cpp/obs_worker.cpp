@@ -34,9 +34,10 @@ static std::string required(const char* name) {
 class ObsError : public std::runtime_error {
 public:
     bool missing;
+    std::string error_code;
     ObsError(obs_status status, const std::string& detail)
         :std::runtime_error(std::string(obs_get_status_name(status))+": "+detail),
-         missing(status==OBS_STATUS_NoSuchKey || status==OBS_STATUS_HttpErrorNotFound) {}
+         missing(status==OBS_STATUS_NoSuchKey || status==OBS_STATUS_HttpErrorNotFound), error_code(obs_get_status_name(status)) {}
 };
 
 /**
@@ -48,6 +49,9 @@ struct Response {
     bool completed=false;
     bool callback_failed=false;
     uint64_t size=0;
+    int64_t modified=0;
+    json objects=json::array();
+    std::vector<std::string> prefixes;
     std::string etag, detail, next_marker;
     bool truncated=false;
     std::vector<std::string> keys;
@@ -59,6 +63,7 @@ static obs_status properties(const obs_response_properties* fields, void* contex
     auto& state=*static_cast<Response*>(context);
     try {
         state.size=fields->content_length;
+        state.modified=fields->last_modified;
         state.etag=fields->etag ? fields->etag : "";
         return OBS_STATUS_OK;
     } catch(...) { state.callback_failed=true; return OBS_STATUS_AbortedByCallback; }
@@ -88,7 +93,7 @@ static obs_status write_body(int size, const char* buffer, void* context) noexce
     } catch(...) { state.callback_failed=true; return OBS_STATUS_AbortedByCallback; }
 }
 static obs_status list_page(int truncated, const char* marker, int count,
-    const obs_list_objects_content* contents, int, const char**, void* context) noexcept {
+    const obs_list_objects_content* contents, int prefix_count, const char** prefixes, void* context) noexcept {
     auto& state=*static_cast<Response*>(context);
     try {
         state.truncated=truncated!=0;
@@ -96,7 +101,9 @@ static obs_status list_page(int truncated, const char* marker, int count,
         for(int i=0;i<count;++i) {
             if(!contents[i].key) { state.callback_failed=true; return OBS_STATUS_AbortedByCallback; }
             state.keys.emplace_back(contents[i].key);
+            state.objects.push_back({{"key",contents[i].key},{"size",contents[i].size},{"last_modified_ms",contents[i].last_modified*1000},{"etag",contents[i].etag?contents[i].etag:""}});
         }
+        for(int i=0;i<prefix_count;++i) if(prefixes[i]) state.prefixes.emplace_back(prefixes[i]);
         return OBS_STATUS_OK;
     } catch(...) { state.callback_failed=true; return OBS_STATUS_AbortedByCallback; }
 }
@@ -178,7 +185,7 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","obs"},{"language","cpp"},{"sdk_language","c"},{"api","native"},
             {"sdk","huaweicloud-sdk-c-obs"},{"sdk_version",OSV_OBS_SDK_VERSION},{"sdk_source_revision",OSV_OBS_SOURCE_REVISION},
-            {"protocol_version",1},{"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"}},
+            {"protocol_version",1},{"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page"}},
             {"endpoint",endpoint},{"bucket",bucket},{"region",env("OSV_REGION")},{"auth_mode","OBS_OBS_TYPE"},
             {"path_style",false},{"cname",options.bucket_options.useCname},{"retries","sdk-default; not configurable"},
             {"sdk_retry_loop_budget",OSV_OBS_ATTEMPTS},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
@@ -188,7 +195,23 @@ public:
         Response state;
         obs_response_handler response_handler{properties,complete};
         obs_object_info object{}; object.key=key.data();
-        if(op=="put") {
+        if(op=="bucket_create") {
+            obs_head_bucket(&options,&response_handler,&state);
+            if(state.status!=OBS_STATUS_OK) {
+                if(state.status!=OBS_STATUS_NoSuchBucket && state.status!=OBS_STATUS_HttpErrorNotFound) check(state);
+                state=Response{};
+                const auto region=env("OSV_REGION");
+                create_bucket(&options,OBS_CANNED_ACL_PRIVATE,region.c_str(),&response_handler,&state);
+            }
+        } else if(op=="list_page") {
+            const auto prefix=q.value("prefix",""); const auto marker=q.value("token",q.value("marker",""));
+            const auto delimiter=q.value("delimiter",""); const auto encoding=q.value("encoding_type","");
+            obs_list_objects_params params{}; params.prefix=prefix.c_str(); params.marker=marker.empty()?nullptr:marker.c_str();
+            params.delimiter=delimiter.empty()?nullptr:delimiter.c_str(); params.encoding_type=encoding.empty()?nullptr:encoding.c_str(); params.maxkeys=q.value("max_keys",1000);
+            obs_list_objects_handler handler{response_handler,list_page};
+            list_bucket_objects_with_params(&options,&params,&handler,&state); check(state);
+            return {{"keys",state.keys},{"objects",state.objects},{"common_prefixes",state.prefixes},{"truncated",state.truncated},{"next_token",state.next_marker}};
+        } else if(op=="put") {
             auto length=open_body(state,q);
             obs_put_properties props{}; init_put_properties(&props);
             obs_put_object_handler handler{response_handler,read_body,nullptr};
@@ -205,7 +228,7 @@ public:
             get_object(&options,&object,&conditions,nullptr,&handler,&state);
             state.output.close(); if(!state.output) state.callback_failed=true;
         } else if(op=="head") {
-            get_object_metadata(&options,&object,nullptr,&response_handler,&state); check(state); return {{"size",state.size}};
+            get_object_metadata(&options,&object,nullptr,&response_handler,&state); check(state); return {{"key",key},{"size",state.size},{"last_modified_ms",state.modified*1000},{"etag",state.etag}};
         } else if(op=="delete") {
             delete_object(&options,&object,&response_handler,&state);
         } else if(op=="list") {
@@ -256,7 +279,7 @@ int main() {
         for(std::string line;std::getline(std::cin,line);) {
             auto start=std::chrono::steady_clock::now(); json result;
             try { result=worker.execute(json::parse(line)); result["ok"]=true; }
-            catch(const ObsError& error) { result={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"}}; }
+            catch(const ObsError& error) { result={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"},{"error_code",error.error_code}}; }
             catch(const std::exception& error) { result={{"ok",false},{"error",error.what()},{"error_kind","worker_error"}}; }
             result["elapsed_ns"]=std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-start).count();
             std::cout<<result.dump()<<std::endl;

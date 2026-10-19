@@ -13,5 +13,11 @@ dependencies = []
 [project.scripts]
 osv = "osv.cli:main"
 
+[tool.setuptools]
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md", "third_party/ceph-s3-tests-LICENSE"]
+
 [tool.setuptools.packages.find]
 include = ["osv*"]
+
+[tool.setuptools.package-data]
+osv = ["data/*.json"]

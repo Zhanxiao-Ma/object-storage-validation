@@ -70,7 +70,8 @@ OSV_RUN_SDK_TESTS=1 .venv/bin/python -m unittest discover -s tests/integration -
 
 测试启动仅监听 loopback 的 Moto，使用假凭据，随机分配端口。
 必须存在两种真实 SDK 驱动，否则测试失败，不能以 reference 替代。
-覆盖两种 SDK 进入生产调度/校验/报告的完整流程，以及 Java 写入到 C++ 读取和反向读写。
+覆盖两种 SDK 进入生产调度/校验/报告的完整流程、多对象 objbench 阶段，以及 Java 写入到 C++ 读取和反向读写。
+完善档还保留 Moto 5.1.15 在 MaxKeys=0 时错误返回 IsTruncated=true 的失败证据；测试预期准确发现它并阻止性能阶段，不能将该差异改成通过。
 测试代码只生成原始数据和独立预期，存储请求由真实官方 SDK 发出。
 未显式开启时跳过；缺少依赖或驱动不算验证成功。
 
@@ -194,3 +195,30 @@ GitHub Actions 自动执行两档框架自检、Java AWS SDK 完善档、COS Jav
 共享 C++ 响应保存回归覆盖空流、二进制、恰好一个缓冲区、多缓冲区、旧文件截断、
 输入 bad/fail 状态、无法打开输出文件与 /dev/full 写入失败。
 这是 worker 的 IO 正确性验证，不是模拟对象存储协议。
+
+## 十条 SDK 链路的通用 HTTP 契约
+
+构建 Java 五种 SDK 和 C++ 五种驱动后：
+
+```bash
+OSV_RUN_PAGE_TESTS=1 OSV_OBS_LIBRARY_PATH=/path/to/obs-runtime python3 -m unittest discover -s tests/integration -p test_page_sdk.py -v
+# 可选择已构建的真实链路；没有选择的链路不算通过：
+OSV_RUN_PAGE_TESTS=1 OSV_PAGE_TEST_TARGETS=java:s3,java:oss,java:obs,java:tos,java:cos python3 -m unittest discover -s tests/integration -p test_page_sdk.py -v
+```
+
+测试逐条验证真实 PUT/GET/Range/HEAD/DELETE、实际鉴权前缀、单页 LIST 参数和响应元数据，
+以及错误 ETag 确实发往服务端、返回 InvalidPart。固定响应中 TOS 使用其原生 JSON，其余接口使用对应 XML。
+负面测试不接受本地 JSON 类型错误、worker 崩溃或不支持操作冒充服务端拒绝。
+HTTP fixture 处理标准 chunked 和 AWS streaming 请求体；不实现存储引擎或替换 SDK。
+SDK 计时从 JSON 请求解析完成后开始，包含请求映射、实际 SDK 调用和文件流读写；进程/协议往返另行记录。
+
+两项已验证的原生端点限制：
+
+- OBS Java SDK 3.25.10 在 IP/path-style/CNAME 下自动将 OBS 签名改为 AWS V2。本工具拒绝此隐式回退，避免把它作为原生协议比较；使用标准 DNS 端点。可通过 `OSV_HTTP_PROXY=http://host:port` 设置 OBS Java 的显式 HTTP 代理。本地契约测试通过代理将标准 DNS 请求送到回环服务，不依赖外部 DNS 或修改 hosts。
+- TOS C++ SDK 2.6.30 拒绝 IP、显式端口及 S3 端点。本工具提前输出诊断，避免上游 SDK 早退后空指针崩溃。测试使用标准端口的 localhost 端点，通过回环 HTTP 代理回放响应，不修改 SDK。实云使用 TOS 原生 DNS 端点。
+
+这些测试证明适配层发出的真实请求和解析结果，不能证明云服务接受签名或给出性能结论。
+
+新增空白分隔符场景还发现固定 AWS C++ SDK 1.11.675 将 LIST 响应中的纯空格/换行 Delimiter 解析为空字符串。
+Java SDK 在相同响应下保留原值；独立固定 XML 回放能复现，因而这两项不能归因于 Moto 或云厂商。
+完善档仍要求原值准确，C++ 链路对应两项必须报失败。集成回归断言的是工具准确检出差异，绝不把失败门槛改成通过。

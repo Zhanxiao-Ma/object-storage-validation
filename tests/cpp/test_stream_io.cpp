@@ -1,4 +1,5 @@
 #include "stream_io.h"
+#include "object_metadata.h"
 #include <filesystem>
 #include <iostream>
 #include <iterator>
@@ -50,6 +51,14 @@ int main() {
         roundtrip(root/"exact-buffer", std::string(65536, char(120)));
         roundtrip(root/"multiple-buffers", std::string(200000, char(121))+"independent-tail");
         failures(root);
+        // Verify real metadata conversion: ISO/RFC UTC and fractional milliseconds must match independent epoch values.
+        require(timestamp_ms("2023-11-14T22:13:20Z")==1700000000000LL);
+        require(timestamp_ms("Tue, 14 Nov 2023 22:13:20 GMT")==1700000000000LL);
+        require(timestamp_ms("2023-11-14T22:13:20.123456Z")==1700000000123LL);
+        require(timestamp_ms("2023-11-14T22:13:20.1Z")==1700000000100LL);
+        require(timestamp_ms("").is_null());
+        bool invalid=false; try { timestamp_ms("invalid"); } catch(const std::runtime_error&) { invalid=true; }
+        require(invalid);
         std::filesystem::remove_all(root);
         return 0;
     } catch (const std::exception& error) {

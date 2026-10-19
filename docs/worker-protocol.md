@@ -6,7 +6,7 @@ Worker 是长驻进程：标准输入、标准输出使用一行一个 JSON，�
 
 认证继承环境：`OSV_ACCESS_KEY`、`OSV_SECRET_KEY`、可选 `OSV_SESSION_TOKEN`。
 非敏感配置：`OSV_ENDPOINT`、`OSV_BUCKET`、`OSV_REGION`、`OSV_PATH_STYLE`、
-`OSV_RETRIES`、`OSV_CONNECTIONS`。禁止将凭据放进 JSON manifest 或命令参数。
+`OSV_RETRIES`、`OSV_CONNECTIONS`、可选 `OSV_CNAME`。禁止将凭据放进 JSON manifest 或命令参数。
 
 首条请求 `{"op":"info"}` 返回 `ok`、language、backend、SDK 信息。
 语言名称是开放字符串；新增语言无需修改调度器或报告器。身份必须来自实际驱动，不能改标签冒充。
@@ -22,8 +22,10 @@ Worker 是长驻进程：标准输入、标准输出使用一行一个 JSON，�
 |---|---|---|
 | put | key, body_path | — |
 | get | key, output_path; optional offset,length | —，实际响应必须完整写到 output_path |
-| head | key | size |
+| head | key | size；新驱动另返回 key、last_modified_ms、etag |
 | list | prefix | keys，遍历全部分页 |
+| list_page | prefix；可选 delimiter、marker、token、max_keys、encoding_type | keys、objects:[{key,size,last_modified_ms,etag}]、common_prefixes、truncated、next_token；SDK 能观测时返回实际 prefix/delimiter/max_keys |
+| bucket_create | —（使用配置桶） | 缺失则创建、已有则复用；重复调用成功，不删除桶 |
 | delete | key | — |
 | mp_create | key | upload_id |
 | mp_part | key,upload_id,part_number,body_path | etag |
@@ -38,3 +40,14 @@ Worker 是长驻进程：标准输入、标准输出使用一行一个 JSON，�
 
 C++ 调用 OBS C SDK 时，`language=cpp` 描述调用端，`sdk_language=c` 描述实际 SDK。
 `worker_info` 保留 SDK 版本、源码提交、鉴权模式和不可配置的重试策略；不得把 C SDK 标为厂商 C++ SDK。
+
+服务端错误尽可能保留 `error_code`，SDK 暴露 HTTP 状态时另返回 `status_code`；不得由本地类型错误、
+无效 JSON、流错误或不支持操作制造服务端错误码。未知信息不能根据请求值伪造。
+OBS C SDK 的 list callback 不提供回显 prefix/delimiter/max_keys，这些字段保持缺失。
+
+分块并发兼容检查使用独立的真实 worker 会话，不能把多个请求同时写进一个无关联 ID 的 JSONL 通道。
+worker 提前退出时记录经过凭据脱敏、长度受限的 stderr，避免把初始化错误隐藏成一个无原因的失败。
+
+OBS Java 原生链路要求 SDK 初始化后仍为 OBS 签名；IP、path-style 或 CNAME 导致的 AWS V2 回退必须报错。
+TOS C++ 提前拒绝上游 SDK 不接受的 IP、显式端口和 S3 端点。诊断保留在脱敏的初始化错误中。
+SDK 的 stdout 日志重定向到 stderr，协议 stdout 只包含 JSONL，避免 SDK 日志破坏帧。

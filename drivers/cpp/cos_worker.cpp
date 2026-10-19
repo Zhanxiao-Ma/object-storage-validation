@@ -1,3 +1,4 @@
+#include "object_metadata.h"
 #include <cos_api.h>
 #include <cos_sys_config.h>
 #include <Poco/URI.h>
@@ -26,8 +27,10 @@ static std::string required(const char* key) {
 class CosError : public std::runtime_error {
 public:
     bool missing;
+    int status;
+    std::string error_code;
     explicit CosError(const vendor::CosResult& result)
-        :std::runtime_error(result.GetErrorCode()+": "+result.GetErrorMsg()),missing(result.GetHttpStatus()==404) {}
+        :std::runtime_error(result.GetErrorCode()+": "+result.GetErrorMsg()),missing(result.GetHttpStatus()==404),status(result.GetHttpStatus()),error_code(result.GetErrorCode()) {}
 };
 
 /**
@@ -66,13 +69,25 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","cos"},{"api","native"},{"language","cpp"},
             {"sdk_version",COS_CPP_SDK_VERSON},{"protocol_version",1},
-            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"}},
+            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page"}},
             {"endpoint",env("OSV_ENDPOINT")},{"region",env("OSV_REGION")},{"bucket",bucket},
             {"retries",env("OSV_RETRIES","0")},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
             {"range_integrity","whole-object ETag MD5 check disabled for ranges; harness verifies returned bytes"},
             {"connection_limit_semantics","max idle connections per host, not a total connection cap"},
             {"measurement","operation including local payload IO; excludes JSONL serialization"}};
-        if(op=="put") {
+        if(op=="bucket_create") {
+            vendor::HeadBucketReq head(bucket); configure(head); vendor::HeadBucketResp exists;
+            auto status=client->HeadBucket(head,&exists);
+            if(!status.IsSucc()) { if(status.GetHttpStatus()!=404) check(status); vendor::PutBucketReq request(bucket); configure(request); vendor::PutBucketResp response; check(client->PutBucket(request,&response)); }
+        } else if(op=="list_page") {
+            vendor::GetBucketReq request(bucket); configure(request); request.SetPrefix(q.value("prefix","")); request.SetMaxKeys(q.value("max_keys",1000));
+            if(q.contains("marker") || q.contains("token")) request.SetMarker(q.value("token",q.value("marker","")));
+            if(q.contains("delimiter")) request.SetDelimiter(q.at("delimiter").get<std::string>());
+            if(q.contains("encoding_type")) request.SetEncodingType(q.at("encoding_type").get<std::string>());
+            vendor::GetBucketResp page; check(client->GetBucket(request,&page)); json keys=json::array(),objects=json::array();
+            for(const auto& object:page.GetContents()) { keys.push_back(object.m_key); objects.push_back({{"key",object.m_key},{"size",std::stoll(object.m_size)},{"last_modified_ms",timestamp_ms(object.m_last_modified)},{"etag",object.m_etag}}); }
+            return {{"keys",keys},{"objects",objects},{"common_prefixes",page.GetCommonPrefixes()},{"truncated",page.IsTruncated()},{"next_token",page.GetNextMarker()},{"prefix",page.GetPrefix()},{"delimiter",page.GetDelimiter()},{"max_keys",page.GetMaxKeys()}};
+        } else if(op=="put") {
             std::ifstream input(q.at("body_path").get<std::string>(),std::ios::binary);
             if(!input) throw std::runtime_error("cannot open body_path");
             vendor::PutObjectByStreamReq request(bucket,key,input); configure(request);
@@ -92,7 +107,7 @@ public:
             output.close(); if(!output) throw std::runtime_error("response write failed");
         } else if(op=="head") {
             vendor::HeadObjectReq request(bucket,key); configure(request);
-            vendor::HeadObjectResp response; check(client->HeadObject(request,&response)); return {{"size",response.GetContentLength()}};
+            vendor::HeadObjectResp response; check(client->HeadObject(request,&response)); return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()}};
         } else if(op=="list") {
             json keys=json::array(); std::string marker;
             for(;;) {
@@ -136,7 +151,7 @@ int main() {
         for(std::string line;std::getline(std::cin,line);) {
             auto start=std::chrono::steady_clock::now(); json response;
             try { response=worker.execute(json::parse(line)); response["ok"]=true; }
-            catch(const CosError& error) { response={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"}}; }
+            catch(const CosError& error) { response={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"},{"status_code",error.status},{"error_code",error.error_code}}; }
             catch(const std::exception& error) { response={{"ok",false},{"error",error.what()},{"error_kind","worker_error"}}; }
             response["elapsed_ns"]=std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-start).count();
             std::cout<<response.dump()<<std::endl;

@@ -59,19 +59,51 @@ class SdkIntegrationTest(unittest.TestCase):
             directory = Path(temporary)
             manifest = directory/"manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "targets": self.targets,
-                "workload": {"object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
-                             "profile": "complete", "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
+                "workload": {"performance_model":"operations", "large_object_size":65536, "object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
+                             "profile": "normal", "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
-            self.assertEqual(report["coverage"]["profile"], "complete")
-            self.assertEqual(len(report["coverage"]["catalog"]), 32)
-            self.assertFalse([case for case in report["cases"] if case["status"] == "fail"], report["cases"])
+            self.assertEqual(report["coverage"]["profile"], "normal")
+            self.assertEqual(len(report["coverage"]["catalog"]), 23)
+            self.assertEqual([case for case in report["cases"] if case["status"] == "fail"], [])
             self.assertEqual(len(report["summary"]), 5*len(self.targets))
             self.assertEqual(len(report["samples"]), 55*len(self.targets))
-            self.assertFalse([case for case in report["cases"] if case["status"] == "fail"], report["cases"])
+            self.assertEqual([case for case in report["cases"] if case["status"] == "fail"], [])
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
+
+    def test_real_sdk_multikey_objbench_model(self):
+        """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "profile":"normal","performance_model":"objbench","object_size":1024,"range_size":17,
+                "large_object_size":65536,"part_size":5*1024*1024,"concurrency":2,"requests":1,"rounds":1,
+                "objbench":{"small_object_size":128,"small_objects":3,"block_size":1024,"big_object_size":3072,"list_requests_per_lane":2}}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
+            self.assertEqual(len(report["samples"]),31*len(self.targets))
+            self.assertEqual(len(report["summary"]),8*len(self.targets))
+            self.assertTrue(all(row["ok"] for row in report["samples"]))
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
+
+    def test_complete_profile_preserves_moto_zero_maxkeys_incompatibility(self):
+        """Run strict cases through real SDKs; expect Moto MaxKeys=0 plus C++ whitespace parsing discrepancies to fail and block performance."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "profile":"complete","performance_model":"operations","object_size":1024,"range_size":17,
+                "large_object_size":65536,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
+            report=run(load_config(path),directory/"results")
+            failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"]
+            expected=[(target["id"],"ceph_list_maxkeys_zero") for target in self.targets]
+            expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
+                         for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
+            self.assertEqual(sorted(failures),sorted(expected))
+            self.assertEqual(report["samples"],[])
+            self.assertEqual(report["summary"],[])
+            self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
 
     def test_cross_sdk_real_producer_and_consumer(self):
         """Feed Java-produced bytes to C++ GET and reverse the direction; expect exact independent bytes and Range output."""

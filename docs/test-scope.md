@@ -8,11 +8,11 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 1。
+来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 3；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
-`core_objects`：14 项，其中 13 个兼容性门槛、1 个行为观察。
+`core_objects` 的 14 项，加 `objbench_objects` 的 9 项：共 23 项，其中 22 个门槛、1 个观察。
 
 | 用例 ID | 断言 |
 |---|---|
@@ -27,12 +27,25 @@
 | multipart_abort | **先上传分块再取消**，HEAD/LIST 均无已提交对象 |
 | range_end_overflow | 记录拒绝或正确截断；observation，不作统一门槛 |
 
-参考 objbench 的基础对象功能；分块取消另加生命周期检查。
-与原版 objbench 的差异：不创建桶，不实现文件系统 owner/mode/mtime；不复刻其所有特殊键与参数组合。
+新增 objbench 对应检查：
+
+| 新增用例 ID | 对齐内容 |
+|---|---|
+| bucket_create_idempotent | 配置的桶不存在则创建、已存在则复用，重复执行不报错 |
+| hello_partial_ranges | 原版 hello 的 h/o/llo/ll 四组范围 |
+| list_object_fields | 列举实际返回的键、大小、修改时间，时间窗口 30 秒 |
+| list_after_marker / list_sorted_100 | marker 超过最后键返回空；100 个键按字典序完整列举 |
+| special_control_key | 原版中文、JSON 字符、U+001F 控制字符及百分号键，URL 编码列举无损 |
+| large_object_put | 默认 256 MiB 单对象上传及大小验证；缩小 large_object_size 时明确记录 |
+| slash_suffixed_key | 斜线结尾对象的上传、读取和列举 |
+| multipart_grow_shrink | 三个独立真实 SDK 会话并发上传；首块加倍、末块改为 hello 后完成并完整校验 |
+
+原版的 POSIX owner/mode/mtime 功能与对应性能阶段对对象 SDK 不适用，逐项保留 N/A 原因。
+bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删除桶；云凭据需要相应权限。
 
 ## 完善档 complete
 
-包含正常档，增加 `extended_objects` 的 18 项，总计 32 项（29 个门槛、3 个观察）。
+包含正常档、`extended_objects` 的 18 项和 `ceph_object_boundaries` 的 39 项，总计 80 项（77 个门槛、3 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -50,6 +63,11 @@
 | multipart_abort_preserves | 取消新上传不影响旧对象；本工具补充场景 |
 | multipart_bad_etag | 错误 ETag 完成失败，不能发布对象 |
 
+`ceph_object_boundaries` 新增具体 prefix/delimiter/marker/MaxKeys 组合、实际续传令牌遍历、
+二进制大小矩阵、严格 InvalidRange，以及分块缺失、错误 ETag、非末块过小。
+负面场景要求服务端错误码，能观测 HTTP 状态时也检查；本地驱动类型错误不能算预期服务端拒绝。
+SDK 原生 C 回调不暴露的回显字段不会凭请求值伪造，仍保留为逐项对齐缺口。
+
 Ceph 参考函数逐项记录在 `osv/suites.py` 和报告的 coverage.catalog 中。
 `list_objects` 为 1001–10000 的整数；达到常见服务端分页阈值不代表已检查原始 token/marker 等所有分页参数。
 普通 SDK worker 负责遍历分页，场景验证其最终返回的完整集合。
@@ -59,11 +77,11 @@ Ceph 参考函数逐项记录在 `osv/suites.py` 和报告的 coverage.catalog �
 “完善档”是本工具的扩展对象语义档位，**不等于 Ceph 全量测试，也不是 S3 认证**。
 以下在报告中保留为未覆盖范围，不生成通过结果：
 
-- 桶创建/删除、账户管理；只使用已有桶内本次随机前缀。
+- 桶删除、跨桶和账户管理场景；当前只创建/复用配置桶并使用随机对象前缀。
 - 文件系统 chmod/chown/mtime。
 - CopyObject、UploadPartCopy、批量删除、用户元数据、条件请求。
 - 版本控制、ACL/Policy、加密、生命周期、对象锁、归档恢复。
-- LIST delimiter/marker/token 原始分页参数、响应元数据与排序保证。
+- LIST 全部 V1/V2 参数与返回字段组合；已实现一批单页参数、原始元数据与排序检查，尚未全量。
 - HTTP 状态和响应头逐字段检查、签名负面用例、故障注入、限流与恢复。
 
 这些功能可通过新增操作、Suite、Profile 扩展。能力缺失记录失败，不能跳过后算通过。
@@ -82,24 +100,35 @@ python3 -m osv run examples/selftest.json --profile complete --output results/co
 `workload.profile` 与 `workload.compatibility_suites` 二选一。未指定则使用 normal。
 旧配置显式选择 baseline 时仍运行旧套件，报告标记 custom，不冒充新档位。
 CLI 的 `--profile` 显式覆盖 manifest 选择。每个场景创建独立数据，不依赖前一个场景成功。
+`python3 -m osv alignment MANIFEST --profile complete` 可在不启动 SDK 的情况下输出完整上游映射。
 
 Suite 可以声明逐项 catalog，执行结果必须与目录逐项对应；重复、遗漏或将必测门槛降为 observation 都失败。
 Profile 只组合 Suite，不含语言或厂商分支。插件扩展见 [扩展说明](extensions.md)。
 
 ## 性能范围
 
-档位控制兼容性广度；性能阶段由独立 workload 配置驱动，不与档位绑定压力等级。
-当前测量 GET、Range、PUT、HEAD、LIST，可配置对象/Range 大小、并发、请求数、预热、轮次和 seed。
-兼容性对象在性能前清理，避免完善档的大量对象改变 LIST 的性能数据集。
-性能反复操作同一 perf 对象，PUT 覆盖同一键；Range 使用固定 seed 生成偏移。
-每 lane 一个持久 SDK 进程/client，不能代表引擎内共享 client/thread pool 的性能。
+默认 `performance_model=objbench` 对齐多对象负载形态：
 
-尚未内置多对象性能数据集、冷读控制、混合读写、业务轨迹回放、独立分块吞吐、CPU/RSS 或长期稳定性。
-也未按 Polars 生产采样校准负载。objbench 多小对象、拆块大对象和删除性能未被本档位复刻。
+1. 100 个 128 KiB 小对象并发 PUT，再 GET 并逐字节散列校验。
+2. 1 GiB 数据按 4 MiB 拆成 256 个独立对象并发 PUT/GET；不是单对象 Multipart 性能。
+3. 额外执行随机 Range 阶段，用 seed 固定偏移并校验准确字节。
+4. 每个有效 lane 100 次 LIST，再对全部对象 HEAD、DELETE，最后验证数据集已删除。
+
+`workload.objbench` 可以配置 small_objects、small_object_size、big_object_size、block_size、
+list_requests_per_lane、warmup_rounds。块数向上取整，最后一块保持完整块大小；报告记录实际字节数。
+有效并发取配置并发、小对象数和块数的最小值；每 lane 独立持久 SDK 进程/client。
+读取完整校验，失败数据流不能生成正常的 S3/native 性能比较结论。LIST 同时报告 SDK 调用次数/s 与列举对象数/s。
+
+显式选择 `performance_model=operations` 可保留旧单对象 GET/Range/PUT/HEAD/LIST 模型及插件操作。
+兼容性数据在性能前清理，避免扩大 LIST 数据集。性能轮次打乱目标顺序，预热不进入测量统计。
+输入文件 IO、进程调度和完整校验开销与 Go objbench 的内存路径不同；不能把数据量/阶段对齐说成计时实现完全相同。
+
+尚未内置：冷读控制、混合读写、Polars 生产轨迹回放、单对象分块吞吐、CPU/RSS 或长期稳定性。
+未按 Polars 生产采样校准，不能从合成负载直接推出引擎生产性能。
 
 ## 报告
 
-每次在新目录生成 report.md 与 report.json，包含：
+每次在新目录生成 report.md、report.json 与逐项 alignment.json，包含：
 
 1. 调用端语言、SDK 名称/语言、实际版本、重试配置和 worker_info。
 2. 档位、目录版本、所选 Suite、逐项来源与预期、明确未覆盖范围。
@@ -123,3 +152,18 @@ within_budget 仅表示本次观测落在预定预算内，不是统计等价证
 - [Ceph s3-tests 主测试文件](https://github.com/ceph/s3-tests/blob/master/s3tests/functional/test_s3.py)
 
 本项目未复制上游测试实现，不要求安装其测试环境；覆盖目录里的 reference 是场景映射，而非全量移植声明。
+
+## 固定上游与计数
+
+- JuiceFS：29c60bbbeea410c6c0cb7a49540044e0c099dffb，16 个功能项与 10 个性能项。
+- Ceph：5b3987116eca0b4b8fa57d6b10f3db57bab196b6，八个文件，979 个源码定义；4 个同名定义被后续定义覆盖，实际函数数为 975。
+- 这些是源码定义/阶段数，不是 pytest 参数展开后的执行数。不能以本工具 case 数量除以上游函数数声称覆盖率。
+- Ceph 行引用匹配只标 partial；未核对完整参数、断言与协议版本，不自动标 aligned。
+- 本地 Moto 5.1.15 在 MaxKeys=0 时返回 IsTruncated=true，与锁定 Ceph 的 false 断言不符。
+  完善档会如实失败并阻止该目标的性能阶段；回归测试专门验证此差异没有被隐藏。这不是任何云厂商的实测结论。
+
+LIST 已迁移普通/下划线数据集的四组分页遍历、纯公共前缀页、斜线结尾对象、替代分隔符（字母、百分号、空格、点、换行）和不存在的前缀/分隔符组合。V1/V2 全部响应断言仍需继续核对，不按名称匹配认定完整对齐。
+
+吞吐量使用各阶段的真实墙钟时间，包含框架生成输入、读回校验及本地文件 I/O，不能解释为纯 SDK 网络吞吐。
+样本的 SDK elapsed_ns 不包含 Python 生成/校验及 JSONL 序列化，但包含实际 SDK 调用与驱动文件 I/O。
+判断 SDK 差异时须同时查看延迟分位数、吞吐量、CPU/网络瓶颈和实际数据集参数；本地自检不作为性能证据。

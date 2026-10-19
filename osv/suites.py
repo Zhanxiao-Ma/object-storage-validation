@@ -8,9 +8,9 @@ import random
 
 from .scenarios import Profile, Suite, assert_equal, require_ok
 
-JUICE = "https://github.com/juicedata/juicefs/blob/main/cmd/objbench.go"
-CEPH = "https://github.com/ceph/s3-tests/blob/master/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 1
+JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
+CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
+CATALOG_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -97,9 +97,11 @@ class Probe:
                 assert_equal(self.keys(), [])
             request_parts = [parts[n] for n in sorted(parts)]
             if mode == "bad_etag":
-                request_parts[0] = {**request_parts[0], "etag": 00000000000000000000000000000000}
+                request_parts[0] = {**request_parts[0], "etag": "00000000000000000000000000000000"}
                 result = self.raw("mp_complete", upload_id=upload, parts=request_parts)
                 assert_equal(result["ok"], False)
+                assert_equal(result.get("error_kind"), "local_error" if self.ctx.worker.info.get("api") == "local" else "sdk_error")
+                if self.ctx.worker.info.get("api") != "local": assert_equal(result.get("error_code"),"InvalidPart")
                 self.missing("head")
                 return
             self.call("mp_complete", upload_id=upload, parts=request_parts)
@@ -239,11 +241,11 @@ EXTENDED = (
 )
 
 EXCLUSIONS = (
-    "桶创建/删除及账户管理（工具只操作已有桶中的隔离前缀）",
+    "桶删除、账户管理及跨桶权限用例（尚未迁移；bucket_create 只针对配置的桶）",
     "文件系统 chmod/chown/mtime（不属于本工具对象接口）",
     "CopyObject/UploadPartCopy、批量删除、用户元数据及条件请求（尚未实现操作协议）",
     "版本控制、ACL/Policy、加密、生命周期、对象锁与归档恢复（尚未实现）",
-    "LIST delimiter/marker/token 原始分页参数与响应字段（目前验证驱动汇总后的键集合）",
+    "LIST 的全部协议版本、参数组合和响应字段（已增加单页参数与元数据；尚未全量迁移）",
     "HTTP 状态/响应头逐字段一致性、签名负面用例、故障注入（尚未实现）",
 )
 
@@ -252,7 +254,11 @@ def register_suites(registry):
     for name, cases in (("core_objects", CORE), ("extended_objects", EXTENDED)):
         registry.add_suite(Suite(name, frozenset().union(*(c.operations for c in cases)),
             lambda ctx, cases=cases: run_cases(ctx, cases), tuple(c.metadata() for c in cases)))
-    registry.add_profile(Profile("normal", ("core_objects",),
-        "正常档：参考 objbench 的基础对象语义，加入带分块数据的取消验证", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "extended_objects"),
-        "完善档：基础对象语义加参考 s3-tests 的边界场景；不是 Ceph 全量覆盖", EXCLUSIONS))
+    from .objbench_cases import register
+    register(registry)
+    from .ceph_objects import register as register_ceph
+    register_ceph(registry)
+    registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
+        "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries"),
+        "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

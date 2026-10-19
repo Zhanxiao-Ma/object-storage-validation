@@ -1,5 +1,6 @@
 """Persistent JSON-lines SDK workers, with bounded responses and deadlines."""
 import json
+from collections import deque
 import os
 import queue
 import subprocess
@@ -14,11 +15,17 @@ class Worker:
 
     def __init__(self, target, timeout=60):
         self.timeout = timeout
+        self.target = target.copy()
+        environment={**os.environ, **target.get("env", {})}
+        self.secrets=[value for name,value in environment.items() if len(value)>=4 and any(word in name.upper() for word in ("SECRET","TOKEN","PASSWORD","ACCESS_KEY"))]
+        self.stderr_lines=deque(maxlen=12)
         self.process = subprocess.Popen(
             target["command"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL, text=True, bufsize=1,
-            env={**os.environ, **target.get("env", {})},
+            stderr=subprocess.PIPE, text=True, bufsize=1,
+            env=environment,
         )
+        self.stderr_reader=threading.Thread(target=self._read_stderr,daemon=True)
+        self.stderr_reader.start()
         self.responses = queue.Queue()
         self.reader = threading.Thread(target=self._read, daemon=True)
         self.reader.start()
@@ -39,12 +46,32 @@ class Worker:
             self.close()
             raise
 
+    def fork(self):
+        """Open an independent real SDK session for parallel compatibility operations."""
+        return Worker(self.target,self.timeout)
+
+    def _read_stderr(self):
+        try:
+            while True:
+                line=self.process.stderr.readline(4097)
+                if not line:return
+                self.stderr_lines.append(line)
+        except (OSError,ValueError):
+            return
+
+    def _diagnostic(self):
+        self.stderr_reader.join(timeout=.2)
+        value="".join(self.stderr_lines)[-8192:].strip()
+        for secret in sorted(self.secrets,key=len,reverse=True):value=value.replace(secret,"[REDACTED]")
+        return value
+
     def _read(self):
         try:
             while True:
                 line = self.process.stdout.readline(1024 * 1024 + 1)
                 if not line:
-                    raise RuntimeError("worker exited before sending a response")
+                    detail=self._diagnostic()
+                    raise RuntimeError("worker exited before sending a response"+(": "+detail if detail else ""))
                 if len(line) > 1024 * 1024:
                     raise RuntimeError("worker response exceeds 1 MiB")
                 self.responses.put(json.loads(line))
@@ -77,10 +104,11 @@ class Worker:
             except subprocess.TimeoutExpired:
                 self.process.kill()
                 self.process.wait()
-        for stream in (self.process.stdin, self.process.stdout):
+        for stream in (self.process.stdin, self.process.stdout, self.process.stderr):
             if stream:
                 stream.close()
         self.reader.join(timeout=1)
+        self.stderr_reader.join(timeout=1)
 
 
 def invoke_external(spec, output_dir, redact):

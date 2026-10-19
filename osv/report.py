@@ -27,6 +27,7 @@ def summarize(samples, batches):
                        "p99_ms": percentile(durations, .99),
                        "sdk_mean_ms": statistics.mean(durations) if durations else None,
                        "verified_ops_s": len(good) / sum(walls) if sum(walls) > 0 else None,
+                       "verified_objects_s": sum(s.get("objects",0) for s in good)/sum(walls) if sum(walls)>0 else None,
                        "verified_mib_s": sum(s["bytes"] for s in good) / 2**20 / sum(walls)
                        if sum(walls) > 0 else None})
     return result
@@ -114,16 +115,28 @@ def markdown(report):
         inventory += ["- "+cell(item) for item in coverage["exclusions"]]
         inventory += ["", "档位控制兼容性用例范围；性能负载由 workload 单独配置。参考上游场景，不执行上游测试程序。", ""]
         lines[position:position] = inventory
+    if report.get("upstream_alignment"):
+        position=lines.index("## 兼容性")
+        section=["## 上游能力对齐", "", "逐项映射见 [alignment.json](alignment.json)。partial 不计作已对齐，目录提取不代表用例已经迁移。", "",
+                 "| Upstream | Total functions/items | Aligned | Partial | Missing | N/A | Complete |", "|---|---|---|---|---|---|---|"]
+        for row in report["upstream_alignment"]["summary"]:
+            section.append("| "+" | ".join(map(str,[row["project"],row["total"],row["aligned"],row["partial"],row["not_migrated"]+row["not_selected"],row["not_applicable"],row["complete"]]))+" |")
+        section += ["", "以上是实现映射；实际执行数量见档位覆盖表。参数缩放、SDK 回调可观测字段差异及未迁移项目不能省略。", ""]
+        lines[position:position]=section
     for row in report["cases"]:
         lines.append(f'| {row["target"]} | {row["case"]} | {row["status"]} | {cell(row.get("error", row.get("behavior", "—")))} |')
     lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", "",
-              "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s |",
-              "|---|---|---|---|---|---|---|---|"]
+              "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s |",
+              "|---|---|---|---|---|---|---|---|---|"]
     def fmt(value):
         return "N/A" if value is None else f"{value:.3f}"
     for row in report["summary"]:
         lines.append(f'| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | '
-                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s")) + " |")
+                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + " |")
+    if report.get("benchmark_datasets"):
+        lines += ["", "### 性能数据集", "", "objbench 模型使用多对象与拆块数据集；Range 是额外阶段。POSIX chmod/chown/chtimes 对对象 SDK 不适用。", ""]
+        for dataset in report["benchmark_datasets"]:
+            lines.append(f"- {dataset['target']}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, lanes={dataset['effective_lanes']}; parameters={dataset['reference_parameters']}")
     warmup = [s for s in report["samples"] if s["phase"] == "warmup"]
     lines += ["", f"预热请求：{len(warmup)}；失败：{sum(not s['ok'] for s in warmup)}。预热不进入性能统计。"]
     lines += ["", "## 同厂商 SDK 对比", ""]

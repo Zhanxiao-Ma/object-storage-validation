@@ -59,15 +59,19 @@ def load_config(path, profile_override=None):
     defaults = {"object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
                 "requests": 100, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 3, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
-                "seed": 1729, "list_objects": 1001, "operations": ["get", "range", "put", "head"]}
+                "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "performance_model": "objbench", "operations": ["get", "range", "put", "head"]}
     workload = {**defaults, **workload}
-    for key in ("object_size", "range_size", "requests", "concurrency", "rounds", "part_size", "timeout_seconds"):
+    for key in ("object_size", "range_size", "requests", "concurrency", "rounds", "part_size", "timeout_seconds", "large_object_size"):
         if type(workload[key]) is not int or workload[key] <= 0:
             raise ValueError(f"{key} must be a positive integer")
     if type(workload["warmup_requests"]) is not int or workload["warmup_requests"] < 0:
         raise ValueError("warmup_requests must be nonnegative")
     if workload["range_size"] > workload["object_size"]:
         raise ValueError("range_size must not exceed object_size")
+    if workload["performance_model"] not in ("objbench", "operations"):
+        raise ValueError("performance_model must be objbench or operations")
+    from .objbench import normalize
+    workload["objbench"] = normalize(workload.get("objbench", {}))
     registry = build_registry(config)
     if "compatibility_suites" not in workload:
         profile = workload.setdefault("profile", "normal")
@@ -84,7 +88,7 @@ def load_config(path, profile_override=None):
         if len(set(selected)) != len(selected):
             raise ValueError(f"duplicate {field}")
     # Explicit ceilings prevent accidental unbounded subprocess fanout or allocations.
-    if workload["concurrency"] > 128 or max(workload["object_size"], workload["part_size"]) > 256 * 1024 * 1024:
+    if workload["concurrency"] > 128 or max(workload["object_size"], workload["part_size"], workload["large_object_size"]) > 256 * 1024 * 1024:
         raise ValueError("limit concurrency to 128 and object/part size to 256 MiB")
     if type(workload["seed"]) is not int:
         raise ValueError("seed must be an integer")
@@ -152,6 +156,9 @@ def run(config, output_dir):
               "coverage": coverage(config, registry),
               "operation_metrics": {name: registry.operations[name].throughput_metric for name in config["workload"]["operations"]}}
     workload = config["workload"]
+    if workload["performance_model"] == "objbench":
+        from .objbench import METRICS
+        report["operation_metrics"] = METRICS.copy()
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
     prefix = "osv/" + report["run_id"] + "/"
     pools = {}
@@ -204,19 +211,26 @@ def run(config, output_dir):
                         report["cases"].extend({**case, "target": ident, "suite": name} for case in cases)
                     # Compatibility data must not change the performance dataset between profiles.
                     cleanup_objects(workers[0], prefix+ident+"/")
-                    require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/perf", "body_path": str(body)}))
+                    if workload["performance_model"] == "operations":
+                        require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/perf", "body_path": str(body)}))
                 except Exception as error:
                     report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
             active = [t for t in config.get("targets", []) if pools.get(t["id"])
                       and not any(c["status"] == "fail" for c in report["cases"] if c["target"] == t["id"])]
             for phase in ("warmup", "measure"):
-                rounds = 1 if phase == "warmup" else workload["rounds"]
+                rounds = (workload["objbench"]["warmup_rounds"] if workload["performance_model"] == "objbench" else 1) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
                 for round_index in range(rounds):
                     order = list(active)
                     random.Random(workload["seed"] + round_index).shuffle(order)
                     for target in order:
                         ident = target["id"]
+                        if workload["performance_model"] == "objbench":
+                            from .objbench import run_objbench
+                            ctx = Context(pools[ident][0], prefix+ident+"/", root/ident, payload, body,
+                                          root/ident/"read.bin", workload)
+                            run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
+                            continue
                         for op in workload["operations"]:
                             workers = pools[ident]
                             def lane(slot):
@@ -267,6 +281,10 @@ def run(config, output_dir):
         except Exception as error:
             report["external"].append({"id": spec["id"], "tool": spec["tool"], "exit_code": -1,
                                       "error": redact(str(error)), "stdout": "unavailable"})
+    from .alignment import audit
+    alignment=audit(config,registry)
+    report["upstream_alignment"]={"summary":alignment["summary"],"details":"alignment.json"}
+    (output_dir/"alignment.json").write_text(json.dumps(alignment,indent=2,ensure_ascii=False)+"\n")
     report["summary"] = summarize(report["samples"], report["batches"])
     # Observations are not required semantic gates.
     gates = [c for c in report["cases"] if c["status"] != "observation"]
@@ -281,7 +299,7 @@ def run(config, output_dir):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("check", "catalog", "run"):
+    for name in ("check", "catalog", "alignment", "run"):
         command = commands.add_parser(name)
         command.add_argument("manifest")
         command.add_argument("--profile", help="select registered test profile; overrides manifest suite selection")
@@ -290,6 +308,10 @@ def main():
     args = parser.parse_args()
     try:
         config = load_config(args.manifest, args.profile)
+        if args.command == "alignment":
+            from .alignment import audit
+            print(json.dumps(audit(config,build_registry(config)),indent=2,ensure_ascii=False))
+            return
         if args.command == "catalog":
             print(json.dumps(coverage(config, build_registry(config)), indent=2, ensure_ascii=False))
             return

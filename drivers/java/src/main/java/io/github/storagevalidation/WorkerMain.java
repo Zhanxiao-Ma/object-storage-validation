@@ -59,16 +59,19 @@ public final class WorkerMain {
                 Map<String,Object> result = new LinkedHashMap<>();
                 try {
                     JsonNode request = JSON.readTree(line);
+                    start=System.nanoTime();
                     if ("info".equals(text(request,"op"))) {
                         result.put("language", "java"); result.put("backend", provider);
                         result.put("api", "s3".equals(provider)?"s3":"native");
                         result.put("sdk_version", sdkVersion(provider));
                         result.put("protocol_version", 1);
-                        result.put("capabilities", Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort"));
+                        result.put("capabilities", Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page"));
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
                         result.put("connections_per_worker",env("CONNECTIONS","16"));
                         result.put("runtime", System.getProperty("java.version"));
+                        result.put("cname",Boolean.parseBoolean(env("CNAME","false")));
+                        if("obs".equals(provider)) result.put("auth_mode","OBS; negotiation disabled");
                         result.put("measurement", "operation including local payload IO; excludes JSONL serialization");
                     } else result.putAll(store.execute(request));
                     result.put("ok", true);
@@ -76,6 +79,13 @@ public final class WorkerMain {
                     result.put("ok", false);
                     result.put("error_kind", notFound(error) ? "not_found" : "sdk_error");
                     result.put("error", error.getClass().getSimpleName()+": "+error.getMessage());
+                    if(error instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
+                        software.amazon.awssdk.services.s3.model.S3Exception e=(software.amazon.awssdk.services.s3.model.S3Exception)error;
+                        result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null) result.put("error_code",e.awsErrorDetails().errorCode());
+                    } else if(error instanceof com.aliyun.oss.OSSException) result.put("error_code",((com.aliyun.oss.OSSException)error).getErrorCode());
+                    else if(error instanceof com.obs.services.exception.ObsException) { result.put("status_code",((com.obs.services.exception.ObsException)error).getResponseCode()); result.put("error_code",((com.obs.services.exception.ObsException)error).getErrorCode()); }
+                    else if(error instanceof com.volcengine.tos.TosServerException) { result.put("status_code",((com.volcengine.tos.TosServerException)error).getStatusCode()); result.put("error_code",((com.volcengine.tos.TosServerException)error).getCode()); }
+                    else if(error instanceof com.qcloud.cos.exception.CosServiceException) { result.put("status_code",((com.qcloud.cos.exception.CosServiceException)error).getStatusCode()); result.put("error_code",((com.qcloud.cos.exception.CosServiceException)error).getErrorCode()); }
                 }
                 result.put("elapsed_ns", System.nanoTime()-start);
                 protocol.println(JSON.writeValueAsString(result));
@@ -107,6 +117,21 @@ public final class WorkerMain {
     }
     static Map<String,Object> one(String key, Object value) { return Collections.singletonMap(key,value); }
     static Map<String,Object> empty() { return Collections.emptyMap(); }
+    static Map<String,Object> fields(Object... values) {
+        Map<String,Object> result=new LinkedHashMap<>();
+        for(int i=0;i<values.length;i+=2) result.put((String)values[i],values[i+1]);
+        return result;
+    }
+    static Long millis(java.util.Date value) { return value==null?null:value.getTime(); }
+    static Long millis(java.time.Instant value) { return value==null?null:value.toEpochMilli(); }
+    static Map<String,Object> object(String key,long size,Long modified,String etag) {
+        return fields("key",key,"size",size,"last_modified_ms",modified,"etag",etag);
+    }
+    static Map<String,Object> page(List<Map<String,Object>> objects,List<String> prefixes,boolean truncated,String token,String prefix,String delimiter,int maximum) {
+        List<String> keys=new ArrayList<>(); for(Map<String,Object> object:objects) keys.add((String)object.get("key"));
+        return fields("keys",keys,"objects",objects,"common_prefixes",prefixes,"truncated",truncated,"next_token",token==null?"":token,"prefix",prefix,"delimiter",delimiter==null?"":delimiter,"max_keys",maximum);
+    }
+
 
     /**
      * Exercises AWS SDK v2 S3 rather than a substitute HTTP implementation.
@@ -134,6 +159,26 @@ public final class WorkerMain {
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             switch(op) {
+            case "bucket_create": {
+                try { client.headBucket(b->b.bucket(bucket)); }
+                catch(software.amazon.awssdk.services.s3.model.S3Exception error) {
+                    if(error.statusCode()!=404) throw error;
+                    client.createBucket(b->{ b.bucket(bucket); if(!"us-east-1".equals(required("REGION"))) b.createBucketConfiguration(c->c.locationConstraint(required("REGION"))); });
+                } return empty();
+            }
+            case "list_page": {
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Request.Builder request=software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder().bucket(bucket).prefix(text(q,"prefix")).maxKeys(q.path("max_keys").asInt(1000));
+                if(q.has("marker")) request.startAfter(text(q,"marker"));
+                if(q.has("token")) request.continuationToken(text(q,"token"));
+                if(q.has("delimiter")) request.delimiter(text(q,"delimiter"));
+                if(q.has("encoding_type")) request.encodingType(text(q,"encoding_type"));
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Response result=client.listObjectsV2(request.build());
+                List<Map<String,Object>> objects=new ArrayList<>(); List<String> prefixes=new ArrayList<>();
+                for(software.amazon.awssdk.services.s3.model.S3Object item:result.contents()) objects.add(object(item.key(),item.size(),millis(item.lastModified()),item.eTag()));
+                for(software.amazon.awssdk.services.s3.model.CommonPrefix item:result.commonPrefixes()) prefixes.add(item.prefix());
+                return page(objects,prefixes,result.isTruncated(),result.nextContinuationToken(),result.prefix(),result.delimiter(),result.maxKeys());
+            }
+
             case "put":
                 client.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
@@ -142,7 +187,7 @@ public final class WorkerMain {
                 if(q.has("offset")) b.range("bytes="+q.get("offset").asLong()+"-"+(q.get("offset").asLong()+q.get("length").asLong()-1));
                 try(InputStream in=client.getObject(b.build())) { Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
             }
-            case "head": return one("size",client.headObject(b->b.bucket(bucket).key(key)).contentLength());
+            case "head": { software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(b->b.bucket(bucket).key(key)); return object(key,result.contentLength(),millis(result.lastModified()),result.eTag()); }
             case "delete": client.deleteObject(b->b.bucket(bucket).key(key)); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>();
@@ -174,6 +219,7 @@ public final class WorkerMain {
         final String bucket=required("BUCKET");
         OssStore() {
             com.aliyun.oss.ClientBuilderConfiguration configuration=new com.aliyun.oss.ClientBuilderConfiguration();
+            configuration.setSupportCname(Boolean.parseBoolean(env("CNAME","false")));
             configuration.setMaxErrorRetry(Integer.parseInt(env("RETRIES","0")));
             configuration.setMaxConnections(Integer.parseInt(env("CONNECTIONS","16")));
             client=new com.aliyun.oss.OSSClientBuilder().build(required("ENDPOINT"),
@@ -182,13 +228,26 @@ public final class WorkerMain {
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             switch(op) {
+            case "bucket_create": if(!client.doesBucketExist(bucket)) client.createBucket(bucket); return empty();
+            case "list_page": {
+                com.aliyun.oss.model.ListObjectsRequest request=new com.aliyun.oss.model.ListObjectsRequest(bucket);
+                request.setPrefix(text(q,"prefix")); request.setMaxKeys(q.path("max_keys").asInt(1000));
+                if(q.has("marker") || q.has("token")) request.setMarker(q.has("token")?text(q,"token"):text(q,"marker"));
+                if(q.has("delimiter")) request.setDelimiter(text(q,"delimiter"));
+                if(q.has("encoding_type")) request.setEncodingType(text(q,"encoding_type"));
+                com.aliyun.oss.model.ObjectListing result=client.listObjects(request);
+                List<Map<String,Object>> objects=new ArrayList<>();
+                for(com.aliyun.oss.model.OSSObjectSummary item:result.getObjectSummaries()) objects.add(object(item.getKey(),item.getSize(),millis(item.getLastModified()),item.getETag()));
+                return page(objects,result.getCommonPrefixes(),result.isTruncated(),result.getNextMarker(),result.getPrefix(),result.getDelimiter(),result.getMaxKeys());
+            }
+
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
             case "get": {
                 com.aliyun.oss.model.GetObjectRequest request=new com.aliyun.oss.model.GetObjectRequest(bucket,key);
                 if(q.has("offset")) request.setRange(q.get("offset").asLong(),q.get("offset").asLong()+q.get("length").asLong()-1);
                 try(com.aliyun.oss.model.OSSObject object=client.getObject(request)) { Files.copy(object.getObjectContent(),Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
             }
-            case "head": return one("size",client.getObjectMetadata(bucket,key).getContentLength());
+            case "head": { com.aliyun.oss.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()); }
             case "delete": client.deleteObject(bucket,key); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>();
@@ -227,12 +286,34 @@ public final class WorkerMain {
             com.volcengine.tos.transport.TransportConfig transport=new com.volcengine.tos.transport.TransportConfig();
             transport.setMaxRetryCount(Integer.parseInt(env("RETRIES","0")));
             transport.setMaxConnections(Integer.parseInt(env("CONNECTIONS","16")));
-            client=new com.volcengine.tos.TOSV2ClientBuilder().build(required("REGION"),required("ENDPOINT"),
-                required("ACCESS_KEY"),required("SECRET_KEY"),env("SESSION_TOKEN",null),transport);
+            com.volcengine.tos.TOSClientConfiguration configuration=com.volcengine.tos.TOSClientConfiguration.builder().build()
+                .setRegion(required("REGION")).setTransportConfig(transport)
+                .setCredentials(new com.volcengine.tos.auth.StaticCredentials(required("ACCESS_KEY"),required("SECRET_KEY")).withSecurityToken(env("SESSION_TOKEN",null)))
+                .setCustomDomain(Boolean.parseBoolean(env("CNAME","false")));
+            configuration.setEndpoint(required("ENDPOINT"));
+            client=new com.volcengine.tos.TOSV2ClientBuilder().build(configuration);
         }
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"),op=text(q,"op");
             switch(op) {
+            case "bucket_create": {
+                try { client.headBucket(new com.volcengine.tos.model.bucket.HeadBucketV2Input().setBucket(bucket)); }
+                catch(com.volcengine.tos.TosServerException error) { if(error.getStatusCode()!=404) throw error; client.createBucket(bucket); }
+                return empty();
+            }
+            case "list_page": {
+                com.volcengine.tos.model.object.ListObjectsType2Input request=new com.volcengine.tos.model.object.ListObjectsType2Input().setBucket(bucket).setPrefix(text(q,"prefix")).setMaxKeys(q.path("max_keys").asInt(1000));
+                if(q.has("marker")) request.setStartAfter(text(q,"marker"));
+                if(q.has("token")) request.setContinuationToken(text(q,"token"));
+                if(q.has("delimiter")) request.setDelimiter(text(q,"delimiter"));
+                if(q.has("encoding_type")) request.setEncodingType(text(q,"encoding_type"));
+                com.volcengine.tos.model.object.ListObjectsType2Output result=client.listObjectsType2(request);
+                List<Map<String,Object>> objects=new ArrayList<>(); List<String> prefixes=new ArrayList<>();
+                for(com.volcengine.tos.model.object.ListedObjectV2 item:result.getContents()) objects.add(object(item.getKey(),item.getSize(),millis(item.getLastModified()),item.getEtag()));
+                if(result.getCommonPrefixes()!=null) for(com.volcengine.tos.model.object.ListedCommonPrefix item:result.getCommonPrefixes()) prefixes.add(item.getPrefix());
+                return page(objects,prefixes,result.isTruncated(),result.getNextContinuationToken(),result.getPrefix(),result.getDelimiter(),result.getMaxKeys());
+            }
+
             case "put": {
                 Path file=Paths.get(text(q,"body_path"));
                 try(InputStream in=Files.newInputStream(file)) {
@@ -244,7 +325,7 @@ public final class WorkerMain {
                 if(q.has("offset")) request.setRange("bytes="+q.get("offset").asLong()+"-"+(q.get("offset").asLong()+q.get("length").asLong()-1));
                 try(InputStream in=client.getObject(request).getContent()) { Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
             }
-            case "head": return one("size",client.headObject(new com.volcengine.tos.model.object.HeadObjectV2Input().setBucket(bucket).setKey(key)).getContentLength());
+            case "head": { com.volcengine.tos.model.object.HeadObjectV2Output result=client.headObject(new com.volcengine.tos.model.object.HeadObjectV2Input().setBucket(bucket).setKey(key)); return object(key,result.getContentLength(),millis(result.getLastModifiedInDate()),result.getEtag()); }
             case "delete": client.deleteObject(new com.volcengine.tos.model.object.DeleteObjectInput().setBucket(bucket).setKey(key)); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>();
@@ -280,20 +361,45 @@ public final class WorkerMain {
         ObsStore() {
             com.obs.services.ObsConfiguration configuration=new com.obs.services.ObsConfiguration();
             configuration.setEndPoint(required("ENDPOINT"));
+            configuration.setCname(Boolean.parseBoolean(env("CNAME","false")));
+            configuration.setAuthType(com.obs.services.model.AuthTypeEnum.OBS);
+            configuration.setAuthTypeNegotiation(false);
+            String proxy=env("HTTP_PROXY","");
+            if(!proxy.isEmpty()) {
+                java.net.URI uri=java.net.URI.create(proxy);
+                configuration.setHttpProxy(uri.getHost(),uri.getPort()<0?80:uri.getPort(),null,null);
+            }
             configuration.setMaxErrorRetry(Integer.parseInt(env("RETRIES","0")));
             configuration.setMaxConnections(Integer.parseInt(env("CONNECTIONS","16")));
             client=new com.obs.services.ObsClient(required("ACCESS_KEY"),required("SECRET_KEY"),env("SESSION_TOKEN",null),configuration);
+            if(configuration.getAuthType()!=com.obs.services.model.AuthTypeEnum.OBS) {
+                try { client.close(); } catch(IOException error) { throw new UncheckedIOException(error); }
+                throw new IllegalArgumentException("OBS native Java SDK requires a DNS endpoint without CNAME or path-style mode; SDK changed authentication to "+configuration.getAuthType());
+            }
         }
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"),op=text(q,"op");
             switch(op) {
+            case "bucket_create": if(!client.headBucket(bucket)) client.createBucket(bucket,required("REGION")); return empty();
+            case "list_page": {
+                com.obs.services.model.ListObjectsRequest request=new com.obs.services.model.ListObjectsRequest(bucket);
+                request.setPrefix(text(q,"prefix")); request.setMaxKeys(q.path("max_keys").asInt(1000));
+                if(q.has("marker") || q.has("token")) request.setMarker(q.has("token")?text(q,"token"):text(q,"marker"));
+                if(q.has("delimiter")) request.setDelimiter(text(q,"delimiter"));
+                if(q.has("encoding_type")) request.setEncodingType(text(q,"encoding_type"));
+                com.obs.services.model.ObjectListing result=client.listObjects(request);
+                List<Map<String,Object>> objects=new ArrayList<>();
+                for(com.obs.services.model.ObsObject item:result.getObjects()) objects.add(object(item.getObjectKey(),item.getMetadata().getContentLength(),millis(item.getMetadata().getLastModified()),item.getMetadata().getEtag()));
+                return page(objects,result.getCommonPrefixes(),result.isTruncated(),result.getNextMarker(),result.getPrefix(),result.getDelimiter(),result.getMaxKeys());
+            }
+
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
             case "get": {
                 com.obs.services.model.GetObjectRequest request=new com.obs.services.model.GetObjectRequest(bucket,key);
                 if(q.has("offset")) { request.setRangeStart(q.get("offset").asLong()); request.setRangeEnd(q.get("offset").asLong()+q.get("length").asLong()-1); }
                 try(InputStream in=client.getObject(request).getObjectContent()) { Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
             }
-            case "head": return one("size",client.getObjectMetadata(bucket,key).getContentLength());
+            case "head": { com.obs.services.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return object(key,result.getContentLength(),millis(result.getLastModified()),result.getEtag()); }
             case "delete": client.deleteObject(bucket,key); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>(); com.obs.services.model.ListObjectsRequest request=new com.obs.services.model.ListObjectsRequest(bucket); request.setPrefix(text(q,"prefix"));
@@ -343,13 +449,25 @@ public final class WorkerMain {
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             switch(op) {
+            case "bucket_create": if(!client.doesBucketExist(bucket)) client.createBucket(bucket); return empty();
+            case "list_page": {
+                com.qcloud.cos.model.ListObjectsRequest request=new com.qcloud.cos.model.ListObjectsRequest().withBucketName(bucket).withPrefix(text(q,"prefix")).withMaxKeys(q.path("max_keys").asInt(1000));
+                if(q.has("marker") || q.has("token")) request.setMarker(q.has("token")?text(q,"token"):text(q,"marker"));
+                if(q.has("delimiter")) request.setDelimiter(text(q,"delimiter"));
+                if(q.has("encoding_type")) request.setEncodingType(text(q,"encoding_type"));
+                com.qcloud.cos.model.ObjectListing result=client.listObjects(request);
+                List<Map<String,Object>> objects=new ArrayList<>();
+                for(com.qcloud.cos.model.COSObjectSummary item:result.getObjectSummaries()) objects.add(object(item.getKey(),item.getSize(),millis(item.getLastModified()),item.getETag()));
+                return page(objects,result.getCommonPrefixes(),result.isTruncated(),result.getNextMarker(),result.getPrefix(),result.getDelimiter(),result.getMaxKeys());
+            }
+
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
             case "get": {
                 com.qcloud.cos.model.GetObjectRequest request=new com.qcloud.cos.model.GetObjectRequest(bucket,key);
                 if(q.has("offset")) request.setRange(q.get("offset").asLong(),q.get("offset").asLong()+q.get("length").asLong()-1);
                 try(com.qcloud.cos.model.COSObject object=client.getObject(request)) { Files.copy(object.getObjectContent(),Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
             }
-            case "head": return one("size",client.getObjectMetadata(bucket,key).getContentLength());
+            case "head": { com.qcloud.cos.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()); }
             case "delete": client.deleteObject(bucket,key); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>();

@@ -1,14 +1,46 @@
 {
   "schema_version": 1,
-  "targets": [{
-    "id": "local-reference", "provider": "filesystem", "language": "python", "api": "local",
-    "sdk": "local-reference-not-s3", "sdk_version": "1",
-    "command": ["python3", "drivers/reference.py"],
-    "env": {"OSV_REFERENCE_ROOT": "/tmp/osv-reference-objects"}
-  }],
+  "targets": [
+    {
+      "id": "local-reference",
+      "provider": "filesystem",
+      "language": "python",
+      "api": "local",
+      "sdk": "local-reference-not-s3",
+      "sdk_version": "1",
+      "command": [
+        "python3",
+        "drivers/reference.py"
+      ],
+      "env": {
+        "OSV_REFERENCE_ROOT": "/tmp/osv-reference-objects",
+        "OSV_REFERENCE_MIN_PART_SIZE": "65536"
+      }
+    }
+  ],
   "workload": {
-    "object_size": 65536, "range_size": 4096, "part_size": 65536,
-    "requests": 20, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
-    "seed": 1729, "operations": ["get", "range", "put", "head", "list"]
+    "object_size": 65536,
+    "range_size": 4096,
+    "part_size": 65536,
+    "requests": 20,
+    "concurrency": 2,
+    "rounds": 2,
+    "warmup_requests": 2,
+    "seed": 1729,
+    "operations": [
+      "get",
+      "range",
+      "put",
+      "head",
+      "list"
+    ],
+    "objbench": {
+      "small_object_size": 128,
+      "small_objects": 5,
+      "block_size": 1024,
+      "big_object_size": 3072,
+      "list_requests_per_lane": 2
+    },
+    "large_object_size": 65536
   }
 }

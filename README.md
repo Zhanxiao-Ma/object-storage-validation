@@ -116,22 +116,22 @@ python3 -m osv catalog examples/java-oss.json --profile complete
 
 | 档位 | 当前兼容性目录 | 参考范围 |
 |---|---|---|
-| `normal` 正常档（默认） | 13 个门槛 + 1 个行为观察 | objbench 基础对象读写、空对象、Range、特殊键名、列举、删除、分块；取消检查先上传数据 |
-| `complete` 完善档 | 29 个门槛 + 3 个行为观察，包含正常档 | 再参考 s3-tests 的覆盖写、分页规模列举、编码与分块边界 |
+| `normal` 正常档（默认） | 22 个门槛 + 1 个行为观察 | 锁定 objbench 的对象检查：256 MiB PUT、实际列举字段/排序、控制字符、三块并发并变长/变短重传；保留额外基础检查 |
+| `complete` 完善档 | 77 个门槛 + 3 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
 
-档位只选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
+档位选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
 不依赖其二进制或 Python/Go SDK。完善档不等于 Ceph 全量覆盖，未实现范围在报告中明确列出。
 逐项目录、来源、性能口径与未覆盖项见 [测试范围](docs/test-scope.md)。
 
 manifest 可设置 `workload.profile`；原有 `workload.compatibility_suites` 保留为自选模式，不能同时设置。
-CLI `--profile` 显式覆盖 manifest 中的两种选择。性能大小/并发/次数/操作单独由 workload 配置，
-不会因切换档位而自动提高压力。完善档列举用例默认写入 1001 个对象，可配置 `list_objects` 为 1001–10000。
+CLI `--profile` 显式覆盖 manifest 中的两种选择。默认性能模型为 `objbench`，使用多对象数据集；可显式选择 `workload.performance_model=operations` 保留单对象操作模型。
+负载大小、并发与轮次仍可配置，参数缩放写入报告。完善档列举用例默认写入 1001 个对象，可配置 `list_objects` 为 1001–10000。
 
 历史外部命令入口保留用于用户自定义辅助任务（`examples/external.json`），不是档位的实现或执行依赖。
 
 ## 结果与限制
 
-- `report.json`：每条测量、轮次、成功/失败、SDK worker 信息、兼容性断言、对比结论。
+- `report.json`：每条测量、轮次、成功/失败、SDK worker 信息、兼容性断言、对比结论。另生成 `alignment.json`，逐项列出锁定上游的实现映射和缺口。
 - `report.md`：兼容性矩阵、p50/p95/p99、已校验吞吐、S3/native 比值。
 - warmup 不进入统计；每轮打乱 target 顺序；Range 偏移由 seed 固定，可重复执行。
 - SDK 延迟包含响应体完整消费；有效吞吐包含进程协议与内容校验开销，不能冒充纯 SDK 峰值吞吐。
@@ -139,7 +139,7 @@ CLI `--profile` 显式覆盖 manifest 中的两种选择。性能大小/并发/�
 - `within_budget` 是本次观测预算检查，不是统计等价证明；目前未提供置信区间、负载回放、缓存控制、CPU/RSS 分析。
 - 每个并发 lane 一个进程，不能等价于引擎内共享 client/thread pool 的性能；需另做生产链路验证。
 - 只在随机 `osv/<run-id>/` 前缀读写与清理，不清空整个桶，不创建或删除用户桶。
-- 分块完成/取消有功能验证，尚未提供独立分块吞吐压测；复制、批量删除和故障注入尚未内置。
+- 已有拆块对象的并发性能阶段；它是多个独立对象，不是单对象 Multipart 吞吐。复制、批量删除和故障注入尚未内置。
 - 本地与模拟器通过不代表 OSS/OBS/TOS 已通过；未提供云凭据前没有实云结论。
 
 扩展真实 SDK 和生产路径见 [worker protocol](docs/worker-protocol.md)。
@@ -157,3 +157,23 @@ Apache-2.0。SDK 及外部工具保持各自许可证；本项目不包含内部
 GitHub Actions 工作流位于 `.github/workflows/check.yml`，在 push 与 pull request 时执行框架测试、Java 构建/COS 契约测试及 OBS C SDK/C++ 驱动构建与契约测试。
 
 实际测试范围、与 objbench/s3-tests 的覆盖差异和报告口径见 [测试范围与报告](docs/test-scope.md)。
+
+## 对齐基准与多对象性能配置
+
+基准固定为 JuiceFS `29c60bbbeea410c6c0cb7a49540044e0c099dffb`、Ceph s3-tests
+`5b3987116eca0b4b8fa57d6b10f3db57bab196b6`，避免用上游移动分支冒充固定范围。
+
+```bash
+python3 -m osv alignment examples/java-oss.json --profile complete
+```
+
+Ceph 清单包含八个测试文件、979 个定义，其中 4 个同名定义被后续定义覆盖，实际函数数为 975；
+这不是 pytest 参数展开后的执行数。当前 Ceph 仍有未迁移项，`complete` 档位名称不代表迁移已完成。
+
+默认 `objbench` 性能模型为 100 个 128 KiB 小对象、1 GiB 数据按 4 MiB 拆为独立对象、每 lane 100 次列举。
+依次执行 smallput/smallget/put/get、额外 Range、LIST/HEAD/DELETE，完整校验读取内容和最终删除。
+可通过 `workload.objbench` 设置 `small_objects`、`small_object_size`、`block_size`、`big_object_size`、
+`list_requests_per_lane` 和 `warmup_rounds`。向上取整生成完整块，实际数据量、有效并发和参数均进入报告。
+正常档功能检查默认另上传 256 MiB 单对象，可设置 `large_object_size` 缩小自检，报告明确标记缩放。
+
+`examples/selftest.json` 使用缩小参数，只用于框架自检。`bucket_create` 对配置的桶执行“缺失则创建、已有则复用”，不删除桶。
