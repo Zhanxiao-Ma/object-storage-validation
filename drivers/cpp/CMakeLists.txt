@@ -40,3 +40,21 @@ if(OSV_TOS_SOURCE)
   target_compile_definitions(osv-cpp-tos PRIVATE OSV_NATIVE_VERSION="${OSV_TOS_VERSION}")
   target_link_libraries(osv-cpp-tos PRIVATE ve-tos-cpp-sdk-lib nlohmann_json::nlohmann_json CURL::libcurl OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
 endif()
+
+# COS upstream uses CMAKE_SOURCE_DIR internally and must be built as a standalone project.
+set(OSV_COS_SOURCE "" CACHE PATH "Official tencentyun/cos-cpp-sdk-v5 checkout")
+set(OSV_COS_LIBRARY "" CACHE FILEPATH "Static libcossdk.a built from OSV_COS_SOURCE")
+if(OSV_COS_SOURCE OR OSV_COS_LIBRARY)
+  if(NOT OSV_COS_SOURCE OR NOT EXISTS "${OSV_COS_LIBRARY}")
+    message(FATAL_ERROR "COS requires both OSV_COS_SOURCE and a built OSV_COS_LIBRARY")
+  endif()
+  find_package(Poco REQUIRED COMPONENTS Foundation Net NetSSL Crypto Util JSON XML)
+  find_package(OpenSSL REQUIRED)
+  find_package(Threads REQUIRED)
+  add_executable(osv-cpp-cos cos_worker.cpp)
+  target_include_directories(osv-cpp-cos PRIVATE "${OSV_COS_SOURCE}/include" "${OSV_COS_SOURCE}/third_party/include")
+  target_link_libraries(osv-cpp-cos PRIVATE "${OSV_COS_LIBRARY}" nlohmann_json::nlohmann_json
+    Poco::NetSSL Poco::Net Poco::Crypto Poco::Util Poco::JSON Poco::XML Poco::Foundation
+    OpenSSL::SSL OpenSSL::Crypto Threads::Threads)
+  target_compile_options(osv-cpp-cos PRIVATE -Wall -Wextra -Wpedantic)
+endif()

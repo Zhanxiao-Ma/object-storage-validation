@@ -8,7 +8,7 @@
 python3 scripts/build.py java
 ```
 
-当前依赖版本在 `drivers/java/pom.xml` 固定：AWS v2 2.20.162、OSS 3.18.1、OBS 3.25.10、TOS 2.9.19。
+当前依赖版本在 `drivers/java/pom.xml` 固定：AWS v2 2.20.162、OSS 3.18.1、OBS 3.25.10、TOS 2.9.19、COS 5.6.246。
 JAR 将真实依赖版本用于运行时握手，不能只改 manifest 标签。
 
 ## C++
@@ -79,7 +79,7 @@ Moto 不验证所有签名、厂商语义或性能。上述通过只证明本地
 
 ## 实云对比
 
-选择 `examples/java-oss.json`、`java-obs.json`、`java-tos.json`、`cpp-oss.json` 或 `cpp-tos.json`。
+选择 `examples/java-oss.json`、`java-obs.json`、`java-tos.json`、`cpp-oss.json` 、`cpp-tos.json`、`java-cos.json` 或 `cpp-cos.json`。
 替换示例 endpoint、region、bucket，并从外部凭据管理方式继承认证环境变量。
 确认两端连接同一区域、桶、存储类型和网络，再启用对比条件标志。
 不要把未经测量的 SDK 或厂商写成已通过；当前没有 C++ OBS 原生驱动。
@@ -89,3 +89,40 @@ Moto 不验证所有签名、厂商语义或性能。上述通过只证明本地
 `.github/workflows/check.yml` 在 push 与 pull request 时运行框架测试、自检、示例配置检查及 Java 构建。
 构建使用与本地一致的资源监控入口；首次授权需要包含 `workflow` scope 才能推送工作流文件。
 当前 CI 不包含 C++ 构建与可选 SDK 集成测试；这两部分需要准备依赖并按上述命令单独验证。
+
+## 腾讯云 COS C++ 原生 SDK
+
+官方源码：[tencentyun/cos-cpp-sdk-v5](https://github.com/tencentyun/cos-cpp-sdk-v5)。
+验证的 SDK 宏版本为 `v5.5.23`，源码提交 `3373ca3d44accde9aa2b3a8ea1b48d2b4510f03b`。
+使用 Poco 1.12.4（Foundation、Net、NetSSL、Crypto、Util、JSON、XML）及 OpenSSL。
+Poco 与 SDK 都应通过 `scripts/build.py command` 构建，限制并行度并监控内存。
+Poco 可按官方说明安装到与 AWS SDK/nlohmann_json 相同的 prefix，之后：
+
+```bash
+python3 scripts/build.py command -- cmake -S /path/to/cos-cpp-sdk-v5 -B .deps/cos-build -DCMAKE_BUILD_TYPE=Release -DBUILD_DEMO=OFF -DBUILD_UNITTEST=OFF '-DCMAKE_CXX_FLAGS=-I/path/to/sdk-install/include -include cstdint'
+python3 scripts/build.py command -- cmake --build .deps/cos-build --parallel '{jobs}'
+python3 scripts/build.py cpp --prefix /path/to/sdk-install --cos-source /path/to/cos-cpp-sdk-v5 --cos-library /absolute/path/to/.deps/cos-build/lib/libcossdk.a
+```
+
+`-include cstdint` 兼容当前 SDK 头文件在较新编译器下缺少整数类型声明的问题，不修改上游源码。
+COS SDK 上游 CMake 使用 `CMAKE_SOURCE_DIR`，故单独构建后再链接，不能直接当作本工具的子目录。
+CMake 4 环境构建旧版上游脚本时可能还需 `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`。
+运行时让动态链接器找到 Poco 与 AWS SDK，例如设置 `LD_LIBRARY_PATH=/path/to/sdk-install/lib`。
+指定的 SDK 库与源码头文件必须来自同一版本，不能混用。
+
+## COS 本地 HTTP 契约测试
+
+构建两种 COS 驱动后执行（不依赖 Moto 或云端）：
+
+```bash
+OSV_RUN_COS_TESTS=1 python3 -m unittest discover -s tests/integration -p test_cos_sdk.py -v
+# 只验证已构建的 Java 驱动时：
+OSV_RUN_COS_TESTS=1 OSV_COS_TEST_LANGUAGES=java python3 -m unittest discover -s tests/integration -p test_cos_sdk.py -v
+```
+
+真实官方 SDK 连接 loopback HTTP fixture，检查请求内容、Range、分页 marker、分块参数和错误分类。
+fixture 仅回放独立指定的固定响应，不实现对象存储状态机；测试不构成 COS 服务功能、鉴权或性能结论。
+覆盖零字节对象、整对象读取、Range、重复分页 marker、分块参数、404/403 区分。
+C++ SDK 的 `SetCheckMD5(false)` 仅用于 Range：整对象 ETag 不能与局部响应体 MD5 比较；
+完整 GET 仍使用 SDK 默认校验，并有错误 ETag 的失败测试。框架性能测试继续独立校验实际读取字节。
+真实 COS S3/native 对照仍需配置实际端点和凭据。Java 契约测试已纳入 CI，C++ 需本地构建后验证。

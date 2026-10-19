@@ -27,6 +27,7 @@ public final class WorkerMain {
             case "s3": path="software.amazon.awssdk/s3"; break;
             case "oss": path="com.aliyun.oss/aliyun-sdk-oss"; break;
             case "obs": path="com.huaweicloud/esdk-obs-java"; break;
+            case "cos": path="com.qcloud/cos_api"; break;
             case "tos": path="com.volcengine/ve-tos-java-sdk"; break;
             default: throw new IllegalArgumentException(provider);
         }
@@ -90,6 +91,8 @@ public final class WorkerMain {
             return ((com.obs.services.exception.ObsException)error).getResponseCode()==404;
         if (error instanceof com.volcengine.tos.TosServerException)
             return ((com.volcengine.tos.TosServerException)error).getStatusCode()==404;
+        if (error instanceof com.qcloud.cos.exception.CosServiceException)
+            return ((com.qcloud.cos.exception.CosServiceException)error).getStatusCode()==404;
         return error instanceof FileNotFoundException;
     }
     static Store create(String provider) {
@@ -98,7 +101,8 @@ public final class WorkerMain {
             case "oss": return new OssStore();
             case "obs": return new ObsStore();
             case "tos": return new TosStore();
-            default: throw new IllegalArgumentException("supported: s3, oss, obs, tos");
+            case "cos": return new CosStore();
+            default: throw new IllegalArgumentException("supported: s3, oss, obs, tos, cos");
         }
     }
     static Map<String,Object> one(String key, Object value) { return Collections.singletonMap(key,value); }
@@ -313,4 +317,70 @@ public final class WorkerMain {
         }
         public void close() { try { client.close(); } catch(IOException error) { throw new UncheckedIOException(error); } }
     }
+    /**
+     * Measures Tencent COS native requests through its official Java SDK.
+     * Bucket-scoped endpoints, complete response reads and pagination preserve the shared workload semantics.
+     */
+    static final class CosStore implements Store {
+        final com.qcloud.cos.COSClient client;
+        final String bucket=required("BUCKET");
+        CosStore() {
+            java.net.URI endpoint=java.net.URI.create(required("ENDPOINT"));
+            if(endpoint.getHost()==null || !("http".equals(endpoint.getScheme()) || "https".equals(endpoint.getScheme()))
+                || endpoint.getUserInfo()!=null || endpoint.getRawQuery()!=null || endpoint.getFragment()!=null
+                || (endpoint.getPath()!=null && !endpoint.getPath().isEmpty() && !"/".equals(endpoint.getPath())))
+                throw new IllegalArgumentException("COS endpoint must be an http(s) bucket-domain URL without path or credentials");
+            com.qcloud.cos.ClientConfig configuration=new com.qcloud.cos.ClientConfig(new com.qcloud.cos.region.Region(required("REGION")));
+            configuration.setMaxErrorRetry(Integer.parseInt(env("RETRIES","0")));
+            configuration.setMaxConnectionsCount(Integer.parseInt(env("CONNECTIONS","16")));
+            configuration.setHttpProtocol("https".equals(endpoint.getScheme()) ? com.qcloud.cos.http.HttpProtocol.https : com.qcloud.cos.http.HttpProtocol.http);
+            configuration.setEndpointBuilder(new com.qcloud.cos.endpoint.UserSpecifiedEndpointBuilder(endpoint.getRawAuthority(),endpoint.getRawAuthority()));
+            com.qcloud.cos.auth.COSCredentials credentials=env("SESSION_TOKEN", "").isEmpty()
+                ? new com.qcloud.cos.auth.BasicCOSCredentials(required("ACCESS_KEY"), required("SECRET_KEY"))
+                : new com.qcloud.cos.auth.BasicSessionCredentials(required("ACCESS_KEY"), required("SECRET_KEY"), required("SESSION_TOKEN"));
+            client=new com.qcloud.cos.COSClient(credentials, configuration);
+        }
+        public Map<String,Object> execute(JsonNode q) throws Exception {
+            String key=text(q,"key"), op=text(q,"op");
+            switch(op) {
+            case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
+            case "get": {
+                com.qcloud.cos.model.GetObjectRequest request=new com.qcloud.cos.model.GetObjectRequest(bucket,key);
+                if(q.has("offset")) request.setRange(q.get("offset").asLong(),q.get("offset").asLong()+q.get("length").asLong()-1);
+                try(com.qcloud.cos.model.COSObject object=client.getObject(request)) { Files.copy(object.getObjectContent(),Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); } return empty();
+            }
+            case "head": return one("size",client.getObjectMetadata(bucket,key).getContentLength());
+            case "delete": client.deleteObject(bucket,key); return empty();
+            case "list": {
+                List<String> keys=new ArrayList<>();
+                com.qcloud.cos.model.ListObjectsRequest request=new com.qcloud.cos.model.ListObjectsRequest().withBucketName(bucket).withPrefix(text(q,"prefix"));
+                for(;;) {
+                    com.qcloud.cos.model.ObjectListing page=client.listObjects(request);
+                    for(com.qcloud.cos.model.COSObjectSummary object:page.getObjectSummaries()) keys.add(object.getKey());
+                    if(!page.isTruncated()) break;
+                    String next=page.getNextMarker();
+                    if(next==null || next.isEmpty() || next.equals(request.getMarker())) throw new IOException("invalid pagination marker");
+                    request.setMarker(next);
+                }
+                return one("keys",keys);
+            }
+            case "mp_create": return one("upload_id",client.initiateMultipartUpload(new com.qcloud.cos.model.InitiateMultipartUploadRequest(bucket,key)).getUploadId());
+            case "mp_part": {
+                com.qcloud.cos.model.UploadPartRequest request=new com.qcloud.cos.model.UploadPartRequest();
+                request.setBucketName(bucket); request.setKey(key); request.setUploadId(text(q,"upload_id")); request.setPartNumber(q.get("part_number").asInt());
+                File file=new File(text(q,"body_path")); request.setPartSize(file.length());
+                try(InputStream in=new FileInputStream(file)) { request.setInputStream(in); return one("etag",client.uploadPart(request).getETag()); }
+            }
+            case "mp_complete": {
+                List<com.qcloud.cos.model.PartETag> parts=new ArrayList<>();
+                for(JsonNode part:q.get("parts")) parts.add(new com.qcloud.cos.model.PartETag(part.get("part_number").asInt(),text(part,"etag")));
+                client.completeMultipartUpload(new com.qcloud.cos.model.CompleteMultipartUploadRequest(bucket,key,text(q,"upload_id"),parts)); return empty();
+            }
+            case "mp_abort": client.abortMultipartUpload(new com.qcloud.cos.model.AbortMultipartUploadRequest(bucket,key,text(q,"upload_id"))); return empty();
+            default: throw new UnsupportedOperationException(op);
+            }
+        }
+        public void close() { client.shutdown(); }
+    }
+
 }

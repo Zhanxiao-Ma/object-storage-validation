@@ -3,7 +3,7 @@
   <groupId>io.github.storagevalidation</groupId><artifactId>sdk-worker</artifactId><version>0.1.0</version>
   <properties>
     <maven.compiler.release>11</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <aws.version>2.20.162</aws.version><oss.version>3.18.1</oss.version><obs.version>3.25.10</obs.version><tos.version>2.9.19</tos.version>
+    <aws.version>2.20.162</aws.version><oss.version>3.18.1</oss.version><obs.version>3.25.10</obs.version><tos.version>2.9.19</tos.version><cos.version>5.6.246</cos.version>
   </properties>
   <dependencyManagement><dependencies><dependency><groupId>com.fasterxml.jackson</groupId><artifactId>jackson-bom</artifactId><version>2.17.2</version><type>pom</type><scope>import</scope></dependency></dependencies></dependencyManagement>
   <dependencies>
@@ -12,6 +12,7 @@
     <dependency><groupId>com.aliyun.oss</groupId><artifactId>aliyun-sdk-oss</artifactId><version>${oss.version}</version></dependency>
     <dependency><groupId>com.huaweicloud</groupId><artifactId>esdk-obs-java</artifactId><version>${obs.version}</version></dependency>
     <dependency><groupId>com.volcengine</groupId><artifactId>ve-tos-java-sdk</artifactId><version>${tos.version}</version></dependency>
+    <dependency><groupId>com.qcloud</groupId><artifactId>cos_api</artifactId><version>${cos.version}</version></dependency>
     <dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><version>2.17.2</version></dependency>
     <dependency><groupId>org.slf4j</groupId><artifactId>slf4j-simple</artifactId><version>1.7.36</version></dependency>
   </dependencies>

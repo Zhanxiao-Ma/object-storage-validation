@@ -57,7 +57,11 @@ def main():
     parser.add_argument("--prefix", help="CMAKE_PREFIX_PATH for installed AWS SDK and nlohmann_json")
     parser.add_argument("--oss-source", help="optional official OSS C++ SDK source checkout")
     parser.add_argument("--tos-source", help="optional official TOS C++ SDK source checkout")
+    parser.add_argument("--cos-source", help="optional official COS C++ SDK source checkout")
+    parser.add_argument("--cos-library", help="libcossdk.a built from --cos-source")
     args, remainder = parser.parse_known_args()
+    if bool(args.cos_source) != bool(args.cos_library):
+        parser.error("--cos-source and --cos-library must be supplied together")
     if args.target != "command" and remainder:
         parser.error("unrecognized arguments: " + " ".join(remainder))
     memory = available()
@@ -78,6 +82,8 @@ def main():
             configure.append("-DOSV_OSS_SOURCE="+args.oss_source)
         if args.tos_source:
             configure.append("-DOSV_TOS_SOURCE="+args.tos_source)
+        if args.cos_source:
+            configure.extend(["-DOSV_COS_SOURCE="+args.cos_source, "-DOSV_COS_LIBRARY="+args.cos_library])
         commands = [configure, ["cmake", "--build", str(root/"drivers/cpp/build"), "--parallel", str(jobs)]]
     else:
         argv = remainder[1:] if remainder and remainder[0] == "--" else remainder

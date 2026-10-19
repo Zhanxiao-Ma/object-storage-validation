@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "id": "cos-cpp-s3",
+      "provider": "cos",
+      "language": "cpp",
+      "api": "s3",
+      "sdk": "aws-sdk-cpp",
+      "sdk_version": "1.11.675",
+      "command": [
+        "drivers/cpp/build/osv-cpp-s3"
+      ],
+      "env": {
+        "OSV_ENDPOINT": "https://cos.ap-guangzhou.myqcloud.com",
+        "OSV_REGION": "ap-guangzhou",
+        "OSV_BUCKET": "examplebucket-1250000000",
+        "OSV_PATH_STYLE": "false",
+        "OSV_RETRIES": "0",
+        "OSV_CONNECTIONS": "16"
+      }
+    },
+    {
+      "id": "cos-cpp-native",
+      "provider": "cos",
+      "language": "cpp",
+      "api": "native",
+      "sdk": "cos-cpp-sdk-v5",
+      "sdk_version": "v5.5.23",
+      "command": [
+        "drivers/cpp/build/osv-cpp-cos"
+      ],
+      "env": {
+        "OSV_ENDPOINT": "https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com",
+        "OSV_REGION": "ap-guangzhou",
+        "OSV_BUCKET": "examplebucket-1250000000",
+        "OSV_RETRIES": "0",
+        "OSV_CONNECTIONS": "16"
+      }
+    }
+  ],
+  "workload": {
+    "object_size": 8388608,
+    "range_size": 65536,
+    "part_size": 8388608,
+    "requests": 100,
+    "concurrency": 4,
+    "rounds": 3,
+    "warmup_requests": 4,
+    "operations": [
+      "get",
+      "range",
+      "put",
+      "head",
+      "list"
+    ],
+    "seed": 1729
+  },
+  "comparisons": [
+    {
+      "s3": "cos-cpp-s3",
+      "native": "cos-cpp-native",
+      "same_storage_and_network_confirmed": false,
+      "min_samples": 100,
+      "min_throughput_ratio": 0.9,
+      "max_p95_ratio": 1.1
+    }
+  ]
+}

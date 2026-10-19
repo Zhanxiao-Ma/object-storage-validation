@@ -15,8 +15,8 @@
 
 | Language | S3 | Native |
 |---|---|---|
-| Java | AWS SDK v2 | OSS、OBS、TOS |
-| C++ | AWS SDK for C++ | OSS、TOS；OBS 原生尚未实现 |
+| Java | AWS SDK v2 | OSS、OBS、TOS、腾讯云 COS |
+| C++ | AWS SDK for C++ | OSS、TOS、腾讯云 COS；OBS 原生尚未实现 |
 | Python reference | 无 | 真实本地文件 IO，仅自检框架，不是 S3 模拟器 |
 
 **C++ OBS 原生 SDK 对照尚未实现。**不能用 Java 或 Go 的结果补填 C++ 对比列。
@@ -66,6 +66,27 @@ python3 -m osv run local-cpp.json --output results/cpp-s3-001
 
 build.py 在 Linux 下检查逻辑 CPU 与 MemAvailable，显式限制并行度、CPU affinity、
 虚拟地址空间和 I/O 优先级；内存不足、持续换页或 PSI 超阈值会停止编译。不编译整个业务引擎。
+
+## 腾讯云 COS 对照
+
+提供 `examples/java-cos.json` 与 `examples/cpp-cos.json`，分别比较同语言 AWS S3 SDK 和 COS 原生 SDK。
+Java 使用官方 `com.qcloud:cos_api:5.6.246`，C++ 使用官方 `cos-cpp-sdk-v5`（验证版本 `v5.5.23`）。
+
+COS 的 `OSV_BUCKET` 必须包含 APPID，例如 `examplebucket-1250000000`。
+示例使用同一桶的两种 endpoint：
+
+- S3 驱动：`https://cos.ap-guangzhou.myqcloud.com`，由 AWS SDK 添加桶名，`OSV_PATH_STYLE=false`。
+- COS 原生驱动：完整桶域名 `https://examplebucket-1250000000.cos.ap-guangzhou.myqcloud.com`。
+
+替换示例桶名、地域及对应域名；凭据仍继承 `OSV_ACCESS_KEY` / `OSV_SECRET_KEY` / 可选 `OSV_SESSION_TOKEN`。
+两个 endpoint 指向同一个桶并不意味着配置已被工具自动核实；确认网络、存储类型后再启用对比条件。
+S3 endpoint 与虚拟主机形式参考 [腾讯云官方配置说明](https://cloud.tencent.cn/document/product/436/41284)。
+
+C++ COS 的构建步骤及本地 HTTP 契约测试见 [构建与验证](docs/build-and-test.md)。
+整对象读取保留 SDK 默认校验；C++ Range 读取按 SDK 要求关闭与整对象 ETag 的 MD5 比较，
+框架仍独立验证所请求字节，校验失败不能进入成功样本。
+C++ COS SDK 的连接池参数控制每 host 最大空闲连接数，区别于其他 SDK 的总连接上限，报告中单独注明。
+当前每 lane 串行操作，不使用该参数推断整个负载的并发数。
 
 ## 集成已有开源工具
 
