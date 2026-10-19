@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "external": [
+    {"id": "juicefs-s3", "tool": "juicefs", "command": ["juicefs", "objbench", "--storage", "s3", "--threads", "4", "https://replace-bucket.replace-endpoint"], "timeout_seconds": 600},
+    {"id": "warp-range", "tool": "warp", "command": ["warp", "get", "--range", "--duration", "30s", "--host", "replace-endpoint", "--tls"], "timeout_seconds": 600},
+    {"id": "s3-compatibility", "tool": "s3-tests", "command": ["tox", "-c", "/path/to/s3-tests/tox.ini", "--", "-k", "object_read_range"], "timeout_seconds": 600}
+  ]
+}

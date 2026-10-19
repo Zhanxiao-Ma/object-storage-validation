@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+build/
+target/
+results/
+local*.json
+.env
+*.pem
+*.key
+
+.deps/

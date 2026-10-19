@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "targets": [{
+    "id": "local-reference", "provider": "filesystem", "language": "python", "api": "local",
+    "sdk": "local-reference-not-s3", "sdk_version": "1",
+    "command": ["python3", "drivers/reference.py"],
+    "env": {"OSV_REFERENCE_ROOT": "/tmp/osv-reference-objects"}
+  }],
+  "workload": {
+    "object_size": 65536, "range_size": 4096, "part_size": 65536,
+    "requests": 20, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
+    "seed": 1729, "operations": ["get", "range", "put", "head", "list"]
+  }
+}
