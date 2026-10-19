@@ -48,7 +48,7 @@ python3 scripts/build.py cpp --prefix /path/to/sdk-install --oss-source /path/to
 资源入口使用 `min(max(1, CPU-2), 8, floor((MemAvailable-12GiB)/2GiB))` 设置并行度，
 结果小于 1 则不构建。构建进程限制 CPU affinity、地址空间、累计进程组 RSS，并降低 CPU/I/O 优先级。
 可用内存低于 8 GiB、连续 10 秒平均换页超过 64 MiB/s 或内存 PSI full avg10 超过 5% 时终止。
-CI 模板也使用此入口，资源不足的 runner 需要更换或增加内存，不能取消保护后继续构建。
+CI 也使用此入口，资源不足的 runner 需要更换或增加内存，不能取消保护后继续构建。
 
 ## 无云端依赖的框架测试
 
@@ -84,9 +84,8 @@ Moto 不验证所有签名、厂商语义或性能。上述通过只证明本地
 确认两端连接同一区域、桶、存储类型和网络，再启用对比条件标志。
 不要把未经测量的 SDK 或厂商写成已通过；当前没有 C++ OBS 原生驱动。
 
-## GitHub Actions 模板
+## GitHub Actions
 
-`ci/github-actions.yml` 保存框架测试与 Java 构建的工作流模板，当前未启用自动 CI。
-具有 GitHub Actions 工作流写入权限后，可复制到 `.github/workflows/check.yml` 启用。
-当前发布登录凭据不包含 `workflow` scope，因此仓库只保留模板。
-模板不包含 C++ 构建与可选 SDK 集成测试；这两部分需要准备依赖并按上述命令单独验证。
+`.github/workflows/check.yml` 在 push 与 pull request 时运行框架测试、自检、示例配置检查及 Java 构建。
+构建使用与本地一致的资源监控入口；首次授权需要包含 `workflow` scope 才能推送工作流文件。
+当前 CI 不包含 C++ 构建与可选 SDK 集成测试；这两部分需要准备依赖并按上述命令单独验证。

@@ -105,4 +105,4 @@ Apache-2.0。SDK 及外部工具保持各自许可证；本项目不包含内部
 注册，新增场景无需改调度器；需要新 SDK 操作时再扩展驱动能力。能力缺失产生明确失败证据。
 接口、插件示例及兼容策略见 [扩展说明](docs/extensions.md)。
 
-CI 模板保存在 `ci/github-actions.yml`，当前未启用 GitHub Actions；启用方式见构建文档。
+GitHub Actions 工作流位于 `.github/workflows/check.yml`，在 push 与 pull request 时执行框架测试和 Java 构建。
