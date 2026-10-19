@@ -40,6 +40,17 @@ def group_rss(group):
     return total
 
 
+def build_environment(environ, jobs, budget):
+    """Fit JVM reservations inside the address-space budget, including non-heap regions."""
+    environment = dict(environ)
+    heap_mib = min(2048, budget // (3 * 1024**2))
+    environment["MAVEN_OPTS"] = (
+        f"-Xms64m -Xmx{heap_mib}m -XX:+UseSerialGC -XX:CompressedClassSpaceSize=128m "
+        f"-XX:ReservedCodeCacheSize=128m -XX:MaxMetaspaceSize=256m -XX:ActiveProcessorCount={jobs}")
+    environment["CMAKE_BUILD_PARALLEL_LEVEL"] = str(jobs)
+    return environment
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", choices=("java", "cpp", "command"))
@@ -56,9 +67,7 @@ def main():
     root = Path(__file__).resolve().parents[1]
     budget = memory - 12*GIB
     print(f"Build jobs={jobs}, address-space cap={budget/GIB:.1f} GiB, nice=10, ionice=2/7", flush=True)
-    environment = dict(os.environ)
-    environment["MAVEN_OPTS"] = f"-Xmx2g -XX:ActiveProcessorCount={jobs}"
-    environment["CMAKE_BUILD_PARALLEL_LEVEL"] = str(jobs)
+    environment = build_environment(os.environ, jobs, budget)
     if args.target == "java":
         commands = [["mvn", "-B", "-T", str(jobs), "-f", str(root/"drivers/java/pom.xml"), "package"]]
     elif args.target == "cpp":
