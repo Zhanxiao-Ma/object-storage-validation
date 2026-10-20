@@ -648,6 +648,30 @@
       "source_sha256": "6958679e2ab212a771fc9ec3f3d7215e28766cff74f48c19cbc92936ce1f81ca",
       "implementation": "ceph_exact_list_v1_delimiter_not_skip_special",
       "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multi_object_delete@L1697",
+      "source_sha256": "769979c531936992b9e8b06abdd56b9ca0195645f8f26763fa1c3925f632b3f0",
+      "implementation": "ceph_delete_many_v1_repeat",
+      "review": "保留固定源码的 3 键/1001 键、两次删除、Deleted 数量、Errors/Contents 字段缺失和实际 400 断言。V1/V2 真实分页计数；1001 键完整交给单次 SDK DeleteObjects，适配器不拆分或生成拒绝。SDK 固定响应合同证明请求到达；Moto 的接受行为保留为失败，实际资源清理另行验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multi_object_delete_key_limit@L1761",
+      "source_sha256": "94e095a366c8e2d0ee188e73ab95416be05185c3a8de9df419ea86bd556eb399",
+      "implementation": "ceph_delete_many_v1_limit",
+      "review": "保留固定源码的 3 键/1001 键、两次删除、Deleted 数量、Errors/Contents 字段缺失和实际 400 断言。V1/V2 真实分页计数；1001 键完整交给单次 SDK DeleteObjects，适配器不拆分或生成拒绝。SDK 固定响应合同证明请求到达；Moto 的接受行为保留为失败，实际资源清理另行验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multi_objectv2_delete@L1740",
+      "source_sha256": "4bf2e3fbd32c09d00b61e00fd57e0c18f6122573a62027e73b2fc86c70ae31ad",
+      "implementation": "ceph_delete_many_v2_repeat",
+      "review": "保留固定源码的 3 键/1001 键、两次删除、Deleted 数量、Errors/Contents 字段缺失和实际 400 断言。V1/V2 真实分页计数；1001 键完整交给单次 SDK DeleteObjects，适配器不拆分或生成拒绝。SDK 固定响应合同证明请求到达；Moto 的接受行为保留为失败，实际资源清理另行验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multi_objectv2_delete_key_limit@L1778",
+      "source_sha256": "ce4a6b2612fc335de7d0dfaa87c605ddb612db8a8c4a74c51fde0fa150e8bcfc",
+      "implementation": "ceph_delete_many_v2_limit",
+      "review": "保留固定源码的 3 键/1001 键、两次删除、Deleted 数量、Errors/Contents 字段缺失和实际 400 断言。V1/V2 真实分页计数；1001 键完整交给单次 SDK DeleteObjects，适配器不拆分或生成拒绝。SDK 固定响应合同证明请求到达；Moto 的接受行为保留为失败，实际资源清理另行验证。"
     }
   ]
 }

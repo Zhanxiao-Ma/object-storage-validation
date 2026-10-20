@@ -57,7 +57,7 @@ def execute(q):
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many"]}
     if op=="bucket_create_raw":
         if "bucket" not in q:raise ValueError("raw bucket creation requires explicit bucket")
         if root.exists():return {"status_code":200}
@@ -106,6 +106,15 @@ def execute(q):
             for name in ("prefix","delimiter","marker","next_marker","start_after"):
                 if page.get(name) is not None:page[name]=quote(page[name],safe="/")
         return page
+    if op=="delete_many":
+        identifiers=q["objects"]
+        if any("version_id" in item for item in identifiers):raise ValueError("filesystem reference does not implement version deletion")
+        if len(identifiers)>1000:raise OperationError("MalformedXML",400)
+        deleted=[]
+        for item in identifiers:
+            execute({**q,"op":"delete","key":item["key"]})
+            if not q.get("quiet",False):deleted.append({"key":item["key"]})
+        return {"deleted":deleted,"errors":[],"errors_present":False,"status_code":200}
     key = path(q.get("key", "unused"))
     if op == "bucket_create":
         root.mkdir(exist_ok=True,parents=True)

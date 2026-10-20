@@ -117,6 +117,41 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
+    def test_ceph_bulk_delete_keeps_limit_rejection_expectations(self):
+        """Execute four source bulk cases through real SDK IO; expect Moto accepting 1001 keys to remain a failure and all buckets to be cleaned."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["ceph_delete_many"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
+            report=run(load_config(path),directory/"results")
+            failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
+            self.assertEqual(failures,{(target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2)})
+            self.assertEqual(len(report["coverage"]["catalog"]),4);self.assertEqual(report["samples"],[])
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
+    def test_cross_sdk_bulk_delete_consumes_actual_other_sdk_objects(self):
+        """Write through one SDK and bulk-delete through the other in each direction; expect real empty listings and verified owned-bucket cleanup."""
+        if len(self.targets)!=2:self.skipTest("requires both language workers")
+        from osv.bucket_scope import BucketScope
+        from osv.scenarios import Context
+        from osv.suites import Probe
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);workers=[Worker(target,30) for target in self.targets]
+            try:
+                for producer,consumer in (workers,workers[::-1]):
+                    ctx=Context(producer,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                    with BucketScope(Probe(ctx)) as bucket:
+                        for index in range(3):bucket.put("cross-"+str(index),("value-"+str(index)).encode())
+                        self.assertEqual(len(bucket.call("list_v2_observed")["objects"]),3)
+                        result=consumer.call({"op":"delete_many","bucket":bucket.name,"objects":[{"key":"cross-"+str(index)} for index in range(3)]})
+                        self.assertTrue(result["ok"],result);self.assertFalse(result["errors_present"]);self.assertEqual(len(result["deleted"]),3)
+                        self.assertEqual(bucket.call("list_v2_observed")["keys"],[])
+                    self.assertTrue(bucket.cleanup_completed)
+            finally:
+                for worker in workers:worker.close()
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
     def test_ceph_bucket_cases_create_and_clean_actual_owned_buckets(self):
         """Run the seven real SDK bucket scenarios; expect exact source responses, a usable default bucket and no extra buckets afterward."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -184,6 +219,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected=[(target["id"],"ceph_list_maxkeys_zero") for target in self.targets]
             expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
             expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
+            expected.extend((target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))

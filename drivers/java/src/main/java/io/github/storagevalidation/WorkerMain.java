@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions"));
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
@@ -220,6 +220,28 @@ public final class WorkerMain {
             String key=text(q,"key"), op=text(q,"op");
             String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
             switch(op) {
+            case "delete_many": case "delete_many_versions": {
+                List<software.amazon.awssdk.services.s3.model.ObjectIdentifier> identifiers=new ArrayList<>();
+                for(JsonNode item:q.get("objects")) {
+                    software.amazon.awssdk.services.s3.model.ObjectIdentifier.Builder id=software.amazon.awssdk.services.s3.model.ObjectIdentifier.builder().key(text(item,"key"));
+                    if(item.has("version_id")) id.versionId(text(item,"version_id"));identifiers.add(id.build());
+                }
+                software.amazon.awssdk.services.s3.model.Delete.Builder deletion=software.amazon.awssdk.services.s3.model.Delete.builder().objects(identifiers);
+                if(q.has("quiet")) deletion.quiet(q.get("quiet").asBoolean());
+                software.amazon.awssdk.services.s3.model.DeleteObjectsResponse result=client.deleteObjects(b->b.bucket(bucket).delete(deletion.build()));
+                List<Map<String,Object>> deleted=new ArrayList<>(),errors=new ArrayList<>();
+                for(software.amazon.awssdk.services.s3.model.DeletedObject item:result.deleted()) {
+                    Map<String,Object> row=new LinkedHashMap<>();
+                    if(item.key()!=null)row.put("key",item.key());if(item.versionId()!=null)row.put("version_id",item.versionId());
+                    if(item.deleteMarker()!=null)row.put("delete_marker",item.deleteMarker());if(item.deleteMarkerVersionId()!=null)row.put("delete_marker_version_id",item.deleteMarkerVersionId());deleted.add(row);
+                }
+                for(software.amazon.awssdk.services.s3.model.S3Error item:result.errors()) {
+                    Map<String,Object> row=new LinkedHashMap<>();
+                    if(item.key()!=null)row.put("key",item.key());if(item.versionId()!=null)row.put("version_id",item.versionId());
+                    if(item.code()!=null)row.put("code",item.code());if(item.message()!=null)row.put("message",item.message());errors.add(row);
+                }
+                return withHttp(fields("deleted",deleted,"errors",errors,"errors_present",result.hasErrors()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
             case "list_v1_page": {
                 software.amazon.awssdk.services.s3.model.ListObjectsRequest.Builder request=software.amazon.awssdk.services.s3.model.ListObjectsRequest.builder().bucket(bucket);
                 if(q.has("prefix"))request.prefix(text(q,"prefix"));if(q.has("delimiter"))request.delimiter(text(q,"delimiter"));

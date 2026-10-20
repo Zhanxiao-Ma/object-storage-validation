@@ -252,3 +252,5 @@ AWS C++ Curl 的响应头回调只在收到响应体数据时触发，无法覆�
 通过 `OSV_S3_TEST_LANGUAGES=java,cpp` 选择已经构建的实际 AWS SDK workers。
 `test_s3_sdk.py` 还在独立 Moto 服务中执行桶生命周期和完整 LIST 场景，检查失败路径清理与默认桶数据隔离。
 固定 Moto 不等同于标准或云厂商；断言中的源预期不因本地服务返回值而修改。
+
+批量删除合同使用 `OSV_RUN_DELETE_TESTS=1` 运行 `test_delete_many_sdk.py`，检查一次性 1001 键请求、混合结果、版本标记和 Quiet。

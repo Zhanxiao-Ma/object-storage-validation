@@ -20,6 +20,7 @@
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/DeleteObjectRequest.h>
+#include <aws/s3/model/DeleteObjectsRequest.h>
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/ListObjectsV2Request.h>
@@ -94,6 +95,30 @@ public:
         const std::string& bucket=q.contains("bucket")?q.at("bucket").get_ref<const std::string&>():this->bucket;
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
+        if(op=="delete_many" || op=="delete_many_versions") {
+            Aws::S3::Model::DeleteObjectsRequest request;request.SetBucket(bucket);Aws::S3::Model::Delete deletion;
+            for(const auto& item:q.at("objects")) {
+                Aws::S3::Model::ObjectIdentifier id;id.SetKey(item.at("key").get<std::string>());
+                if(item.contains("version_id"))id.SetVersionId(item.at("version_id").get<std::string>());deletion.AddObjects(id);
+            }
+            if(q.contains("quiet"))deletion.SetQuiet(q.at("quiet").get<bool>());request.SetDelete(deletion);
+            json observed;HttpObservationScope observation(&observed,true);
+            auto outcome=client->DeleteObjects(request);checked(outcome);
+            if(observed.value("xml_root",std::string())!="DeleteResult") throw std::runtime_error("actual response is not a valid DeleteResult");
+            json deleted=json::array(),errors=json::array();
+            for(const auto& item:outcome.GetResult().GetDeleted()) {
+                json row=json::object();
+                if(item.KeyHasBeenSet())row["key"]=std::string(item.GetKey().c_str());if(item.VersionIdHasBeenSet())row["version_id"]=std::string(item.GetVersionId().c_str());
+                if(item.DeleteMarkerHasBeenSet())row["delete_marker"]=item.GetDeleteMarker();if(item.DeleteMarkerVersionIdHasBeenSet())row["delete_marker_version_id"]=std::string(item.GetDeleteMarkerVersionId().c_str());deleted.push_back(row);
+            }
+            for(const auto& item:outcome.GetResult().GetErrors()) {
+                json row=json::object();
+                if(item.KeyHasBeenSet())row["key"]=std::string(item.GetKey().c_str());if(item.VersionIdHasBeenSet())row["version_id"]=std::string(item.GetVersionId().c_str());
+                if(item.CodeHasBeenSet())row["code"]=std::string(item.GetCode().c_str());if(item.MessageHasBeenSet())row["message"]=std::string(item.GetMessage().c_str());errors.push_back(row);
+            }
+            observed.update({{"deleted",deleted},{"errors",errors},{"errors_present",std::find(observed["fields"].begin(),observed["fields"].end(),json("Error"))!=observed["fields"].end()}});
+            return observed;
+        }
         if(op=="list_v1_page" || op=="list_v2_observed") {
             json observed;HttpObservationScope observation(&observed,true);
             if(op=="list_v1_page") {
@@ -305,7 +330,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

@@ -102,3 +102,14 @@ V1 另返回 `marker`/`next_marker`，V2 另返回 `token`/`next_token`/`start_a
 
 C++ 观察实际 XML 字段有无后复位原流，SDK 仍负责数据解码；Java 保留 SDK 模型暴露的字段和 URL 解码结果。
 不重编码 SDK 值来迎合上游断言。当前固定 SDK 的 FetchOwner=false 序列化，Java 为 false、C++ 为 0；合同测试记录实际请求。
+
+
+## 批量删除扩展
+
+Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id":"可选"}]` 和可选 `quiet`。
+`delete_many_versions` 是相同真实 SDK 操作的版本能力入口；版本字段原样交给 SDK。
+返回实际 `deleted`、`errors`、`errors_present`、HTTP 状态与响应头。
+删除条目可含 `key`/`version_id`/`delete_marker`/`delete_marker_version_id`，错误条目可含 `key`/`version_id`/`code`/`message`。
+这些值来自 SDK；不按输入制造确认，也不把单对象失败藏在整体 HTTP 200 中。
+一次调用对应一次完整 SDK DeleteObjects，不做自动拆分或桥接层数量拒绝。
+文件参考驱动仅为工具自检实现基础非版本删除；版本请求明确拒绝且不声明版本能力。
