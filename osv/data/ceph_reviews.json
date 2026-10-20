@@ -1248,6 +1248,48 @@
       "source_sha256": "6ebfd72153142ce260f202f9ddc72a006b631d2b60d7adb71ace5ce05701cd31",
       "implementation": "ceph_lock_config_get_invalid_bucket",
       "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_multipart_upload@L10897",
+      "source_sha256": "d2a54cb6a9665245714669aa40bb22ee942f0ff515005c28932dee433feed6c1",
+      "implementation": "ceph_sse_multipart_full",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_unaligned_multipart_upload@L10943",
+      "source_sha256": "f529418822bb176518400ee34ecad98df0aab96114a04ff6174b26fc82917366",
+      "implementation": "ceph_sse_multipart_unaligned",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_multipart_invalid_chunks_1@L10990",
+      "source_sha256": "58e147231610cc848202ce07c6f93d7f703ab6da0556634e75ee5d7c0be7b0f1",
+      "implementation": "ceph_sse_multipart_wrong_part_key",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_multipart_invalid_chunks_2@L11018",
+      "source_sha256": "21c45f44a28fef8cd994f16dbbbbc8f3c09e05a794eca5221f78b9775d2a6083",
+      "implementation": "ceph_sse_multipart_wrong_part_md5",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_multipart_bad_download@L11044",
+      "source_sha256": "93af67854acdbf00f7857e13b7b82a63dd276a7e3490c6ce513ee128580e063e",
+      "implementation": "ceph_sse_multipart_bad_download",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_sse_c_get_part@L6669",
+      "source_sha256": "2b032366574456a5fb88b4f13efad897994ae027b694545ef1a37fc55cc88837",
+      "implementation": "ceph_sse_multipart_get_part",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_non_multipart_sse_c_get_part@L6786",
+      "source_sha256": "038b47bfe3b3528bbe4f73c21b6159bd80b9a1fe9fc5d07c8acd15c0d1ca6307",
+      "implementation": "ceph_sse_multipart_ordinary",
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
     }
   ]
 }

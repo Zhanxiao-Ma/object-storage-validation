@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
@@ -294,8 +294,10 @@ public final class WorkerMain {
             case "head_http": case "head_sse_c": {
                 software.amazon.awssdk.services.s3.model.HeadObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.HeadObjectRequest.builder().bucket(bucket).key(key);
                 if("head_sse_c".equals(op)) request.overrideConfiguration(SseCustomerHeaders.from(q.get("sse_headers")));
+                if(q.has("part_number")) request.partNumber(q.get("part_number").asInt());
                 software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(request.build());
                 Map<String,Object> observed=object(key,result.contentLength(),millis(result.lastModified()),result.eTag());
+                if(q.has("part_number")) observed.put("parts_count",result.partsCount());
                 return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
             case "tags_put": {
@@ -362,7 +364,7 @@ public final class WorkerMain {
                     Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING);
                     software.amazon.awssdk.services.s3.model.GetObjectResponse result=in.response();
                     Map<String,Object> observed=withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
-                    if("get_part".equals(op)) observed.put("parts_count",result.partsCount());
+                    if("get_part".equals(op)||("get_sse_c".equals(op)&&q.has("part_number"))) observed.put("parts_count",result.partsCount());
                     return ("get_http".equals(op)||"get_sse_c".equals(op))?withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()):observed;
                 }
             }
@@ -409,18 +411,23 @@ public final class WorkerMain {
                 List<String> prefixes=new ArrayList<>();for(software.amazon.awssdk.services.s3.model.CommonPrefix item:result.commonPrefixes()) prefixes.add(item.prefix());observed.put("common_prefixes",prefixes);
                 return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
-            case "mp_create": case "mp_create_metadata": {
+            case "mp_create": case "mp_create_metadata": case "mp_create_sse_c": {
                 software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.builder().bucket(bucket).key(key);
+                if("mp_create_sse_c".equals(op)) b.overrideConfiguration(SseCustomerHeaders.from(q.get("sse_headers")));
                 if(q.has("content_type")) b.contentType(text(q,"content_type"));
                 if(q.has("metadata")) b.metadata(JSON.convertValue(q.get("metadata"),new com.fasterxml.jackson.core.type.TypeReference<Map<String,String>>(){}));
                 return one("upload_id",client.createMultipartUpload(b.build()).uploadId());
             }
-            case "mp_part": return one("etag",client.uploadPart(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id")).partNumber(q.get("part_number").asInt()),
-                software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))).eTag());
-            case "mp_complete": case "mp_complete_observed": case "mp_complete_empty": {
+            case "mp_part": case "mp_part_sse_c": {
+                software.amazon.awssdk.services.s3.model.UploadPartRequest.Builder b=software.amazon.awssdk.services.s3.model.UploadPartRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id")).partNumber(q.get("part_number").asInt());
+                if("mp_part_sse_c".equals(op)) b.overrideConfiguration(SseCustomerHeaders.from(q.get("sse_headers")));
+                return one("etag",client.uploadPart(b.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))).eTag());
+            }
+            case "mp_complete": case "mp_complete_observed": case "mp_complete_empty": case "mp_complete_sse_c": {
                 List<software.amazon.awssdk.services.s3.model.CompletedPart> parts=new ArrayList<>();
                 for(JsonNode part:q.path("parts")) parts.add(software.amazon.awssdk.services.s3.model.CompletedPart.builder().partNumber(part.get("part_number").asInt()).eTag(text(part,"etag")).build());
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id"));
+                if("mp_complete_sse_c".equals(op)) b.overrideConfiguration(SseCustomerHeaders.from(q.get("sse_headers")));
                 if(!"mp_complete_empty".equals(op)) b.multipartUpload(m->m.parts(parts));
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse result=client.completeMultipartUpload(b.build());
                 Map<String,Object> observed=fields("etag",result.eTag());

@@ -17,9 +17,10 @@ def source_data(size,part_size=5*MIB,seed=101):
     return b"".join(parts)
 
 @contextmanager
-def uploading(bucket,p,key="mymultipart",**options):
+def uploading(bucket,p,key="mymultipart",create_operation="mp_create_metadata",**options):
     """Abort the actual upload even when an assertion fails; surface cleanup errors rather than leaking parts."""
-    ident=bucket.call("mp_create_metadata",key=key,**options)["upload_id"]
+    if create_operation not in ("mp_create_metadata","mp_create_sse_c"):raise ValueError("unsupported scoped multipart creation operation")
+    ident=bucket.call(create_operation,key=key,**options)["upload_id"]
     try:yield ident
     finally:
         response=bucket.raw("mp_abort_raw",key=key,upload_id=ident)

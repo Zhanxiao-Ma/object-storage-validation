@@ -21,7 +21,7 @@ class BucketScope:
         if "bucket" in options:raise ValueError("cannot override the owned bucket scope")
         # Retain the real producer's opaque keys before a possibly ambiguous request.
         # Typed XML list parsers can trim whitespace keys; they are still valid objects.
-        if op in ("put","put_sse_c","put_http","put_metadata","put_version","copy","copy_replace","mp_create","mp_create_metadata","mp_complete","mp_complete_observed") and "key" in options:
+        if op in ("put","put_sse_c","put_http","put_metadata","put_version","copy","copy_replace","mp_create","mp_create_metadata","mp_create_sse_c","mp_complete","mp_complete_observed") and "key" in options:
             self.written_keys.add(options["key"])
         return self.probe.ctx.worker.call({"op":op,"bucket":self.name,**options})
 

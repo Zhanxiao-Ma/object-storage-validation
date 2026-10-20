@@ -17,7 +17,7 @@ final class SseCustomerHeaders {
             String name=entry.getKey();
             if (!(name.equals("x-amz-server-side-encryption-customer-algorithm")
                 || name.equals("x-amz-server-side-encryption-customer-key")
-                || name.equals("x-amz-server-side-encryption-customer-key-md5")) || !entry.getValue().isTextual())
+                || name.equals("x-amz-server-side-encryption-customer-key-md5") || name.equals("content-type")) || !entry.getValue().isTextual())
                 throw new IllegalArgumentException("invalid SSE-C header: "+name);
             builder.putHeader(name,entry.getValue().textValue());
         });

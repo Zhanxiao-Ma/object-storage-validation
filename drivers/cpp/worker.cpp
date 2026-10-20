@@ -48,7 +48,7 @@ template<class Request> static void sse_customer_headers(Request& request,const 
     for(auto it=headers.begin();it!=headers.end();++it) {
         if((it.key()!="x-amz-server-side-encryption-customer-algorithm" &&
             it.key()!="x-amz-server-side-encryption-customer-key" &&
-            it.key()!="x-amz-server-side-encryption-customer-key-md5") || !it.value().is_string())
+            it.key()!="x-amz-server-side-encryption-customer-key-md5" && it.key()!="content-type") || !it.value().is_string())
             throw std::runtime_error("invalid SSE-C header: "+it.key());
         request.SetAdditionalCustomHeaderValue(it.key().c_str(),it.value().get<std::string>().c_str());
     }
@@ -278,7 +278,7 @@ public:
             const auto& object=outcome.GetResult();
             json observed={{"key",key},{"size",object.GetContentLength()},{"last_modified_ms",object.GetLastModified().Millis()},
                 {"etag",std::string(object.GetETag().c_str())},{"content_type",std::string(object.GetContentType().c_str())},{"metadata",object.GetMetadata()}};
-            if(op=="get_part") observed["parts_count"]=object.GetPartsCount();
+            if(op=="get_part" || (op=="get_sse_c" && q.contains("part_number"))) observed["parts_count"]=object.GetPartsCount();
             if(op=="get_http"||op=="get_sse_c") {
                 if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
                 observed.update(http);
@@ -292,7 +292,7 @@ public:
             if(q.contains("part_number")) request.SetPartNumber(q.at("part_number").get<int>());
             auto outcome = client->HeadObject(request); checked(outcome);
             json observed={{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())},{"content_type",std::string(outcome.GetResult().GetContentType().c_str())},{"metadata",outcome.GetResult().GetMetadata()}};
-            if(op=="head_part") observed["parts_count"]=outcome.GetResult().GetPartsCount();
+            if(op=="head_part" || (op=="head_sse_c" && q.contains("part_number"))) observed["parts_count"]=outcome.GetResult().GetPartsCount();
             if(op=="head_http"||op=="head_sse_c") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");observed.update(http);}
             return observed;
         } else if (op == "delete") {
@@ -344,16 +344,18 @@ public:
             http.update({{"uploads",uploads},{"common_prefixes",prefixes},{"truncated",result.GetIsTruncated()},{"next_key_marker",std::string(result.GetNextKeyMarker().c_str())},{"next_upload_id_marker",std::string(result.GetNextUploadIdMarker().c_str())},
                 {"key_marker",std::string(result.GetKeyMarker().c_str())},{"upload_id_marker",std::string(result.GetUploadIdMarker().c_str())},{"max_uploads",result.GetMaxUploads()},{"prefix",std::string(result.GetPrefix().c_str())},{"delimiter",std::string(result.GetDelimiter().c_str())}});
             return http;
-        } else if (op == "mp_create" || op == "mp_create_metadata") {
+        } else if (op == "mp_create" || op == "mp_create_metadata" || op == "mp_create_sse_c") {
             Aws::S3::Model::CreateMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            if(op=="mp_create_sse_c") sse_customer_headers(request,q);
             if(q.contains("content_type")) request.SetContentType(q.at("content_type").get<std::string>());
             if(q.contains("metadata")) for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             auto outcome = client->CreateMultipartUpload(request); checked(outcome);
             return {{"upload_id", std::string(outcome.GetResult().GetUploadId().c_str())}};
-        } else if (op == "mp_part") {
+        } else if (op == "mp_part" || op == "mp_part_sse_c") {
             Aws::S3::Model::UploadPartRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            if(op=="mp_part_sse_c") sse_customer_headers(request,q);
             request.SetUploadId(q.at("upload_id").get<std::string>());
             request.SetPartNumber(q.at("part_number").get<int>());
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
@@ -362,9 +364,10 @@ public:
             request.SetBody(stream);
             auto outcome = client->UploadPart(request); checked(outcome);
             return {{"etag", std::string(outcome.GetResult().GetETag().c_str())}};
-        } else if (op == "mp_complete" || op == "mp_complete_observed" || op == "mp_complete_empty") {
+        } else if (op == "mp_complete" || op == "mp_complete_observed" || op == "mp_complete_empty" || op == "mp_complete_sse_c") {
             Aws::S3::Model::CompleteMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            if(op=="mp_complete_sse_c") sse_customer_headers(request,q);
             request.SetUploadId(q.at("upload_id").get<std::string>());
             Aws::S3::Model::CompletedMultipartUpload upload;
             for (const auto& part : q.value("parts", json::array())) {
@@ -401,7 +404,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");

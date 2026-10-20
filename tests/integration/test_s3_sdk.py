@@ -31,6 +31,9 @@ def expected_version_diagnostics(language):
     if language=="cpp":names.add("ceph_version_special")
     return names
 
+def expected_encrypted_multipart_diagnostics():
+    return {"ceph_sse_multipart_"+name for name in ("wrong_part_key","wrong_part_md5","bad_download","get_part","ordinary")}
+
 def expected_control_diagnostics():
     return {"ceph_public_block_deny"}|{"ceph_lock_config_"+name for name in ("invalid_bucket","enable_after","invalid_days","invalid_years","invalid_mode","invalid_status","suspend","get")}
 
@@ -270,6 +273,23 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                 finally:worker.close()
 
+    def test_encrypted_multipart_source_cases_and_cleanup(self):
+        """Execute original 30-MiB encrypted uploads/ranges and part reads through actual SDKs; expect pinned validation/part diagnostics and no residual buckets or uploads."""
+        from osv.ceph_sse_multipart import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        for target in self.targets:
+            with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=Worker(target,30)
+                try:
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                    rows=run_cases(ctx,CASES)
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected_encrypted_multipart_diagnostics())
+                    self.assertTrue(all(row["status"]=="pass" for row in rows if row["case"] not in expected_encrypted_multipart_diagnostics()))
+                    self.assertEqual(len(rows),7)
+                    self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                finally:worker.close()
+
     def test_configured_storage_classes_execute_original_transition_input(self):
         """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
         from osv.ceph_bucket_config import CASES
@@ -394,6 +414,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_config_diagnostics(target["language"]))
             expected.extend((target["id"],name) for target in self.targets for name in expected_sse_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
+            expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -407,7 +428,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),302)
+            self.assertEqual(len(report["coverage"]["catalog"]),309)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],"ceph_config_lifecycle_noncurrent_transition") for target in self.targets})
             self.assertTrue(all(row["reason"]=="missing_prerequisites" and row["missing_requirements"]==["workload.storage_classes: at least 3"] for row in missing))
