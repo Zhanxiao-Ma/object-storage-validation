@@ -136,3 +136,10 @@ Java 使用 SDK 公开 SdkField 描述及 builder/getter；C++ 根据 `drivers/s
 AWS S3 Java/C++ 声明 `wire_headers` 能力。兼容性 RPC 可附 `"wire_headers":{"Content-MD5":"bad-value","Expect":null}`：字符串覆盖、null 删除；名称按 HTTP token 校验，禁止 CR/LF、非字符串值和大小写重复名称。在序列化之后、官方签名之前修改；签名器和 HTTP 层仍可正规化/重写，报告保留实际结果。不接受事后伪造 HTTP 错误，也不实现替代签名器。未附该字段的普通性能请求不经过修改器。
 
 负 ContentLength 的源场景附 `checksum_when_required:true`，要求握手声明相应能力。`put_http.content_length` 是有符号长度，交给真实 SDK 模型而非仅修改文本头。`OSV_HEADER_REQUEST_TIMEOUT_MS` 指兼容性客户端总超时，默认 30000ms，握手记录 `header_request_timeout_ms`。请求总超时与 C++ 低速超时分别设置；JSONL 输入使用私有管道副本，SDK 默认 stdin 只读到 EOF，以免上传意外消费控制消息。以上均不修改普通客户端连接/重试设置。
+
+
+AWS S3 Java/C++ 的 `copy`/`copy_replace` 支持可选 `acl` 和 `source_version_id`，分别要求 `copy_acl`、`copy_source_version` 能力；版本 ID 交由真实 SDK 的复制源模型编码，未在兼容层修正厂商响应。
+
+`api.GetObjectAttributes` 使用通用 typed API 模型入口，`input` 提供 `Key`、`ObjectAttributes` 和可选 `VersionId`/`MaxParts`/`PartNumberMarker`/SSE-C 字段。`data` 保留 SDK 解码的嵌套对象及真实缺字段。
+
+摘要请求使用 `checksum` 对象，字段名称保持 AWS 模型原名，例如 `ChecksumAlgorithm`、`ChecksumSHA256`、`ChecksumType`。`put_http`、分块创建/上传/完成支持对应模型的实际字段；完成请求的 `parts` 项可携带各块 `Checksum*`。`head_http` 可选 `checksum_mode=ENABLED`，`get_part` 支持同类输入。响应 `checksum` 仅包含 SDK 实际解码的摘要字段；HTTP 原始头独立保留。握手按真实模型声明 `checksum_sha256`/`checksum_sha1`/`checksum_crc32`/`checksum_crc32c`/`checksum_crc64nvme` 与 `checksum_type`，未知或该模型不支持的字段在发起 HTTP 前拒绝。

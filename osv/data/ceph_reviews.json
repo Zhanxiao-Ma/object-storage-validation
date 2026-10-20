@@ -2046,6 +2046,336 @@
       "source_sha256": "9436441dccd8b53cb1a4c26fab191f8decb88ad9b24442fac3548e50eb8084c2",
       "implementation": "ceph_interop_copy_missing_bucket",
       "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_enforced_with_bucket_policy@L11146",
+      "source_sha256": "8e332ed106cb6f98b7bd4e9376f39a41b2663306dc02c6f8baea7bd668fc4140",
+      "implementation": "ceph_policy_condition_ssec_required",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。原始条件、AES192/空正文、公开 SSE-C 密钥和 403；finally 删除桶策略"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_deny_algo_with_bucket_policy@L11176",
+      "source_sha256": "188a65a35022881f68347343dcd24a8dd6e425f2ca55250f3ee7f1425b9ec72a",
+      "implementation": "ceph_policy_condition_ssec_algorithm",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。原始条件、AES192/空正文、公开 SSE-C 密钥和 403；finally 删除桶策略"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_s3_noenc@L13000",
+      "source_sha256": "73702f5fe7d7fc4699865f414002cef8140edea8dd3b376e7d27fdade3260f16",
+      "implementation": "ceph_policy_condition_s3_noenc",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留缺失/非法算法、原始正文、原始 KMS 配置前提及回退键、实际响应加密头"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_s3_incorrect_algo_sse_s3@L13029",
+      "source_sha256": "7ab9789c85dc84700fa5b0940e6d3ba65ef38764070d649513b8ad10bd8fed3a",
+      "implementation": "ceph_policy_condition_s3_incorrect_algo_sse_s3",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留缺失/非法算法、原始正文、原始 KMS 配置前提及回退键、实际响应加密头"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_s3_kms@L13057",
+      "source_sha256": "6474e7416b870926456680d27b7dd4155ee05d18928677400a00448e31cd505f",
+      "implementation": "ceph_policy_condition_s3_kms",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留缺失/非法算法、原始正文、原始 KMS 配置前提及回退键、实际响应加密头"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_kms_noenc@L13103",
+      "source_sha256": "5450d6c9fcbcd033478a17d0b6b512323ca1a057fe8f3aebdc7b61838f7775f6",
+      "implementation": "ceph_policy_condition_kms_noenc",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留缺失/非法算法、原始正文、原始 KMS 配置前提及回退键、实际响应加密头"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_kms_s3@L13149",
+      "source_sha256": "c86ec9a696a6abfb36717945cf35852b2ba15effda1b83cf1826b1cd9d631640",
+      "implementation": "ceph_policy_condition_kms_s3",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留缺失/非法算法、原始正文、原始 KMS 配置前提及回退键、实际响应加密头"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_get_obj_existing_tag@L12455",
+      "source_sha256": "455763fd295ff9f61cb086421ca7d584a644943cb1db132db57203873e04ced4",
+      "implementation": "ceph_policy_condition_existing_get",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留三个原始键/正文、全部标签、真实另一身份和每次状态断言；不修正 GetACL 源负例操作"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_get_obj_tagging_existing_tag@L12510",
+      "source_sha256": "3f2aef8781f8156ab0f77ac289662d94ec87fe3d668361d188af012c72214718",
+      "implementation": "ceph_policy_condition_existing_get_tagging",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留三个原始键/正文、全部标签、真实另一身份和每次状态断言；不修正 GetACL 源负例操作"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_tagging_existing_tag@L12572",
+      "source_sha256": "3ccd3901ae555100b66b03c34e481a2899359e389f5a7dfb942007ef0be0fba5",
+      "implementation": "ceph_policy_condition_existing_put_tagging",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留三个原始键/正文、全部标签、真实另一身份和每次状态断言；不修正 GetACL 源负例操作"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_get_obj_acl_existing_tag@L13221",
+      "source_sha256": "3195b02a29c6bd95979256fad402c657d26d3f75bf0ae41ee101203f22018a7d",
+      "implementation": "ceph_policy_condition_existing_get_acl",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留 GetObjectAcl 成功后 GetObject 及两个 GetObjectTagging 负例，不将源疑似复制错误修成 GetObjectAcl"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_request_obj_tag@L13192",
+      "source_sha256": "f2a8b020401a21df7c3cdb084660afe8eeec1a06b9804bdb8a43a86008b60410",
+      "implementation": "ceph_policy_condition_request_tag",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留 fails_on_rgw；hook 注册到 main，但两个写请求均由 alt 发出，第二次仍无标签而源期待成功，不修正缺陷"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_set_condition_operator_end_with_IfExists@L11898",
+      "source_sha256": "7a9a8fb90e8c16decb2fc3a938cae1ed8e08f7ace6c1cf88b3f2cce906dbdc89",
+      "implementation": "ceph_policy_condition_ifexists",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留 fails_on_rgw、主身份、三个 Referer、最后 403 与末尾 GetBucketPolicy，不改成匿名身份"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_acl@L12798",
+      "source_sha256": "e492e2fc15fc2c47eb8c13ef234ff2b6dc7f046931d4cd8e5f54711d918d68a6",
+      "implementation": "ceph_policy_condition_acl",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。真实另一身份，无 ACL 上传成功，public-read 被 public* Deny 拒绝 403"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_grant@L12838",
+      "source_sha256": "64e6c2d85c4356b43839668f24602b0dd76f595dffb62a1e8c9a68eb3abbca68",
+      "implementation": "ceph_policy_condition_grant",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留 id=主用户条件、不同桶的上传者所有权、主用户拒绝和首个授权 ID 断言"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_copy_source@L12700",
+      "source_sha256": "d7b034b392781ede31afe760f2cf95a4d8f7d629eea09678790d64350ca64993",
+      "implementation": "ceph_policy_condition_copy_source",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。原始对象键/正文，两桶真实 SDK 复制/读取，保留 COPY 请求头移除和 Metadata 输入或 public/* 前缀与 403"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_put_obj_copy_source_meta@L12748",
+      "source_sha256": "b0e83c1fdd9704ecf840e12be021c7787263e3f09e09fddb24e85031116199b7",
+      "implementation": "ceph_policy_condition_copy_metadata",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。第一次真实 CopyObject 发送 COPY；第二次删除 x-amz-metadata-directive 并发送原始 Metadata foo=bar 对应 x-amz-meta-foo，不额外插入 ContentType"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_allow_notprincipal@L14192",
+      "source_sha256": "7e15b8fefca8447b3940e4125fda05afbd72df48c15ec31d19b2c36297c86c6e",
+      "implementation": "ceph_policy_condition_notprincipal",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。保留固定租户 ARN，源期待 400 和 InvalidArgument/MalformedPolicy 二选一"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_head_object_404_with_policy_prefix@L20384",
+      "source_sha256": "6b0d710b31b20b4442068df74a82fdaa3ca50ff3f0138a155489ac682ed734a1",
+      "implementation": "ceph_policy_condition_head_prefix",
+      "review": "核对固定版本原始策略条件/Principal/资源、键/正文/标签/加密头和全部状态、响应字段断言；真实 SDK 与独立桶隔离，finally 删除策略。另一真实身份 public/object 404、private/object 403，空桶和桶 ARN 策略"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_multipart@L11753",
+      "source_sha256": "d66ee6b96ad3ef18e83838b2e7a0d00c97d039322bc77dd46ac93aa8569425cd",
+      "implementation": "ceph_policy_condition_multipart",
+      "review": "核对固定版本全部输入/断言：无策略、桶 ARN 策略的两次 assert_raises(ClientError) 不收窄状态码；精确对象 ARN 成功。所有实际成功返回的 upload_id 包括期待拒绝却成功的前两次，先记录再断言，finally 同一真实 alt 身份 Abort，严格仅清理容忍404/NoSuchUpload；原始成功/失败 oracle 不变。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_return_data@L1400",
+      "source_sha256": "eb412b4c891e4af0f21935b6ae278785d9a3fec0c5d41d133f8482de930eee9b",
+      "implementation": "ceph_metadata_edges_list",
+      "review": "真实 HEAD 和 GetObjectAcl 输出作为 LIST 对照；原始 bar/baz/foo 键与内容；必须存在 Contents、Owner ID/DisplayName、ETag/Size，保留仅列表时间截秒的源规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_return_data_versioning@L1432",
+      "source_sha256": "dee62d43792a32b3e1de2bb44a92d36bcf0a418f7637ce08b1fd5710763eec81",
+      "implementation": "ceph_metadata_edges_list_versioned",
+      "review": "启用版本后保留 _create_objects→get_new_bucket_resource 的再次真实 CreateBucket，再创建原始三对象；真实 HEAD 头中的 VersionId、HEAD 属性、ACL Owner 对照 Versions；保留字段必须存在及仅列表时间截秒规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_set_get_unicode_metadata@L1890",
+      "source_sha256": "64cf510fb2edc3968034359b62856c1008c66c0b4193dc47338d7cd80aeb2774",
+      "implementation": "ceph_metadata_edges_unicode",
+      "review": "原始 before-call x-amz-meta-meta1=Hello Worldé、bar 内容与实际 GET 元数据严格相等；保留 SDK/HTTP Unicode 编码行为及原失败标记，不做编码归一化。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_file@L1934",
+      "source_sha256": "6356d4aaa9f01fdc821b20e854bb9a6de30378abe0d0080d85413e0f022a05c0",
+      "implementation": "ceph_metadata_edges_file",
+      "review": "真实 UTF-8 bar 文件输入 SDK PUT、实际 GET 文件解码后严格 bar。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned_bucketownerread@L4340",
+      "source_sha256": "c7b14e882a40b1c852b934b7c3fb957175faf373abe5929fac0eb3d5cacc03d4",
+      "implementation": "ceph_metadata_edges_owner_read",
+      "review": "创建 public-read-write；另一身份先写 bar 后空体 bucket-owner-read；保留源 GetBucketAcl Grants[2] 固定下标、完整原始 check_grants 顺序/字段规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned_bucketownerfullcontrol@L4382",
+      "source_sha256": "2941650a350a152621777b819c801e9047b07ade0a7ec2d4e30485b6a892e682",
+      "implementation": "ceph_metadata_edges_owner_full",
+      "review": "创建 public-read-write；另一身份先写 bar 后空体 bucket-owner-full-control；保留源 Grants[2] 固定下标与完整原始 check_grants 规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_full_control_verify_owner@L4425",
+      "source_sha256": "f6f1060f696a7fb3b6e5a8b6ba2197194291cefece78d45bf21ba8b6dba7cf04",
+      "implementation": "ceph_metadata_edges_owner_stable",
+      "review": "独立 main/alt ID/DisplayName；原始只授权 alt FULL_CONTROL，然后 alt 改 READ_ACP，真实 alt GetObjectAcl Owner.ID 等于 main；缺身份或真实 alt SDK 时 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_full_control_verify_attributes@L4473",
+      "source_sha256": "03ff5f203b53283889a52fd39b992da5454950fabc41d34ffe9603e398af35e9",
+      "implementation": "ceph_metadata_edges_attributes_stable",
+      "review": "原始公共桶、签名前 x-amz-foo=bar、bar 内容；真实 GET ContentType/ETag 进入真实 ACL 变更前后对照，实际 GetObjectAcl Grants 输出追加原 grant 后进入 PutObjectAcl。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_header_acl_grants@L4813",
+      "source_sha256": "a8876dd45c74e067faea67f55e3c4472d0d62f34108df9cbf22eb905ff804e9d",
+      "implementation": "ceph_metadata_edges_acl_headers",
+      "review": "原始五个 x-amz-grant-* id=alt 值、foo_key/bar；完整原 READ/WRITE/READ_ACP/WRITE_ACP/FULL_CONTROL check_grants 顺序与字段存在性，未修正源排序限制。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_canned_acl@L5659",
+      "source_sha256": "cfebdc28482f90301660502ee42e14d3b312825be61d2c10923d38848734ba95",
+      "implementation": "ceph_metadata_edges_copy_canned",
+      "review": "两次真实 typed public-read CopyObject、两次真实 alt GET；第二次原始 Metadata abc=def 与 REPLACE 通过签名前头，不附加源未设置的 ContentType；需 copy_acl。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_not_owned_object_bucket@L5636",
+      "source_sha256": "39a9f64532ba83d78e970a8c0b886116142cb323cc34c6955d5635276e44eeab",
+      "implementation": "ceph_metadata_edges_copy_granted",
+      "review": "main 写 foo；实际 GetObjectAcl/GetBucketAcl Grants 生产者输出追加原 grant，进入 Put ACL；真实 alt GET/托管复制 HEAD 预检/CopyObject；保留源无额外目标内容断言。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_versioned_bucket@L5742",
+      "source_sha256": "f6c4e9f47f206545f3a355afcb447f47d9235934a2d26ea87702d540daf84778",
+      "implementation": "ceph_metadata_edges_copy_versions",
+      "review": "原始五字节全零内容、五条同桶/版本桶/普通桶复制路径；实际 GET VersionId 进入真实 SDK sourceVersionId；每目标独立检查解码内容及 ContentLength；需 copy_source_version。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_versioned_url_encoding@L5807",
+      "source_sha256": "ac4cc082445dc4f2cbbeca7b09b8c8f3965abc8fa293cc7c53f6c4a90dd9f1ca",
+      "implementation": "ceph_metadata_edges_copy_encoded",
+      "review": "原始空 foo?bar 与 bar&foo，真实源 HEAD 的 VersionId 消费到 SDK 复制，再真实目的 HEAD；保留 SDK 自身键/版本编码行为；需 copy_source_version。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_put_acl_mtime@L3401",
+      "source_sha256": "da6baf4dd0a3a1f68fc49af3bdfe930dfa2cacabcae495658dec6672aa16f6b3",
+      "implementation": "ceph_metadata_edges_acl_mtime",
+      "review": "启用版本、foooz、foo；保留原两秒间隔，实际 HEAD/LIST/版本LIST 在 ACL private 变更前后的全部单边截秒比较。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_content_encoding_aws_chunked@L3543",
+      "source_sha256": "94315f75cdfaa934f58ab4ebf6f186676ce7889ce252a5f375641804a3676810",
+      "implementation": "ceph_metadata_edges_content_encoding",
+      "review": "原始六组 Content-Encoding 与空对象，通过签名前真实请求头进入 SDK；HEAD 严格检查 gzip/deflate,gzip 或真实字段缺失，不主动清洗 aws-chunked。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_special_key_names@L5471",
+      "source_sha256": "880c0c10e23dd808c42ec3bdc44c9600a7f086357567b282fe27a603d9fbda2d",
+      "implementation": "ceph_metadata_edges_special_keys",
+      "review": "原始十二个特殊键（包含空格、单/双引号、美元/百分号/与号、尖括号、下划线组合）的输入顺序与各键同值内容；真实 V1 清单完整顺序、实际 GET 解码内容、真实每键 PutObjectAcl private；保留 C++ XML 空格裁剪等实际差异。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_special_prefix@L5501",
+      "source_sha256": "12eb6a127688455e42af694f77febf4a9281fc5f67bbd5d5d157e4f850158999",
+      "implementation": "ceph_metadata_edges_special_prefix",
+      "review": "原始 _bla/1..4 与 abcd 五对象同名内容；真实 V1 全量与 Prefix=_bla/ 请求，分别只断言原始计数5/4。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_recreate_not_overriding@L5457",
+      "source_sha256": "1ae41550faa64f54e550c8d510af756b5197aeaa1b7dded132c80cce241d2c27",
+      "implementation": "ceph_metadata_edges_recreate",
+      "review": "原始 mykey1/mykey2 同名内容；只对本用例已确认拥有的隔离桶再次真实 CreateBucket，前后真实 V1 清单都必须原顺序相等；保留 SDK/服务真实重建错误。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_attributes@L19321",
+      "source_sha256": "5bbac024b0e10ab63a4819fda4eccc72b28c39dd37458416935f13ec385fdeea",
+      "implementation": "ceph_attributes_object",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_versioned_object_attributes@L19242",
+      "source_sha256": "f2b70b9efc8fedc88d567cfa3dfce4fbeaa316bef9f0f3c261a92bfc61c59fe2",
+      "implementation": "ceph_attributes_versioned",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_sse_c_encrypted_object_attributes@L19285",
+      "source_sha256": "35f75ae1da1d317798d46f6b5e1225adb8d84c1b9da814605978d9c28d19a62f",
+      "implementation": "ceph_attributes_sse_customer",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_multipart_object_attributes@L19090",
+      "source_sha256": "5675f34a9f414cfbd062c40df32881b50a9425df243781979cefab26f03a7ffd",
+      "implementation": "ceph_attributes_multipart_ordinary",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_paginated_multipart_object_attributes@L19126",
+      "source_sha256": "76cec76c62ac3495b079e4954435d6be296afc7bd09ee9f16f2b15c849a33151",
+      "implementation": "ceph_attributes_multipart_paginated",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_single_multipart_object_attributes@L19187",
+      "source_sha256": "35327763fb31b89e47df9973d50bae5505969d959ea6e5c1f8c17051c190132a",
+      "implementation": "ceph_attributes_multipart_single",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_checksum_sha256@L14961",
+      "source_sha256": "116bf3403390d6276890f11ca903fb6de9fa5a2b545701c7ab3ddb6230514a00",
+      "implementation": "ceph_checksum_object_sha256",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_checksum_crc64nvme@L14983",
+      "source_sha256": "193883f7395f5dbefa54397e3f4c4e035875798f9b66bafd636325e3acbf8ac5",
+      "implementation": "ceph_checksum_object_crc64nvme",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_checksum_object_attributes@L19219",
+      "source_sha256": "5fbdf886da7b97c23616c681ee483197d3bb5ec9c618d8a014c668653b7ef4ee",
+      "implementation": "ceph_checksum_attributes_sha256",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_checksum_sha256@L15006",
+      "source_sha256": "0f2dfd81286b4e8c4e0971865c0cb0521b908b7184b1a79f3d656820bb9405d1",
+      "implementation": "ceph_checksum_multipart_sha256",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_reupload_checksum_and_etag@L15071",
+      "source_sha256": "ad5437aa2389c0860acf5fdef7176710c25906e29c1457ab6ecda7231d5614bd",
+      "implementation": "ceph_checksum_multipart_reupload",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_multipart_checksum_object_attributes@L19047",
+      "source_sha256": "b74e4ac0f1542c83e6e7a1ca2ea6b5b89fa732efb30c485d4c4ad316009c3201",
+      "implementation": "ceph_checksum_attributes_multipart",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_sha256@L15180",
+      "source_sha256": "2148091f90f366598f5a3ade9836c18a793e374f70194b73fed43488016b14da",
+      "implementation": "ceph_checksum_helper_sha256",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc64nvme@L15204",
+      "source_sha256": "a644314000fb18bf184ef7386995ae6d166dcbb235bcbf66e665ddeed948bb8b",
+      "implementation": "ceph_checksum_helper_crc64nvme",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc32@L15228",
+      "source_sha256": "cb862c6df3562b86b05c79fd28dd30d5b52ed096a067d4b3cf87c8a3fa82fb22",
+      "implementation": "ceph_checksum_helper_crc32",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc32c@L15252",
+      "source_sha256": "858a3db7d2a346e00df892ce5b036fa71c5d909df2855fa6476b3927c3db0dcd",
+      "implementation": "ceph_checksum_helper_crc32c",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_sha1@L15276",
+      "source_sha256": "f1f6a92c9a61ca50b7f5510fcef7eae2ad69166a90153eeae3b63529f2542a3e",
+      "implementation": "ceph_checksum_helper_sha1",
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
     }
   ]
 }

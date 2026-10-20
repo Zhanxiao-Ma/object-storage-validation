@@ -79,6 +79,13 @@ jobs:
         env:
           OSV_RUN_SDK_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java policy, metadata and checksum source diagnostics
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_policy_conditions_sdk test_metadata_edges_sdk test_checksum_attributes_sdk -v
+        env:
+          OSV_RUN_POLICY_CONDITION_TESTS: '1'
+          OSV_RUN_METADATA_EDGES_TESTS: '1'
+          OSV_RUN_CHECKSUM_ATTRIBUTE_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:

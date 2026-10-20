@@ -546,6 +546,16 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
+            from osv.ceph_checksum_attributes import CASES as checksum_cases
+            policy_fail={"ceph_policy_condition_"+name for name in ("ssec_required","ssec_algorithm","s3_noenc","s3_incorrect_algo_sse_s3","ifexists","notprincipal")}
+            checksum_missing={"ceph_checksum_object_crc64nvme"}|{"ceph_checksum_helper_"+name for name in ("sha256","crc64nvme","crc32","crc32c","sha1")}
+            for target in self.targets:
+                extra=policy_fail|{"ceph_metadata_edges_content_encoding"}
+                if target["language"]=="cpp":
+                    extra=extra|{"ceph_policy_condition_s3_kms","ceph_policy_condition_kms_s3"}|{"ceph_metadata_edges_"+name for name in ("special_keys","copy_versions","copy_encoded")}
+                    extra=extra|({item.name for item in checksum_cases}-{"ceph_attributes_object","ceph_attributes_versioned","ceph_checksum_attributes_sha256"})
+                else:extra=extra|({item.name for item in checksum_cases}-checksum_missing)
+                expected.extend((target["id"],name) for name in extra)
             self.assertEqual(sorted(failures),sorted(expected))
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
@@ -557,12 +567,30 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),435)
+            self.assertEqual(len(report["coverage"]["catalog"]),490)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
+            policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
+            metadata_missing={"ceph_metadata_edges_"+name for name in ("owner_read","owner_full","owner_stable","attributes_stable","acl_headers","copy_canned","copy_granted")}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in checksum_missing:
+                    self.assertEqual(row["reason"],"unsupported_operations")
+                    self.assertTrue(row["missing_operations"])
+                    continue
+                if row["case"] in policy_missing:
+                    if row["case"]=="ceph_policy_condition_kms_noenc":
+                        self.assertEqual(row["reason"],"missing_prerequisites");self.assertEqual(row["missing_requirements"],["workload.kms_key_id"])
+                    else:
+                        self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
+                    continue
+                if row["case"] in metadata_missing:
+                    if row["case"] in {"ceph_metadata_edges_owner_read","ceph_metadata_edges_owner_full","ceph_metadata_edges_owner_stable","ceph_metadata_edges_copy_canned","ceph_metadata_edges_copy_granted"}:
+                        self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
+                    else:
+                        self.assertEqual(row["reason"],"missing_prerequisites");self.assertTrue(row["missing_requirements"])
+                    continue
                 if row["case"].startswith(("ceph_policy_","ceph_acl_user_","ceph_access_matrix_","ceph_interop_tag_policy_")):
                     self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
                 else:

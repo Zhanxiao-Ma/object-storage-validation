@@ -68,7 +68,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
-                        if("s3".equals(provider)) capabilities.addAll(S3Identities.capabilities());
+                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl"));capabilities.addAll(S3Checksums.capabilities()); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
@@ -211,7 +211,7 @@ public final class WorkerMain {
                     return executeSelected(q,identities.select(q));
                 }
             }
-            return executeSelected(q,q.has("identity")?identities.select(q):this.client);
+            return executeSelected(q,(q.has("identity")||q.has("checksum_when_required"))?identities.select(q):this.client);
         }
         private Map<String,Object> executeSelected(JsonNode q,software.amazon.awssdk.services.s3.S3Client client) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
@@ -288,19 +288,21 @@ public final class WorkerMain {
                 if("put_sse_c".equals(op)) request.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if("put_acl".equals(op)) request.acl(text(q,"acl"));
                 if(q.has("content_length")) request.contentLength(q.get("content_length").asLong());
+                S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)request,q);
                 if(q.has("cache_control")) request.cacheControl(text(q,"cache_control"));
                 if(q.has("expires_ms")) request.expires(java.time.Instant.ofEpochMilli(q.get("expires_ms").asLong()));
                 software.amazon.awssdk.services.s3.model.PutObjectResponse result=client.putObject(request.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path"))));
-                return withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+                return S3Checksums.observe(withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);
             }
             case "head_http": case "head_sse_c": {
                 software.amazon.awssdk.services.s3.model.HeadObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.HeadObjectRequest.builder().bucket(bucket).key(key);
                 if("head_sse_c".equals(op)) request.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if(q.has("part_number")) request.partNumber(q.get("part_number").asInt());
+                S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)request,q);
                 software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(request.build());
                 Map<String,Object> observed=object(key,result.contentLength(),millis(result.lastModified()),result.eTag());
                 if(q.has("part_number")) observed.put("parts_count",result.partsCount());
-                return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+                return S3Checksums.observe(withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);
             }
             case "tags_put": {
                 List<software.amazon.awssdk.services.s3.model.Tag> tags=new ArrayList<>();
@@ -322,6 +324,8 @@ public final class WorkerMain {
                 String sourceBucket=q.path("source_bucket").asText(bucket),sourceKey=text(q,"source_key");
                 software.amazon.awssdk.services.s3.model.CopyObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.CopyObjectRequest.builder()
                     .sourceBucket(sourceBucket).sourceKey(sourceKey).destinationBucket(bucket).destinationKey(key);
+                if(q.has("source_version_id"))request.sourceVersionId(text(q,"source_version_id"));
+                if(q.has("acl"))request.acl(text(q,"acl"));
                 if("copy_replace".equals(op)) request.metadataDirective("REPLACE").metadata(userMetadata(q)).contentType(text(q,"content_type"));
                 return one("etag",client.copyObject(request.build()).copyObjectResult().eTag());
             }
@@ -355,6 +359,7 @@ public final class WorkerMain {
             case "get": case "get_conditional": case "get_metadata": case "get_http": case "get_sse_c": case "get_part": {
                 software.amazon.awssdk.services.s3.model.GetObjectRequest.Builder b=software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(key);
                 if("get_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
+                if("get_part".equals(op)) S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
                 if(q.has("if_match")) b.ifMatch(text(q,"if_match"));
                 if(q.has("if_none_match")) b.ifNoneMatch(text(q,"if_none_match"));
                 if(q.has("if_modified_since_ms")) b.ifModifiedSince(java.time.Instant.ofEpochMilli(q.get("if_modified_since_ms").asLong()));
@@ -367,6 +372,7 @@ public final class WorkerMain {
                     software.amazon.awssdk.services.s3.model.GetObjectResponse result=in.response();
                     Map<String,Object> observed=withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
                     if("get_part".equals(op)||("get_sse_c".equals(op)&&q.has("part_number"))) observed.put("parts_count",result.partsCount());
+                    if("get_part".equals(op)) S3Checksums.observe(observed,result);
                     return ("get_http".equals(op)||"get_sse_c".equals(op))?withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()):observed;
                 }
             }
@@ -418,23 +424,33 @@ public final class WorkerMain {
                 if("mp_create_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if(q.has("content_type")) b.contentType(text(q,"content_type"));
                 if(q.has("metadata")) b.metadata(JSON.convertValue(q.get("metadata"),new com.fasterxml.jackson.core.type.TypeReference<Map<String,String>>(){}));
-                return one("upload_id",client.createMultipartUpload(b.build()).uploadId());
+                S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
+                software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse result=client.createMultipartUpload(b.build());
+                return S3Checksums.observe(withHttp(one("upload_id",result.uploadId()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);
             }
             case "mp_part": case "mp_part_sse_c": {
                 software.amazon.awssdk.services.s3.model.UploadPartRequest.Builder b=software.amazon.awssdk.services.s3.model.UploadPartRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id")).partNumber(q.get("part_number").asInt());
                 if("mp_part_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
-                return one("etag",client.uploadPart(b.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))).eTag());
+                S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
+                software.amazon.awssdk.services.s3.model.UploadPartResponse result=client.uploadPart(b.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path"))));
+                return S3Checksums.observe(withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);
             }
             case "mp_complete": case "mp_complete_observed": case "mp_complete_empty": case "mp_complete_sse_c": {
                 List<software.amazon.awssdk.services.s3.model.CompletedPart> parts=new ArrayList<>();
-                for(JsonNode part:q.path("parts")) parts.add(software.amazon.awssdk.services.s3.model.CompletedPart.builder().partNumber(part.get("part_number").asInt()).eTag(text(part,"etag")).build());
+                for(JsonNode part:q.path("parts")) {
+                    software.amazon.awssdk.services.s3.model.CompletedPart.Builder item=software.amazon.awssdk.services.s3.model.CompletedPart.builder().partNumber(part.get("part_number").asInt()).eTag(text(part,"etag"));
+                    com.fasterxml.jackson.databind.node.ObjectNode checksum=JSON.createObjectNode(),options=JSON.createObjectNode();
+                    part.fields().forEachRemaining(entry->{if(entry.getKey().startsWith("Checksum"))checksum.set(entry.getKey(),entry.getValue());});
+                    options.set("checksum",checksum);S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)item,options);parts.add(item.build());
+                }
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id"));
                 if("mp_complete_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if(!"mp_complete_empty".equals(op)) b.multipartUpload(m->m.parts(parts));
+                S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse result=client.completeMultipartUpload(b.build());
                 Map<String,Object> observed=fields("etag",result.eTag());
                 if(result.versionId()!=null) observed.put("version_id",result.versionId());
-                return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+                return S3Checksums.observe(withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);
             }
             case "mp_abort": case "mp_abort_raw": client.abortMultipartUpload(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id"))); return empty();
             default: throw new UnsupportedOperationException(op);

@@ -83,6 +83,13 @@
 #include <aws/s3/model/ObjectCannedACL.h>
 #include <aws/s3/model/ListBucketsRequest.h>
 #include <aws/s3/model/Bucket.h>
+#include <aws/s3/model/GetObjectAttributesRequest.h>
+#include <aws/s3/model/ObjectAttributes.h>
+#include <aws/s3/model/Checksum.h>
+#include <aws/s3/model/ChecksumType.h>
+#include <aws/s3/model/GetObjectAttributesParts.h>
+#include <aws/s3/model/ObjectPart.h>
+#include <aws/s3/model/StorageClass.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -98,6 +105,7 @@
 #include <aws/s3/model/GetObjectAclResult.h>
 #include <aws/s3/model/PutObjectAclResult.h>
 #include <aws/s3/model/ListBucketsResult.h>
+#include <aws/s3/model/GetObjectAttributesResult.h>
 namespace osv_bucket_api {
 using J=nlohmann::json;
 inline int64_t signed_integer(const J& value,int64_t minimum,int64_t maximum,const char* field){
@@ -389,6 +397,62 @@ inline Aws::String read_S3RegionalOrS3ExpressBucketArnString(const J& value);
 inline J write_S3RegionalOrS3ExpressBucketArnString(const Aws::String& value);
 inline Aws::String read_NextToken(const J& value);
 inline J write_NextToken(const Aws::String& value);
+inline Aws::S3::Model::GetObjectAttributesRequest read_GetObjectAttributesRequest(const J& value);
+inline J write_GetObjectAttributesRequest(const Aws::S3::Model::GetObjectAttributesRequest& value);
+inline int read_MaxParts(const J& value);
+inline J write_MaxParts(const int& value);
+inline int read_PartNumberMarker(const J& value);
+inline J write_PartNumberMarker(const int& value);
+inline Aws::String read_SSECustomerAlgorithm(const J& value);
+inline J write_SSECustomerAlgorithm(const Aws::String& value);
+inline Aws::String read_SSECustomerKey(const J& value);
+inline J write_SSECustomerKey(const Aws::String& value);
+inline Aws::String read_SSECustomerKeyMD5(const J& value);
+inline J write_SSECustomerKeyMD5(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::ObjectAttributes> read_ObjectAttributesList(const J& value);
+inline J write_ObjectAttributesList(const Aws::Vector<Aws::S3::Model::ObjectAttributes>& value);
+inline Aws::S3::Model::ObjectAttributes read_ObjectAttributes(const J& value);
+inline J write_ObjectAttributes(const Aws::S3::Model::ObjectAttributes& value);
+inline bool read_DeleteMarker(const J& value);
+inline J write_DeleteMarker(const bool& value);
+inline Aws::Utils::DateTime read_LastModified(const J& value);
+inline J write_LastModified(const Aws::Utils::DateTime& value);
+inline Aws::String read_ETag(const J& value);
+inline J write_ETag(const Aws::String& value);
+inline Aws::S3::Model::Checksum read_Checksum(const J& value);
+inline J write_Checksum(const Aws::S3::Model::Checksum& value);
+inline Aws::String read_ChecksumCRC32(const J& value);
+inline J write_ChecksumCRC32(const Aws::String& value);
+inline Aws::String read_ChecksumCRC32C(const J& value);
+inline J write_ChecksumCRC32C(const Aws::String& value);
+inline Aws::String read_ChecksumCRC64NVME(const J& value);
+inline J write_ChecksumCRC64NVME(const Aws::String& value);
+inline Aws::String read_ChecksumSHA1(const J& value);
+inline J write_ChecksumSHA1(const Aws::String& value);
+inline Aws::String read_ChecksumSHA256(const J& value);
+inline J write_ChecksumSHA256(const Aws::String& value);
+inline Aws::S3::Model::ChecksumType read_ChecksumType(const J& value);
+inline J write_ChecksumType(const Aws::S3::Model::ChecksumType& value);
+inline Aws::S3::Model::GetObjectAttributesParts read_GetObjectAttributesParts(const J& value);
+inline J write_GetObjectAttributesParts(const Aws::S3::Model::GetObjectAttributesParts& value);
+inline int read_PartsCount(const J& value);
+inline J write_PartsCount(const int& value);
+inline int read_NextPartNumberMarker(const J& value);
+inline J write_NextPartNumberMarker(const int& value);
+inline bool read_IsTruncated(const J& value);
+inline J write_IsTruncated(const bool& value);
+inline Aws::Vector<Aws::S3::Model::ObjectPart> read_PartsList(const J& value);
+inline J write_PartsList(const Aws::Vector<Aws::S3::Model::ObjectPart>& value);
+inline Aws::S3::Model::ObjectPart read_ObjectPart(const J& value);
+inline J write_ObjectPart(const Aws::S3::Model::ObjectPart& value);
+inline int read_PartNumber(const J& value);
+inline J write_PartNumber(const int& value);
+inline int64_t read_Size(const J& value);
+inline J write_Size(const int64_t& value);
+inline Aws::S3::Model::StorageClass read_StorageClass(const J& value);
+inline J write_StorageClass(const Aws::S3::Model::StorageClass& value);
+inline int64_t read_ObjectSize(const J& value);
+inline J write_ObjectSize(const int64_t& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -1993,8 +2057,258 @@ inline Aws::String read_NextToken(const J& value) {
 inline J write_NextToken(const Aws::String& value) {
     return std::string(value.c_str());
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::GetObjectAttributesRequest read_GetObjectAttributesRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetObjectAttributesRequest");
+    static const std::set<std::string> allowed={"Bucket","Key","VersionId","MaxParts","PartNumberMarker","SSECustomerAlgorithm","SSECustomerKey","SSECustomerKeyMD5","RequestPayer","ExpectedBucketOwner","ObjectAttributes"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetObjectAttributesRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("VersionId") && !value.at("VersionId").is_null())result.SetVersionId(read_ObjectVersionId(value.at("VersionId")));
+    if(value.contains("MaxParts") && !value.at("MaxParts").is_null())result.SetMaxParts(read_MaxParts(value.at("MaxParts")));
+    if(value.contains("PartNumberMarker") && !value.at("PartNumberMarker").is_null())result.SetPartNumberMarker(read_PartNumberMarker(value.at("PartNumberMarker")));
+    if(value.contains("SSECustomerAlgorithm") && !value.at("SSECustomerAlgorithm").is_null())result.SetSSECustomerAlgorithm(read_SSECustomerAlgorithm(value.at("SSECustomerAlgorithm")));
+    if(value.contains("SSECustomerKey") && !value.at("SSECustomerKey").is_null())result.SetSSECustomerKey(read_SSECustomerKey(value.at("SSECustomerKey")));
+    if(value.contains("SSECustomerKeyMD5") && !value.at("SSECustomerKeyMD5").is_null())result.SetSSECustomerKeyMD5(read_SSECustomerKeyMD5(value.at("SSECustomerKeyMD5")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("ObjectAttributes") && !value.at("ObjectAttributes").is_null())result.SetObjectAttributes(read_ObjectAttributesList(value.at("ObjectAttributes")));
+    return result;
+}
+inline J write_GetObjectAttributesRequest(const Aws::S3::Model::GetObjectAttributesRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.VersionIdHasBeenSet())result["VersionId"]=write_ObjectVersionId(value.GetVersionId());
+    if(value.MaxPartsHasBeenSet())result["MaxParts"]=write_MaxParts(value.GetMaxParts());
+    if(value.PartNumberMarkerHasBeenSet())result["PartNumberMarker"]=write_PartNumberMarker(value.GetPartNumberMarker());
+    if(value.SSECustomerAlgorithmHasBeenSet())result["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(value.GetSSECustomerAlgorithm());
+    if(value.SSECustomerKeyHasBeenSet())result["SSECustomerKey"]=write_SSECustomerKey(value.GetSSECustomerKey());
+    if(value.SSECustomerKeyMD5HasBeenSet())result["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(value.GetSSECustomerKeyMD5());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.ObjectAttributesHasBeenSet())result["ObjectAttributes"]=write_ObjectAttributesList(value.GetObjectAttributes());
+    return result;
+}
+inline int read_MaxParts(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"MaxParts"));
+}
+inline J write_MaxParts(const int& value) {
+    return value;
+}
+inline int read_PartNumberMarker(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"PartNumberMarker"));
+}
+inline J write_PartNumberMarker(const int& value) {
+    return value;
+}
+inline Aws::String read_SSECustomerAlgorithm(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_SSECustomerAlgorithm(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_SSECustomerKey(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_SSECustomerKey(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_SSECustomerKeyMD5(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_SSECustomerKeyMD5(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::ObjectAttributes> read_ObjectAttributesList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: ObjectAttributesList");
+    Aws::Vector<Aws::S3::Model::ObjectAttributes> result;for(const auto& item:value)result.push_back(read_ObjectAttributes(item));return result;
+}
+inline J write_ObjectAttributesList(const Aws::Vector<Aws::S3::Model::ObjectAttributes>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_ObjectAttributes(item));return result;
+}
+inline Aws::S3::Model::ObjectAttributes read_ObjectAttributes(const J& value) {
+    return Aws::S3::Model::ObjectAttributesMapper::GetObjectAttributesForName(value.get<std::string>());
+}
+inline J write_ObjectAttributes(const Aws::S3::Model::ObjectAttributes& value) {
+    return std::string(Aws::S3::Model::ObjectAttributesMapper::GetNameForObjectAttributes(value).c_str());
+}
+inline bool read_DeleteMarker(const J& value) {
+    return value.get<bool>();
+}
+inline J write_DeleteMarker(const bool& value) {
+    return value;
+}
+inline Aws::Utils::DateTime read_LastModified(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"LastModified")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_LastModified(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::String read_ETag(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ETag(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::Checksum read_Checksum(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: Checksum");
+    static const std::set<std::string> allowed={"ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256","ChecksumType"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::Checksum result;
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    if(value.contains("ChecksumType") && !value.at("ChecksumType").is_null())result.SetChecksumType(read_ChecksumType(value.at("ChecksumType")));
+    return result;
+}
+inline J write_Checksum(const Aws::S3::Model::Checksum& value) {
+    J result=J::object();
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    if(value.ChecksumTypeHasBeenSet())result["ChecksumType"]=write_ChecksumType(value.GetChecksumType());
+    return result;
+}
+inline Aws::String read_ChecksumCRC32(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ChecksumCRC32(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ChecksumCRC32C(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ChecksumCRC32C(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ChecksumCRC64NVME(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ChecksumCRC64NVME(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ChecksumSHA1(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ChecksumSHA1(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ChecksumSHA256(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ChecksumSHA256(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::ChecksumType read_ChecksumType(const J& value) {
+    return Aws::S3::Model::ChecksumTypeMapper::GetChecksumTypeForName(value.get<std::string>());
+}
+inline J write_ChecksumType(const Aws::S3::Model::ChecksumType& value) {
+    return std::string(Aws::S3::Model::ChecksumTypeMapper::GetNameForChecksumType(value).c_str());
+}
+inline Aws::S3::Model::GetObjectAttributesParts read_GetObjectAttributesParts(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetObjectAttributesParts");
+    static const std::set<std::string> allowed={"TotalPartsCount","PartNumberMarker","NextPartNumberMarker","MaxParts","IsTruncated","Parts"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetObjectAttributesParts result;
+    if(value.contains("TotalPartsCount") && !value.at("TotalPartsCount").is_null())result.SetTotalPartsCount(read_PartsCount(value.at("TotalPartsCount")));
+    if(value.contains("PartNumberMarker") && !value.at("PartNumberMarker").is_null())result.SetPartNumberMarker(read_PartNumberMarker(value.at("PartNumberMarker")));
+    if(value.contains("NextPartNumberMarker") && !value.at("NextPartNumberMarker").is_null())result.SetNextPartNumberMarker(read_NextPartNumberMarker(value.at("NextPartNumberMarker")));
+    if(value.contains("MaxParts") && !value.at("MaxParts").is_null())result.SetMaxParts(read_MaxParts(value.at("MaxParts")));
+    if(value.contains("IsTruncated") && !value.at("IsTruncated").is_null())result.SetIsTruncated(read_IsTruncated(value.at("IsTruncated")));
+    if(value.contains("Parts") && !value.at("Parts").is_null())result.SetParts(read_PartsList(value.at("Parts")));
+    return result;
+}
+inline J write_GetObjectAttributesParts(const Aws::S3::Model::GetObjectAttributesParts& value) {
+    J result=J::object();
+    if(value.TotalPartsCountHasBeenSet())result["TotalPartsCount"]=write_PartsCount(value.GetTotalPartsCount());
+    if(value.PartNumberMarkerHasBeenSet())result["PartNumberMarker"]=write_PartNumberMarker(value.GetPartNumberMarker());
+    if(value.NextPartNumberMarkerHasBeenSet())result["NextPartNumberMarker"]=write_NextPartNumberMarker(value.GetNextPartNumberMarker());
+    if(value.MaxPartsHasBeenSet())result["MaxParts"]=write_MaxParts(value.GetMaxParts());
+    if(value.IsTruncatedHasBeenSet())result["IsTruncated"]=write_IsTruncated(value.GetIsTruncated());
+    if(value.PartsHasBeenSet())result["Parts"]=write_PartsList(value.GetParts());
+    return result;
+}
+inline int read_PartsCount(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"PartsCount"));
+}
+inline J write_PartsCount(const int& value) {
+    return value;
+}
+inline int read_NextPartNumberMarker(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"NextPartNumberMarker"));
+}
+inline J write_NextPartNumberMarker(const int& value) {
+    return value;
+}
+inline bool read_IsTruncated(const J& value) {
+    return value.get<bool>();
+}
+inline J write_IsTruncated(const bool& value) {
+    return value;
+}
+inline Aws::Vector<Aws::S3::Model::ObjectPart> read_PartsList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: PartsList");
+    Aws::Vector<Aws::S3::Model::ObjectPart> result;for(const auto& item:value)result.push_back(read_ObjectPart(item));return result;
+}
+inline J write_PartsList(const Aws::Vector<Aws::S3::Model::ObjectPart>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_ObjectPart(item));return result;
+}
+inline Aws::S3::Model::ObjectPart read_ObjectPart(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: ObjectPart");
+    static const std::set<std::string> allowed={"PartNumber","Size","ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::ObjectPart result;
+    if(value.contains("PartNumber") && !value.at("PartNumber").is_null())result.SetPartNumber(read_PartNumber(value.at("PartNumber")));
+    if(value.contains("Size") && !value.at("Size").is_null())result.SetSize(read_Size(value.at("Size")));
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    return result;
+}
+inline J write_ObjectPart(const Aws::S3::Model::ObjectPart& value) {
+    J result=J::object();
+    if(value.PartNumberHasBeenSet())result["PartNumber"]=write_PartNumber(value.GetPartNumber());
+    if(value.SizeHasBeenSet())result["Size"]=write_Size(value.GetSize());
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    return result;
+}
+inline int read_PartNumber(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"PartNumber"));
+}
+inline J write_PartNumber(const int& value) {
+    return value;
+}
+inline int64_t read_Size(const J& value) {
+    return static_cast<int64_t>(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"Size"));
+}
+inline J write_Size(const int64_t& value) {
+    return value;
+}
+inline Aws::S3::Model::StorageClass read_StorageClass(const J& value) {
+    return Aws::S3::Model::StorageClassMapper::GetStorageClassForName(value.get<std::string>());
+}
+inline J write_StorageClass(const Aws::S3::Model::StorageClass& value) {
+    return std::string(Aws::S3::Model::StorageClassMapper::GetNameForStorageClass(value).c_str());
+}
+inline int64_t read_ObjectSize(const J& value) {
+    return static_cast<int64_t>(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"ObjectSize"));
+}
+inline J write_ObjectSize(const int64_t& value) {
+    return value;
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -2254,6 +2568,23 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Owner"))!=observed["fields"].end())data["Owner"]=write_Owner(result.GetOwner());
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ContinuationToken"))!=observed["fields"].end())data["ContinuationToken"]=write_NextToken(result.GetContinuationToken());
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Prefix"))!=observed["fields"].end())data["Prefix"]=write_Prefix(result.GetPrefix());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetObjectAttributes"){
+        auto request=read_GetObjectAttributesRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetObjectAttributes(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed["http_headers"].contains("x-amz-delete-marker"))data["DeleteMarker"]=write_DeleteMarker(result.GetDeleteMarker());
+        if(observed["http_headers"].contains("last-modified"))data["LastModified"]=write_LastModified(result.GetLastModified());
+        if(observed["http_headers"].contains("x-amz-version-id"))data["VersionId"]=write_ObjectVersionId(result.GetVersionId());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ETag"))!=observed["fields"].end())data["ETag"]=write_ETag(result.GetETag());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Checksum"))!=observed["fields"].end())data["Checksum"]=write_Checksum(result.GetChecksum());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ObjectParts"))!=observed["fields"].end())data["ObjectParts"]=write_GetObjectAttributesParts(result.GetObjectParts());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("StorageClass"))!=observed["fields"].end())data["StorageClass"]=write_StorageClass(result.GetStorageClass());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ObjectSize"))!=observed["fields"].end())data["ObjectSize"]=write_ObjectSize(result.GetObjectSize());
         observed["data"]=data;return observed;
     }
     throw std::runtime_error("unsupported bucket API: "+op);

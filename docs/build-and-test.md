@@ -269,3 +269,12 @@ OSV_RUN_WIRE_HEADER_TESTS=1 python3 -m unittest discover -s tests/integration -p
 ```
 
 覆盖官方签名后的实际头、无效输入零 HTTP、身份/请求上下文隔离、WHEN_REQUIRED 校验和、持续进展响应的总超时、非法长度下控制输入隔离，以及实际 ACL 所有者读回进入异常创建清理。只验证一种语言时设置 `OSV_S3_TEST_LANGUAGES=java` 或 `cpp`。这组定向测试通过后再运行批次末的完善档回归。
+
+
+策略条件、元数据边界和摘要/属性的定向回归（需真实 SDK 构建及本地 Moto 依赖）：
+
+```bash
+PYTHONPATH=tests/integration:. OSV_RUN_POLICY_CONDITION_TESTS=1 OSV_RUN_METADATA_EDGES_TESTS=1 OSV_RUN_CHECKSUM_ATTRIBUTE_TESTS=1 python3 -m unittest test_policy_conditions_sdk test_metadata_edges_sdk test_checksum_attributes_sdk -v
+```
+
+这些测试核对真实签名请求、源函数的生产者输出到后续请求、缺字段及清理；固定 SDK/Moto 的诊断差异保留为 fail/not_run，不用于云厂商性能比较。

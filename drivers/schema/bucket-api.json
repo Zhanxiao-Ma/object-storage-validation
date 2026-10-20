@@ -553,6 +553,24 @@
       "output": {
         "shape": "ListBucketsOutput"
       }
+    },
+    "GetObjectAttributes": {
+      "name": "GetObjectAttributes",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}/{Key+}?attributes"
+      },
+      "input": {
+        "shape": "GetObjectAttributesRequest"
+      },
+      "output": {
+        "shape": "GetObjectAttributesOutput"
+      },
+      "errors": [
+        {
+          "shape": "NoSuchKey"
+        }
+      ]
     }
   },
   "shapes": {
@@ -2602,6 +2620,298 @@
     },
     "NextToken": {
       "type": "string"
+    },
+    "GetObjectAttributesRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key",
+        "ObjectAttributes"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "MaxParts": {
+          "shape": "MaxParts",
+          "location": "header",
+          "locationName": "x-amz-max-parts"
+        },
+        "PartNumberMarker": {
+          "shape": "PartNumberMarker",
+          "location": "header",
+          "locationName": "x-amz-part-number-marker"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "ObjectAttributes": {
+          "shape": "ObjectAttributesList",
+          "location": "header",
+          "locationName": "x-amz-object-attributes"
+        }
+      }
+    },
+    "MaxParts": {
+      "type": "integer"
+    },
+    "PartNumberMarker": {
+      "type": "integer"
+    },
+    "SSECustomerAlgorithm": {
+      "type": "string"
+    },
+    "SSECustomerKey": {
+      "type": "string",
+      "sensitive": true
+    },
+    "SSECustomerKeyMD5": {
+      "type": "string"
+    },
+    "ObjectAttributesList": {
+      "type": "list",
+      "member": {
+        "shape": "ObjectAttributes"
+      }
+    },
+    "ObjectAttributes": {
+      "type": "string",
+      "enum": [
+        "ETag",
+        "Checksum",
+        "ObjectParts",
+        "StorageClass",
+        "ObjectSize"
+      ]
+    },
+    "GetObjectAttributesOutput": {
+      "type": "structure",
+      "members": {
+        "DeleteMarker": {
+          "shape": "DeleteMarker",
+          "location": "header",
+          "locationName": "x-amz-delete-marker"
+        },
+        "LastModified": {
+          "shape": "LastModified",
+          "location": "header",
+          "locationName": "Last-Modified"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "header",
+          "locationName": "x-amz-version-id"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        },
+        "ETag": {
+          "shape": "ETag"
+        },
+        "Checksum": {
+          "shape": "Checksum"
+        },
+        "ObjectParts": {
+          "shape": "GetObjectAttributesParts"
+        },
+        "StorageClass": {
+          "shape": "StorageClass"
+        },
+        "ObjectSize": {
+          "shape": "ObjectSize"
+        }
+      }
+    },
+    "DeleteMarker": {
+      "type": "boolean"
+    },
+    "LastModified": {
+      "type": "timestamp"
+    },
+    "ETag": {
+      "type": "string"
+    },
+    "Checksum": {
+      "type": "structure",
+      "members": {
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType"
+        }
+      }
+    },
+    "ChecksumCRC32": {
+      "type": "string"
+    },
+    "ChecksumCRC32C": {
+      "type": "string"
+    },
+    "ChecksumCRC64NVME": {
+      "type": "string"
+    },
+    "ChecksumSHA1": {
+      "type": "string"
+    },
+    "ChecksumSHA256": {
+      "type": "string"
+    },
+    "ChecksumType": {
+      "type": "string",
+      "enum": [
+        "COMPOSITE",
+        "FULL_OBJECT"
+      ]
+    },
+    "GetObjectAttributesParts": {
+      "type": "structure",
+      "members": {
+        "TotalPartsCount": {
+          "shape": "PartsCount",
+          "locationName": "PartsCount"
+        },
+        "PartNumberMarker": {
+          "shape": "PartNumberMarker"
+        },
+        "NextPartNumberMarker": {
+          "shape": "NextPartNumberMarker"
+        },
+        "MaxParts": {
+          "shape": "MaxParts"
+        },
+        "IsTruncated": {
+          "shape": "IsTruncated"
+        },
+        "Parts": {
+          "shape": "PartsList",
+          "locationName": "Part"
+        }
+      }
+    },
+    "PartsCount": {
+      "type": "integer",
+      "box": true
+    },
+    "NextPartNumberMarker": {
+      "type": "integer",
+      "box": true
+    },
+    "IsTruncated": {
+      "type": "boolean",
+      "box": true
+    },
+    "PartsList": {
+      "type": "list",
+      "member": {
+        "shape": "ObjectPart"
+      },
+      "flattened": true
+    },
+    "ObjectPart": {
+      "type": "structure",
+      "members": {
+        "PartNumber": {
+          "shape": "PartNumber"
+        },
+        "Size": {
+          "shape": "Size"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256"
+        }
+      }
+    },
+    "PartNumber": {
+      "type": "integer"
+    },
+    "Size": {
+      "type": "long",
+      "box": true
+    },
+    "StorageClass": {
+      "type": "string",
+      "enum": [
+        "STANDARD",
+        "REDUCED_REDUNDANCY",
+        "STANDARD_IA",
+        "ONEZONE_IA",
+        "INTELLIGENT_TIERING",
+        "GLACIER",
+        "DEEP_ARCHIVE",
+        "OUTPOSTS",
+        "GLACIER_IR",
+        "SNOW",
+        "EXPRESS_ONEZONE",
+        "FSX_OPENZFS"
+      ]
+    },
+    "ObjectSize": {
+      "type": "long",
+      "box": true
     }
   }
 }
