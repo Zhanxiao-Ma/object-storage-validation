@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项，总计 274 项（270 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项，总计 285 项（281 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -274,3 +274,11 @@ Java/C++ 都调用实际 AWS SDK 的 VersionId、ListObjectVersions、Put/GetBuc
 非当前版本迁移场景要求 `workload.storage_classes` 至少包含三种配置值；缺少时保留源用例的跳过前提，报告 `not_run/missing_prerequisites` 和具体缺项，阻断完整档性能结论。不会臆造云厂商支持的存储类型。文件系统 reference 不实现这些云端配置，新增 24 项连同版本控制共 45 项报告缺能力。
 
 配置由 Java/C++ 官方 SDK 的真实请求模型序列化，响应值取实际 SDK getter。当前固定 C++ SDK 模型不再提供旧 LifecycleRule.Prefix，相关请求保留明确的客户端模型错误；不会删除该字段、改成 Filter 或伪造服务端拒绝。Java 对无效日期的客户端解析失败，以及 Moto 接受超长/重复 ID、小写状态的结果同样保留，不能据此直接判定云端 S3 不兼容。
+
+### 对象 SSE-C 原始请求头
+
+`ceph_sse_customer` 迁移 11 个固定源码场景：1B/1KiB/1MiB/13B 读写、HEAD 无密钥拒绝与带密钥成功、GET 无密钥/错误密钥、错误 MD5、缺 MD5、缺密钥、缺算法。保留原始密钥、MD5、A 字节长度和错误断言；原 helper 注释提到 B 覆盖，但实际函数只有 A 写读，因此按实际函数迁移。
+
+Java 使用公共逐请求 header override，C++ 使用公共 AdditionalCustomHeaders；不调用会自动补 MD5 的 SSE-C 模型参数。实际 HTTP 夹具核对字段缺失/空值、签名 SignedHeaders、错误响应与请求间隔离。只为 AWS S3 worker 声明此能力，尚未实现的原生 worker 和本地参考 worker 显式 not_run。
+
+本地 Moto 下正向传输通过，7 个错误输入场景未按原预期拒绝；两个 SDK 都如实记录失败并清理独立桶。这不是实际云厂商验证结果，不改判定规则。

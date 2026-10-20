@@ -41,6 +41,19 @@
 
 using json = nlohmann::json;
 
+/** Supply literal per-request SSE-C headers through the public SDK API, avoiding model MD5 autofill. */
+template<class Request> static void sse_customer_headers(Request& request,const json& q) {
+    const auto& headers=q.at("sse_headers");
+    if(!headers.is_object()) throw std::runtime_error("sse_headers must be an object");
+    for(auto it=headers.begin();it!=headers.end();++it) {
+        if((it.key()!="x-amz-server-side-encryption-customer-algorithm" &&
+            it.key()!="x-amz-server-side-encryption-customer-key" &&
+            it.key()!="x-amz-server-side-encryption-customer-key-md5") || !it.value().is_string())
+            throw std::runtime_error("invalid SSE-C header: "+it.key());
+        request.SetAdditionalCustomHeaderValue(it.key().c_str(),it.value().get<std::string>().c_str());
+    }
+}
+
 static std::string env(const char* name, const std::string& fallback = "") {
     auto value = std::getenv(name);
     return value ? value : fallback;
@@ -225,27 +238,29 @@ public:
             }
             for(const auto& prefix:page.GetCommonPrefixes()) prefixes.push_back(std::string(prefix.GetPrefix().c_str()));
             return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.GetIsTruncated()},{"next_token",std::string(page.GetNextContinuationToken().c_str())},{"prefix",std::string(page.GetPrefix().c_str())},{"delimiter",std::string(page.GetDelimiter().c_str())},{"max_keys",page.GetMaxKeys()}};
-        } else if ((op == "put" || op == "put_metadata" || op == "put_http")) {
+        } else if ((op == "put" || op == "put_metadata" || op == "put_http" || op == "put_sse_c")) {
             Aws::S3::Model::PutObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
             if (!*stream) throw std::runtime_error("cannot open body_path");
             request.SetBody(stream);
+            if(op=="put_sse_c") sse_customer_headers(request,q);
             if(op=="put_metadata") {
                 request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             }
             if(q.contains("cache_control")) request.SetCacheControl(q.at("cache_control").get<std::string>());
             if(q.contains("expires_ms")) request.SetExpires(Aws::Utils::DateTime(q.at("expires_ms").get<int64_t>()));
-            json http;HttpObservationScope observation(op=="put_http"?&http:nullptr);
+            json http;HttpObservationScope observation((op=="put_http"||op=="put_sse_c")?&http:nullptr);
             auto outcome=client->PutObject(request);checked(outcome);
-            if(op=="put_http") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;}
+            if(op=="put_http"||op=="put_sse_c") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;}
 
-        } else if ((op == "get" || op == "get_conditional" || op == "get_metadata" || op == "get_http" || op == "get_part")) {
+        } else if ((op == "get" || op == "get_conditional" || op == "get_metadata" || op == "get_http" || op == "get_part" || op == "get_sse_c")) {
             Aws::S3::Model::GetObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             json http=json::object();
-            HttpObservationScope observation(op=="get_http"?&http:nullptr);
+            HttpObservationScope observation((op=="get_http"||op=="get_sse_c")?&http:nullptr);
+            if(op=="get_sse_c") sse_customer_headers(request,q);
             if(q.contains("if_match")) request.SetIfMatch(q.at("if_match").get<std::string>());
             if(q.contains("if_none_match")) request.SetIfNoneMatch(q.at("if_none_match").get<std::string>());
             if(q.contains("if_modified_since_ms")) request.SetIfModifiedSince(Aws::Utils::DateTime(q.at("if_modified_since_ms").get<int64_t>()));
@@ -263,20 +278,21 @@ public:
             json observed={{"key",key},{"size",object.GetContentLength()},{"last_modified_ms",object.GetLastModified().Millis()},
                 {"etag",std::string(object.GetETag().c_str())},{"content_type",std::string(object.GetContentType().c_str())},{"metadata",object.GetMetadata()}};
             if(op=="get_part") observed["parts_count"]=object.GetPartsCount();
-            if(op=="get_http") {
+            if(op=="get_http"||op=="get_sse_c") {
                 if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
                 observed.update(http);
             }
             return observed;
-        } else if ((op == "head" || op == "head_metadata" || op == "head_http" || op == "head_part")) {
+        } else if ((op == "head" || op == "head_metadata" || op == "head_http" || op == "head_part" || op == "head_sse_c")) {
             Aws::S3::Model::HeadObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
-            json http;HttpObservationScope observation(op=="head_http"?&http:nullptr);
+            json http;HttpObservationScope observation((op=="head_http"||op=="head_sse_c")?&http:nullptr);
+            if(op=="head_sse_c") sse_customer_headers(request,q);
             if(q.contains("part_number")) request.SetPartNumber(q.at("part_number").get<int>());
             auto outcome = client->HeadObject(request); checked(outcome);
             json observed={{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())},{"content_type",std::string(outcome.GetResult().GetContentType().c_str())},{"metadata",outcome.GetResult().GetMetadata()}};
             if(op=="head_part") observed["parts_count"]=outcome.GetResult().GetPartsCount();
-            if(op=="head_http") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");observed.update(http);}
+            if(op=="head_http"||op=="head_sse_c") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");observed.update(http);}
             return observed;
         } else if (op == "delete") {
             Aws::S3::Model::DeleteObjectRequest request;
@@ -384,7 +400,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");

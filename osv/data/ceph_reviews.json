@@ -1080,6 +1080,72 @@
       "source_sha256": "b1198c85dc2bb525cc96bdbc2da10fea631233935c5a7b30cd1c3a34d6ba4d82",
       "implementation": "ceph_config_encryption_kms_delete",
       "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encrypted_transfer_1b@L10688",
+      "source_sha256": "74aa92cf1176df2588a8e5629381c0e45ddd7f924ce5be107a58a45c3a0affe4",
+      "implementation": "ceph_sse_c_1b",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encrypted_transfer_1kb@L10694",
+      "source_sha256": "a21278927ff5578f670d2b469eced2b6a71ad9846ca6c2b5880b5334ee737518",
+      "implementation": "ceph_sse_c_1kb",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encrypted_transfer_1MB@L10700",
+      "source_sha256": "418c38094e046f5f6dab75070fd439b86d85921114078dc4c18f728eb206fa94",
+      "implementation": "ceph_sse_c_1MB",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encrypted_transfer_13b@L10706",
+      "source_sha256": "f8042a8e4d5a971e0268ec13a02be9d6ae3554e7a3fc49706e8fc4a7253caf3f",
+      "implementation": "ceph_sse_c_13b",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_method_head@L10711",
+      "source_sha256": "bdee7a311f5697341758c8ef91f073ec91748360d3f4d5e9213eebbc406ee1bf",
+      "implementation": "ceph_sse_c_head",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_present@L10736",
+      "source_sha256": "34cd33fb3a9045ad5fcff4fda091683b2c1bda6e102aa0f1875db24203e5ffaf",
+      "implementation": "ceph_sse_c_present",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_other_key@L10756",
+      "source_sha256": "6e9c105cf17a65444219e376c679669bccf6566fe6aba18bae843f279c71cbd7",
+      "implementation": "ceph_sse_c_other",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_invalid_md5@L10783",
+      "source_sha256": "47830f8ed9f6ea7187d3e5271a0aac1d1333125064ffef068b9eccd3486e5c1f",
+      "implementation": "ceph_sse_c_invalid_md5",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_no_md5@L10801",
+      "source_sha256": "2f3661b4b5a70e78c93cb83428d656e32c212acea93dab1dfbebfc1f9d0d162a",
+      "implementation": "ceph_sse_c_no_md5",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_no_key@L10816",
+      "source_sha256": "119f325f7250f898c1406f25f7a698e5d1971c7e46f6a4cce8f1935f9c98df1b",
+      "implementation": "ceph_sse_c_no_key",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_key_no_sse_c@L10830",
+      "source_sha256": "be90a05451ee8852f90762e8ecf8eba7d500b32acd4f2da85b0b4508b490e0d8",
+      "implementation": "ceph_sse_c_no_algorithm",
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
     }
   ]
 }
