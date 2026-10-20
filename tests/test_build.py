@@ -31,7 +31,7 @@ class BuildEnvironmentTest(unittest.TestCase):
 
     @unittest.skipUnless(os.environ.get("OSV_RUN_BUILD_TESTS")=="1" and shutil.which("mvn"),"enable actual resource-guarded Maven packaging explicitly")
     def test_actual_project_packages_with_minimum_address_space(self):
-        """Compile/package the actual SDK worker at 2 and 2.6 GiB caps under the production pressure guard; expect genuine worker classes in each final jar."""
+        """Package real SDK code at 2/2.6 GiB, capped by any tighter inherited guard; expect worker classes without increasing the parent's hard limit."""
         root=Path(__file__).resolve().parents[1]
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);project=directory/"java"
@@ -39,7 +39,7 @@ class BuildEnvironmentTest(unittest.TestCase):
             # The outer production guard retains CPU/IO/physical-memory monitoring.
             # Only the Maven child receives the smaller boundary-test address limit.
             script=directory/"package.py"
-            script.write_text("import os,resource,subprocess,sys\nfrom scripts.build import build_environment\nbudget=int(sys.argv[2])\ndef limits():resource.setrlimit(resource.RLIMIT_AS,(budget,budget))\nraise SystemExit(subprocess.call(['mvn','-B','-T','1','-f',sys.argv[1],'clean','package'],env=build_environment(os.environ,1,budget),preexec_fn=limits))\n")
+            script.write_text("import os,resource,subprocess,sys\nfrom scripts.build import build_environment\nbudget=int(sys.argv[2])\nhard=resource.getrlimit(resource.RLIMIT_AS)[1]\nif hard!=resource.RLIM_INFINITY:budget=min(budget,hard)\nprint('effective_budget_bytes',budget,flush=True)\ndef limits():resource.setrlimit(resource.RLIMIT_AS,(budget,budget))\nraise SystemExit(subprocess.call(['mvn','-B','-T','1','-f',sys.argv[1],'clean','package'],env=build_environment(os.environ,1,budget),preexec_fn=limits))\n")
             for budget in (2*GIB,int(2.6*GIB)):
                 with self.subTest(budget=budget):
                     command=[sys.executable,str(root/"scripts/build.py"),"command","--",sys.executable,str(script),str(project/"pom.xml"),str(budget)]
