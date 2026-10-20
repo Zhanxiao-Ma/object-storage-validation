@@ -49,3 +49,20 @@ class SourcePrerequisitesTest(unittest.TestCase):
         """Construct incomplete skip signals; expect rejection rather than an unexplained unexecuted gate."""
         for message,requirements in (("",("input",)),("missing",()),("missing",("",)),(None,("input",))):
             with self.subTest(message=message,requirements=requirements),self.assertRaises(ValueError):CaseNotRun(message,*requirements)
+
+    def test_missing_main_kms_input_precedes_actual_bucket_mutation(self):
+        """Call the real KMS object source paths with absent/null configuration and a real worker; expect explicit missing input and zero bucket/object requests."""
+        from osv.ceph_encryption_objects import transfer
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);worker=Worker({"command":[sys.executable,str(ROOT/"drivers/reference.py")],"env":{"OSV_REFERENCE_ROOT":str(directory/"objects")}},10)
+            original=worker.call;requests=[]
+            def observe(request):requests.append(request);return original(request)
+            worker.call=observe
+            try:
+                for workload in ({},{"kms_key_id":None}):
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",workload)
+                    for mode in ("kms_transfer","kms_default","kms_head","kms_present"):
+                        with self.assertRaises(CaseNotRun) as raised:transfer(Probe(ctx),mode,13)
+                        self.assertEqual(raised.exception.requirements,["workload.kms_key_id"])
+                self.assertEqual(requests,[])
+            finally:worker.close()

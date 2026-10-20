@@ -41,15 +41,17 @@
 
 using json = nlohmann::json;
 
-/** Supply literal per-request SSE-C headers through the public SDK API, avoiding model MD5 autofill. */
-template<class Request> static void sse_customer_headers(Request& request,const json& q) {
-    const auto& headers=q.at("sse_headers");
+/** Supply literal per-request encryption headers through the public SDK API, avoiding model MD5 autofill. */
+template<class Request> static void encryption_headers(Request& request,const json& q) {
+    if(q.contains("sse_headers") && q.contains("encryption_headers")) throw std::runtime_error("ambiguous encryption headers");
+    const auto& headers=q.at(q.contains("encryption_headers")?"encryption_headers":"sse_headers");
     if(!headers.is_object()) throw std::runtime_error("sse_headers must be an object");
     for(auto it=headers.begin();it!=headers.end();++it) {
         if((it.key()!="x-amz-server-side-encryption-customer-algorithm" &&
             it.key()!="x-amz-server-side-encryption-customer-key" &&
-            it.key()!="x-amz-server-side-encryption-customer-key-md5" && it.key()!="content-type") || !it.value().is_string())
-            throw std::runtime_error("invalid SSE-C header: "+it.key());
+            it.key()!="x-amz-server-side-encryption-customer-key-md5" && it.key()!="content-type" && it.key()!="x-amz-server-side-encryption" &&
+            it.key()!="x-amz-server-side-encryption-aws-kms-key-id") || !it.value().is_string())
+            throw std::runtime_error("invalid encryption header: "+it.key());
         request.SetAdditionalCustomHeaderValue(it.key().c_str(),it.value().get<std::string>().c_str());
     }
 }
@@ -113,6 +115,9 @@ public:
     }
     json execute(const json& q) {
         std::string op = q.at("op"), key = q.value("key", "");
+        if(op=="put_encryption")op="put_sse_c";
+        else if(op=="get_encryption")op="get_sse_c";
+        else if(op=="head_encryption")op="head_sse_c";
         const std::string& bucket=q.contains("bucket")?q.at("bucket").get_ref<const std::string&>():this->bucket;
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
@@ -245,7 +250,7 @@ public:
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
             if (!*stream) throw std::runtime_error("cannot open body_path");
             request.SetBody(stream);
-            if(op=="put_sse_c") sse_customer_headers(request,q);
+            if(op=="put_sse_c") encryption_headers(request,q);
             if(op=="put_metadata") {
                 request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
@@ -261,7 +266,7 @@ public:
             request.SetBucket(bucket); request.SetKey(key);
             json http=json::object();
             HttpObservationScope observation((op=="get_http"||op=="get_sse_c")?&http:nullptr);
-            if(op=="get_sse_c") sse_customer_headers(request,q);
+            if(op=="get_sse_c") encryption_headers(request,q);
             if(q.contains("if_match")) request.SetIfMatch(q.at("if_match").get<std::string>());
             if(q.contains("if_none_match")) request.SetIfNoneMatch(q.at("if_none_match").get<std::string>());
             if(q.contains("if_modified_since_ms")) request.SetIfModifiedSince(Aws::Utils::DateTime(q.at("if_modified_since_ms").get<int64_t>()));
@@ -288,7 +293,7 @@ public:
             Aws::S3::Model::HeadObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             json http;HttpObservationScope observation((op=="head_http"||op=="head_sse_c")?&http:nullptr);
-            if(op=="head_sse_c") sse_customer_headers(request,q);
+            if(op=="head_sse_c") encryption_headers(request,q);
             if(q.contains("part_number")) request.SetPartNumber(q.at("part_number").get<int>());
             auto outcome = client->HeadObject(request); checked(outcome);
             json observed={{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())},{"content_type",std::string(outcome.GetResult().GetContentType().c_str())},{"metadata",outcome.GetResult().GetMetadata()}};
@@ -347,7 +352,7 @@ public:
         } else if (op == "mp_create" || op == "mp_create_metadata" || op == "mp_create_sse_c") {
             Aws::S3::Model::CreateMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
-            if(op=="mp_create_sse_c") sse_customer_headers(request,q);
+            if(op=="mp_create_sse_c") encryption_headers(request,q);
             if(q.contains("content_type")) request.SetContentType(q.at("content_type").get<std::string>());
             if(q.contains("metadata")) for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             auto outcome = client->CreateMultipartUpload(request); checked(outcome);
@@ -355,7 +360,7 @@ public:
         } else if (op == "mp_part" || op == "mp_part_sse_c") {
             Aws::S3::Model::UploadPartRequest request;
             request.SetBucket(bucket); request.SetKey(key);
-            if(op=="mp_part_sse_c") sse_customer_headers(request,q);
+            if(op=="mp_part_sse_c") encryption_headers(request,q);
             request.SetUploadId(q.at("upload_id").get<std::string>());
             request.SetPartNumber(q.at("part_number").get<int>());
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
@@ -367,7 +372,7 @@ public:
         } else if (op == "mp_complete" || op == "mp_complete_observed" || op == "mp_complete_empty" || op == "mp_complete_sse_c") {
             Aws::S3::Model::CompleteMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
-            if(op=="mp_complete_sse_c") sse_customer_headers(request,q);
+            if(op=="mp_complete_sse_c") encryption_headers(request,q);
             request.SetUploadId(q.at("upload_id").get<std::string>());
             Aws::S3::Model::CompletedMultipartUpload upload;
             for (const auto& part : q.value("parts", json::array())) {
@@ -404,7 +409,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");

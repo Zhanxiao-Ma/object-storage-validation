@@ -31,6 +31,12 @@ def expected_version_diagnostics(language):
     if language=="cpp":names.add("ceph_version_special")
     return names
 
+def expected_object_encryption_diagnostics(configured=False):
+    return {"ceph_encryption_"+name for name in ("s3_head","no_key","not_declared","read_declare")}|({"ceph_encryption_kms_head"} if configured else set())
+
+def expected_kms_prerequisites():
+    return {"ceph_encryption_kms_"+name for name in ("default_1b","default_1kb","default_1mb","default_8mb","transfer_1b","transfer_1kb","transfer_1MB","transfer_13b","head","present")}
+
 def expected_encrypted_multipart_diagnostics():
     return {"ceph_sse_multipart_"+name for name in ("wrong_part_key","wrong_part_md5","bad_download","get_part","ordinary")}
 
@@ -290,6 +296,25 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                 finally:worker.close()
 
+    def test_object_encryption_with_configured_kms_and_without_prerequisite(self):
+        """Run genuine SDK encryption requests with and without the source KMS input; expect exact missing prerequisites or service diagnostics and no leaked buckets."""
+        from osv.ceph_encryption_objects import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        for target in self.targets:
+            for configured in (False,True):
+                with self.subTest(language=target["language"],configured=configured),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,30)
+                    try:
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"kms_key_id":"independent-moto-test-key"} if configured else {})
+                        rows=run_cases(ctx,CASES)
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected_object_encryption_diagnostics(configured))
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},set() if configured else expected_kms_prerequisites())
+                        self.assertTrue(all(row["status"]=="pass" for row in rows if row["case"] not in expected_object_encryption_diagnostics(configured) and (configured or row["case"] not in expected_kms_prerequisites())))
+                        self.assertEqual(len(rows),22)
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+
     def test_configured_storage_classes_execute_original_transition_input(self):
         """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
         from osv.ceph_bucket_config import CASES
@@ -415,6 +440,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_sse_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
+            expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -428,10 +454,10 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),309)
+            self.assertEqual(len(report["coverage"]["catalog"]),331)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],"ceph_config_lifecycle_noncurrent_transition") for target in self.targets})
-            self.assertTrue(all(row["reason"]=="missing_prerequisites" and row["missing_requirements"]==["workload.storage_classes: at least 3"] for row in missing))
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites())})
+            self.assertTrue(all(row["reason"]=="missing_prerequisites" and row["missing_requirements"]==(["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"]) for row in missing))
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):

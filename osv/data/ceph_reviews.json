@@ -1290,6 +1290,138 @@
       "source_sha256": "038b47bfe3b3528bbe4f73c21b6159bd80b9a1fe9fc5d07c8acd15c0d1ca6307",
       "implementation": "ceph_sse_multipart_ordinary",
       "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_upload_1b@L14654",
+      "source_sha256": "ce66d8e8082b912517fcf7baa19c43ca18a8af42cb5755e9a0f07b633f10ad64",
+      "implementation": "ceph_encryption_s3_default_1b",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_upload_1kb@L14661",
+      "source_sha256": "f9fcf7633474d1f69127059b50ab9478e4632f1954209b8c03e5d1dea39eddb2",
+      "implementation": "ceph_encryption_s3_default_1kb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_upload_1mb@L14668",
+      "source_sha256": "a1402941e73d07f886dcf62ea72ebdd4d71b3a3639db50860367ac3e75d2c15e",
+      "implementation": "ceph_encryption_s3_default_1mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_upload_8mb@L14675",
+      "source_sha256": "62a3145d8a6267fc507139905db412c608f201349d93ba2698852c372ca6006d",
+      "implementation": "ceph_encryption_s3_default_8mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_encrypted_upload_1b@L14918",
+      "source_sha256": "370c60580d50d65afbd8dba78034eb0ebf8cb8625a74f0ea8ecde9d1c344a816",
+      "implementation": "ceph_encryption_s3_explicit_1b",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_encrypted_upload_1kb@L14924",
+      "source_sha256": "d0fcd7057b8f6b04c6563cca11d39b4d4d79bef2f0ab3d8e63f22daf6092d30a",
+      "implementation": "ceph_encryption_s3_explicit_1kb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_encrypted_upload_1mb@L14930",
+      "source_sha256": "47d0cae329672b2864b79faeb55de8f412074a0a1a8c54ef3bc12bdc13182eda",
+      "implementation": "ceph_encryption_s3_explicit_1mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_encrypted_upload_8mb@L14936",
+      "source_sha256": "a32a0c85d481da4a9ed5326866162ccd572a55361cf4f68738833b90c5c45474",
+      "implementation": "ceph_encryption_s3_explicit_8mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_upload_1b@L14706",
+      "source_sha256": "754589f77ed99f4c78bdc185e096ab4b6035c56ee71abdaa86829f92c48022d8",
+      "implementation": "ceph_encryption_kms_default_1b",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_upload_1kb@L14713",
+      "source_sha256": "cdd00495879561bc2fb342e04be07d1159526f47d5ff3b59982da9c42fdbfe05",
+      "implementation": "ceph_encryption_kms_default_1kb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_upload_1mb@L14720",
+      "source_sha256": "eff3363244b96460de9897c230d110e5ff49547e8c374b58d8c3ce0245dd0d5b",
+      "implementation": "ceph_encryption_kms_default_1mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_upload_8mb@L14727",
+      "source_sha256": "8eb9eb3aa2cd632942670d40a9df4178c0a03e6f9947b6d5b4477931d13964b5",
+      "implementation": "ceph_encryption_kms_default_8mb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_transfer_1b@L11456",
+      "source_sha256": "f59378f6e135b8bf6b4438611d85b7b0dc220d4d3de368202fc0c8ee0dcee808",
+      "implementation": "ceph_encryption_kms_transfer_1b",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_transfer_1kb@L11465",
+      "source_sha256": "ab50adeae0171ba5bcf4cf5ecede65b57b3953d2a51147800293cc49e4eed20e",
+      "implementation": "ceph_encryption_kms_transfer_1kb",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_transfer_1MB@L11474",
+      "source_sha256": "93ed8b72edac23306f0f5dd7f2a6d715b25cf2dd26e5599cd3fd3240d2dbc9d5",
+      "implementation": "ceph_encryption_kms_transfer_1MB",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_transfer_13b@L11483",
+      "source_sha256": "534bd79ad565be4820f2dcf76774edf30c28a274c35ad4d821ebe7168dde7f83",
+      "implementation": "ceph_encryption_kms_transfer_13b",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_method_head@L11231",
+      "source_sha256": "5f642051059b06a465a772f3d8563113c679e00d72a02e7387765b4a146e889b",
+      "implementation": "ceph_encryption_kms_head",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_present@L11258",
+      "source_sha256": "2421c1358c6199e5f60f1515556c6d77f91b89cb4aca59a4d8cb183ee189d9cc",
+      "implementation": "ceph_encryption_kms_present",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_method_head@L14736",
+      "source_sha256": "e73c5b7a18a0021f66ebdcd80e55eff6881a2e2dc4014c01b5340d19b3776cff",
+      "implementation": "ceph_encryption_s3_head",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_no_key@L11278",
+      "source_sha256": "49ae7977cd102a598544c3e6a60e5e603122dbfa25087a4868f0c7e12ab2aefe",
+      "implementation": "ceph_encryption_no_key",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_not_declared@L11294",
+      "source_sha256": "232cbe99ae23495b72a249fa181d55e48ec9c1b141a0ef716c990e0b44fa352d",
+      "implementation": "ceph_encryption_not_declared",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_read_declare@L11491",
+      "source_sha256": "6e851a9de7ec6c1a08619da13c11fa693b087c9c0742b3624795e3507f0f05e8",
+      "implementation": "ceph_encryption_read_declare",
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
     }
   ]
 }

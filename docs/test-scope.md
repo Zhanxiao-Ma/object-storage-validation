@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项，总计 309 项（305 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项，总计 331 项（327 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -298,3 +298,11 @@ Java/C++ 经实际 SDK 模型与传输执行；创建启用头、原始非法值
 各阶段均由实际 Java/C++ SDK 签名和传输，不用本地 Range 替代服务端 PartNumber。源用例完成前及越界多分块读取故意不带 SSE-C 请求头，这一细节也保留。失败时实际 AbortMultipartUpload，删除原始对象键并确认独立桶不存在。
 
 本地 Moto 下两个大对象传输/Range 场景通过；错误分块密钥/MD5、错误下载密钥、HEAD 分块 ETag 和普通对象越界状态形成每种语言 5 项原预期失败，均保留。实际 HTTP 夹具另外覆盖服务端正确拒绝错误分块时的源路径和 Abort 清理。
+
+### SSE-S3/KMS 对象与默认加密
+
+`ceph_encryption_objects` 增加 22 项：AES256 默认/显式加密各 1B/1KiB/1MiB/8MiB、KMS 默认加密相同四个长度、KMS 显式传输 1B/1KiB/1MiB/13B、KMS HEAD/普通读取、SSE-S3 默认 HEAD，以及缺 KMS key、只给 key 未声明加密、普通对象 GET 附带 KMS 声明。保留原始 A 字节、testkey-1/testkey-2 和实际响应头/拒绝断言。
+
+`workload.kms_key_id` 提供有效 KMS 资源标识；缺失时 10 个依赖主 KMS key 的场景明确 not_run，保留缺失要求并阻止性能统计，不填造有效 key。其中 8 项源码显式 skip，HEAD/普通读取 2 项对应其主 KMS 环境前提。错误输入 3 项照原输入执行，不因为没有有效 key 跳过。
+
+Java/C++ 公共逐请求头入口由 `EncryptionHeaders`/同等 C++ helper 统一维护 SSE-C、SSE-S3、KMS 字段；保持原 SSE-C 操作兼容，普通性能操作不走头映射。真实 HTTP 检查签名、缺失/空值、请求隔离及独立响应字段。配置本地测试 key 时两种 SDK 的正向传输均完成；Moto 未拒绝的 5 项原预期失败保留。缺配置时每种语言额外 10 项未执行；均不是实际 KMS 云认证。
