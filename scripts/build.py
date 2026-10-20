@@ -43,7 +43,9 @@ def group_rss(group):
 def build_environment(environ, jobs, budget):
     """Fit JVM reservations inside the address-space budget, including non-heap regions."""
     environment = dict(environ)
-    heap_mib = min(2048, budget // (3 * 1024**2))
+    # Maven also maps SDK/dependency jars and allocates native plugin/compiler state.
+    # Keep those regions inside RLIMIT_AS even on a 2 GiB build budget.
+    heap_mib = min(1024, budget // (6 * 1024**2))
     environment["MAVEN_OPTS"] = (
         f"-Xms64m -Xmx{heap_mib}m -XX:+UseSerialGC -XX:CompressedClassSpaceSize=128m "
         f"-XX:ReservedCodeCacheSize=128m -XX:MaxMetaspaceSize=256m -XX:ActiveProcessorCount={jobs}")
