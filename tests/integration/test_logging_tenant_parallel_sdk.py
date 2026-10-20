@@ -41,7 +41,7 @@ class TenantParallelSdkTest(unittest.TestCase):
     """Verify actual credential namespaces, returned log bodies and overlapping native SDK calls without replacing storage or SDK behavior."""
     def test_all_seven_namespace_vectors_keep_real_tenant_signatures_and_original_targets(self):
         """Run all seven original vectors on both SDKs including same bare names in different namespaces; expect five real full logs, two exact NoSuchKey denials and owner-consistent shutdown/cleanup."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             sequence,names,expected=tenant_vectors()
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,sequence,'s3',{'OSV_TENANT_ACCESS_KEY':'genuine-tenant','OSV_TENANT_SECRET_KEY':'genuine-tenant-secret'}) as (worker,server):
                 d=Path(temporary);ctx=Context(worker,'unused/',d,b'',d/'body',d/'out',{'tenant_name':'source-tenant','identities':{'main':{'user_id':'main-user'},'tenant':{'user_id':'tenant-user','canonical_id':'different-owner'}}})
@@ -74,7 +74,7 @@ class TenantParallelSdkTest(unittest.TestCase):
                     if not self.server.phase_events[phase].wait(8):self.server.phase_failures.append(phase)
                 super().respond()
             do_GET=do_PUT=do_HEAD=do_POST=do_DELETE=respond
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             sequence,names=parallel_vectors()
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,patch('sdk_fixtures.ThreadingHTTPServer.request_queue_size',128),fixture_worker(language,sequence,'s3',handler=BarrierHandler) as (worker,server):
                 server.phase_lock=threading.Lock();server.phase_counts=[0,0];server.phase_events=[threading.Event(),threading.Event()];server.phase_failures=[]
@@ -86,7 +86,7 @@ class TenantParallelSdkTest(unittest.TestCase):
 
     def test_both_source_defaults_and_tenant_prerequisites_stop_before_io(self):
         """Run both source entries without account metadata and direct tenant source with missing real tenant credentials; expect not_run before any HTTP or worker clone, never fallback to main."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],'s3') as (worker,server):
                 d=Path(temporary);ctx=Context(worker,'unused/',d,b'',d/'body',d/'out',{})
                 rows=run_cases(ctx,TENANT_CASES+PARALLEL_CASES);self.assertEqual(len(rows),2);self.assertEqual({row['status'] for row in rows},{'not_run'})

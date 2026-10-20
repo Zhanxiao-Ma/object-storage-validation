@@ -54,17 +54,17 @@ class LoggingPrefixesSdkTest(unittest.TestCase):
 
     def test_multiple_prefixes_accept_original_at_least_five_logs_and_all_source_records(self):
         """Run five actual sibling source buckets with six independently supplied logs; expect five real flush waits, >=5 acceptance and original per-prefix record matching without strengthening count to equality."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language):self.execute(language,False,extra=True)
 
     def test_single_prefix_preserves_original_final_source_only_assertion(self):
         """Provide a shared actual log containing only the final source's five records; expect the pinned overwrite-found loop to pass, preserving its known missing-first-four-source assertion defect and original final-source-only flush."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language):self.execute(language,True,last_only=True)
 
     def test_defaults_require_account_metadata_before_creating_related_buckets(self):
         """Run both source cases with actual SDK capabilities and absent user_id; expect explicit not_run and zero HTTP, rather than pretending logging or namespace success."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],'s3') as (worker,server):
                 d=Path(temporary);rows=run_cases(Context(worker,'unused/',d,b'',d/'body',d/'out',{}),CASES);self.assertEqual(len(rows),2);self.assertEqual({row['status'] for row in rows},{'not_run'});self.assertEqual(server.requests,[])
 

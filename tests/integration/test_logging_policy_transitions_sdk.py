@@ -53,13 +53,13 @@ class LoggingPolicyTransitionsSdkTest(unittest.TestCase):
 
     def test_wildcard_policy_two_accounts_and_complete_object_vectors(self):
         """Exercise both original wildcard sources on both real SDKs; expect exact two-user policy mutation inputs, genuine alt signatures for every alt-owned request, ten mixed log records and no extra log after denied alt flush."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             for objects in (False,True):
                 with self.subTest(language=language,objects=objects):self.execute_wildcard(language,objects)
 
     def test_standard_permission_change_preserves_all_ten_puts_and_denied_real_dummy(self):
         """Keep Standard writes successful after invalid SourceArn and reject only the original real 5.5-second flush dummy; expect AccessDenied, zero target log objects and complete cleanup."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,changing_workload(),'s3') as (worker,server):
                 d=Path(temporary);ctx=Context(worker,'unused/',d,b'',d/'body',d/'out',{'identities':{'main':{'user_id':'main-user'}}})
                 started=time.monotonic();permission_change(Probe(ctx),False);self.assertGreaterEqual(time.monotonic()-started,5.4);self.assertFalse(server.fixtures);self.assertEqual(len(server.requests),42)
@@ -68,7 +68,7 @@ class LoggingPolicyTransitionsSdkTest(unittest.TestCase):
 
     def test_unexpected_success_or_wrong_flush_error_keeps_source_failure_and_cleanup(self):
         """Let the denied flush unexpectedly succeed or return another real service code; expect the original AccessDenied oracle to fail and all written/ambiguous keys still removed."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             for wrong in ('success','wrong_code'):
                 with self.subTest(language=language,error=wrong),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,changing_workload(wrong),'s3') as (worker,server):
                     d=Path(temporary);ctx=Context(worker,'unused/',d,b'',d/'body',d/'out',{'identities':{'main':{'user_id':'main-user'}}})
@@ -77,7 +77,7 @@ class LoggingPolicyTransitionsSdkTest(unittest.TestCase):
 
     def test_default_four_sources_and_journal_model_requirements_never_fall_back(self):
         """Execute all four sources without IDs/alt metadata and call Journal directly with a real stock SDK; expect all not_run and original missing native extension/POST prerequisites before any HTTP or fallback identity."""
-        for language in ('java','cpp'):
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],'s3') as (worker,server):
                 d=Path(temporary);ctx=Context(worker,'unused/',d,b'',d/'body',d/'out',{})
                 rows=run_cases(ctx,CASES);self.assertEqual(len(rows),4);self.assertEqual({row['status'] for row in rows},{'not_run'})
