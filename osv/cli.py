@@ -92,6 +92,8 @@ def load_config(path, profile_override=None):
         raise ValueError("object_lock_cleanup_authorized must be boolean")
     if "ceph_literal_bucket_names_authorized" in workload and type(workload["ceph_literal_bucket_names_authorized"]) is not bool:
         raise ValueError("ceph_literal_bucket_names_authorized must be boolean")
+    if "tenant_name" in workload and (not isinstance(workload["tenant_name"],str) or not workload["tenant_name"]):
+        raise ValueError("tenant_name must be a nonempty string")
     if "ceph_api_name" in workload and (not isinstance(workload["ceph_api_name"],str) or not workload["ceph_api_name"]):
         raise ValueError("ceph_api_name must be a nonempty string")
     if "cloud_lifecycle" in workload:

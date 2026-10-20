@@ -355,3 +355,40 @@ class CloudLifecycleSdkTest(unittest.TestCase):
                     self.assertEqual(len(deletes),1);self.assertEqual(unquote(urlsplit(deletes[0][1]).path),"/"+TARGET+"/"+key)
                     self.assertEqual(parse_qs(urlsplit(deletes[0][1]).query)["versionId"],[ident])
                     self.assertEqual(len(server.requests),len(source));self.assertEqual(len(cloud_server.requests),len(cloud))
+
+    def test_read_through_zero_days_executes_zero_wait_and_actual_final_head(self):
+        """Source days=0 must execute the original zero-duration wait and real final HEAD, accepting original GET200/400 paths; a final actual size1 must still fail the source zero-size oracle with cleanup."""
+        from osv.ceph_cloud_lifecycle import restore_current
+        key="test_restore_readthrough";body="restore data with readthrough"
+        case=next(case for case in CASES if case.name=="ceph_cloud_lc_read_through")
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            for status,final_size in ((200,0),(400,0),(200,1)):
+                base,_,config=documents("read_through");config={**config,"allow_read_through":"true","read_through_days":0}
+                source=base[:7]+[get(body) if status==200 else error(400,"InvalidRequest"),head(size=len(body)),head(size=final_size)]+scope_end((key,))
+                with fixture_worker(language,remote_cleanup([]),"s3") as (_,cloud_server):
+                    overrides={"OSV_CLOUD_ENDPOINT":"http://127.0.0.1:"+str(cloud_server.server_port),"OSV_CLOUD_REGION":"us-east-1","OSV_CLOUD_ACCESS_KEY":"separate-cloud-access","OSV_CLOUD_SECRET_KEY":"separate-cloud-secret"}
+                    with self.subTest(language=language,status=status,final_size=final_size),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,source,"s3",overrides=overrides) as (worker,server):
+                        path=Path(temporary);context=Context(worker,"unused/",path,b"independent",path/"body",path/"output",{"cloud_lifecycle":config,"lifecycle_debug_interval_seconds":.001,"restore_debug_interval_seconds":.002,"restore_processor_period_seconds":.003})
+                        if case.operations-worker.capabilities:
+                            self.assertEqual(run_cases(context,[case])[0]["status"],"not_run");self.assertEqual(server.requests,[]);self.assertEqual(cloud_server.requests,[]);continue
+                        with patch("osv.ceph_cloud_lifecycle.wait",wraps=wait) as observed:
+                            if final_size:
+                                with self.assertRaisesRegex(AssertionError,"1 != 0"):restore_current(Probe(context),"read_through")
+                            else:restore_current(Probe(context),"read_through")
+                        self.assertEqual([round(call.args[0],6) for call in observed.call_args_list],[.01,.006,0])
+                        actual_heads=[row for row in server.requests if row[0]=="HEAD" and row[1].endswith("/"+key)]
+                        self.assertEqual(len(actual_heads),3);self.assertEqual(len(server.requests),len(source));self.assertEqual(len(cloud_server.requests),2)
+
+    def test_read_through_days_missing_and_noninteger_boundaries_are_zero_http(self):
+        """Missing days remains an explicit prerequisite; negative, boolean, floating, textual and enormous floating values must fail configuration before HTTP, matching CLI's nonnegative-integer contract."""
+        from osv.ceph_cloud_lifecycle import _restore_current
+        from osv.suites import CaseNotRun
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3") as (worker,server):
+                path=Path(temporary);probe=Probe(Context(worker,"unused/",path,b"independent",path/"body",path/"output",{}))
+                config={"storage_class":SC,"clock":.001,"period":.003,"restore_clock":.002,"allow_read_through":"true"}
+                with self.assertRaises(CaseNotRun) as missing:_restore_current(probe,config,"read_through")
+                self.assertEqual(missing.exception.requirements,["workload.cloud_lifecycle.read_through_days"])
+                for value in (-1,True,False,0.0,1.0,"0",float("nan"),float("inf")):
+                    with self.subTest(days=value),self.assertRaises(ValueError):_restore_current(probe,{**config,"read_through_days":value},"read_through")
+                self.assertEqual(server.requests,[])

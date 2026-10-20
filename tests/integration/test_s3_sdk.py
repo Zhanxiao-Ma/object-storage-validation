@@ -591,7 +591,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),769)
+            self.assertEqual(len(report["coverage"]["catalog"]),771)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -618,7 +618,7 @@ class SdkIntegrationTest(unittest.TestCase):
             from osv.ceph_logging_policy_transitions import CASES as logging_transition_cases
             from osv.ceph_logging_prefixes import CASES as logging_prefix_cases
             new_missing|={c.name for c in encryption_tail_cases if c.name not in {"ceph_encryption_tail_torrent","ceph_encryption_tail_s3_default"}}|{c.name for c in logging_transition_cases}|{c.name for c in logging_prefix_cases}
-            new_missing|={"ceph_encrypted_copy_matrix","ceph_encrypted_part_copy_matrix"}
+            new_missing|={"ceph_encrypted_copy_matrix","ceph_encrypted_part_copy_matrix","ceph_logging_tenant_standard","ceph_logging_parallel_put"}
             cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}

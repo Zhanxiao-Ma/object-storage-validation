@@ -87,7 +87,7 @@ class SourcePrerequisitesTest(unittest.TestCase):
         """Load actual manifests with valid source prerequisites and malformed alternatives; expect preserved values or validation failure before starting any worker."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            valid={"ceph_http":{"endpoint":"https://storage.example:443/prefix/","addressing_style":"path","access_key_env":"AK_NAME","secret_key_env":"SK_NAME"},"lifecycle_debug_interval_seconds":1.25,"object_lock_cleanup_authorized":False,"ceph_literal_bucket_names_authorized":False,"ceph_api_name":"s3","secondary_kms_key_id":"independent-secondary","restore_debug_interval_seconds":1,"restore_processor_period_seconds":2,"cloud_lifecycle":{"storage_class":"CLOUD","retain_head_object":"False","target_by_bucket":False,"read_through_days":0,"target_by_bucket_prefix":"rgwx-${zonegroup}-${storage_class}-${bucket}"}}
+            valid={"ceph_http":{"endpoint":"https://storage.example:443/prefix/","addressing_style":"path","access_key_env":"AK_NAME","secret_key_env":"SK_NAME"},"lifecycle_debug_interval_seconds":1.25,"object_lock_cleanup_authorized":False,"ceph_literal_bucket_names_authorized":False,"ceph_api_name":"s3","tenant_name":"independent-tenant","secondary_kms_key_id":"independent-secondary","restore_debug_interval_seconds":1,"restore_processor_period_seconds":2,"cloud_lifecycle":{"storage_class":"CLOUD","retain_head_object":"False","target_by_bucket":False,"read_through_days":0,"target_by_bucket_prefix":"rgwx-${zonegroup}-${storage_class}-${bucket}"}}
             data=config(directory);data["workload"].update(valid);path.write_text(json.dumps(data));loaded=load_config(path)
             for field,value in valid.items():self.assertEqual(loaded["workload"][field],value)
             invalid=[{"lifecycle_debug_interval_seconds":value} for value in (None,False,0,-1,float("inf"),float("nan"),1<<4096,"1")]
@@ -95,6 +95,7 @@ class SourcePrerequisitesTest(unittest.TestCase):
             invalid += [{"ceph_literal_bucket_names_authorized":value} for value in (None,0,"true")]
             invalid += [{"secondary_kms_key_id":value} for value in (False,0,[],{})]
             invalid += [{"cloud_lifecycle":{"target_by_bucket_prefix":value}} for value in ("fixed-shared-bucket","${bucket}-${bucket}","${bucket}-${unknown}","${bucket}-${unfinished")]
+            invalid += [{"tenant_name":value} for value in (None,"",3,False,[])]
             invalid += [{"ceph_api_name":value} for value in (None,"",3)]
             invalid += [{"cloud_lifecycle":value} for value in (None,[],{"unknown":"x"},{"storage_class":0},{"target_by_bucket":"false"},{"read_through_days":False},{"read_through_days":-1})]
             invalid += [{"object_lock_cleanup_authorized":value} for value in (None,0,1,"true")]

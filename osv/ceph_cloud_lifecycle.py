@@ -237,7 +237,8 @@ def _restore_current(p,config,mode):
     data={"temporary":"temporary restore data","permanent":"permanent restore data","read_through":"restore data with readthrough"}[mode]
     if mode=="read_through" and config.get("allow_read_through") is not None and config.get("allow_read_through")=="true":
         days=config.get("read_through_days")
-        if type(days) not in (int,float) or days<=0:raise CaseNotRun("source read-through expiration needs actual configured read_through_days","workload.cloud_lifecycle.read_through_days")
+        if days is None:raise CaseNotRun("source read-through expiration needs actual configured read_through_days","workload.cloud_lifecycle.read_through_days")
+        if type(days) is not int or days<0:raise ValueError("cloud_lifecycle.read_through_days must be a nonnegative integer")
     with cloud_source(p,config) as (bucket,cloud):
         bucket.put(key,data.encode());verify_object(p,p.ctx.worker,bucket.name,key,data)
         lifecycle(bucket,[{"ID":"rule1","Transitions":[{"Days":1,"StorageClass":sc}],"Prefix":"","Status":"Enabled"}])

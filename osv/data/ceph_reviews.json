@@ -4050,6 +4050,18 @@
       "source_sha256": "4f448b02579bdce032df2b8ab3708e8a16c9eb84437b07fe06070b8ec8e8991e",
       "implementation": "ceph_encrypted_part_copy_matrix",
       "review": "核对固定源20415..20748四种源加密模式×四种目标模式×所有配置源/目标存储类别有序组合；普通copy完整1/1024/1048576/8388608字节，part完整8388608字节。源SSE-S3响应断言、目标SSE-S3/SSE-C/KMS在copy/create/copy-part/upload-part/complete/get的原断言、两独立KMS key、两套原SSE-C key/MD5和dest-SSE-C六次原400请求全部保留（第二个负面copy仍只重复source-copy-key，未纠正源逻辑）。真实typed SDK响应UploadId/CopyPartResult.ETag/UploadPart.ETag进入真正typed完成请求，完整A或A+B文件读回。Java/C++按2存储类别实测256+64实例/语言；默认缺两独立KMS配置not_run，不丢参数实例。已登记实际uploadID的finally abort覆盖原400与header断言失败；未知Create错误/断连/缺ID以真实自有桶ListMultipartUploads枚举回收后删桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_tenant_s@L17151",
+      "source_sha256": "8c1c0a04ca7fb71688a82aa73e04f05d74f8bdcb4176644d96839792352a9afe",
+      "implementation": "ceph_logging_tenant_standard",
+      "review": "完整核对17151及helper全部七向量：main→tenant不同名/相同bare名、错误bare目标NoSuchKey、tenant→同tenant显式tenant:/bare、tenant→默认显式冒号、错误默认bare NoSuchKey；五个成功向量原五个随机小对象、当前keys、真实5.5秒flush、单log/前缀/返回flush键（仅存在时）及5条Standard记录。原namespace ARN/Resource和SourceAccount字面tenant.user_id不拼接canonical_id；真实main/tenant各自签名创建/访问/停日志/删除策略/清理，同名仅在独立认证namespace的absence proof后拥有；缺tenant_name/user_id/实际identity_tenant明确not_run，绝不回退main。真实Java/C++七向量全过，显式默认namespace冒号突变检出。保留fails_on_aws/fails_without_logging_rollover标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_put_concurrency@L17358",
+      "source_sha256": "c3a23ec8fcac6881ec685559b15fa13f6ecf17321c045c5f7b6ea39e0be6e59b",
+      "implementation": "ceph_logging_parallel_put",
+      "review": "完整核对17358：原max_pool_connections50映射为专用真实SDK worker OSV_CONNECTIONS=50，全部源操作使用同一client；第一阶段50线程对应50独立随机body真实PUT，第二阶段50真实dummy/POST线程，使用原生concurrent_requests一次50无串行分批；保留原List源keys、标准5.5秒等待、多目标日志拼接/每key log/前缀、完整50条PUT记录与Journal条件分支。原thread异常不会由join重抛，未添加逐线程成功oracle，只保留实际逐请求结果/50数量并按原最终日志断言。两个HTTP barrier逐阶段必须50同时到达，真实Java/C++验证pool50、100请求和50独立body，50→49事件数量突变检出。所有真实/模糊写key预登记，finally停日志后清理全部对象/日志，专用worker关闭后清理payload文件。保留fails_on_aws/fails_without_logging_rollover标记。"
     }
   ]
 }
