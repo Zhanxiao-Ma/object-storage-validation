@@ -7,7 +7,9 @@ SCOPE_OPERATIONS="bucket_head bucket_create_raw bucket_delete list delete"
 
 class BucketScope:
     """Prevent bucket-wide tests from sharing production state: verify a fresh generated name, create it and clean only that owned bucket."""
-    def __init__(self,probe,name=None):
+    def __init__(self,probe,name=None,create_operation="bucket_create_raw"):
+        if create_operation not in ("bucket_create_raw","bucket_create_locked"):raise ValueError("unsupported scoped bucket creation operation")
+        self.create_operation=create_operation
         self.probe=probe
         self.name="osv-"+uuid.uuid4().hex if name is None else name
         if not isinstance(self.name,str) or not re.fullmatch(r"osv-[0-9a-f]{32}",self.name):raise ValueError("isolated bucket must use the generated osv UUID namespace")
@@ -36,7 +38,7 @@ class BucketScope:
         if (existing.get("error_kind"),existing.get("status_code"))!=("not_found",404):raise RuntimeError("cannot establish test bucket absence: "+str(existing))
         region=self.probe.ctx.worker.info.get("region","us-east-1")
         options={"location":region} if region and region!="us-east-1" else {}
-        response=self.raw("bucket_create_raw",**options)
+        response=self.raw(self.create_operation,**options)
         if not response["ok"]:
             raise RuntimeError("test bucket creation failed; verify ambiguous transport outcomes before manual cleanup of "+self.name+": "+str(response))
         self.created=True

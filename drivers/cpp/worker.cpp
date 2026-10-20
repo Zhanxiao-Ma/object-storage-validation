@@ -163,10 +163,11 @@ public:
             if(q.contains("encoding_type")) request.SetEncodingType(Aws::S3::Model::EncodingTypeMapper::GetEncodingTypeForName(q.at("encoding_type").get<std::string>()));
             auto outcome=client->ListObjectsV2(request);checked(outcome);return observed_list_page(outcome.GetResult(),observed);
         }
-        if(op=="bucket_create_raw" || op=="bucket_head" || op=="bucket_delete" || op=="bucket_location") {
+        if(op=="bucket_create_raw" || op=="bucket_create_locked" || op=="bucket_head" || op=="bucket_delete" || op=="bucket_location") {
             json http;HttpObservationScope observation(&http);
-            if(op=="bucket_create_raw") {
+            if(op=="bucket_create_raw" || op=="bucket_create_locked") {
                 Aws::S3::Model::CreateBucketRequest request;request.SetBucket(bucket);
+                if(op=="bucket_create_locked") request.SetObjectLockEnabledForBucket(true);
                 if(q.contains("location")) {Aws::S3::Model::CreateBucketConfiguration configuration;configuration.SetLocationConstraint(Aws::S3::Model::BucketLocationConstraintMapper::GetBucketLocationConstraintForName(q.at("location").get<std::string>()));request.SetCreateBucketConfiguration(configuration);}
                 checked(client->CreateBucket(request));
             } else if(op=="bucket_head") {
@@ -400,7 +401,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");

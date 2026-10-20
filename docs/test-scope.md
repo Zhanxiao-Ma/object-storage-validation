@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项，总计 285 项（281 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项，总计 302 项（298 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -282,3 +282,11 @@ Java/C++ 都调用实际 AWS SDK 的 VersionId、ListObjectVersions、Put/GetBuc
 Java 使用公共逐请求 header override，C++ 使用公共 AdditionalCustomHeaders；不调用会自动补 MD5 的 SSE-C 模型参数。实际 HTTP 夹具核对字段缺失/空值、签名 SignedHeaders、错误响应与请求间隔离。只为 AWS S3 worker 声明此能力，尚未实现的原生 worker 和本地参考 worker 显式 not_run。
 
 本地 Moto 下正向传输通过，7 个错误输入场景未按原预期拒绝；两个 SDK 都如实记录失败并清理独立桶。这不是实际云厂商验证结果，不改判定规则。
+
+### 桶控制与 Object Lock 配置
+
+`ceph_bucket_controls` 增加公共访问阻止 4 项、所有权控制 2 项、Object Lock 桶配置 11 项。覆盖四个布尔值读回、未配置错误、删除/幂等删除、精确 GetBucketPublicAccessBlock 拒绝策略、创建时启用 Object Lock、配置 GOVERNANCE/COMPLIANCE、Days/Years 冲突、零/负周期、非法大小写枚举/启用状态、版本控制开启/暂停和配置读回。
+
+Java/C++ 经实际 SDK 模型与传输执行；创建启用头、原始非法值及独立服务响应由 HTTP 合约检查。所有场景使用独立空桶，Object Lock 场景不上传保留对象，最终确认桶已删除。此批不包含对象级保留、法律保留或跨身份 ACL 场景，不用桶配置能力冒充这些覆盖。
+
+本地 Moto/SDK 下每种语言 9 项保留为失败，包括 400/409 差异、未拒绝非法输入、读回额外 Years=0 和策略行为；C++ 策略请求还保留其真实 SDK 解析错误。适用性与预期协调后续单独处理。

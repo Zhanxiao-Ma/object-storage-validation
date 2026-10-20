@@ -1146,6 +1146,108 @@
       "source_sha256": "be90a05451ee8852f90762e8ecf8eba7d500b32acd4f2da85b0b4508b490e0d8",
       "implementation": "ceph_sse_c_no_algorithm",
       "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_undefined_public_block@L14219",
+      "source_sha256": "70703e1b0740647107c643f68426a0d0c5e1626065e5f6f9106e9844516f4063",
+      "implementation": "ceph_public_block_undefined",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_public_block_deny_bucket_policy@L14236",
+      "source_sha256": "627d1b38e598c07ae76af0f0cfe5610126e35d4eacb4650e20491fce2e91f273",
+      "implementation": "ceph_public_block_deny",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_public_block@L14264",
+      "source_sha256": "96cf1e9a99c15f07ba7f1d4bf35fa43c47dfd6109b0a4bb2ee1094719d0402a7",
+      "implementation": "ceph_public_block_put",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_get_delete_public_block@L14441",
+      "source_sha256": "a378beb40ddbbc39d3fcfef8a241724784e54bd68f73bfb4fd26485ac5b687c7",
+      "implementation": "ceph_public_block_delete",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_create_bucket_no_ownership_controls@L20275",
+      "source_sha256": "d1db77c78c94cdb52264712f4838ba211c705fe02237a31b5c21e9be17e2449d",
+      "implementation": "ceph_ownership_undefined",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_delete_bucket_ownership@L20369",
+      "source_sha256": "3c4ebafcbbe8f86f8d99b1c705358efd9c0ccbf2b2e19dc2f2b3bd3ad1dcb16a",
+      "implementation": "ceph_ownership_delete",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock@L13280",
+      "source_sha256": "fd3f852f911fbbafa4cfe035b7b14acf527ccba4cea9ef32c7095c39e1c3bbad",
+      "implementation": "ceph_lock_config_put",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_bucket@L13312",
+      "source_sha256": "3115380dd134bedf0b7a9fe04f899cea6e5c32e54bf171ac29413c652d025855",
+      "implementation": "ceph_lock_config_invalid_bucket",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_enable_after_create@L13328",
+      "source_sha256": "a40670ca3ba7710b3903648f7296ec788938f458bd8aa5ae1b999d9d9822f57f",
+      "implementation": "ceph_lock_config_enable_after",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_with_days_and_years@L13359",
+      "source_sha256": "6bcda9b7bef93481ffbe8c0d5b55b759f16065b507ee430c62542cacce3f6d58",
+      "implementation": "ceph_lock_config_both",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_days@L13378",
+      "source_sha256": "6ddeda0a4de118f179d212dc1f879a28039156a9ecdb2aef78bf9185bb800a64",
+      "implementation": "ceph_lock_config_invalid_days",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_years@L13396",
+      "source_sha256": "ff8d4755f23c9ae46cb5616cfe12ce8080dc9294faa0f44c7ad913ee03000e76",
+      "implementation": "ceph_lock_config_invalid_years",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_mode@L13414",
+      "source_sha256": "6832296ba923573950ddda06aa98132f2797e165331964eb29c622b84f3c5979",
+      "implementation": "ceph_lock_config_invalid_mode",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_lock_invalid_status@L13444",
+      "source_sha256": "74499d0a4d303ee0e09bd642190888a57b3f3f4f63627497549d66373ff8e9a7",
+      "implementation": "ceph_lock_config_invalid_status",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_suspend_versioning@L13462",
+      "source_sha256": "0e129b1f1b28ad743cb9baf9e7aa8f585bebfd796f01604d701eb338f19c15a3",
+      "implementation": "ceph_lock_config_suspend",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_lock@L13473",
+      "source_sha256": "abad034497789214fa22928bb4e4c2be7eb37c31d2fccd0146d394deb69ebe89",
+      "implementation": "ceph_lock_config_get",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_lock_invalid_bucket@L13491",
+      "source_sha256": "6ebfd72153142ce260f202f9ddc72a006b631d2b60d7adb71ace5ce05701cd31",
+      "implementation": "ceph_lock_config_get_invalid_bucket",
+      "review": "核对固定源码实际函数及共享辅助函数；保留独立桶、原始布尔/枚举/保留周期、配置顺序、版本控制状态和全部 HTTP/错误码/模型断言。公共访问策略核对同版本 policy.py 的 make_json_policy。Object Lock 配置只配置空桶，不写入保留对象；SDK 不识别、服务端不符仍记录真实失败，不放宽预期。"
     }
   ]
 }

@@ -327,6 +327,142 @@
           "value": true
         }
       }
+    },
+    "GetObjectLockConfiguration": {
+      "name": "GetObjectLockConfiguration",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?object-lock"
+      },
+      "input": {
+        "shape": "GetObjectLockConfigurationRequest"
+      },
+      "output": {
+        "shape": "GetObjectLockConfigurationOutput"
+      }
+    },
+    "PutObjectLockConfiguration": {
+      "name": "PutObjectLockConfiguration",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?object-lock"
+      },
+      "input": {
+        "shape": "PutObjectLockConfigurationRequest"
+      },
+      "output": {
+        "shape": "PutObjectLockConfigurationOutput"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      }
+    },
+    "GetPublicAccessBlock": {
+      "name": "GetPublicAccessBlock",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?publicAccessBlock"
+      },
+      "input": {
+        "shape": "GetPublicAccessBlockRequest"
+      },
+      "output": {
+        "shape": "GetPublicAccessBlockOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutPublicAccessBlock": {
+      "name": "PutPublicAccessBlock",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?publicAccessBlock"
+      },
+      "input": {
+        "shape": "PutPublicAccessBlockRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeletePublicAccessBlock": {
+      "name": "DeletePublicAccessBlock",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?publicAccessBlock",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeletePublicAccessBlockRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketOwnershipControls": {
+      "name": "GetBucketOwnershipControls",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?ownershipControls"
+      },
+      "input": {
+        "shape": "GetBucketOwnershipControlsRequest"
+      },
+      "output": {
+        "shape": "GetBucketOwnershipControlsOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketOwnershipControls": {
+      "name": "PutBucketOwnershipControls",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?ownershipControls"
+      },
+      "input": {
+        "shape": "PutBucketOwnershipControlsRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketOwnershipControls": {
+      "name": "DeleteBucketOwnershipControls",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?ownershipControls",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketOwnershipControlsRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
     }
   },
   "shapes": {
@@ -1484,6 +1620,405 @@
         },
         "RoutingRules": {
           "shape": "RoutingRules"
+        }
+      }
+    },
+    "GetObjectLockConfigurationRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetObjectLockConfigurationOutput": {
+      "type": "structure",
+      "members": {
+        "ObjectLockConfiguration": {
+          "shape": "ObjectLockConfiguration"
+        }
+      },
+      "payload": "ObjectLockConfiguration"
+    },
+    "ObjectLockConfiguration": {
+      "type": "structure",
+      "members": {
+        "ObjectLockEnabled": {
+          "shape": "ObjectLockEnabled"
+        },
+        "Rule": {
+          "shape": "ObjectLockRule"
+        }
+      }
+    },
+    "ObjectLockEnabled": {
+      "type": "string",
+      "enum": [
+        "Enabled"
+      ]
+    },
+    "ObjectLockRule": {
+      "type": "structure",
+      "members": {
+        "DefaultRetention": {
+          "shape": "DefaultRetention"
+        }
+      }
+    },
+    "DefaultRetention": {
+      "type": "structure",
+      "members": {
+        "Mode": {
+          "shape": "ObjectLockRetentionMode"
+        },
+        "Days": {
+          "shape": "Days"
+        },
+        "Years": {
+          "shape": "Years"
+        }
+      }
+    },
+    "ObjectLockRetentionMode": {
+      "type": "string",
+      "enum": [
+        "GOVERNANCE",
+        "COMPLIANCE"
+      ]
+    },
+    "Years": {
+      "type": "integer",
+      "box": true
+    },
+    "PutObjectLockConfigurationRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ObjectLockConfiguration": {
+          "shape": "ObjectLockConfiguration",
+          "locationName": "ObjectLockConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "Token": {
+          "shape": "ObjectLockToken",
+          "location": "header",
+          "locationName": "x-amz-bucket-object-lock-token"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "ObjectLockConfiguration"
+    },
+    "RequestPayer": {
+      "type": "string",
+      "enum": [
+        "requester"
+      ]
+    },
+    "ObjectLockToken": {
+      "type": "string"
+    },
+    "PutObjectLockConfigurationOutput": {
+      "type": "structure",
+      "members": {
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "RequestCharged": {
+      "type": "string",
+      "enum": [
+        "requester"
+      ]
+    },
+    "GetPublicAccessBlockRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetPublicAccessBlockOutput": {
+      "type": "structure",
+      "members": {
+        "PublicAccessBlockConfiguration": {
+          "shape": "PublicAccessBlockConfiguration"
+        }
+      },
+      "payload": "PublicAccessBlockConfiguration"
+    },
+    "PublicAccessBlockConfiguration": {
+      "type": "structure",
+      "members": {
+        "BlockPublicAcls": {
+          "shape": "Setting",
+          "locationName": "BlockPublicAcls"
+        },
+        "IgnorePublicAcls": {
+          "shape": "Setting",
+          "locationName": "IgnorePublicAcls"
+        },
+        "BlockPublicPolicy": {
+          "shape": "Setting",
+          "locationName": "BlockPublicPolicy"
+        },
+        "RestrictPublicBuckets": {
+          "shape": "Setting",
+          "locationName": "RestrictPublicBuckets"
+        }
+      }
+    },
+    "Setting": {
+      "type": "boolean",
+      "box": true
+    },
+    "PutPublicAccessBlockRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "PublicAccessBlockConfiguration"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "PublicAccessBlockConfiguration": {
+          "shape": "PublicAccessBlockConfiguration",
+          "locationName": "PublicAccessBlockConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "PublicAccessBlockConfiguration"
+    },
+    "DeletePublicAccessBlockRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketOwnershipControlsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketOwnershipControlsOutput": {
+      "type": "structure",
+      "members": {
+        "OwnershipControls": {
+          "shape": "OwnershipControls"
+        }
+      },
+      "payload": "OwnershipControls"
+    },
+    "OwnershipControls": {
+      "type": "structure",
+      "required": [
+        "Rules"
+      ],
+      "members": {
+        "Rules": {
+          "shape": "OwnershipControlsRules",
+          "locationName": "Rule"
+        }
+      }
+    },
+    "OwnershipControlsRules": {
+      "type": "list",
+      "member": {
+        "shape": "OwnershipControlsRule"
+      },
+      "flattened": true
+    },
+    "OwnershipControlsRule": {
+      "type": "structure",
+      "required": [
+        "ObjectOwnership"
+      ],
+      "members": {
+        "ObjectOwnership": {
+          "shape": "ObjectOwnership"
+        }
+      }
+    },
+    "ObjectOwnership": {
+      "type": "string",
+      "enum": [
+        "BucketOwnerPreferred",
+        "ObjectWriter",
+        "BucketOwnerEnforced"
+      ]
+    },
+    "PutBucketOwnershipControlsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "OwnershipControls"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "OwnershipControls": {
+          "shape": "OwnershipControls",
+          "locationName": "OwnershipControls",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        }
+      },
+      "payload": "OwnershipControls"
+    },
+    "DeleteBucketOwnershipControlsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
         }
       }
     }

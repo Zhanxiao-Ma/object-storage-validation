@@ -50,6 +50,25 @@
 #include <aws/s3/model/TransitionDefaultMinimumObjectSize.h>
 #include <aws/s3/model/TransitionStorageClass.h>
 #include <aws/s3/model/WebsiteConfiguration.h>
+#include <aws/s3/model/GetObjectLockConfigurationRequest.h>
+#include <aws/s3/model/ObjectLockConfiguration.h>
+#include <aws/s3/model/ObjectLockEnabled.h>
+#include <aws/s3/model/ObjectLockRule.h>
+#include <aws/s3/model/DefaultRetention.h>
+#include <aws/s3/model/ObjectLockRetentionMode.h>
+#include <aws/s3/model/PutObjectLockConfigurationRequest.h>
+#include <aws/s3/model/RequestPayer.h>
+#include <aws/s3/model/RequestCharged.h>
+#include <aws/s3/model/GetPublicAccessBlockRequest.h>
+#include <aws/s3/model/PublicAccessBlockConfiguration.h>
+#include <aws/s3/model/PutPublicAccessBlockRequest.h>
+#include <aws/s3/model/DeletePublicAccessBlockRequest.h>
+#include <aws/s3/model/GetBucketOwnershipControlsRequest.h>
+#include <aws/s3/model/OwnershipControls.h>
+#include <aws/s3/model/OwnershipControlsRule.h>
+#include <aws/s3/model/ObjectOwnership.h>
+#include <aws/s3/model/PutBucketOwnershipControlsRequest.h>
+#include <aws/s3/model/DeleteBucketOwnershipControlsRequest.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -57,6 +76,10 @@
 #include <aws/s3/model/GetBucketPolicyResult.h>
 #include <aws/s3/model/GetBucketWebsiteResult.h>
 #include <aws/s3/model/GetBucketEncryptionResult.h>
+#include <aws/s3/model/GetObjectLockConfigurationResult.h>
+#include <aws/s3/model/PutObjectLockConfigurationResult.h>
+#include <aws/s3/model/GetPublicAccessBlockResult.h>
+#include <aws/s3/model/GetBucketOwnershipControlsResult.h>
 namespace osv_bucket_api {
 using J=nlohmann::json;
 inline int64_t signed_integer(const J& value,int64_t minimum,int64_t maximum,const char* field){
@@ -240,6 +263,52 @@ inline int read_VersionCount(const J& value);
 inline J write_VersionCount(const int& value);
 inline Aws::S3::Model::WebsiteConfiguration read_WebsiteConfiguration(const J& value);
 inline J write_WebsiteConfiguration(const Aws::S3::Model::WebsiteConfiguration& value);
+inline Aws::S3::Model::GetObjectLockConfigurationRequest read_GetObjectLockConfigurationRequest(const J& value);
+inline J write_GetObjectLockConfigurationRequest(const Aws::S3::Model::GetObjectLockConfigurationRequest& value);
+inline Aws::S3::Model::ObjectLockConfiguration read_ObjectLockConfiguration(const J& value);
+inline J write_ObjectLockConfiguration(const Aws::S3::Model::ObjectLockConfiguration& value);
+inline Aws::S3::Model::ObjectLockEnabled read_ObjectLockEnabled(const J& value);
+inline J write_ObjectLockEnabled(const Aws::S3::Model::ObjectLockEnabled& value);
+inline Aws::S3::Model::ObjectLockRule read_ObjectLockRule(const J& value);
+inline J write_ObjectLockRule(const Aws::S3::Model::ObjectLockRule& value);
+inline Aws::S3::Model::DefaultRetention read_DefaultRetention(const J& value);
+inline J write_DefaultRetention(const Aws::S3::Model::DefaultRetention& value);
+inline Aws::S3::Model::ObjectLockRetentionMode read_ObjectLockRetentionMode(const J& value);
+inline J write_ObjectLockRetentionMode(const Aws::S3::Model::ObjectLockRetentionMode& value);
+inline int read_Years(const J& value);
+inline J write_Years(const int& value);
+inline Aws::S3::Model::PutObjectLockConfigurationRequest read_PutObjectLockConfigurationRequest(const J& value);
+inline J write_PutObjectLockConfigurationRequest(const Aws::S3::Model::PutObjectLockConfigurationRequest& value);
+inline Aws::S3::Model::RequestPayer read_RequestPayer(const J& value);
+inline J write_RequestPayer(const Aws::S3::Model::RequestPayer& value);
+inline Aws::String read_ObjectLockToken(const J& value);
+inline J write_ObjectLockToken(const Aws::String& value);
+inline Aws::S3::Model::RequestCharged read_RequestCharged(const J& value);
+inline J write_RequestCharged(const Aws::S3::Model::RequestCharged& value);
+inline Aws::S3::Model::GetPublicAccessBlockRequest read_GetPublicAccessBlockRequest(const J& value);
+inline J write_GetPublicAccessBlockRequest(const Aws::S3::Model::GetPublicAccessBlockRequest& value);
+inline Aws::S3::Model::PublicAccessBlockConfiguration read_PublicAccessBlockConfiguration(const J& value);
+inline J write_PublicAccessBlockConfiguration(const Aws::S3::Model::PublicAccessBlockConfiguration& value);
+inline bool read_Setting(const J& value);
+inline J write_Setting(const bool& value);
+inline Aws::S3::Model::PutPublicAccessBlockRequest read_PutPublicAccessBlockRequest(const J& value);
+inline J write_PutPublicAccessBlockRequest(const Aws::S3::Model::PutPublicAccessBlockRequest& value);
+inline Aws::S3::Model::DeletePublicAccessBlockRequest read_DeletePublicAccessBlockRequest(const J& value);
+inline J write_DeletePublicAccessBlockRequest(const Aws::S3::Model::DeletePublicAccessBlockRequest& value);
+inline Aws::S3::Model::GetBucketOwnershipControlsRequest read_GetBucketOwnershipControlsRequest(const J& value);
+inline J write_GetBucketOwnershipControlsRequest(const Aws::S3::Model::GetBucketOwnershipControlsRequest& value);
+inline Aws::S3::Model::OwnershipControls read_OwnershipControls(const J& value);
+inline J write_OwnershipControls(const Aws::S3::Model::OwnershipControls& value);
+inline Aws::Vector<Aws::S3::Model::OwnershipControlsRule> read_OwnershipControlsRules(const J& value);
+inline J write_OwnershipControlsRules(const Aws::Vector<Aws::S3::Model::OwnershipControlsRule>& value);
+inline Aws::S3::Model::OwnershipControlsRule read_OwnershipControlsRule(const J& value);
+inline J write_OwnershipControlsRule(const Aws::S3::Model::OwnershipControlsRule& value);
+inline Aws::S3::Model::ObjectOwnership read_ObjectOwnership(const J& value);
+inline J write_ObjectOwnership(const Aws::S3::Model::ObjectOwnership& value);
+inline Aws::S3::Model::PutBucketOwnershipControlsRequest read_PutBucketOwnershipControlsRequest(const J& value);
+inline J write_PutBucketOwnershipControlsRequest(const Aws::S3::Model::PutBucketOwnershipControlsRequest& value);
+inline Aws::S3::Model::DeleteBucketOwnershipControlsRequest read_DeleteBucketOwnershipControlsRequest(const J& value);
+inline J write_DeleteBucketOwnershipControlsRequest(const Aws::S3::Model::DeleteBucketOwnershipControlsRequest& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -1217,8 +1286,295 @@ inline J write_WebsiteConfiguration(const Aws::S3::Model::WebsiteConfiguration& 
     if(value.RoutingRulesHasBeenSet())result["RoutingRules"]=write_RoutingRules(value.GetRoutingRules());
     return result;
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::GetObjectLockConfigurationRequest read_GetObjectLockConfigurationRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetObjectLockConfigurationRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetObjectLockConfigurationRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_GetObjectLockConfigurationRequest(const Aws::S3::Model::GetObjectLockConfigurationRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::ObjectLockConfiguration read_ObjectLockConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: ObjectLockConfiguration");
+    static const std::set<std::string> allowed={"ObjectLockEnabled","Rule"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::ObjectLockConfiguration result;
+    if(value.contains("ObjectLockEnabled") && !value.at("ObjectLockEnabled").is_null())result.SetObjectLockEnabled(read_ObjectLockEnabled(value.at("ObjectLockEnabled")));
+    if(value.contains("Rule") && !value.at("Rule").is_null())result.SetRule(read_ObjectLockRule(value.at("Rule")));
+    return result;
+}
+inline J write_ObjectLockConfiguration(const Aws::S3::Model::ObjectLockConfiguration& value) {
+    J result=J::object();
+    if(value.ObjectLockEnabledHasBeenSet())result["ObjectLockEnabled"]=write_ObjectLockEnabled(value.GetObjectLockEnabled());
+    if(value.RuleHasBeenSet())result["Rule"]=write_ObjectLockRule(value.GetRule());
+    return result;
+}
+inline Aws::S3::Model::ObjectLockEnabled read_ObjectLockEnabled(const J& value) {
+    return Aws::S3::Model::ObjectLockEnabledMapper::GetObjectLockEnabledForName(value.get<std::string>());
+}
+inline J write_ObjectLockEnabled(const Aws::S3::Model::ObjectLockEnabled& value) {
+    return std::string(Aws::S3::Model::ObjectLockEnabledMapper::GetNameForObjectLockEnabled(value).c_str());
+}
+inline Aws::S3::Model::ObjectLockRule read_ObjectLockRule(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: ObjectLockRule");
+    static const std::set<std::string> allowed={"DefaultRetention"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::ObjectLockRule result;
+    if(value.contains("DefaultRetention") && !value.at("DefaultRetention").is_null())result.SetDefaultRetention(read_DefaultRetention(value.at("DefaultRetention")));
+    return result;
+}
+inline J write_ObjectLockRule(const Aws::S3::Model::ObjectLockRule& value) {
+    J result=J::object();
+    if(value.DefaultRetentionHasBeenSet())result["DefaultRetention"]=write_DefaultRetention(value.GetDefaultRetention());
+    return result;
+}
+inline Aws::S3::Model::DefaultRetention read_DefaultRetention(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: DefaultRetention");
+    static const std::set<std::string> allowed={"Mode","Days","Years"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::DefaultRetention result;
+    if(value.contains("Mode") && !value.at("Mode").is_null())result.SetMode(read_ObjectLockRetentionMode(value.at("Mode")));
+    if(value.contains("Days") && !value.at("Days").is_null())result.SetDays(read_Days(value.at("Days")));
+    if(value.contains("Years") && !value.at("Years").is_null())result.SetYears(read_Years(value.at("Years")));
+    return result;
+}
+inline J write_DefaultRetention(const Aws::S3::Model::DefaultRetention& value) {
+    J result=J::object();
+    if(value.ModeHasBeenSet())result["Mode"]=write_ObjectLockRetentionMode(value.GetMode());
+    if(value.DaysHasBeenSet())result["Days"]=write_Days(value.GetDays());
+    if(value.YearsHasBeenSet())result["Years"]=write_Years(value.GetYears());
+    return result;
+}
+inline Aws::S3::Model::ObjectLockRetentionMode read_ObjectLockRetentionMode(const J& value) {
+    return Aws::S3::Model::ObjectLockRetentionModeMapper::GetObjectLockRetentionModeForName(value.get<std::string>());
+}
+inline J write_ObjectLockRetentionMode(const Aws::S3::Model::ObjectLockRetentionMode& value) {
+    return std::string(Aws::S3::Model::ObjectLockRetentionModeMapper::GetNameForObjectLockRetentionMode(value).c_str());
+}
+inline int read_Years(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"Years"));
+}
+inline J write_Years(const int& value) {
+    return value;
+}
+inline Aws::S3::Model::PutObjectLockConfigurationRequest read_PutObjectLockConfigurationRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutObjectLockConfigurationRequest");
+    static const std::set<std::string> allowed={"Bucket","ObjectLockConfiguration","RequestPayer","Token","ContentMD5","ChecksumAlgorithm","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutObjectLockConfigurationRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ObjectLockConfiguration") && !value.at("ObjectLockConfiguration").is_null())result.SetObjectLockConfiguration(read_ObjectLockConfiguration(value.at("ObjectLockConfiguration")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("Token") && !value.at("Token").is_null())result.SetToken(read_ObjectLockToken(value.at("Token")));
+    if(value.contains("ContentMD5") && !value.at("ContentMD5").is_null())result.SetContentMD5(read_ContentMD5(value.at("ContentMD5")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_PutObjectLockConfigurationRequest(const Aws::S3::Model::PutObjectLockConfigurationRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ObjectLockConfigurationHasBeenSet())result["ObjectLockConfiguration"]=write_ObjectLockConfiguration(value.GetObjectLockConfiguration());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.TokenHasBeenSet())result["Token"]=write_ObjectLockToken(value.GetToken());
+    if(value.ContentMD5HasBeenSet())result["ContentMD5"]=write_ContentMD5(value.GetContentMD5());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::RequestPayer read_RequestPayer(const J& value) {
+    return Aws::S3::Model::RequestPayerMapper::GetRequestPayerForName(value.get<std::string>());
+}
+inline J write_RequestPayer(const Aws::S3::Model::RequestPayer& value) {
+    return std::string(Aws::S3::Model::RequestPayerMapper::GetNameForRequestPayer(value).c_str());
+}
+inline Aws::String read_ObjectLockToken(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ObjectLockToken(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::RequestCharged read_RequestCharged(const J& value) {
+    return Aws::S3::Model::RequestChargedMapper::GetRequestChargedForName(value.get<std::string>());
+}
+inline J write_RequestCharged(const Aws::S3::Model::RequestCharged& value) {
+    return std::string(Aws::S3::Model::RequestChargedMapper::GetNameForRequestCharged(value).c_str());
+}
+inline Aws::S3::Model::GetPublicAccessBlockRequest read_GetPublicAccessBlockRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetPublicAccessBlockRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetPublicAccessBlockRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_GetPublicAccessBlockRequest(const Aws::S3::Model::GetPublicAccessBlockRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::PublicAccessBlockConfiguration read_PublicAccessBlockConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PublicAccessBlockConfiguration");
+    static const std::set<std::string> allowed={"BlockPublicAcls","IgnorePublicAcls","BlockPublicPolicy","RestrictPublicBuckets"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PublicAccessBlockConfiguration result;
+    if(value.contains("BlockPublicAcls") && !value.at("BlockPublicAcls").is_null())result.SetBlockPublicAcls(read_Setting(value.at("BlockPublicAcls")));
+    if(value.contains("IgnorePublicAcls") && !value.at("IgnorePublicAcls").is_null())result.SetIgnorePublicAcls(read_Setting(value.at("IgnorePublicAcls")));
+    if(value.contains("BlockPublicPolicy") && !value.at("BlockPublicPolicy").is_null())result.SetBlockPublicPolicy(read_Setting(value.at("BlockPublicPolicy")));
+    if(value.contains("RestrictPublicBuckets") && !value.at("RestrictPublicBuckets").is_null())result.SetRestrictPublicBuckets(read_Setting(value.at("RestrictPublicBuckets")));
+    return result;
+}
+inline J write_PublicAccessBlockConfiguration(const Aws::S3::Model::PublicAccessBlockConfiguration& value) {
+    J result=J::object();
+    if(value.BlockPublicAclsHasBeenSet())result["BlockPublicAcls"]=write_Setting(value.GetBlockPublicAcls());
+    if(value.IgnorePublicAclsHasBeenSet())result["IgnorePublicAcls"]=write_Setting(value.GetIgnorePublicAcls());
+    if(value.BlockPublicPolicyHasBeenSet())result["BlockPublicPolicy"]=write_Setting(value.GetBlockPublicPolicy());
+    if(value.RestrictPublicBucketsHasBeenSet())result["RestrictPublicBuckets"]=write_Setting(value.GetRestrictPublicBuckets());
+    return result;
+}
+inline bool read_Setting(const J& value) {
+    return value.get<bool>();
+}
+inline J write_Setting(const bool& value) {
+    return value;
+}
+inline Aws::S3::Model::PutPublicAccessBlockRequest read_PutPublicAccessBlockRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutPublicAccessBlockRequest");
+    static const std::set<std::string> allowed={"Bucket","ContentMD5","ChecksumAlgorithm","PublicAccessBlockConfiguration","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutPublicAccessBlockRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ContentMD5") && !value.at("ContentMD5").is_null())result.SetContentMD5(read_ContentMD5(value.at("ContentMD5")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("PublicAccessBlockConfiguration") && !value.at("PublicAccessBlockConfiguration").is_null())result.SetPublicAccessBlockConfiguration(read_PublicAccessBlockConfiguration(value.at("PublicAccessBlockConfiguration")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_PutPublicAccessBlockRequest(const Aws::S3::Model::PutPublicAccessBlockRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ContentMD5HasBeenSet())result["ContentMD5"]=write_ContentMD5(value.GetContentMD5());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.PublicAccessBlockConfigurationHasBeenSet())result["PublicAccessBlockConfiguration"]=write_PublicAccessBlockConfiguration(value.GetPublicAccessBlockConfiguration());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::DeletePublicAccessBlockRequest read_DeletePublicAccessBlockRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: DeletePublicAccessBlockRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::DeletePublicAccessBlockRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_DeletePublicAccessBlockRequest(const Aws::S3::Model::DeletePublicAccessBlockRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::GetBucketOwnershipControlsRequest read_GetBucketOwnershipControlsRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetBucketOwnershipControlsRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetBucketOwnershipControlsRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_GetBucketOwnershipControlsRequest(const Aws::S3::Model::GetBucketOwnershipControlsRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::OwnershipControls read_OwnershipControls(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: OwnershipControls");
+    static const std::set<std::string> allowed={"Rules"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::OwnershipControls result;
+    if(value.contains("Rules") && !value.at("Rules").is_null())result.SetRules(read_OwnershipControlsRules(value.at("Rules")));
+    return result;
+}
+inline J write_OwnershipControls(const Aws::S3::Model::OwnershipControls& value) {
+    J result=J::object();
+    if(value.RulesHasBeenSet())result["Rules"]=write_OwnershipControlsRules(value.GetRules());
+    return result;
+}
+inline Aws::Vector<Aws::S3::Model::OwnershipControlsRule> read_OwnershipControlsRules(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: OwnershipControlsRules");
+    Aws::Vector<Aws::S3::Model::OwnershipControlsRule> result;for(const auto& item:value)result.push_back(read_OwnershipControlsRule(item));return result;
+}
+inline J write_OwnershipControlsRules(const Aws::Vector<Aws::S3::Model::OwnershipControlsRule>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_OwnershipControlsRule(item));return result;
+}
+inline Aws::S3::Model::OwnershipControlsRule read_OwnershipControlsRule(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: OwnershipControlsRule");
+    static const std::set<std::string> allowed={"ObjectOwnership"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::OwnershipControlsRule result;
+    if(value.contains("ObjectOwnership") && !value.at("ObjectOwnership").is_null())result.SetObjectOwnership(read_ObjectOwnership(value.at("ObjectOwnership")));
+    return result;
+}
+inline J write_OwnershipControlsRule(const Aws::S3::Model::OwnershipControlsRule& value) {
+    J result=J::object();
+    if(value.ObjectOwnershipHasBeenSet())result["ObjectOwnership"]=write_ObjectOwnership(value.GetObjectOwnership());
+    return result;
+}
+inline Aws::S3::Model::ObjectOwnership read_ObjectOwnership(const J& value) {
+    return Aws::S3::Model::ObjectOwnershipMapper::GetObjectOwnershipForName(value.get<std::string>());
+}
+inline J write_ObjectOwnership(const Aws::S3::Model::ObjectOwnership& value) {
+    return std::string(Aws::S3::Model::ObjectOwnershipMapper::GetNameForObjectOwnership(value).c_str());
+}
+inline Aws::S3::Model::PutBucketOwnershipControlsRequest read_PutBucketOwnershipControlsRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutBucketOwnershipControlsRequest");
+    static const std::set<std::string> allowed={"Bucket","ContentMD5","ExpectedBucketOwner","OwnershipControls","ChecksumAlgorithm"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutBucketOwnershipControlsRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ContentMD5") && !value.at("ContentMD5").is_null())result.SetContentMD5(read_ContentMD5(value.at("ContentMD5")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("OwnershipControls") && !value.at("OwnershipControls").is_null())result.SetOwnershipControls(read_OwnershipControls(value.at("OwnershipControls")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    return result;
+}
+inline J write_PutBucketOwnershipControlsRequest(const Aws::S3::Model::PutBucketOwnershipControlsRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ContentMD5HasBeenSet())result["ContentMD5"]=write_ContentMD5(value.GetContentMD5());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.OwnershipControlsHasBeenSet())result["OwnershipControls"]=write_OwnershipControls(value.GetOwnershipControls());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    return result;
+}
+inline Aws::S3::Model::DeleteBucketOwnershipControlsRequest read_DeleteBucketOwnershipControlsRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: DeleteBucketOwnershipControlsRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::DeleteBucketOwnershipControlsRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_DeleteBucketOwnershipControlsRequest(const Aws::S3::Model::DeleteBucketOwnershipControlsRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -1363,6 +1719,70 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
     if(op=="api.DeleteBucketEncryption"){
         auto request=read_DeleteBucketEncryptionRequest(input);J observed;HttpObservationScope observation(&observed,false);
         auto outcome=client.DeleteBucketEncryption(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetObjectLockConfiguration"){
+        auto request=read_GetObjectLockConfigurationRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetObjectLockConfiguration(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(true)data["ObjectLockConfiguration"]=write_ObjectLockConfiguration(result.GetObjectLockConfiguration());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutObjectLockConfiguration"){
+        auto request=read_PutObjectLockConfigurationRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutObjectLockConfiguration(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetPublicAccessBlock"){
+        auto request=read_GetPublicAccessBlockRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetPublicAccessBlock(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(true)data["PublicAccessBlockConfiguration"]=write_PublicAccessBlockConfiguration(result.GetPublicAccessBlockConfiguration());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutPublicAccessBlock"){
+        auto request=read_PutPublicAccessBlockRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutPublicAccessBlock(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.DeletePublicAccessBlock"){
+        auto request=read_DeletePublicAccessBlockRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.DeletePublicAccessBlock(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetBucketOwnershipControls"){
+        auto request=read_GetBucketOwnershipControlsRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetBucketOwnershipControls(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(true)data["OwnershipControls"]=write_OwnershipControls(result.GetOwnershipControls());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutBucketOwnershipControls"){
+        auto request=read_PutBucketOwnershipControlsRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutBucketOwnershipControls(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.DeleteBucketOwnershipControls"){
+        auto request=read_DeleteBucketOwnershipControlsRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.DeleteBucketOwnershipControls(request);checked(outcome);
         if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
         J data=J::object();
         observed["data"]=data;return observed;

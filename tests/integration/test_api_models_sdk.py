@@ -104,3 +104,70 @@ class ApiModelsSdkTest(unittest.TestCase):
                     result=worker.call({"op":"api.PutBucketLifecycleConfiguration","input":{"Bucket":"fixture","LifecycleConfiguration":{"Rules":[{"Status":"Enabled","Filter":{"ObjectSizeGreaterThan":number}}]}}})
                     self.assertTrue(result["ok"],result)
                 self.assertEqual([named(tree(request[3]),"ObjectSizeGreaterThan")[0].text for request in server.requests],["-9223372036854775808","9223372036854775807"])
+
+    def test_lock_configuration_uses_literal_invalid_values_and_actual_response(self):
+        """Send original invalid modes/periods and decode independent lock rules; expect exact wire enums/integers, a real signed creation header and no retained object uploads."""
+        response=b'<ObjectLockConfiguration><ObjectLockEnabled>Enabled</ObjectLockEnabled><Rule><DefaultRetention><Mode>COMPLIANCE</Mode><Years>3</Years></DefaultRetention></Rule></ObjectLockConfiguration>'
+        vectors=[{"Mode":"abc","Years":1},{"Mode":"governance","Years":1},{"Mode":"GOVERNANCE","Days":0},{"Mode":"GOVERNANCE","Years":-1},{"Mode":"GOVERNANCE","Days":1,"Years":1}]
+        fixtures=[(200,{},b"")]+[(200,{},b"")]*len(vectors)+[(200,{"Content-Type":"application/xml"},response)]
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            with self.subTest(language=language),fixture_worker(language,fixtures,"s3") as (worker,server):
+                result=worker.call({"op":"bucket_create_locked","bucket":"fixture"});self.assertTrue(result["ok"],result)
+                for vector in vectors:
+                    result=worker.call({"op":"api.PutObjectLockConfiguration","input":{"Bucket":"fixture","ObjectLockConfiguration":{"ObjectLockEnabled":"Enabled","Rule":{"DefaultRetention":vector}}}})
+                    self.assertTrue(result["ok"],result)
+                headers={key.lower():value for key,value in server.requests[0][2].items()}
+                self.assertEqual(headers["x-amz-bucket-object-lock-enabled"],"true")
+                self.assertIn("x-amz-bucket-object-lock-enabled",headers["authorization"])
+                for vector,request in zip(vectors,server.requests[1:]):
+                    document=tree(request[3])
+                    for key,value in vector.items():self.assertEqual(named(document,key)[0].text,str(value))
+                result=worker.call({"op":"api.GetObjectLockConfiguration","input":{"Bucket":"fixture"}})
+                self.assertTrue(result["ok"],result)
+                self.assertEqual(result["data"]["ObjectLockConfiguration"],{"ObjectLockEnabled":"Enabled","Rule":{"DefaultRetention":{"Mode":"COMPLIANCE","Years":3}}})
+                self.assertTrue(all("/fixture"==request[1].split("?",1)[0] for request in server.requests))
+
+    def test_public_block_and_ownership_preserve_false_and_server_rules(self):
+        """Write original boolean control vectors and ownership, then consume different service responses; expect explicit false XML and real SDK output values."""
+        block=b'<PublicAccessBlockConfiguration><BlockPublicAcls>false</BlockPublicAcls><IgnorePublicAcls>true</IgnorePublicAcls><BlockPublicPolicy>false</BlockPublicPolicy><RestrictPublicBuckets>true</RestrictPublicBuckets></PublicAccessBlockConfiguration>'
+        ownership=b'<OwnershipControls><Rule><ObjectOwnership>ObjectWriter</ObjectOwnership></Rule></OwnershipControls>'
+        fixtures=[(200,{},b""),(200,{"Content-Type":"application/xml"},block),(200,{},b""),(200,{"Content-Type":"application/xml"},ownership)]
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            with self.subTest(language=language),fixture_worker(language,fixtures,"s3") as (worker,server):
+                result=worker.call({"op":"api.PutPublicAccessBlock","input":{"Bucket":"fixture","PublicAccessBlockConfiguration":{"BlockPublicAcls":True,"IgnorePublicAcls":True,"BlockPublicPolicy":True,"RestrictPublicBuckets":False}}})
+                self.assertTrue(result["ok"],result);document=tree(server.requests[0][3]);self.assertEqual(named(document,"RestrictPublicBuckets")[0].text,"false")
+                result=worker.call({"op":"api.GetPublicAccessBlock","input":{"Bucket":"fixture"}})
+                self.assertTrue(result["ok"],result);self.assertEqual(result["data"]["PublicAccessBlockConfiguration"],{"BlockPublicAcls":False,"IgnorePublicAcls":True,"BlockPublicPolicy":False,"RestrictPublicBuckets":True})
+                result=worker.call({"op":"api.PutBucketOwnershipControls","input":{"Bucket":"fixture","OwnershipControls":{"Rules":[{"ObjectOwnership":"BucketOwnerEnforced"}]}}})
+                self.assertTrue(result["ok"],result);self.assertEqual(named(tree(server.requests[2][3]),"ObjectOwnership")[0].text,"BucketOwnerEnforced")
+                result=worker.call({"op":"api.GetBucketOwnershipControls","input":{"Bucket":"fixture"}})
+                self.assertTrue(result["ok"],result);self.assertEqual(result["data"]["OwnershipControls"]["Rules"],[{"ObjectOwnership":"ObjectWriter"}])
+
+    def test_original_enable_after_create_runs_all_versioning_steps(self):
+        """Feed independent service replies to the real translated source case; expect both 409 rejections, suspended/enabled SDK transitions, final enable and confirmed bucket cleanup."""
+        import tempfile
+        from pathlib import Path
+        from osv.ceph_bucket_controls import object_lock
+        from osv.scenarios import Context
+        from osv.suites import Probe
+        error=b'<Error><Code>InvalidBucketState</Code><Message>versioning required</Message></Error>'
+        suspended=b'<VersioningConfiguration><Status>Suspended</Status></VersioningConfiguration>'
+        enabled=b'<VersioningConfiguration><Status>Enabled</Status></VersioningConfiguration>'
+        listing=b'<ListBucketResult><IsTruncated>false</IsTruncated></ListBucketResult>'
+        fixtures=[(404,{},b""),(200,{},b""),(409,{"Content-Type":"application/xml"},error),
+                  (200,{},b""),(200,{"Content-Type":"application/xml"},suspended),
+                  (409,{"Content-Type":"application/xml"},error),(200,{},b""),
+                  (200,{"Content-Type":"application/xml"},enabled),(200,{},b""),
+                  (200,{},b""),(200,{"Content-Type":"application/xml"},listing),(204,{},b""),(404,{},b"")]
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,"s3") as (worker,server):
+                directory=Path(temporary);ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                evidence=object_lock(Probe(ctx),"enable_after")
+                self.assertTrue(evidence["cleanup_confirmed"])
+                self.assertEqual([request[0] for request in server.requests],["HEAD","PUT","PUT","PUT","GET","PUT","PUT","GET","PUT","HEAD","GET","DELETE","HEAD"])
+                self.assertEqual(named(tree(server.requests[3][3]),"Status")[0].text,"Suspended")
+                self.assertEqual(named(tree(server.requests[6][3]),"Status")[0].text,"Enabled")
+                for index in (2,5,8):
+                    self.assertEqual(named(tree(server.requests[index][3]),"Mode")[0].text,"GOVERNANCE")
+                    self.assertEqual(named(tree(server.requests[index][3]),"Days")[0].text,"1")
+                self.assertEqual({request[1].split("?",1)[0] for request in server.requests},{"/"+evidence["isolated_bucket"]})
