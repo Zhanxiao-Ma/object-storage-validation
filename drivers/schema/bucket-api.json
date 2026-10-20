@@ -463,6 +463,96 @@
           "value": true
         }
       }
+    },
+    "GetBucketAcl": {
+      "name": "GetBucketAcl",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?acl"
+      },
+      "input": {
+        "shape": "GetBucketAclRequest"
+      },
+      "output": {
+        "shape": "GetBucketAclOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketAcl": {
+      "name": "PutBucketAcl",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?acl"
+      },
+      "input": {
+        "shape": "PutBucketAclRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetObjectAcl": {
+      "name": "GetObjectAcl",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}/{Key+}?acl"
+      },
+      "input": {
+        "shape": "GetObjectAclRequest"
+      },
+      "output": {
+        "shape": "GetObjectAclOutput"
+      },
+      "errors": [
+        {
+          "shape": "NoSuchKey"
+        }
+      ]
+    },
+    "PutObjectAcl": {
+      "name": "PutObjectAcl",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}/{Key+}?acl"
+      },
+      "input": {
+        "shape": "PutObjectAclRequest"
+      },
+      "output": {
+        "shape": "PutObjectAclOutput"
+      },
+      "errors": [
+        {
+          "shape": "NoSuchKey"
+        }
+      ],
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      }
+    },
+    "ListBuckets": {
+      "name": "ListBuckets",
+      "http": {
+        "method": "GET",
+        "requestUri": "/"
+      },
+      "input": {
+        "shape": "ListBucketsRequest"
+      },
+      "output": {
+        "shape": "ListBucketsOutput"
+      }
     }
   },
   "shapes": {
@@ -2021,6 +2111,497 @@
           "locationName": "x-amz-expected-bucket-owner"
         }
       }
+    },
+    "GetBucketAclRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketAclOutput": {
+      "type": "structure",
+      "members": {
+        "Owner": {
+          "shape": "Owner"
+        },
+        "Grants": {
+          "shape": "Grants",
+          "locationName": "AccessControlList"
+        }
+      }
+    },
+    "Owner": {
+      "type": "structure",
+      "members": {
+        "DisplayName": {
+          "shape": "DisplayName"
+        },
+        "ID": {
+          "shape": "ID"
+        }
+      }
+    },
+    "DisplayName": {
+      "type": "string"
+    },
+    "Grants": {
+      "type": "list",
+      "member": {
+        "shape": "Grant",
+        "locationName": "Grant"
+      }
+    },
+    "Grant": {
+      "type": "structure",
+      "members": {
+        "Grantee": {
+          "shape": "Grantee"
+        },
+        "Permission": {
+          "shape": "Permission"
+        }
+      }
+    },
+    "Grantee": {
+      "type": "structure",
+      "required": [
+        "Type"
+      ],
+      "members": {
+        "DisplayName": {
+          "shape": "DisplayName"
+        },
+        "EmailAddress": {
+          "shape": "EmailAddress"
+        },
+        "ID": {
+          "shape": "ID"
+        },
+        "Type": {
+          "shape": "Type",
+          "locationName": "xsi:type",
+          "xmlAttribute": true
+        },
+        "URI": {
+          "shape": "URI"
+        }
+      },
+      "xmlNamespace": {
+        "prefix": "xsi",
+        "uri": "http://www.w3.org/2001/XMLSchema-instance"
+      }
+    },
+    "EmailAddress": {
+      "type": "string"
+    },
+    "Type": {
+      "type": "string",
+      "enum": [
+        "CanonicalUser",
+        "AmazonCustomerByEmail",
+        "Group"
+      ]
+    },
+    "URI": {
+      "type": "string"
+    },
+    "Permission": {
+      "type": "string",
+      "enum": [
+        "FULL_CONTROL",
+        "WRITE",
+        "WRITE_ACP",
+        "READ",
+        "READ_ACP"
+      ]
+    },
+    "PutBucketAclRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "ACL": {
+          "shape": "BucketCannedACL",
+          "location": "header",
+          "locationName": "x-amz-acl"
+        },
+        "AccessControlPolicy": {
+          "shape": "AccessControlPolicy",
+          "locationName": "AccessControlPolicy",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "GrantFullControl": {
+          "shape": "GrantFullControl",
+          "location": "header",
+          "locationName": "x-amz-grant-full-control"
+        },
+        "GrantRead": {
+          "shape": "GrantRead",
+          "location": "header",
+          "locationName": "x-amz-grant-read"
+        },
+        "GrantReadACP": {
+          "shape": "GrantReadACP",
+          "location": "header",
+          "locationName": "x-amz-grant-read-acp"
+        },
+        "GrantWrite": {
+          "shape": "GrantWrite",
+          "location": "header",
+          "locationName": "x-amz-grant-write"
+        },
+        "GrantWriteACP": {
+          "shape": "GrantWriteACP",
+          "location": "header",
+          "locationName": "x-amz-grant-write-acp"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "AccessControlPolicy"
+    },
+    "BucketCannedACL": {
+      "type": "string",
+      "enum": [
+        "private",
+        "public-read",
+        "public-read-write",
+        "authenticated-read"
+      ]
+    },
+    "AccessControlPolicy": {
+      "type": "structure",
+      "members": {
+        "Grants": {
+          "shape": "Grants",
+          "locationName": "AccessControlList"
+        },
+        "Owner": {
+          "shape": "Owner"
+        }
+      }
+    },
+    "GrantFullControl": {
+      "type": "string"
+    },
+    "GrantRead": {
+      "type": "string"
+    },
+    "GrantReadACP": {
+      "type": "string"
+    },
+    "GrantWrite": {
+      "type": "string"
+    },
+    "GrantWriteACP": {
+      "type": "string"
+    },
+    "GetObjectAclRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "ObjectVersionId": {
+      "type": "string"
+    },
+    "GetObjectAclOutput": {
+      "type": "structure",
+      "members": {
+        "Owner": {
+          "shape": "Owner"
+        },
+        "Grants": {
+          "shape": "Grants",
+          "locationName": "AccessControlList"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "NoSuchKey": {
+      "type": "structure",
+      "members": {},
+      "error": {
+        "httpStatusCode": 404
+      },
+      "exception": true
+    },
+    "PutObjectAclRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "ACL": {
+          "shape": "ObjectCannedACL",
+          "location": "header",
+          "locationName": "x-amz-acl"
+        },
+        "AccessControlPolicy": {
+          "shape": "AccessControlPolicy",
+          "locationName": "AccessControlPolicy",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "GrantFullControl": {
+          "shape": "GrantFullControl",
+          "location": "header",
+          "locationName": "x-amz-grant-full-control"
+        },
+        "GrantRead": {
+          "shape": "GrantRead",
+          "location": "header",
+          "locationName": "x-amz-grant-read"
+        },
+        "GrantReadACP": {
+          "shape": "GrantReadACP",
+          "location": "header",
+          "locationName": "x-amz-grant-read-acp"
+        },
+        "GrantWrite": {
+          "shape": "GrantWrite",
+          "location": "header",
+          "locationName": "x-amz-grant-write"
+        },
+        "GrantWriteACP": {
+          "shape": "GrantWriteACP",
+          "location": "header",
+          "locationName": "x-amz-grant-write-acp"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "AccessControlPolicy"
+    },
+    "ObjectCannedACL": {
+      "type": "string",
+      "enum": [
+        "private",
+        "public-read",
+        "public-read-write",
+        "authenticated-read",
+        "aws-exec-read",
+        "bucket-owner-read",
+        "bucket-owner-full-control"
+      ]
+    },
+    "PutObjectAclOutput": {
+      "type": "structure",
+      "members": {
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "ListBucketsRequest": {
+      "type": "structure",
+      "members": {
+        "MaxBuckets": {
+          "shape": "MaxBuckets",
+          "location": "querystring",
+          "locationName": "max-buckets"
+        },
+        "ContinuationToken": {
+          "shape": "Token",
+          "location": "querystring",
+          "locationName": "continuation-token"
+        },
+        "Prefix": {
+          "shape": "Prefix",
+          "location": "querystring",
+          "locationName": "prefix"
+        },
+        "BucketRegion": {
+          "shape": "BucketRegion",
+          "location": "querystring",
+          "locationName": "bucket-region"
+        }
+      }
+    },
+    "MaxBuckets": {
+      "type": "integer",
+      "box": true,
+      "max": 10000,
+      "min": 1
+    },
+    "Token": {
+      "type": "string"
+    },
+    "BucketRegion": {
+      "type": "string"
+    },
+    "ListBucketsOutput": {
+      "type": "structure",
+      "members": {
+        "Buckets": {
+          "shape": "Buckets"
+        },
+        "Owner": {
+          "shape": "Owner"
+        },
+        "ContinuationToken": {
+          "shape": "NextToken"
+        },
+        "Prefix": {
+          "shape": "Prefix"
+        }
+      }
+    },
+    "Buckets": {
+      "type": "list",
+      "member": {
+        "shape": "Bucket",
+        "locationName": "Bucket"
+      }
+    },
+    "Bucket": {
+      "type": "structure",
+      "members": {
+        "Name": {
+          "shape": "BucketName"
+        },
+        "CreationDate": {
+          "shape": "CreationDate"
+        },
+        "BucketRegion": {
+          "shape": "BucketRegion"
+        },
+        "BucketArn": {
+          "shape": "S3RegionalOrS3ExpressBucketArnString"
+        }
+      }
+    },
+    "CreationDate": {
+      "type": "timestamp"
+    },
+    "S3RegionalOrS3ExpressBucketArnString": {
+      "type": "string",
+      "max": 128,
+      "min": 1,
+      "pattern": "arn:[^:]+:(s3|s3express):.*"
+    },
+    "NextToken": {
+      "type": "string"
     }
   }
 }

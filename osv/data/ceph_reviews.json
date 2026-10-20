@@ -1446,6 +1446,192 @@
       "source_sha256": "ddd5503fb45db174d564cd6d2f572b7ddbcb4211a63bacc4d300f46f1f416502",
       "implementation": "ceph_policy_list_v2_another",
       "review": "核对固定源码策略、对象输入及全部列举断言：asdf/abcd、s3:ListBucket、AWS:* Principal、同桶/通配资源；两个策略跨桶用例直接把真实 GetBucketPolicy 的 Policy 字符串送入真实 PutBucketPolicy，未重写返回值。另一个身份使用独立实际 SDK 客户端，缺其凭据时缺失 identity_alt 能力，不能回退主身份执行。HTTP 合约验证实际凭据签名、会话令牌/匿名隔离以及真实生产者到消费者的策略字节。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_default@L3937",
+      "source_sha256": "c8f21468a2295f8fa110a8098337fb98ffa2a5deb5c28ccd9ceb30204a1709ba",
+      "implementation": "ceph_acl_bucket_default",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_canned_during_create@L3965",
+      "source_sha256": "68d1fd025d3d2dee9c49f1e2d1ce4e172c1b5865a0c383d309093baf5de20eac",
+      "implementation": "ceph_acl_bucket_public",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_canned@L3997",
+      "source_sha256": "f3643342b96d713368c2660668a6590ea6d9677b17d6b2d576c5bcbefe0dc74d",
+      "implementation": "ceph_acl_bucket_cycle",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_canned_publicreadwrite@L4047",
+      "source_sha256": "ec7869c27259029010c969d6bd3a5dfab1d16e366ca1250c8d057639627c7dd4",
+      "implementation": "ceph_acl_bucket_readwrite",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_canned_authenticatedread@L4086",
+      "source_sha256": "d74f78012a9a7831a1715d0b6b59ef62da935baec172c8e964102fdb71b46e7a",
+      "implementation": "ceph_acl_bucket_authenticated",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_default@L4153",
+      "source_sha256": "a282e7b1bcc6fbea54012286a7fff4819ee85a81fd8da96d5e0b7932a68b91f7",
+      "implementation": "ceph_acl_object_default",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned_during_create@L4179",
+      "source_sha256": "0bed8f896540926313937bb1d3d7774e627c741ff7ad9bb783fa459311058608",
+      "implementation": "ceph_acl_object_public",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned@L4213",
+      "source_sha256": "e48d166fcb7e9e9a49dec8a1ecc63c2b8ea4584a817f909654af276d7ad4039d",
+      "implementation": "ceph_acl_object_cycle",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned_publicreadwrite@L4266",
+      "source_sha256": "d99155c6798cc4c8d9f3c019c8526bea83b27ff02a91ea9c9617bbc7ebe81fa9",
+      "implementation": "ceph_acl_object_readwrite",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_canned_authenticatedread@L4307",
+      "source_sha256": "da68d8cb7e31b17313f547512c7f4c2a0d662912531bbacf58557dc917581b8b",
+      "implementation": "ceph_acl_object_authenticated",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl@L4572",
+      "source_sha256": "6ab562824b8091beb107d1f10b00b901aff4e60c2e53d92c05208dd0ac63b0ae",
+      "implementation": "ceph_acl_permission_full_control",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_write@L4576",
+      "source_sha256": "340e0c6b58e675165d0c3a3859d414b9bdf43b6de00e5800046302299236756e",
+      "implementation": "ceph_acl_permission_write",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_writeacp@L4580",
+      "source_sha256": "6a160ddf4ab2c5f2097ac21a3698f4cb70ff966c6e53cf7241bf3152a973caa0",
+      "implementation": "ceph_acl_permission_write_acp",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_read@L4585",
+      "source_sha256": "8d8f3ed3bad91ee42a3bc68963d5fb987423184fe12bf30a5581f5e4765040c0",
+      "implementation": "ceph_acl_permission_read",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_acl_readacp@L4590",
+      "source_sha256": "2bcb8c74555a637e0271c50365dea039dc1b2e3bd66d30e1e85cba424edc9faa",
+      "implementation": "ceph_acl_permission_read_acp",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_acl_grant_group_read@L4118",
+      "source_sha256": "4657940236bf01a935bdaac09a45bc1d7f2b567280491dd3f76d916359cbb4bb",
+      "implementation": "ceph_acl_explicit_group",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_nonexist_user@L4776",
+      "source_sha256": "08a787b2f0b02fdec46ec152a924aa9e63cdd86662f425e8f5dd2d45640b5292",
+      "implementation": "ceph_acl_explicit_nonexistent",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_email@L4960",
+      "source_sha256": "f7cfbb38b44f0b93a4055224b9bf8b5a14302df41c0722bedacc446ef2527be2",
+      "implementation": "ceph_acl_explicit_email",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_email_not_exist@L5002",
+      "source_sha256": "712f796023038bd066ecb6589b88772757154d9ec3d1edcb05f4e0c11d5c4c00",
+      "implementation": "ceph_acl_explicit_email_nonexistent",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_canned_private_to_private@L4503",
+      "source_sha256": "d764259b113d7e5605bf787b7f81c5fc15167c21fafb725c4c35461627bd2dc3",
+      "implementation": "ceph_acl_private_to_private",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_revoke_all@L5021",
+      "source_sha256": "024b075b7ca470e3f2d07443855c7780712b13d9a96717ab14f6abba86dcfeba",
+      "implementation": "ceph_acl_revoke_all",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_userid_fullcontrol@L4699",
+      "source_sha256": "896d2437cb82060cf969563ce8a2d0a3461d915065fd32c9c1df370947a3cd49",
+      "implementation": "ceph_acl_user_full_control",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_userid_read@L4724",
+      "source_sha256": "4d1697de4b2b197fa4fe108d3a105565687113f3a8a8500e42ac0e5593df5bfa",
+      "implementation": "ceph_acl_user_read",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_userid_readacp@L4737",
+      "source_sha256": "006d018907513bb21ef1eedfb0857ff8309bf83685b92bdd853eeb257df4a122",
+      "implementation": "ceph_acl_user_read_acp",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_userid_write@L4751",
+      "source_sha256": "e03b66b7e478ec19985bd29c3f3af19a683fcd2ccbe0b6203b21c4ab79ab2701",
+      "implementation": "ceph_acl_user_write",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_acl_grant_userid_writeacp@L4764",
+      "source_sha256": "e7dd0681c91b7c07b4ab80a335c557ce58f7e3d589688d963d08c077462e126a",
+      "implementation": "ceph_acl_user_write_acp",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 foo/bar、创建时预置 ACL、Group/CanonicalUser/Email、Owner/Grants 实际读回后再更新、原始权限矩阵、_foo 和不存在邮件及精确服务错误；canonical_id/display_name/email 使用独立 workload.identities 预期，不从被测输出推导。check_grants 保留原源码条件排序、缺失字段与额外字段规则，包括原本的排序局限；不在此批修正预期。撤销全部授权后即使断言失败也恢复原 SDK 策略供清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_buckets_create_then_list@L5341",
+      "source_sha256": "9c7fc6336aa01ec0ac5d4826d20e8b4a10b8d3af66cf48a21ff28b93d2dd7c92",
+      "implementation": "ceph_inventory_membership",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留创建五桶后的真实服务级桶清单成员或 UTC 一日前创建时间断言，只检查源用例选择的新桶；匿名请求真实不签名，桶数零断言不筛选也不改成 AccessDenied。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_buckets_list_ctime@L5361",
+      "source_sha256": "e3f933548696edbaa125bcbb61f50cac93881d224e8b2a26f94a802e61f38d09",
+      "implementation": "ceph_inventory_ctime",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留创建五桶后的真实服务级桶清单成员或 UTC 一日前创建时间断言，只检查源用例选择的新桶；匿名请求真实不签名，桶数零断言不筛选也不改成 AccessDenied。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_buckets_anonymous@L5379",
+      "source_sha256": "e48cccaa91ef244ef9f5d36595639d767478c295faf930f4f0b07fc7ddfba070",
+      "implementation": "ceph_inventory_anonymous",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留创建五桶后的真实服务级桶清单成员或 UTC 一日前创建时间断言，只检查源用例选择的新桶；匿名请求真实不签名，桶数零断言不筛选也不改成 AccessDenied。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_acl@L11650",
+      "source_sha256": "d984e40b667deff3a762171234cc6622cc21f40d9498a057ff8d6f0c5d842296",
+      "implementation": "ceph_policy_deny_acl_v1",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 authenticated-read ACL、Deny ListBucket 策略、独立另一身份 V1/V2 列举 403/AccessDenied 和 public-read 恢复；真实 SDK 解析/请求失败同样保留，finally 删除策略以清理独立桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucketv2_policy_acl@L11686",
+      "source_sha256": "840b77e51c3e40211f21ae5aa2c29920f820f6503021c4772e6e1014aa6275e2",
+      "implementation": "ceph_policy_deny_acl_v2",
+      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 authenticated-read ACL、Deny ListBucket 策略、独立另一身份 V1/V2 列举 403/AccessDenied 和 public-read 恢复；真实 SDK 解析/请求失败同样保留，finally 删除策略以清理独立桶。"
     }
   ]
 }

@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 4 项，总计 335 项（331 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项，总计 366 项（362 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -314,3 +314,13 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 `ceph_bucket_policy` 迁移 V1/V2 策略列举及跨桶复用策略 4 项，保留原始 asdf/abcd、Principal、Action、资源 ARN 和另一身份列举。跨桶场景直接消费真实 GetBucketPolicy 输出，不自行重建策略。真实 HTTP 检查不同签名凭据/会话令牌、匿名头缺失、回到主身份后的隔离以及策略字节从生产者进入消费者。
 
 缺另一个身份凭据时四项明确 not_run，阻止完善档性能统计。本地配置另一个测试身份时 Java 完成四项，C++ 保留本地服务返回导致的真实 SDK 策略解析错误。该本地检查不认证云端权限行为；ACL、跨租户授权与 IAM/STS/SNS 场景仍按清单显示迁移状态。
+
+### ACL 与桶清单批量迁移
+
+`ceph_acl` 增加 26 项：桶/对象默认与创建时 public-read、private 往返、public-read-write、authenticated-read，五种对象显式权限，组/用户 ID/邮件授权及不存在身份，private 幂等设置、撤销全部授权后恢复，以及另一身份的 READ/READ_ACP/WRITE/WRITE_ACP/FULL_CONTROL 权限向量。SDK 原生模型保留 Grantee 的 xsi:type、Owner、Grants；创建时 ACL 用真实创建请求，ACL 修改直接消费真实读回值。
+
+`workload.identities` 提供独立预期身份元数据，例如 `{"main":{"canonical_id":"configured-main-id","display_name":"configured-main-name"},"alt":{"canonical_id":"configured-alt-id","display_name":"configured-alt-name","email":"configured-alt@example.invalid"}}`。缺失的预期和 SDK 身份能力分别显示明确原因，不能从被测接口读回值构造预期。原 check_grants 的条件排序/字段规则及局限保持，暂不协调上游预期。撤销全部 ACL 和 Deny 策略的场景均在失败路径恢复配置，避免清理被拒绝。
+
+`ceph_bucket_inventory` 增加五桶创建后清单成员、创建时间下界、真正匿名列举共 3 项。独立桶清理不删除其他已存在的桶；匿名结果不筛选。策略组另补 Deny 覆盖 authenticated-read ACL 的 V1/V2 两项，仍要求 403/AccessDenied。
+
+本地 Moto 使用独立配置的固定账户元数据执行全部 ACL：private 幂等/撤销恢复通过，其余 24 项保留缺 DisplayName、权限/列表规则及非法授权接受等诊断。桶成员和创建时间通过，匿名桶数与策略 Deny 不符合原预期的结果保持失败。另有真正 SDK HTTP 合约核验模型、请求头和 Owner/Grants 生产者到消费者链路。以上均不代表云厂商认证。

@@ -69,6 +69,20 @@
 #include <aws/s3/model/ObjectOwnership.h>
 #include <aws/s3/model/PutBucketOwnershipControlsRequest.h>
 #include <aws/s3/model/DeleteBucketOwnershipControlsRequest.h>
+#include <aws/s3/model/GetBucketAclRequest.h>
+#include <aws/s3/model/Owner.h>
+#include <aws/s3/model/Grant.h>
+#include <aws/s3/model/Grantee.h>
+#include <aws/s3/model/Type.h>
+#include <aws/s3/model/Permission.h>
+#include <aws/s3/model/PutBucketAclRequest.h>
+#include <aws/s3/model/BucketCannedACL.h>
+#include <aws/s3/model/AccessControlPolicy.h>
+#include <aws/s3/model/GetObjectAclRequest.h>
+#include <aws/s3/model/PutObjectAclRequest.h>
+#include <aws/s3/model/ObjectCannedACL.h>
+#include <aws/s3/model/ListBucketsRequest.h>
+#include <aws/s3/model/Bucket.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -80,6 +94,10 @@
 #include <aws/s3/model/PutObjectLockConfigurationResult.h>
 #include <aws/s3/model/GetPublicAccessBlockResult.h>
 #include <aws/s3/model/GetBucketOwnershipControlsResult.h>
+#include <aws/s3/model/GetBucketAclResult.h>
+#include <aws/s3/model/GetObjectAclResult.h>
+#include <aws/s3/model/PutObjectAclResult.h>
+#include <aws/s3/model/ListBucketsResult.h>
 namespace osv_bucket_api {
 using J=nlohmann::json;
 inline int64_t signed_integer(const J& value,int64_t minimum,int64_t maximum,const char* field){
@@ -309,6 +327,68 @@ inline Aws::S3::Model::PutBucketOwnershipControlsRequest read_PutBucketOwnership
 inline J write_PutBucketOwnershipControlsRequest(const Aws::S3::Model::PutBucketOwnershipControlsRequest& value);
 inline Aws::S3::Model::DeleteBucketOwnershipControlsRequest read_DeleteBucketOwnershipControlsRequest(const J& value);
 inline J write_DeleteBucketOwnershipControlsRequest(const Aws::S3::Model::DeleteBucketOwnershipControlsRequest& value);
+inline Aws::S3::Model::GetBucketAclRequest read_GetBucketAclRequest(const J& value);
+inline J write_GetBucketAclRequest(const Aws::S3::Model::GetBucketAclRequest& value);
+inline Aws::S3::Model::Owner read_Owner(const J& value);
+inline J write_Owner(const Aws::S3::Model::Owner& value);
+inline Aws::String read_DisplayName(const J& value);
+inline J write_DisplayName(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::Grant> read_Grants(const J& value);
+inline J write_Grants(const Aws::Vector<Aws::S3::Model::Grant>& value);
+inline Aws::S3::Model::Grant read_Grant(const J& value);
+inline J write_Grant(const Aws::S3::Model::Grant& value);
+inline Aws::S3::Model::Grantee read_Grantee(const J& value);
+inline J write_Grantee(const Aws::S3::Model::Grantee& value);
+inline Aws::String read_EmailAddress(const J& value);
+inline J write_EmailAddress(const Aws::String& value);
+inline Aws::S3::Model::Type read_Type(const J& value);
+inline J write_Type(const Aws::S3::Model::Type& value);
+inline Aws::String read_URI(const J& value);
+inline J write_URI(const Aws::String& value);
+inline Aws::S3::Model::Permission read_Permission(const J& value);
+inline J write_Permission(const Aws::S3::Model::Permission& value);
+inline Aws::S3::Model::PutBucketAclRequest read_PutBucketAclRequest(const J& value);
+inline J write_PutBucketAclRequest(const Aws::S3::Model::PutBucketAclRequest& value);
+inline Aws::S3::Model::BucketCannedACL read_BucketCannedACL(const J& value);
+inline J write_BucketCannedACL(const Aws::S3::Model::BucketCannedACL& value);
+inline Aws::S3::Model::AccessControlPolicy read_AccessControlPolicy(const J& value);
+inline J write_AccessControlPolicy(const Aws::S3::Model::AccessControlPolicy& value);
+inline Aws::String read_GrantFullControl(const J& value);
+inline J write_GrantFullControl(const Aws::String& value);
+inline Aws::String read_GrantRead(const J& value);
+inline J write_GrantRead(const Aws::String& value);
+inline Aws::String read_GrantReadACP(const J& value);
+inline J write_GrantReadACP(const Aws::String& value);
+inline Aws::String read_GrantWrite(const J& value);
+inline J write_GrantWrite(const Aws::String& value);
+inline Aws::String read_GrantWriteACP(const J& value);
+inline J write_GrantWriteACP(const Aws::String& value);
+inline Aws::S3::Model::GetObjectAclRequest read_GetObjectAclRequest(const J& value);
+inline J write_GetObjectAclRequest(const Aws::S3::Model::GetObjectAclRequest& value);
+inline Aws::String read_ObjectVersionId(const J& value);
+inline J write_ObjectVersionId(const Aws::String& value);
+inline Aws::S3::Model::PutObjectAclRequest read_PutObjectAclRequest(const J& value);
+inline J write_PutObjectAclRequest(const Aws::S3::Model::PutObjectAclRequest& value);
+inline Aws::S3::Model::ObjectCannedACL read_ObjectCannedACL(const J& value);
+inline J write_ObjectCannedACL(const Aws::S3::Model::ObjectCannedACL& value);
+inline Aws::S3::Model::ListBucketsRequest read_ListBucketsRequest(const J& value);
+inline J write_ListBucketsRequest(const Aws::S3::Model::ListBucketsRequest& value);
+inline int read_MaxBuckets(const J& value);
+inline J write_MaxBuckets(const int& value);
+inline Aws::String read_Token(const J& value);
+inline J write_Token(const Aws::String& value);
+inline Aws::String read_BucketRegion(const J& value);
+inline J write_BucketRegion(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::Bucket> read_Buckets(const J& value);
+inline J write_Buckets(const Aws::Vector<Aws::S3::Model::Bucket>& value);
+inline Aws::S3::Model::Bucket read_Bucket(const J& value);
+inline J write_Bucket(const Aws::S3::Model::Bucket& value);
+inline Aws::Utils::DateTime read_CreationDate(const J& value);
+inline J write_CreationDate(const Aws::Utils::DateTime& value);
+inline Aws::String read_S3RegionalOrS3ExpressBucketArnString(const J& value);
+inline J write_S3RegionalOrS3ExpressBucketArnString(const Aws::String& value);
+inline Aws::String read_NextToken(const J& value);
+inline J write_NextToken(const Aws::String& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -1573,8 +1653,348 @@ inline J write_DeleteBucketOwnershipControlsRequest(const Aws::S3::Model::Delete
     if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
     return result;
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::GetBucketAclRequest read_GetBucketAclRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetBucketAclRequest");
+    static const std::set<std::string> allowed={"Bucket","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetBucketAclRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_GetBucketAclRequest(const Aws::S3::Model::GetBucketAclRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::Owner read_Owner(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: Owner");
+    static const std::set<std::string> allowed={"DisplayName","ID"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::Owner result;
+    if(value.contains("DisplayName") && !value.at("DisplayName").is_null())result.SetDisplayName(read_DisplayName(value.at("DisplayName")));
+    if(value.contains("ID") && !value.at("ID").is_null())result.SetID(read_ID(value.at("ID")));
+    return result;
+}
+inline J write_Owner(const Aws::S3::Model::Owner& value) {
+    J result=J::object();
+    if(value.DisplayNameHasBeenSet())result["DisplayName"]=write_DisplayName(value.GetDisplayName());
+    if(value.IDHasBeenSet())result["ID"]=write_ID(value.GetID());
+    return result;
+}
+inline Aws::String read_DisplayName(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_DisplayName(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::Grant> read_Grants(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: Grants");
+    Aws::Vector<Aws::S3::Model::Grant> result;for(const auto& item:value)result.push_back(read_Grant(item));return result;
+}
+inline J write_Grants(const Aws::Vector<Aws::S3::Model::Grant>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_Grant(item));return result;
+}
+inline Aws::S3::Model::Grant read_Grant(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: Grant");
+    static const std::set<std::string> allowed={"Grantee","Permission"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::Grant result;
+    if(value.contains("Grantee") && !value.at("Grantee").is_null())result.SetGrantee(read_Grantee(value.at("Grantee")));
+    if(value.contains("Permission") && !value.at("Permission").is_null())result.SetPermission(read_Permission(value.at("Permission")));
+    return result;
+}
+inline J write_Grant(const Aws::S3::Model::Grant& value) {
+    J result=J::object();
+    if(value.GranteeHasBeenSet())result["Grantee"]=write_Grantee(value.GetGrantee());
+    if(value.PermissionHasBeenSet())result["Permission"]=write_Permission(value.GetPermission());
+    return result;
+}
+inline Aws::S3::Model::Grantee read_Grantee(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: Grantee");
+    static const std::set<std::string> allowed={"DisplayName","EmailAddress","ID","Type","URI"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::Grantee result;
+    if(value.contains("DisplayName") && !value.at("DisplayName").is_null())result.SetDisplayName(read_DisplayName(value.at("DisplayName")));
+    if(value.contains("EmailAddress") && !value.at("EmailAddress").is_null())result.SetEmailAddress(read_EmailAddress(value.at("EmailAddress")));
+    if(value.contains("ID") && !value.at("ID").is_null())result.SetID(read_ID(value.at("ID")));
+    if(value.contains("Type") && !value.at("Type").is_null())result.SetType(read_Type(value.at("Type")));
+    if(value.contains("URI") && !value.at("URI").is_null())result.SetURI(read_URI(value.at("URI")));
+    return result;
+}
+inline J write_Grantee(const Aws::S3::Model::Grantee& value) {
+    J result=J::object();
+    if(value.DisplayNameHasBeenSet())result["DisplayName"]=write_DisplayName(value.GetDisplayName());
+    if(value.EmailAddressHasBeenSet())result["EmailAddress"]=write_EmailAddress(value.GetEmailAddress());
+    if(value.IDHasBeenSet())result["ID"]=write_ID(value.GetID());
+    if(value.TypeHasBeenSet())result["Type"]=write_Type(value.GetType());
+    if(value.URIHasBeenSet())result["URI"]=write_URI(value.GetURI());
+    return result;
+}
+inline Aws::String read_EmailAddress(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_EmailAddress(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::Type read_Type(const J& value) {
+    return Aws::S3::Model::TypeMapper::GetTypeForName(value.get<std::string>());
+}
+inline J write_Type(const Aws::S3::Model::Type& value) {
+    return std::string(Aws::S3::Model::TypeMapper::GetNameForType(value).c_str());
+}
+inline Aws::String read_URI(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_URI(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::Permission read_Permission(const J& value) {
+    return Aws::S3::Model::PermissionMapper::GetPermissionForName(value.get<std::string>());
+}
+inline J write_Permission(const Aws::S3::Model::Permission& value) {
+    return std::string(Aws::S3::Model::PermissionMapper::GetNameForPermission(value).c_str());
+}
+inline Aws::S3::Model::PutBucketAclRequest read_PutBucketAclRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutBucketAclRequest");
+    static const std::set<std::string> allowed={"ACL","AccessControlPolicy","Bucket","ContentMD5","ChecksumAlgorithm","GrantFullControl","GrantRead","GrantReadACP","GrantWrite","GrantWriteACP","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutBucketAclRequest result;
+    if(value.contains("ACL") && !value.at("ACL").is_null())result.SetACL(read_BucketCannedACL(value.at("ACL")));
+    if(value.contains("AccessControlPolicy") && !value.at("AccessControlPolicy").is_null())result.SetAccessControlPolicy(read_AccessControlPolicy(value.at("AccessControlPolicy")));
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ContentMD5") && !value.at("ContentMD5").is_null())result.SetContentMD5(read_ContentMD5(value.at("ContentMD5")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("GrantFullControl") && !value.at("GrantFullControl").is_null())result.SetGrantFullControl(read_GrantFullControl(value.at("GrantFullControl")));
+    if(value.contains("GrantRead") && !value.at("GrantRead").is_null())result.SetGrantRead(read_GrantRead(value.at("GrantRead")));
+    if(value.contains("GrantReadACP") && !value.at("GrantReadACP").is_null())result.SetGrantReadACP(read_GrantReadACP(value.at("GrantReadACP")));
+    if(value.contains("GrantWrite") && !value.at("GrantWrite").is_null())result.SetGrantWrite(read_GrantWrite(value.at("GrantWrite")));
+    if(value.contains("GrantWriteACP") && !value.at("GrantWriteACP").is_null())result.SetGrantWriteACP(read_GrantWriteACP(value.at("GrantWriteACP")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_PutBucketAclRequest(const Aws::S3::Model::PutBucketAclRequest& value) {
+    J result=J::object();
+    if(value.ACLHasBeenSet())result["ACL"]=write_BucketCannedACL(value.GetACL());
+    if(value.AccessControlPolicyHasBeenSet())result["AccessControlPolicy"]=write_AccessControlPolicy(value.GetAccessControlPolicy());
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ContentMD5HasBeenSet())result["ContentMD5"]=write_ContentMD5(value.GetContentMD5());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.GrantFullControlHasBeenSet())result["GrantFullControl"]=write_GrantFullControl(value.GetGrantFullControl());
+    if(value.GrantReadHasBeenSet())result["GrantRead"]=write_GrantRead(value.GetGrantRead());
+    if(value.GrantReadACPHasBeenSet())result["GrantReadACP"]=write_GrantReadACP(value.GetGrantReadACP());
+    if(value.GrantWriteHasBeenSet())result["GrantWrite"]=write_GrantWrite(value.GetGrantWrite());
+    if(value.GrantWriteACPHasBeenSet())result["GrantWriteACP"]=write_GrantWriteACP(value.GetGrantWriteACP());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::BucketCannedACL read_BucketCannedACL(const J& value) {
+    return Aws::S3::Model::BucketCannedACLMapper::GetBucketCannedACLForName(value.get<std::string>());
+}
+inline J write_BucketCannedACL(const Aws::S3::Model::BucketCannedACL& value) {
+    return std::string(Aws::S3::Model::BucketCannedACLMapper::GetNameForBucketCannedACL(value).c_str());
+}
+inline Aws::S3::Model::AccessControlPolicy read_AccessControlPolicy(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AccessControlPolicy");
+    static const std::set<std::string> allowed={"Grants","Owner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::AccessControlPolicy result;
+    if(value.contains("Grants") && !value.at("Grants").is_null())result.SetGrants(read_Grants(value.at("Grants")));
+    if(value.contains("Owner") && !value.at("Owner").is_null())result.SetOwner(read_Owner(value.at("Owner")));
+    return result;
+}
+inline J write_AccessControlPolicy(const Aws::S3::Model::AccessControlPolicy& value) {
+    J result=J::object();
+    if(value.GrantsHasBeenSet())result["Grants"]=write_Grants(value.GetGrants());
+    if(value.OwnerHasBeenSet())result["Owner"]=write_Owner(value.GetOwner());
+    return result;
+}
+inline Aws::String read_GrantFullControl(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_GrantFullControl(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_GrantRead(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_GrantRead(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_GrantReadACP(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_GrantReadACP(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_GrantWrite(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_GrantWrite(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_GrantWriteACP(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_GrantWriteACP(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::GetObjectAclRequest read_GetObjectAclRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: GetObjectAclRequest");
+    static const std::set<std::string> allowed={"Bucket","Key","VersionId","RequestPayer","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::GetObjectAclRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("VersionId") && !value.at("VersionId").is_null())result.SetVersionId(read_ObjectVersionId(value.at("VersionId")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_GetObjectAclRequest(const Aws::S3::Model::GetObjectAclRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.VersionIdHasBeenSet())result["VersionId"]=write_ObjectVersionId(value.GetVersionId());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::String read_ObjectVersionId(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ObjectVersionId(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::PutObjectAclRequest read_PutObjectAclRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutObjectAclRequest");
+    static const std::set<std::string> allowed={"ACL","AccessControlPolicy","Bucket","ContentMD5","ChecksumAlgorithm","GrantFullControl","GrantRead","GrantReadACP","GrantWrite","GrantWriteACP","Key","RequestPayer","VersionId","ExpectedBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutObjectAclRequest result;
+    if(value.contains("ACL") && !value.at("ACL").is_null())result.SetACL(read_ObjectCannedACL(value.at("ACL")));
+    if(value.contains("AccessControlPolicy") && !value.at("AccessControlPolicy").is_null())result.SetAccessControlPolicy(read_AccessControlPolicy(value.at("AccessControlPolicy")));
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("ContentMD5") && !value.at("ContentMD5").is_null())result.SetContentMD5(read_ContentMD5(value.at("ContentMD5")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("GrantFullControl") && !value.at("GrantFullControl").is_null())result.SetGrantFullControl(read_GrantFullControl(value.at("GrantFullControl")));
+    if(value.contains("GrantRead") && !value.at("GrantRead").is_null())result.SetGrantRead(read_GrantRead(value.at("GrantRead")));
+    if(value.contains("GrantReadACP") && !value.at("GrantReadACP").is_null())result.SetGrantReadACP(read_GrantReadACP(value.at("GrantReadACP")));
+    if(value.contains("GrantWrite") && !value.at("GrantWrite").is_null())result.SetGrantWrite(read_GrantWrite(value.at("GrantWrite")));
+    if(value.contains("GrantWriteACP") && !value.at("GrantWriteACP").is_null())result.SetGrantWriteACP(read_GrantWriteACP(value.at("GrantWriteACP")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("VersionId") && !value.at("VersionId").is_null())result.SetVersionId(read_ObjectVersionId(value.at("VersionId")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    return result;
+}
+inline J write_PutObjectAclRequest(const Aws::S3::Model::PutObjectAclRequest& value) {
+    J result=J::object();
+    if(value.ACLHasBeenSet())result["ACL"]=write_ObjectCannedACL(value.GetACL());
+    if(value.AccessControlPolicyHasBeenSet())result["AccessControlPolicy"]=write_AccessControlPolicy(value.GetAccessControlPolicy());
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.ContentMD5HasBeenSet())result["ContentMD5"]=write_ContentMD5(value.GetContentMD5());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.GrantFullControlHasBeenSet())result["GrantFullControl"]=write_GrantFullControl(value.GetGrantFullControl());
+    if(value.GrantReadHasBeenSet())result["GrantRead"]=write_GrantRead(value.GetGrantRead());
+    if(value.GrantReadACPHasBeenSet())result["GrantReadACP"]=write_GrantReadACP(value.GetGrantReadACP());
+    if(value.GrantWriteHasBeenSet())result["GrantWrite"]=write_GrantWrite(value.GetGrantWrite());
+    if(value.GrantWriteACPHasBeenSet())result["GrantWriteACP"]=write_GrantWriteACP(value.GetGrantWriteACP());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.VersionIdHasBeenSet())result["VersionId"]=write_ObjectVersionId(value.GetVersionId());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    return result;
+}
+inline Aws::S3::Model::ObjectCannedACL read_ObjectCannedACL(const J& value) {
+    return Aws::S3::Model::ObjectCannedACLMapper::GetObjectCannedACLForName(value.get<std::string>());
+}
+inline J write_ObjectCannedACL(const Aws::S3::Model::ObjectCannedACL& value) {
+    return std::string(Aws::S3::Model::ObjectCannedACLMapper::GetNameForObjectCannedACL(value).c_str());
+}
+inline Aws::S3::Model::ListBucketsRequest read_ListBucketsRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: ListBucketsRequest");
+    static const std::set<std::string> allowed={"MaxBuckets","ContinuationToken","Prefix","BucketRegion"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::ListBucketsRequest result;
+    if(value.contains("MaxBuckets") && !value.at("MaxBuckets").is_null())result.SetMaxBuckets(read_MaxBuckets(value.at("MaxBuckets")));
+    if(value.contains("ContinuationToken") && !value.at("ContinuationToken").is_null())result.SetContinuationToken(read_Token(value.at("ContinuationToken")));
+    if(value.contains("Prefix") && !value.at("Prefix").is_null())result.SetPrefix(read_Prefix(value.at("Prefix")));
+    if(value.contains("BucketRegion") && !value.at("BucketRegion").is_null())result.SetBucketRegion(read_BucketRegion(value.at("BucketRegion")));
+    return result;
+}
+inline J write_ListBucketsRequest(const Aws::S3::Model::ListBucketsRequest& value) {
+    J result=J::object();
+    if(value.MaxBucketsHasBeenSet())result["MaxBuckets"]=write_MaxBuckets(value.GetMaxBuckets());
+    if(value.ContinuationTokenHasBeenSet())result["ContinuationToken"]=write_Token(value.GetContinuationToken());
+    if(value.PrefixHasBeenSet())result["Prefix"]=write_Prefix(value.GetPrefix());
+    if(value.BucketRegionHasBeenSet())result["BucketRegion"]=write_BucketRegion(value.GetBucketRegion());
+    return result;
+}
+inline int read_MaxBuckets(const J& value) {
+    return static_cast<int>(signed_integer(value,std::numeric_limits<int>::min(),std::numeric_limits<int>::max(),"MaxBuckets"));
+}
+inline J write_MaxBuckets(const int& value) {
+    return value;
+}
+inline Aws::String read_Token(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_Token(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_BucketRegion(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_BucketRegion(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::Bucket> read_Buckets(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: Buckets");
+    Aws::Vector<Aws::S3::Model::Bucket> result;for(const auto& item:value)result.push_back(read_Bucket(item));return result;
+}
+inline J write_Buckets(const Aws::Vector<Aws::S3::Model::Bucket>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_Bucket(item));return result;
+}
+inline Aws::S3::Model::Bucket read_Bucket(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: Bucket");
+    static const std::set<std::string> allowed={"Name","CreationDate","BucketRegion","BucketArn"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::Bucket result;
+    if(value.contains("Name") && !value.at("Name").is_null())result.SetName(read_BucketName(value.at("Name")));
+    if(value.contains("CreationDate") && !value.at("CreationDate").is_null())result.SetCreationDate(read_CreationDate(value.at("CreationDate")));
+    if(value.contains("BucketRegion") && !value.at("BucketRegion").is_null())result.SetBucketRegion(read_BucketRegion(value.at("BucketRegion")));
+    if(value.contains("BucketArn") && !value.at("BucketArn").is_null())result.SetBucketArn(read_S3RegionalOrS3ExpressBucketArnString(value.at("BucketArn")));
+    return result;
+}
+inline J write_Bucket(const Aws::S3::Model::Bucket& value) {
+    J result=J::object();
+    if(value.NameHasBeenSet())result["Name"]=write_BucketName(value.GetName());
+    if(value.CreationDateHasBeenSet())result["CreationDate"]=write_CreationDate(value.GetCreationDate());
+    if(value.BucketRegionHasBeenSet())result["BucketRegion"]=write_BucketRegion(value.GetBucketRegion());
+    if(value.BucketArnHasBeenSet())result["BucketArn"]=write_S3RegionalOrS3ExpressBucketArnString(value.GetBucketArn());
+    return result;
+}
+inline Aws::Utils::DateTime read_CreationDate(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"CreationDate")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_CreationDate(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::String read_S3RegionalOrS3ExpressBucketArnString(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_S3RegionalOrS3ExpressBucketArnString(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_NextToken(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_NextToken(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -1785,6 +2205,55 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
         auto outcome=client.DeleteBucketOwnershipControls(request);checked(outcome);
         if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
         J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetBucketAcl"){
+        auto request=read_GetBucketAclRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetBucketAcl(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Owner"))!=observed["fields"].end())data["Owner"]=write_Owner(result.GetOwner());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("AccessControlList"))!=observed["fields"].end())data["Grants"]=write_Grants(result.GetGrants());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutBucketAcl"){
+        auto request=read_PutBucketAclRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutBucketAcl(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.GetObjectAcl"){
+        auto request=read_GetObjectAclRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.GetObjectAcl(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Owner"))!=observed["fields"].end())data["Owner"]=write_Owner(result.GetOwner());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("AccessControlList"))!=observed["fields"].end())data["Grants"]=write_Grants(result.GetGrants());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutObjectAcl"){
+        auto request=read_PutObjectAclRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutObjectAcl(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.ListBuckets"){
+        auto request=read_ListBucketsRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.ListBuckets(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Buckets"))!=observed["fields"].end())data["Buckets"]=write_Buckets(result.GetBuckets());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Owner"))!=observed["fields"].end())data["Owner"]=write_Owner(result.GetOwner());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ContinuationToken"))!=observed["fields"].end())data["ContinuationToken"]=write_NextToken(result.GetContinuationToken());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Prefix"))!=observed["fields"].end())data["Prefix"]=write_Prefix(result.GetPrefix());
         observed["data"]=data;return observed;
     }
     throw std::runtime_error("unsupported bucket API: "+op);

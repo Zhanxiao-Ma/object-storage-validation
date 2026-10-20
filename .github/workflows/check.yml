@@ -63,6 +63,7 @@ jobs:
           OSV_RUN_SSE_CUSTOMER_TESTS: '1'
           OSV_RUN_ENCRYPTION_TESTS: '1'
           OSV_RUN_IDENTITY_TESTS: '1'
+          OSV_RUN_ACL_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
           OSV_PAGE_TEST_TARGETS: java:s3,java:oss,java:obs,java:tos,java:cos
       - name: Install local S3 integration server

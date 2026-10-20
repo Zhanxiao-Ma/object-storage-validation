@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
                         if("s3".equals(provider)) capabilities.addAll(S3Identities.capabilities());
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
@@ -255,9 +255,10 @@ public final class WorkerMain {
                 return observedAwsPage(result,result.contents(),result.commonPrefixes(),result.hasContents(),result.hasCommonPrefixes(),
                     fields("Name",result.name(),"Prefix",result.prefix(),"Delimiter",result.delimiter(),"ContinuationToken",result.continuationToken(),"NextContinuationToken",result.nextContinuationToken(),"StartAfter",result.startAfter(),"KeyCount",result.keyCount(),"MaxKeys",result.maxKeys(),"IsTruncated",result.isTruncated(),"EncodingType",result.encodingTypeAsString()),true);
             }
-            case "bucket_create_raw": case "bucket_create_locked": {
+            case "bucket_create_raw": case "bucket_create_locked": case "bucket_create_acl": {
                 software.amazon.awssdk.services.s3.model.CreateBucketRequest.Builder request=software.amazon.awssdk.services.s3.model.CreateBucketRequest.builder().bucket(bucket);
                 if("bucket_create_locked".equals(op)) request.objectLockEnabledForBucket(true);
+                if("bucket_create_acl".equals(op)) request.acl(text(q,"acl"));
                 if(q.has("location")) request.createBucketConfiguration(c->c.locationConstraint(text(q,"location")));
                 software.amazon.awssdk.services.s3.model.CreateBucketResponse result=client.createBucket(request.build());
                 return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
@@ -274,9 +275,10 @@ public final class WorkerMain {
                 software.amazon.awssdk.services.s3.model.GetBucketLocationResponse result=client.getBucketLocation(b->b.bucket(bucket));
                 return withHttp(one("location",result.locationConstraintAsString()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
-            case "put_http": case "put_sse_c": {
+            case "put_http": case "put_sse_c": case "put_acl": {
                 software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
                 if("put_sse_c".equals(op)) request.overrideConfiguration(EncryptionHeaders.fromRequest(q));
+                if("put_acl".equals(op)) request.acl(text(q,"acl"));
                 if(q.has("cache_control")) request.cacheControl(text(q,"cache_control"));
                 if(q.has("expires_ms")) request.expires(java.time.Instant.ofEpochMilli(q.get("expires_ms").asLong()));
                 software.amazon.awssdk.services.s3.model.PutObjectResponse result=client.putObject(request.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path"))));

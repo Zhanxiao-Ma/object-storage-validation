@@ -7,7 +7,24 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 
 def generate(model):
-    shapes=model["shapes"];operations=model["operations"]
+    operations=model["operations"]
+    # Service error shapes are handled by actual SDK outcomes, not generated model classes.
+    # Some AWS error names deliberately have no C++ public model header.
+    reachable=set()
+    def include(name):
+        if name in reachable:return
+        reachable.add(name)
+        def references(value):
+            if isinstance(value,dict):
+                if "shape" in value:include(value["shape"])
+                for item in value.values():references(item)
+            elif isinstance(value,list):
+                for item in value:references(item)
+        references(model["shapes"][name])
+    for operation in operations.values():
+        for direction in ("input","output"):
+            if direction in operation:include(operation[direction]["shape"])
+    shapes={name:shape for name,shape in model["shapes"].items() if name in reachable}
     outputs={operation["output"]["shape"] for operation in operations.values() if "output" in operation}
     reusable=[name for name in shapes if name not in outputs]
 

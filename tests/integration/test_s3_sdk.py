@@ -31,6 +31,13 @@ def expected_version_diagnostics(language):
     if language=="cpp":names.add("ceph_version_special")
     return names
 
+def expected_acl_metadata_prerequisites():
+    from osv.ceph_acl import CASES
+    return {item.name for item in CASES if item.name not in {"ceph_acl_private_to_private","ceph_acl_revoke_all"} and not item.name.startswith("ceph_acl_user_")}
+
+def expected_acl_identity_prerequisites():
+    return {"ceph_acl_user_"+permission for permission in ("full_control","read","read_acp","write","write_acp")}
+
 def expected_object_encryption_diagnostics(configured=False):
     return {"ceph_encryption_"+name for name in ("s3_head","no_key","not_declared","read_declare")}|({"ceph_encryption_kms_head"} if configured else set())
 
@@ -330,10 +337,45 @@ class SdkIntegrationTest(unittest.TestCase):
                         self.assertIn("identity_alt",worker.info["capabilities"])
                         ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                         rows=run_cases(ctx,CASES)
-                        self.assertTrue(all(row["status"]==("fail" if target["language"]=="cpp" else "pass") for row in rows),rows)
-                        self.assertEqual(len(rows),4)
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{row.name for row in CASES} if target["language"]=="cpp" else {"ceph_policy_deny_acl_v1","ceph_policy_deny_acl_v2"})
+                        self.assertTrue(all(("XML_ERROR_PARSING_TEXT" in row["error"]) if target["language"]=="cpp" else ('expected service rejection (403' in row["error"] and '\"status_code\": 200' in row["error"]) for row in rows if row["status"]=="fail"),rows)
+                        self.assertEqual(len(rows),6)
                         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                     finally:worker.close()
+
+    def test_acl_source_cases_with_independent_identity_metadata(self):
+        """Execute original canned/explicit ACL vectors through real SDKs using fixed independent Moto account metadata; retain source and service diagnostics and confirm every owned bucket is removed."""
+        from osv.ceph_acl import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        identity={"canonical_id":"75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a","display_name":"webfile"}
+        with patch.dict(os.environ,{"OSV_ALT_ACCESS_KEY":"alternate-test-key","OSV_ALT_SECRET_KEY":"alternate-test-secret"}):
+            for target in self.targets:
+                with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,30)
+                    try:
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"identities":{"main":identity,"alt":{"canonical_id":"independent-alt-user","display_name":"alternate","email":"alternate@example.invalid"}}})
+                        rows=run_cases(ctx,CASES)
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{"ceph_acl_private_to_private","ceph_acl_revoke_all"})
+                        self.assertTrue(all(row["status"]=="fail" for row in rows if row["case"] not in {"ceph_acl_private_to_private","ceph_acl_revoke_all"}),rows)
+                        self.assertEqual(len(rows),26)
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+
+    def test_service_bucket_inventory_source_and_actual_cleanup(self):
+        """Create source five-bucket datasets through genuine SDKs; expect membership/time checks and retained Moto anonymous-visibility mismatch, with no bucket leftovers."""
+        from osv.ceph_bucket_inventory import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        for target in self.targets:
+            with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=Worker(target,30)
+                try:
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                    rows=run_cases(ctx,CASES)
+                    self.assertEqual([(row["case"],row["status"]) for row in rows],[("ceph_inventory_membership","pass"),("ceph_inventory_ctime","pass"),("ceph_inventory_anonymous","fail")],rows)
+                    self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                finally:worker.close()
 
     def test_configured_storage_classes_execute_original_transition_input(self):
         """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
@@ -476,6 +518,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
+            expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -489,15 +532,15 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),335)
+            self.assertEqual(len(report["coverage"]["catalog"]),366)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
-                if row["case"].startswith("ceph_policy_"):
+                if row["case"].startswith(("ceph_policy_","ceph_acl_user_")):
                     self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
                 else:
                     self.assertEqual(row["reason"],"missing_prerequisites")
-                    self.assertEqual(row["missing_requirements"],["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"])
+                    self.assertEqual(row["missing_requirements"],["workload.identities.main.canonical_id","workload.identities.main.display_name"] if row["case"].startswith("ceph_acl_") else ["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):

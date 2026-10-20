@@ -72,6 +72,12 @@ def load_config(path, profile_override=None):
         raise ValueError("performance_model must be objbench or operations")
     from .objbench import normalize
     workload["objbench"] = normalize(workload.get("objbench", {}))
+    if "identities" in workload:
+        if not isinstance(workload["identities"],dict):raise ValueError("identities must be a metadata object")
+        for name,metadata in workload["identities"].items():
+            if not isinstance(name,str) or not name or not isinstance(metadata,dict):raise ValueError("identity metadata must be named objects")
+            for field in ("canonical_id","display_name","email"):
+                if metadata.get(field) is not None and not isinstance(metadata[field],str):raise ValueError("identity metadata fields must be strings or null")
     if workload.get("kms_key_id") is not None and not isinstance(workload["kms_key_id"],str):raise ValueError("kms_key_id must be a string or null")
     if "storage_classes" in workload and (not isinstance(workload["storage_classes"],list) or not all(isinstance(value,str) and value for value in workload["storage_classes"])):raise ValueError("storage_classes must be a list of nonempty strings")
     registry = build_registry(config)

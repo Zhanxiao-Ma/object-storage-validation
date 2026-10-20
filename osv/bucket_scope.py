@@ -7,8 +7,12 @@ SCOPE_OPERATIONS="bucket_head bucket_create_raw bucket_delete list delete"
 
 class BucketScope:
     """Prevent bucket-wide tests from sharing production state: verify a fresh generated name, create it and clean only that owned bucket."""
-    def __init__(self,probe,name=None,create_operation="bucket_create_raw"):
-        if create_operation not in ("bucket_create_raw","bucket_create_locked"):raise ValueError("unsupported scoped bucket creation operation")
+    def __init__(self,probe,name=None,create_operation="bucket_create_raw",create_options=None):
+        if create_operation not in ("bucket_create_raw","bucket_create_locked","bucket_create_acl"):raise ValueError("unsupported scoped bucket creation operation")
+        self.create_options=dict(create_options or {})
+        if set(self.create_options)-{"acl"}:raise ValueError("unsupported scoped bucket creation options")
+        if create_operation=="bucket_create_acl" and not isinstance(self.create_options.get("acl"),str):raise ValueError("ACL creation requires an explicit ACL")
+        if create_operation!="bucket_create_acl" and self.create_options:raise ValueError("ACL creation options require bucket_create_acl")
         self.create_operation=create_operation
         self.probe=probe
         self.name="osv-"+uuid.uuid4().hex if name is None else name
@@ -21,7 +25,7 @@ class BucketScope:
         if "bucket" in options:raise ValueError("cannot override the owned bucket scope")
         # Retain the real producer's opaque keys before a possibly ambiguous request.
         # Typed XML list parsers can trim whitespace keys; they are still valid objects.
-        if op in ("put","put_encryption","put_sse_c","put_http","put_metadata","put_version","copy","copy_replace","mp_create","mp_create_metadata","mp_create_sse_c","mp_complete","mp_complete_observed") and "key" in options:
+        if op in ("put","put_acl","put_encryption","put_sse_c","put_http","put_metadata","put_version","copy","copy_replace","mp_create","mp_create_metadata","mp_create_sse_c","mp_complete","mp_complete_observed") and "key" in options:
             self.written_keys.add(options["key"])
         return self.probe.ctx.worker.call({"op":op,"bucket":self.name,**options})
 
@@ -38,7 +42,7 @@ class BucketScope:
         if (existing.get("error_kind"),existing.get("status_code"))!=("not_found",404):raise RuntimeError("cannot establish test bucket absence: "+str(existing))
         region=self.probe.ctx.worker.info.get("region","us-east-1")
         options={"location":region} if region and region!="us-east-1" else {}
-        response=self.raw(self.create_operation,**options)
+        response=self.raw(self.create_operation,**options,**self.create_options)
         if not response["ok"]:
             raise RuntimeError("test bucket creation failed; verify ambiguous transport outcomes before manual cleanup of "+self.name+": "+str(response))
         self.created=True

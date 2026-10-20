@@ -158,11 +158,12 @@ public:
             if(q.contains("encoding_type")) request.SetEncodingType(Aws::S3::Model::EncodingTypeMapper::GetEncodingTypeForName(q.at("encoding_type").get<std::string>()));
             auto outcome=client->ListObjectsV2(request);checked(outcome);return observed_list_page(outcome.GetResult(),observed);
         }
-        if(op=="bucket_create_raw" || op=="bucket_create_locked" || op=="bucket_head" || op=="bucket_delete" || op=="bucket_location") {
+        if(op=="bucket_create_raw" || op=="bucket_create_locked" || op=="bucket_create_acl" || op=="bucket_head" || op=="bucket_delete" || op=="bucket_location") {
             json http;HttpObservationScope observation(&http);
-            if(op=="bucket_create_raw" || op=="bucket_create_locked") {
+            if(op=="bucket_create_raw" || op=="bucket_create_locked" || op=="bucket_create_acl") {
                 Aws::S3::Model::CreateBucketRequest request;request.SetBucket(bucket);
                 if(op=="bucket_create_locked") request.SetObjectLockEnabledForBucket(true);
+                if(op=="bucket_create_acl") request.SetACL(Aws::S3::Model::BucketCannedACLMapper::GetBucketCannedACLForName(q.at("acl").get<std::string>()));
                 if(q.contains("location")) {Aws::S3::Model::CreateBucketConfiguration configuration;configuration.SetLocationConstraint(Aws::S3::Model::BucketLocationConstraintMapper::GetBucketLocationConstraintForName(q.at("location").get<std::string>()));request.SetCreateBucketConfiguration(configuration);}
                 checked(client->CreateBucket(request));
             } else if(op=="bucket_head") {
@@ -234,22 +235,23 @@ public:
             }
             for(const auto& prefix:page.GetCommonPrefixes()) prefixes.push_back(std::string(prefix.GetPrefix().c_str()));
             return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.GetIsTruncated()},{"next_token",std::string(page.GetNextContinuationToken().c_str())},{"prefix",std::string(page.GetPrefix().c_str())},{"delimiter",std::string(page.GetDelimiter().c_str())},{"max_keys",page.GetMaxKeys()}};
-        } else if ((op == "put" || op == "put_metadata" || op == "put_http" || op == "put_sse_c")) {
+        } else if ((op == "put" || op == "put_metadata" || op == "put_http" || op == "put_sse_c" || op == "put_acl")) {
             Aws::S3::Model::PutObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
             if (!*stream) throw std::runtime_error("cannot open body_path");
             request.SetBody(stream);
             if(op=="put_sse_c") encryption_headers(request,q);
+            if(op=="put_acl") request.SetACL(Aws::S3::Model::ObjectCannedACLMapper::GetObjectCannedACLForName(q.at("acl").get<std::string>()));
             if(op=="put_metadata") {
                 request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             }
             if(q.contains("cache_control")) request.SetCacheControl(q.at("cache_control").get<std::string>());
             if(q.contains("expires_ms")) request.SetExpires(Aws::Utils::DateTime(q.at("expires_ms").get<int64_t>()));
-            json http;HttpObservationScope observation((op=="put_http"||op=="put_sse_c")?&http:nullptr);
+            json http;HttpObservationScope observation((op=="put_http"||op=="put_sse_c"||op=="put_acl")?&http:nullptr);
             auto outcome=client->PutObject(request);checked(outcome);
-            if(op=="put_http"||op=="put_sse_c") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;}
+            if(op=="put_http"||op=="put_sse_c"||op=="put_acl") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;}
 
         } else if ((op == "get" || op == "get_conditional" || op == "get_metadata" || op == "get_http" || op == "get_part" || op == "get_sse_c")) {
             Aws::S3::Model::GetObjectRequest request;
@@ -399,7 +401,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");

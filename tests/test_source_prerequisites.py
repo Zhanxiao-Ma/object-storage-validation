@@ -66,3 +66,19 @@ class SourcePrerequisitesTest(unittest.TestCase):
                         self.assertEqual(raised.exception.requirements,["workload.kms_key_id"])
                 self.assertEqual(requests,[])
             finally:worker.close()
+
+    def test_missing_acl_expectations_precede_owned_bucket_creation(self):
+        """Call real canned/explicit ACL source paths without independent main-user metadata; expect both missing expectation fields and zero worker requests."""
+        from osv.ceph_acl import canned,change_permission,explicit_bucket
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);worker=Worker({"command":[sys.executable,str(ROOT/"drivers/reference.py")],"env":{"OSV_REFERENCE_ROOT":str(directory/"objects")}},10)
+            original=worker.call;requests=[]
+            def observe(request):requests.append(request);return original(request)
+            worker.call=observe
+            try:
+                ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                for action in (lambda:canned(Probe(ctx),"bucket","default"),lambda:canned(Probe(ctx),"object","cycle"),lambda:change_permission(Probe(ctx),"READ"),lambda:explicit_bucket(Probe(ctx),"group")):
+                    with self.assertRaises(CaseNotRun) as raised:action()
+                    self.assertEqual(raised.exception.requirements,["workload.identities.main.canonical_id","workload.identities.main.display_name"])
+                self.assertEqual(requests,[])
+            finally:worker.close()
