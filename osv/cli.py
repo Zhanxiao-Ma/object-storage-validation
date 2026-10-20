@@ -91,7 +91,7 @@ def load_config(path, profile_override=None):
     workload.setdefault("iam_mutation_authorized",False)
     if type(workload["iam_mutation_authorized"]) is not bool:
         raise ValueError("iam_mutation_authorized must be boolean")
-    for field in ("iam_alt_user_name","iam_root_account_id","iam_root_user_id"):
+    for field in ("iam_alt_user_name","iam_root_account_id","iam_root_user_id","iam_alt_root_account_id","iam_alt_root_user_id","iam_alt_root_email"):
         if field in workload and (not isinstance(workload[field],str) or not workload[field]):
             raise ValueError(field+" must be a nonempty string")
     if "object_lock_cleanup_authorized" in workload and type(workload["object_lock_cleanup_authorized"]) is not bool:
@@ -102,6 +102,16 @@ def load_config(path, profile_override=None):
         raise ValueError("tenant_name must be a nonempty string")
     if "ceph_api_name" in workload and (not isinstance(workload["ceph_api_name"],str) or not workload["ceph_api_name"]):
         raise ValueError("ceph_api_name must be a nonempty string")
+    if "sts_web_identity" in workload:
+        settings=workload["sts_web_identity"]
+        allowed={"realm","aud","sub","azp","thumbprint","token_env","user_token_env"}
+        if not isinstance(settings,dict) or set(settings)-allowed:
+            raise ValueError("sts_web_identity only accepts realm/aud/sub/azp/thumbprint and token environment names")
+        for name,value in settings.items():
+            if not isinstance(value,str) or not value:
+                raise ValueError("sts_web_identity settings must be nonempty strings")
+            if name.endswith("_env") and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",value):
+                raise ValueError("sts_web_identity token settings must name environment variables")
     if "cloud_lifecycle" in workload:
         settings=workload["cloud_lifecycle"]
         strings={"storage_class","regular_storage_class","retain_head_object","target_path","target_storage_class","target_by_bucket_prefix","allow_read_through"}

@@ -24,6 +24,7 @@ TRUST={'Version':'2012-10-17','Statement':[{'Effect':'Allow','Action':'sts:Assum
 
 
 def xml(value):
+    if isinstance(value,dict) and set(value)=={'__raw_xml__'}:return value['__raw_xml__']
     if isinstance(value,dict):return ''.join('<'+k+'>'+xml(v)+'</'+k+'>' for k,v in value.items())
     if isinstance(value,list):return ''.join('<member>'+xml(v)+'</member>' for v in value)
     if isinstance(value,bool):return str(value).lower()
@@ -45,15 +46,23 @@ def entity(kind,name,path=PATH,uid='immutable-1',date='2025-01-01T00:00:00Z',**e
 
 
 @contextmanager
-def iam_fixture(language,plan):
-    server=ThreadingHTTPServer(('127.0.0.1',0),FixtureHandler);server.requests=[];server.fixtures=deque(response(op,data,code) for op,values,data,code in plan)
+def iam_fixture(language,plan,handler=FixtureHandler,sts_plan=None):
+    server=ThreadingHTTPServer(('127.0.0.1',0),handler);server.requests=[];server.fixtures=deque(response(op,data,code) for op,values,data,code in plan)
     thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
-    environment={'OSV_IAM_ENDPOINT':'http://127.0.0.1:'+str(server.server_port),'OSV_IAM_REGION':'us-east-1','OSV_IAM_ROOT_ACCESS_KEY':'iam-root-real','OSV_IAM_ROOT_SECRET_KEY':'iam-root-real-secret','OSV_IAM_ACCESS_KEY':'iam-tenant-real','OSV_IAM_SECRET_KEY':'iam-tenant-real-secret'}
+    environment={'OSV_IAM_ENDPOINT':'http://127.0.0.1:'+str(server.server_port),'OSV_IAM_REGION':'us-east-1','OSV_IAM_ROOT_ACCESS_KEY':'iam-root-real','OSV_IAM_ROOT_SECRET_KEY':'iam-root-real-secret','OSV_IAM_ACCESS_KEY':'iam-tenant-real','OSV_IAM_SECRET_KEY':'iam-tenant-real-secret','OSV_IAM_ALT_ROOT_ACCESS_KEY':'iam-alt-root-real','OSV_IAM_ALT_ROOT_SECRET_KEY':'iam-alt-root-real-secret','OSV_ALT_ACCESS_KEY':'s3-alt-real','OSV_ALT_SECRET_KEY':'s3-alt-real-secret'}
+    sts_server=None
+    if sts_plan is not None:
+        sts_server=ThreadingHTTPServer(('127.0.0.1',0),FixtureHandler);sts_server.requests=[]
+        sts_server.fixtures=deque((status,headers,payload.replace(b'https://iam.amazonaws.com/doc/2010-05-08/',b'https://sts.amazonaws.com/doc/2011-06-15/')) for status,headers,payload in (response(op,data,code) for op,values,data,code in sts_plan))
+        sts_thread=threading.Thread(target=sts_server.serve_forever,daemon=True);sts_thread.start();server.sts=sts_server
+        environment.update({'OSV_STS_ENDPOINT':'http://127.0.0.1:'+str(sts_server.server_port),'OSV_STS_REGION':'us-east-1'})
     try:
-        with fixture_worker(language,[],'s3',environment) as (worker,unused):
+        with fixture_worker(language,[],'s3',environment,handler=handler) as (worker,unused):
             server.s3=unused
             yield worker,server
-    finally:server.shutdown();server.server_close();thread.join()
+    finally:
+        server.shutdown();server.server_close();thread.join()
+        if sts_server is not None:sts_server.shutdown();sts_server.server_close();sts_thread.join()
 
 
 def verify_requests(test,server,plan,identities=None):
@@ -227,8 +236,18 @@ class IamAccountsSdkTest(unittest.TestCase):
         """Return the same username with a different immutable ID during finally; expect the original deliberate failure and zero DeleteAccessKey/DeleteUser requests against the replacement."""
         name=PREFIX+'a';first=entity('User',name);replacement=entity('User',name,uid='somebody-elses-new-id')
         plan=[('GetUser',{}, {'User':{'Arn':'arn:aws:iam::123456789012:root'}},None),('CreateUser',{'UserName':name,'Path':PATH},{'User':first},None),('CreateAccessKey',{'UserName':name},{'AccessKey':{'AccessKeyId':'ACTUALRETURNEDKEY','SecretAccessKey':'actual-dynamic-secret'}},None),('GetUser',{'UserName':name},{'User':replacement},None),('GetUser',{'UserName':name},{'User':replacement},None)]
+        class StaticOwnershipXml(FixtureHandler):
+            """Route static independent XML by actual query Action; never model resources, ownership checks or cleanup behavior."""
+            def respond(self):
+                body=self.rfile.read(int(self.headers.get('Content-Length','0')));query=parse_qs(body.decode() if self.command=='POST' else urlsplit(self.path).query);op=query['Action'][0]
+                self.server.requests.append((self.command,self.path,dict(self.headers),body))
+                data=({'User':first} if op=='CreateUser' else {'AccessKey':{'AccessKeyId':'ACTUALRETURNEDKEY','SecretAccessKey':'actual-dynamic-secret'}} if op=='CreateAccessKey' else {'User':replacement} if op=='GetUser' and 'UserName' in query else {'User':{'Arn':'arn:aws:iam::123456789012:root'}} if op=='GetUser' else {})
+                status,headers,payload=response(op,data);self.send_response(status)
+                for k,v in headers.items():self.send_header(k,v)
+                self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload)
+            do_GET=do_POST=respond
         for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
-            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,iam_fixture(language,plan) as (worker,server):
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,iam_fixture(language,[],handler=StaticOwnershipXml) as (worker,server):
                 d=Path(temporary);p=Probe(Context(worker,'unused/',d,b'',d/'body',d/'out',{'iam_mutation_authorized':True}))
                 with self.assertRaisesRegex(AssertionError,'independent source failure'),patch('osv.ceph_iam_scope.uuid.uuid4',return_value=uuid.UUID(int=1)):
                     with IamScope(p) as scope:
@@ -246,3 +265,15 @@ class IamAccountsSdkTest(unittest.TestCase):
                     with IamScope(p) as scope:
                         scope.create('User',name,PATH);scope.call('CreateAccessKey',UserName=name);raise AssertionError('independent source failure')
                 verify_requests(self,server,plan)
+
+    def test_mismatched_or_missing_creation_identity_never_claims_an_unrelated_resource(self):
+        """Return another user's name or an empty immutable ID in real CreateUser XML; expect ownership failure without any Get/Delete targeting that unowned response identity."""
+        name=PREFIX+'a'
+        for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
+            for item in (entity('User','existing-unrelated-user'),entity('User',name,uid='')):
+                plan=[('GetUser',{}, {'User':{'Arn':'arn:aws:iam::123456789012:root'}},None),('CreateUser',{'UserName':name,'Path':PATH},{'User':item},None)]
+                with self.subTest(language=language,returned=item['UserName'],uid=item['UserId']),tempfile.TemporaryDirectory() as temporary,iam_fixture(language,plan) as (worker,server):
+                    d=Path(temporary);p=Probe(Context(worker,'unused/',d,b'',d/'body',d/'out',{'iam_mutation_authorized':True}))
+                    with self.assertRaisesRegex(AssertionError,'cannot prove requested resource ownership'),patch('osv.ceph_iam_scope.uuid.uuid4',return_value=uuid.UUID(int=1)):
+                        with IamScope(p) as scope:scope.create('User',name,PATH)
+                    verify_requests(self,server,plan)

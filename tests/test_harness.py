@@ -76,6 +76,19 @@ class HarnessTest(unittest.TestCase):
                     manifest.write_text(json.dumps(changed))
                     with self.assertRaises(ValueError):load_config(manifest)
 
+    def test_web_identity_configuration_contains_environment_names_only(self):
+        """Load actual WebIdentity manifests; expect typed explicit fixture metadata and reject raw token fields, ambiguous settings and invalid environment names before SDK startup."""
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp);manifest=directory/"web.json"
+            valid={"realm":"test-realm","aud":"test-client","sub":"test-user","azp":"test-authorized-party","thumbprint":"EXAMPLE","token_env":"OSV_WEB_TOKEN","user_token_env":"OSV_USER_WEB_TOKEN"}
+            data=config(directory);data["workload"]["sts_web_identity"]=valid
+            manifest.write_text(json.dumps(data));self.assertEqual(load_config(manifest)["workload"]["sts_web_identity"],valid)
+            for settings in ([],None,{"token":"raw-jwt-value"},{"realm":""},{"aud":True},{"token_env":"raw.jwt.value"},{"token_env":"9TOKEN"},{"user_token_env":False}):
+                with self.subTest(settings=settings):
+                    data=config(directory);data["workload"]["sts_web_identity"]=settings
+                    manifest.write_text(json.dumps(data))
+                    with self.assertRaises(ValueError):load_config(manifest)
+
     def test_worker_timeout_terminates_process(self):
         """A worker that never responds must time out and be reaped, not hang the test run."""
         with self.assertRaises(TimeoutError):

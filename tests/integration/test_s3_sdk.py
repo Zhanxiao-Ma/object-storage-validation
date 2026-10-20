@@ -580,12 +580,25 @@ class SdkIntegrationTest(unittest.TestCase):
             for target in self.targets:
                 extra={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"} if target["language"]=="java" else set()
                 expected.extend((target["id"],name) for name in new_failure_common|extra)
+            # Moto's ordinary ListBuckets response has no Ceph Summary quota
+            # extension, and its missing-object XML has no source RequestId.
+            # The real response capture must expose those original oracle
+            # failures rather than reconstructing either value from metadata.
+            expected.extend((target["id"],name) for target in self.targets for name in ("ceph_body_account_usage","ceph_body_error_request_id"))
             # This full-profile reference intentionally uses a serialized Moto
             # handler. Larger atomic reads backpressure that handler while the
             # callback waits for a nested PUT; independent threaded-service
             # regressions prove genuine SDK/source behavior separately.
             expected.extend((target["id"],"ceph_atomic_stream_read_"+size) for target in self.targets for size in ("4mb","8mb"))
+            from osv.ceph_atomic_streams import CASES as atomic_cases
+            expected.extend((target["id"],c.name) for target in self.targets for c in atomic_cases
+                            if c.name not in {"ceph_atomic_stream_read_1mb","ceph_atomic_stream_read_4mb","ceph_atomic_stream_read_8mb","ceph_atomic_versions_overlap"})
             self.assertEqual(sorted(failures),sorted(expected))
+            body_diagnostics={"ceph_body_account_usage":"'Summary'","ceph_body_error_request_id":"'NoneType' object has no attribute 'text'"}
+            for row in report["cases"]:
+                if row["case"] in body_diagnostics:
+                    self.assertEqual(row["status"],"fail")
+                    self.assertEqual(row["error"],body_diagnostics[row["case"]])
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
                 self.assertEqual(observed["status"],"observation")
@@ -596,7 +609,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),825)
+            self.assertEqual(len(report["coverage"]["catalog"]),936)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -628,11 +641,39 @@ class SdkIntegrationTest(unittest.TestCase):
             from osv.ceph_iam_accounts import CASES as iam_account_cases
             from osv.ceph_iam_inline import CASES as iam_inline_cases
             new_missing|={c.name for c in presigned_cases}|{c.name for c in iam_account_cases}|{c.name for c in iam_inline_cases}
+            # These complete new source groups have independently verified
+            # control-plane / external-identity prerequisites; this S3-only
+            # fixture supplies none of them. Keep the exact group cardinality
+            # fixed so adding a source cannot silently extend an expected skip.
+            from osv.ceph_iam_policy_entities import CASES as iam_entity_cases
+            from osv.ceph_iam_oidc import CASES as iam_oidc_cases
+            from osv.ceph_iam_role_policies import CASES as iam_role_cases
+            from osv.ceph_iam_root_keys import CASES as iam_root_cases
+            from osv.ceph_iam_cross_resources import CASES as iam_cross_cases
+            from osv.ceph_iam_assumed_roles import CASES as iam_assumed_cases
+            from osv.ceph_iam_tenant_actions import CASES as iam_tenant_cases
+            from osv.ceph_sts_callers import CASES as sts_caller_cases
+            from osv.ceph_sts_basic import CASES as sts_basic_cases
+            from osv.ceph_sts_web import CASES as sts_web_cases
+            from osv.ceph_s3_root_policy import CASES as root_policy_cases
+            advanced_control_cases=tuple(c for group in (iam_entity_cases,iam_oidc_cases,iam_role_cases,iam_root_cases,iam_cross_cases,iam_assumed_cases,iam_tenant_cases,sts_caller_cases,sts_basic_cases) for c in group)
+            self.assertEqual(len(advanced_control_cases),66)
+            self.assertEqual(len(sts_web_cases),27)
+            self.assertEqual(len(root_policy_cases),2)
+            from osv.ceph_logging_remaining import CASES as logging_remaining_cases
+            self.assertEqual(len(logging_remaining_cases),2)
+            logging_remaining_missing={c.name for c in logging_remaining_cases}
+            new_missing|=logging_remaining_missing
+            new_missing|={c.name for c in advanced_control_cases}|{c.name for c in sts_web_cases}|{c.name for c in root_policy_cases}
             cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}
             self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (new_missing|(legacy_missing|cpp_expiration_missing if target["language"]=="cpp" else set())|access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in logging_remaining_missing:
+                    self.assertEqual(row["reason"],"unsupported_operations")
+                    self.assertEqual(row["missing_operations"],["identity_iam_root"] if row["case"]=="ceph_logging_remaining_account_s" else ["identity_alt","identity_iam"])
+                    continue
                 if row["case"] in new_missing|cpp_expiration_missing:
                     self.assertIn(row["reason"],("missing_prerequisites","unsupported_operations"))
                     self.assertTrue(row.get("missing_requirements") or row.get("missing_operations"))

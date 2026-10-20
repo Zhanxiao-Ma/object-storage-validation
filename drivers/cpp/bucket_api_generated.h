@@ -160,6 +160,7 @@
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/CompletedMultipartUpload.h>
 #include <aws/s3/model/CompletedPart.h>
+#include <aws/s3/model/AbortMultipartUploadRequest.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -191,6 +192,7 @@
 #include <aws/s3/model/CreateMultipartUploadResult.h>
 #include <aws/s3/model/UploadPartCopyResult.h>
 #include <aws/s3/model/CompleteMultipartUploadResult.h>
+#include <aws/s3/model/AbortMultipartUploadResult.h>
 namespace osv_bucket_api {
 using J=nlohmann::json;
 inline int64_t signed_integer(const J& value,int64_t minimum,int64_t maximum,const char* field){
@@ -818,6 +820,10 @@ inline Aws::String read_IfNoneMatch(const J& value);
 inline J write_IfNoneMatch(const Aws::String& value);
 inline Aws::String read_Location(const J& value);
 inline J write_Location(const Aws::String& value);
+inline Aws::S3::Model::AbortMultipartUploadRequest read_AbortMultipartUploadRequest(const J& value);
+inline J write_AbortMultipartUploadRequest(const Aws::S3::Model::AbortMultipartUploadRequest& value);
+inline Aws::Utils::DateTime read_IfMatchInitiatedTime(const J& value);
+inline J write_IfMatchInitiatedTime(const Aws::Utils::DateTime& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -4423,8 +4429,37 @@ inline Aws::String read_Location(const J& value) {
 inline J write_Location(const Aws::String& value) {
     return std::string(value.c_str());
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::AbortMultipartUploadRequest read_AbortMultipartUploadRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortMultipartUploadRequest");
+    static const std::set<std::string> allowed={"Bucket","Key","UploadId","RequestPayer","ExpectedBucketOwner","IfMatchInitiatedTime"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::AbortMultipartUploadRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("UploadId") && !value.at("UploadId").is_null())result.SetUploadId(read_MultipartUploadId(value.at("UploadId")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("IfMatchInitiatedTime") && !value.at("IfMatchInitiatedTime").is_null())result.SetIfMatchInitiatedTime(read_IfMatchInitiatedTime(value.at("IfMatchInitiatedTime")));
+    return result;
+}
+inline J write_AbortMultipartUploadRequest(const Aws::S3::Model::AbortMultipartUploadRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.UploadIdHasBeenSet())result["UploadId"]=write_MultipartUploadId(value.GetUploadId());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.IfMatchInitiatedTimeHasBeenSet())result["IfMatchInitiatedTime"]=write_IfMatchInitiatedTime(value.GetIfMatchInitiatedTime());
+    return result;
+}
+inline Aws::Utils::DateTime read_IfMatchInitiatedTime(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"IfMatchInitiatedTime")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_IfMatchInitiatedTime(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -4945,6 +4980,15 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
         if(observed["http_headers"].contains("x-amz-version-id"))data["VersionId"]=write_ObjectVersionId(result.GetVersionId());
         if(observed["http_headers"].contains("x-amz-server-side-encryption-aws-kms-key-id"))data["SSEKMSKeyId"]=write_SSEKMSKeyId(result.GetSSEKMSKeyId());
         if(observed["http_headers"].contains("x-amz-server-side-encryption-bucket-key-enabled"))data["BucketKeyEnabled"]=write_BucketKeyEnabled(result.GetBucketKeyEnabled());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.AbortMultipartUpload"){
+        auto request=read_AbortMultipartUploadRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.AbortMultipartUpload(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
         if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
         observed["data"]=data;return observed;
     }

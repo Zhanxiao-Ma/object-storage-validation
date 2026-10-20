@@ -1,5 +1,6 @@
 #pragma once
 #include "object_metadata.h"
+#include "response_body_capture.h"
 #include <aws/core/http/HttpClientFactory.h>
 #include <aws/core/http/curl/CurlHttpClient.h>
 #include <aws/core/http/standard/StandardHttpRequest.h>
@@ -22,6 +23,7 @@ public:
         Aws::Utils::RateLimits::RateLimiterInterface* readLimiter=nullptr,
         Aws::Utils::RateLimits::RateLimiterInterface* writeLimiter=nullptr) const override {
         auto response=Aws::Http::CurlHttpClient::MakeRequest(request,readLimiter,writeLimiter);
+        osv_response_body::capture(response);
         if(osv_http_destination && response && static_cast<int>(response->GetResponseCode())>0) {
             *osv_http_destination=http_observation(static_cast<int>(response->GetResponseCode()),response->GetHeaders());
             if(osv_http_capture_xml_fields) {

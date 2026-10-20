@@ -64,6 +64,7 @@ final class S3Identities implements AutoCloseable {
             .overrideConfiguration(c->{
                 c.apiCallTimeout(java.time.Duration.ofMillis(headers?timeout("HEADER_REQUEST_TIMEOUT_MS",requestTimeout):requestTimeout))
                     .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build());
+                c.addExecutionInterceptor(new ResponseBodyCapture());
                 if(headers){c.addExecutionInterceptor(new WireHeaders());c.addExecutionInterceptor(new WireQuery());}
             })
             .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))).connectionTimeout(java.time.Duration.ofMillis(connectTimeout)).socketTimeout(java.time.Duration.ofMillis(requestTimeout)))

@@ -2,10 +2,13 @@
 from contextlib import contextmanager
 from contextvars import ContextVar
 import json
+import base64
+from urllib.parse import quote, quote_plus
+from xml.sax.saxutils import escape
 import threading
 
 _active = ContextVar("osv_secret_registry", default=None)
-_FIELDS = {"accesskey", "accesskeyid", "secretkey", "secretaccesskey", "sessiontoken", "password", "token"}
+_FIELDS = {"accesskey", "accesskeyid", "secretkey", "secretaccesskey", "sessiontoken", "password", "token", "webidentitytoken", "samlassertion"}
 
 
 class SecretRegistry:
@@ -16,13 +19,17 @@ class SecretRegistry:
     """
     def __init__(self):
         self._values = set()
+        self._encoded_bodies = {}
         self._lock = threading.RLock()
 
     def add(self, value):
         if isinstance(value, str) and len(value) >= 4:
-            variants = {value, json.dumps(value)[1:-1], json.dumps(value, ensure_ascii=False)[1:-1]}
+            variants = {value, json.dumps(value)[1:-1], json.dumps(value, ensure_ascii=False)[1:-1], quote(value,safe=""), quote_plus(value,safe=""), escape(value)}
             with self._lock:
                 self._values.update(variants)
+                for encoded,body in self._encoded_bodies.items():
+                    if any(candidate.encode(encoding) in body for candidate in variants for encoding in ("utf-8","utf-16-le","utf-16-be")):
+                        self._values.add(encoded)
 
     def environment(self, environment):
         for name, value in environment.items():
@@ -32,6 +39,16 @@ class SecretRegistry:
     def payload(self, value):
         if isinstance(value, dict):
             for key, child in value.items():
+                if key=="response_body_b64" and isinstance(child,str):
+                    try:
+                        decoded=base64.b64decode(child,validate=True)
+                    except (ValueError,UnicodeError):
+                        decoded=None
+                    if decoded is not None:
+                        with self._lock:
+                            self._encoded_bodies[child]=decoded
+                            if any(secret.encode(encoding) in decoded for secret in self._values for encoding in ("utf-8","utf-16-le","utf-16-be")):
+                                self._values.add(child)
                 if str(key).replace("_", "").lower() in _FIELDS:
                     self.add(child)
                 self.payload(child)

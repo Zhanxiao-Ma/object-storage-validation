@@ -145,15 +145,41 @@ jobs:
         env:
           OSV_RUN_CONTROL_API_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
-      - name: Java actual streaming atomic read callbacks
-        run: PYTHONPATH=tests/integration:. python3 -m unittest test_atomic_streams_sdk -v
+      - name: Java original atomic stream callbacks and concurrent service semantics
+        timeout-minutes: 15
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_atomic_streams_sdk test_atomic_moto -v
         env:
           OSV_RUN_ATOMIC_STREAM_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
-      - name: Java IAM account and inline policy source vectors
-        run: PYTHONPATH=tests/integration:. python3 -m unittest test_iam_accounts_sdk test_iam_inline_sdk -v
+      - name: Java all IAM sources and non-expiry STS credential chains
+        timeout-minutes: 15
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_iam_accounts_sdk test_iam_inline_sdk test_iam_management_sdk test_iam_root_keys_sdk test_iam_cross_resources_sdk test_iam_assumed_roles_sdk test_iam_tenant_actions_sdk test_iam_all_defaults_sdk test_sts_callers_sdk test_sts_basic_sdk -v
         env:
           OSV_RUN_IAM_ACCOUNT_TESTS: '1'
+          # The original 900-second expiry source is opt-in, never a push test.
+          OSV_RUN_STS_EXPIRY_TESTS: '0'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java original STS web identity and session policy vectors
+        timeout-minutes: 10
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_sts_web_sdk -v
+        env:
+          OSV_RUN_STS_WEB_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java native response bodies, chunked uploads and root policy boundaries
+        timeout-minutes: 10
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_response_bodies_sdk test_s3_tail_sdk test_s3_root_policy_sdk test_logging_remaining_sdk -v
+        env:
+          OSV_RUN_RESPONSE_BODY_TESTS: '1'
+          OSV_RUN_S3_TAIL_TESTS: '1'
+          OSV_RUN_S3_ROOT_POLICY_TESTS: '1'
+          OSV_RUN_LOGGING_REMAINING_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java conditional writes against actual SDK and service
+        timeout-minutes: 10
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_conditional_writes_sdk -v
+        env:
+          OSV_RUN_WIRE_HEADER_TESTS: '1'
+          OSV_RUN_SDK_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest

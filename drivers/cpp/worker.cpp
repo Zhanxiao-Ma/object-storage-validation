@@ -83,9 +83,11 @@ public:
 template<class Outcome> static void checked(const Outcome& outcome) {
     if (!outcome.IsSuccess()) {
         auto& error = outcome.GetError();
+        osv_response_body::metadata(error);
         json headers=json::object();for(const auto& entry:error.GetResponseHeaders()) headers[std::string(entry.first.c_str())]=std::string(entry.second.c_str());
         throw SdkError(static_cast<int>(error.GetResponseCode()), error.GetMessage().c_str(), error.GetExceptionName().c_str(),headers);
     }
+    osv_response_body::metadata(outcome.GetResult());
 }
 
 #include "versioning_ops.h"
@@ -114,13 +116,13 @@ public:
     S3Worker():client(identities.get("main")) {}
     json execute(const json& q) {
         if(q.value("op",std::string())=="concurrent_requests") {
-            for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required"})if(q.contains(name))throw std::runtime_error(std::string("concurrent batch requires the default client: ")+name);
+            for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required","capture_response_body"})if(q.contains(name))throw std::runtime_error(std::string("concurrent batch requires the default client: ")+name);
             if(!q.contains("requests") || !q.at("requests").is_array() || q.at("requests").empty() || q.at("requests").size()>64)throw std::runtime_error("concurrent requests must be an array of 1..64 requests");
             for(const auto& request:q.at("requests")) {
                 if(!request.is_object() || !request.contains("op") || !request.at("op").is_string())throw std::runtime_error("concurrent request requires a textual op");
                 const auto& op=request.at("op").get_ref<const std::string&>();
                 if(op.empty() || op=="concurrent_requests" || op=="info")throw std::runtime_error("invalid concurrent operation: "+op);
-                for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required"})if(request.contains(name))throw std::runtime_error(std::string("concurrent request requires the default client: ")+name);
+                for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required","capture_response_body"})if(request.contains(name))throw std::runtime_error(std::string("concurrent request requires the default client: ")+name);
             }
             std::promise<void> release;auto start=release.get_future().share();
             std::vector<std::future<json>> pending;
@@ -466,12 +468,14 @@ int main() {
         for (std::string line; input.read(line);) {
             auto start = std::chrono::steady_clock::now();
             json response;
+            osv_response_body::reset();
             try {
-                auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
+                auto request = json::parse(line);osv_response_body::begin(request); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& capability:osv_atomic_streams::capabilities())response["capabilities"].push_back(capability);
+                    response["capabilities"].push_back("response_body_capture");response["capabilities"].push_back("sdk_request_id");
                     response["capabilities"].push_back("presign");response["capabilities"].push_back("presign_v4");
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& capability:osv_checksums::capabilities())response["capabilities"].push_back(capability);
@@ -491,6 +495,7 @@ int main() {
             } catch (const std::exception& error) {
                 response = {{"ok", false}, {"error", error.what()}, {"error_kind", "worker_error"}};
             }
+            osv_response_body::attach(response);
             response["elapsed_ns"] = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-start).count();
             std::cout << response.dump() << std::endl;
         }

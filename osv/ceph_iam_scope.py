@@ -56,7 +56,11 @@ class IamScope(AbstractContextManager):
             data=result.get('data',{})
             for kind in ('User','Role','Group'):
                 if operation=='Create'+kind:
-                    item=data[kind];self.resources[(kind,item[kind+'Id'])]=item[kind+'Name']
+                    item=data[kind];uid=item.get(kind+'Id');returned=item.get(kind+'Name');requested=values[kind+'Name']
+                    if not isinstance(uid,str) or not uid or not isinstance(returned,str) or returned.lower()!=requested.lower():raise AssertionError('Fresh IAM creation response cannot prove requested resource ownership')
+                    previous=self.resources.get((kind,uid))
+                    if previous is not None and previous.lower()!=requested.lower():raise AssertionError('IAM creation returned a duplicate immutable ID for a different resource; refusing ambiguous ownership')
+                    self.resources[(kind,uid)]=requested
             if operation=='UpdateUser' and 'NewUserName' in values:
                 for key,name in list(self.resources.items()):
                     if key[0]=='User' and name.lower()==values['UserName'].lower():self.resources[key]=values['NewUserName']

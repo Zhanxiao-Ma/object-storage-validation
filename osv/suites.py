@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 23
+CATALOG_VERSION = 24
 
 
 @dataclass(frozen=True)
@@ -264,12 +264,11 @@ EXTENDED = (
 )
 
 EXCLUSIONS = (
-    "桶命名、账户管理及跨桶权限用例（尚未全量迁移；complete 已增加独立桶生命周期）",
     "文件系统 chmod/chown/mtime（不属于本工具对象接口）",
-    "跨桶复制、UploadPartCopy、条件写入及批量删除完整边界（基础批量删除、同桶复制、元数据和条件 GET 已迁移）",
-    "版本控制、ACL/Policy、加密、生命周期、对象锁与归档恢复（尚未实现）",
-    "LIST 的全部协议版本、参数组合和响应字段（已增加单页参数与元数据；尚未全量迁移）",
-    "Range 以外大部分 HTTP 状态/响应头一致性、签名负面用例、故障注入（尚未实现）",
+    "Ceph 专用日志模型、刷新响应与动态并发剩余71个源函数（尚未迁移）",
+    "S3 Select34、SigV2请求头21、SNS5、S3Control1和数据生成工具1个源函数（尚未迁移）",
+    "正常档只选择基础对象/objbench；高级功能迁移与前提条件见完善档逐项目录和alignment.json",
+    "迁移记录不代表实云通过；身份、OIDC、KMS、生命周期加速等真实前提缺失时明确not_run",
 )
 
 
@@ -399,5 +398,33 @@ def register_suites(registry):
     register_ceph_iam_accounts(registry)
     from .ceph_iam_inline import register as register_ceph_iam_inline
     register_ceph_iam_inline(registry)
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls", "ceph_raw_http", "ceph_query_edges", "ceph_lifecycle_expiration", "ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_object_locks", "ceph_logging_records", "ceph_bucket_names", "ceph_cloud_lifecycle", "ceph_logging_workloads", "ceph_logging_extensions", "ceph_metadata_tail", "ceph_encrypted_forms", "ceph_encryption_tail", "ceph_logging_policy_transitions", "ceph_logging_prefixes", "ceph_encrypted_copy_matrix", "ceph_logging_tenants", "ceph_logging_parallel", "ceph_presigned_urls", "ceph_atomic_streams", "ceph_iam_accounts", "ceph_iam_inline"),
+    from .ceph_iam_tenant_actions import register as register_ceph_iam_tenant_actions
+    register_ceph_iam_tenant_actions(registry)
+    from .ceph_iam_policy_entities import register as register_ceph_iam_policy_entities
+    register_ceph_iam_policy_entities(registry)
+    from .ceph_logging_remaining import register as register_ceph_logging_remaining
+    register_ceph_logging_remaining(registry)
+    from .ceph_s3_tail import register as register_ceph_s3_tail
+    register_ceph_s3_tail(registry)
+    from .ceph_response_bodies import register as register_ceph_response_bodies
+    register_ceph_response_bodies(registry)
+    from .ceph_s3_root_policy import register as register_ceph_s3_root_policy
+    register_ceph_s3_root_policy(registry)
+    from .ceph_iam_root_keys import register as register_ceph_iam_root_keys
+    register_ceph_iam_root_keys(registry)
+    from .ceph_sts_basic import register as register_ceph_sts_basic
+    register_ceph_sts_basic(registry)
+    from .ceph_iam_role_policies import register as register_ceph_iam_role_policies
+    register_ceph_iam_role_policies(registry)
+    from .ceph_iam_assumed_roles import register as register_ceph_iam_assumed_roles
+    register_ceph_iam_assumed_roles(registry)
+    from .ceph_sts_web import register as register_ceph_sts_web
+    register_ceph_sts_web(registry)
+    from .ceph_iam_oidc import register as register_ceph_iam_oidc
+    register_ceph_iam_oidc(registry)
+    from .ceph_sts_callers import register as register_ceph_sts_callers
+    register_ceph_sts_callers(registry)
+    from .ceph_iam_cross_resources import register as register_ceph_iam_cross_resources
+    register_ceph_iam_cross_resources(registry)
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls", "ceph_raw_http", "ceph_query_edges", "ceph_lifecycle_expiration", "ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_object_locks", "ceph_logging_records", "ceph_bucket_names", "ceph_cloud_lifecycle", "ceph_logging_workloads", "ceph_logging_extensions", "ceph_metadata_tail", "ceph_encrypted_forms", "ceph_encryption_tail", "ceph_logging_policy_transitions", "ceph_logging_prefixes", "ceph_encrypted_copy_matrix", "ceph_logging_tenants", "ceph_logging_parallel", "ceph_presigned_urls", "ceph_atomic_streams", "ceph_iam_accounts", "ceph_iam_inline", "ceph_iam_tenant_actions", "ceph_iam_policy_entities", "ceph_logging_remaining", "ceph_s3_tail", "ceph_response_bodies", "ceph_s3_root_policy", "ceph_iam_root_keys", "ceph_sts_basic", "ceph_iam_role_policies", "ceph_iam_assumed_roles", "ceph_sts_web", "ceph_iam_oidc", "ceph_sts_callers", "ceph_iam_cross_resources"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

@@ -4386,6 +4386,672 @@
       "source_sha256": "4fd29c75b97c69ae84765e9424e08cb2e64ff2ae2c62bcce828d9e483f41a30b",
       "implementation": "ceph_iam_delete_user_policy_from_multiple_policies",
       "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_write_1mb@L7337",
+      "source_sha256": "a68052be98e38e63dc0d18ab5d45e8b522ccd1f96cd488081cdc305efc2b2096",
+      "implementation": "ceph_atomic_stream_write_1mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_write_4mb@L7340",
+      "source_sha256": "93a2cd3449770843e0c47cc3993a1d36ff980a0c814d039cb11181a973b8faa8",
+      "implementation": "ceph_atomic_stream_write_4mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_write_8mb@L7343",
+      "source_sha256": "33afb2532d99f3b826a87951c49be0c4a9e9c2ff2384ef9899bb1c2e3fb2f67a",
+      "implementation": "ceph_atomic_stream_write_8mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_dual_write_1mb@L7370",
+      "source_sha256": "3c0439d4787cb10c65292ddce5a3a3de69d70cbf2e935acc8d84b795b1bb877b",
+      "implementation": "ceph_atomic_stream_dual_write_1mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_dual_write_4mb@L7373",
+      "source_sha256": "1db57dcaed2719335a0548aefcf08b77f8f0c50c03bb329c7c65ac300d5ac3aa",
+      "implementation": "ceph_atomic_stream_dual_write_4mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_dual_write_8mb@L7376",
+      "source_sha256": "0fa472143d2d19cc0137f46c465bd945e0377476b6848a7b4b50f306e8207e21",
+      "implementation": "ceph_atomic_stream_dual_write_8mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_conditional_write_1mb@L7409",
+      "source_sha256": "7021d20a708d832af88938d30aaed2c84508e9132a74b2e5fe6ce2a37d4e5d25",
+      "implementation": "ceph_atomic_stream_conditional_write_1mb",
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_resend_first_finishes_last@L7507",
+      "source_sha256": "6b13dc3e238c87c93ae6989f382e40bd8e74bf127752ea2989e8cd51d3115970",
+      "implementation": "ceph_atomic_stream_multipart_resend",
+      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_dual_conditional_write_1mb@L7448",
+      "source_sha256": "20857a31118af726cb62396d7fd3013ef65b9b25dacc8c086751079483bc0194",
+      "implementation": "ceph_atomic_stream_dual_conditional_write",
+      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_write_bucket_gone@L7454",
+      "source_sha256": "01259ade3c78265b27fbb88cf3e26c693aab3b32ba3830b31c428988ed8c21ac",
+      "implementation": "ceph_atomic_stream_bucket_gone",
+      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioned_concurrent_object_create_and_remove@L8412",
+      "source_sha256": "d3fc2e3b0a984880fe3899fc4aa3067291917b37ff85b89899106c00f2753c90",
+      "implementation": "ceph_atomic_versions_overlap",
+      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_account_usage@L1095",
+      "source_sha256": "3f4bac137eed282d6d356dadc48a2343ce297c10ff20f824c60b01ef37a17509",
+      "implementation": "ceph_body_account_usage",
+      "review": "保留原SDK ListBuckets bare usage查询、真实响应UTF8/XML解析及五个quota字面字符串断言；不由typed默认值构造响应。 独立原始HTTP响应通过真实Java/C++ SDK的成功/失败/边界回归；变异能抓到实际参数或编码凭据保护缺陷。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_requestid_matches_header_on_error@L1635",
+      "source_sha256": "e8e015cc684cf843bf825e974f9d0cf6108d86e0d3f46bd54b74f7928b68f771",
+      "implementation": "ceph_body_error_request_id",
+      "review": "保留原ClientError、XML RequestId非None及真实SDK异常metadata相等断言；两端metadata取官方SDK getter，不从捕获XML重建。 独立原始HTTP响应通过真实Java/C++ SDK的成功/失败/边界回归；变异能抓到实际参数或编码凭据保护缺陷。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_deny_self_denied_policy@L11571",
+      "source_sha256": "1e740777bad17ee1c93a7a4a2a14a3d0b8212cb484160851a2b41b4143407f36",
+      "implementation": "ceph_root_policy_deny_self",
+      "review": "保留源策略JSON字面顺序、三项fresh用户403与root Get原文/Delete/Put顺序；真实CreateAccessKey产出进入真实新SDK消费者，清理只触及UUID桶及实际UID。 独立原始HTTP响应通过真实Java/C++ SDK的成功/失败/边界回归；变异能抓到实际参数或编码凭据保护缺陷。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_deny_self_denied_policy_confirm_header@L11612",
+      "source_sha256": "b4a23a496ce57d15fbef7360658aac778dca870c2890582481dfab65cbb2af3a",
+      "implementation": "ceph_root_policy_deny_self_confirm",
+      "review": "保留原ConfirmRemoveSelfBucketAccess=true真实header与fresh/root六项403；只删除实际自有空桶，不假设root能删除已自拒绝policy。 独立原始HTTP响应通过真实Java/C++ SDK的成功/失败/边界回归；变异能抓到实际参数或编码凭据保护缺陷。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_policy_allow@L2098",
+      "source_sha256": "93dd6cda79ec01a06d29ba58e53dd9223cbb2e683bdcdaac9501edb28f0c5f9f",
+      "implementation": "ceph_iam_account_role_policy_allow",
+      "review": "真实新IAM key→STS临时凭据→实际S3/IAM调用；保留原source账号/资源/策略/403两阶段、十次原退避和Owner/Grants账户ID断言；所有实际资源按原身份清理。逐源核对并保留markers：pytest.mark.iam_account, pytest.mark.iam_role, pytest.mark.role_policy。五源双SDK原始Query/XML/HTTP完整验证，真实新IAM Key→实际STS请求→真实返回临时key/token→新S3或IAM原生client实际签名。跨账户资源保留角色策略后仍403、独立桶策略放行阶段；ObjectWriter/private原头和Owner/Grants[0]均对独立root_account_id断言，不能从role ARN反推expected。源ListBucket和GetRole十次0..8s退避不变，所有资源/策略/key按真实ID及原owner确认清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_same_account_role_policy_allow@L2159",
+      "source_sha256": "8b64652618db8908d74c3221ac5fb81e482dfd45af9d5a965161af23b7ac14ad",
+      "implementation": "ceph_iam_same_account_role_policy_allow",
+      "review": "真实新IAM key→STS临时凭据→实际S3/IAM调用；保留原source账号/资源/策略/403两阶段、十次原退避和Owner/Grants账户ID断言；所有实际资源按原身份清理。逐源核对并保留markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.iam_role, pytest.mark.role_policy。五源双SDK原始Query/XML/HTTP完整验证，真实新IAM Key→实际STS请求→真实返回临时key/token→新S3或IAM原生client实际签名。跨账户资源保留角色策略后仍403、独立桶策略放行阶段；ObjectWriter/private原头和Owner/Grants[0]均对独立root_account_id断言，不能从role ARN反推expected。源ListBucket和GetRole十次0..8s退避不变，所有资源/策略/key按真实ID及原owner确认清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_role_policy_allow@L2224",
+      "source_sha256": "3c67739791830fef11306a7bdca17f51ceb748bae20c5dfab76b80a2b1034725",
+      "implementation": "ceph_iam_cross_account_role_policy_allow",
+      "review": "真实新IAM key→STS临时凭据→实际S3/IAM调用；保留原source账号/资源/策略/403两阶段、十次原退避和Owner/Grants账户ID断言；所有实际资源按原身份清理。逐源核对并保留markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.iam_role, pytest.mark.role_policy。五源双SDK原始Query/XML/HTTP完整验证，真实新IAM Key→实际STS请求→真实返回临时key/token→新S3或IAM原生client实际签名。跨账户资源保留角色策略后仍403、独立桶策略放行阶段；ObjectWriter/private原头和Owner/Grants[0]均对独立root_account_id断言，不能从role ARN反推expected。源ListBucket和GetRole十次0..8s退避不变，所有资源/策略/key按真实ID及原owner确认清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_policy_allow_create_bucket@L2307",
+      "source_sha256": "f573d150178ff7fa1eeaf7517850893ac6db08904b8f91aeddc303d1517b1a64",
+      "implementation": "ceph_iam_account_role_policy_allow_create_bucket",
+      "review": "真实新IAM key→STS临时凭据→实际S3/IAM调用；保留原source账号/资源/策略/403两阶段、十次原退避和Owner/Grants账户ID断言；所有实际资源按原身份清理。逐源核对并保留markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.iam_role, pytest.mark.role_policy。五源双SDK原始Query/XML/HTTP完整验证，真实新IAM Key→实际STS请求→真实返回临时key/token→新S3或IAM原生client实际签名。跨账户资源保留角色策略后仍403、独立桶策略放行阶段；ObjectWriter/private原头和Owner/Grants[0]均对独立root_account_id断言，不能从role ARN反推expected。源ListBucket和GetRole十次0..8s退避不变，所有资源/策略/key按真实ID及原owner确认清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_policy_allow_get_role@L2377",
+      "source_sha256": "d18fe06985665ab3dd7dff8b760b259903a0fa8eee2600dfec3ba3da22b7ea33",
+      "implementation": "ceph_iam_account_role_policy_allow_get_role",
+      "review": "真实新IAM key→STS临时凭据→实际S3/IAM调用；保留原source账号/资源/策略/403两阶段、十次原退避和Owner/Grants账户ID断言；所有实际资源按原身份清理。逐源核对并保留markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.iam_role, pytest.mark.role_policy。五源双SDK原始Query/XML/HTTP完整验证，真实新IAM Key→实际STS请求→真实返回临时key/token→新S3或IAM原生client实际签名。跨账户资源保留角色策略后仍403、独立桶策略放行阶段；ObjectWriter/private原头和Owner/Grants[0]均对独立root_account_id断言，不能从role ARN反推expected。源ListBucket和GetRole十次0..8s退避不变，所有资源/策略/key按真实ID及原owner确认清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_user_policy_allow_user_arn@L2715",
+      "source_sha256": "8301c22fc6285cfcf8439ed84502fc86eeec461f5485116589b19c26eb51275c",
+      "implementation": "ceph_iam_crossacct_bucket_user_policy_allow_user_arn",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_bucket_policy_allow_user_arn@L2725",
+      "source_sha256": "b05046366f5b3bb036ad9b9ee4dcc00ff814bbe0e29ef9c7f8b425d4df63698f",
+      "implementation": "ceph_iam_crossacct_user_bucket_policy_allow_user_arn",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_user_policy_allow_account_arn@L2746",
+      "source_sha256": "f6ffa24fd93f2b4480842ad7bdeda57a30ad2234f3b8e66c228d60c484714fcb",
+      "implementation": "ceph_iam_crossacct_bucket_user_policy_allow_account_arn",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_bucket_policy_allow_account_arn@L2735",
+      "source_sha256": "ec96e7fd70d363e34574046d8cdac08b32dd72e453eec30c9fba7c1fe1b127cf",
+      "implementation": "ceph_iam_crossacct_user_bucket_policy_allow_account_arn",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_user_policy_allow_account_id@L2768",
+      "source_sha256": "7c1a6b27993fecc309fd21a3085a5affa36ac6f0b587d931bfd7dbcabcb63f1c",
+      "implementation": "ceph_iam_crossacct_bucket_user_policy_allow_account_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_bucket_policy_allow_account_id@L2757",
+      "source_sha256": "8f8fd71d8afa84f4282fcdce24b94b3fbd502c2ed06022f1f4f5c1b97e4e094f",
+      "implementation": "ceph_iam_crossacct_user_bucket_policy_allow_account_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_acl_user_policy_grant_user_id@L2849",
+      "source_sha256": "77370b6f0ad79b6685752ffdfe0e2f36a5457a4a56682557e00eddbc65acbdc5",
+      "implementation": "ceph_iam_crossacct_bucket_acl_user_policy_grant_user_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.fails_on_aws。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_policy_bucket_acl_grant_user_id@L2860",
+      "source_sha256": "1beb8f8a71c738f1a43918eef20a64663c4b82bb27944f12b9fb9c0ebc1ce7ee",
+      "implementation": "ceph_iam_crossacct_user_policy_bucket_acl_grant_user_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account, pytest.mark.fails_on_aws。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_acl_user_policy_grant_canonical_id@L2870",
+      "source_sha256": "0354468baae8aa2d96f0aef9a895f8d0550acb1c0853fff578836348b7903116",
+      "implementation": "ceph_iam_crossacct_bucket_acl_user_policy_grant_canonical_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_policy_bucket_acl_grant_canonical_id@L2880",
+      "source_sha256": "490568ec2d8e79728772bdfee1228af8b210fd9ad23b6e99c090201b836d155f",
+      "implementation": "ceph_iam_crossacct_user_policy_bucket_acl_grant_canonical_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_bucket_acl_user_policy_grant_account_email@L2890",
+      "source_sha256": "38e9e2e2857c57b798cf785feb646f2ba605c2b7ae968ff70592fd4e133eb551",
+      "implementation": "ceph_iam_crossacct_bucket_acl_user_policy_grant_account_email",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_user_policy_bucket_acl_grant_account_email@L2900",
+      "source_sha256": "99c91e1778dfee5b6fa0942112dbced2f540a0d7675807159f029f6764336943",
+      "implementation": "ceph_iam_crossacct_user_policy_bucket_acl_grant_account_email",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_root_bucket_policy_allow_account_arn@L2937",
+      "source_sha256": "e4b92db10ae7cb21f796beea9f07423775b47c33d0d9229633912a6d33ff3ac1",
+      "implementation": "ceph_iam_crossacct_root_bucket_policy_allow_account_arn",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_root_bucket_policy_allow_account_id@L2945",
+      "source_sha256": "25864b312f0de9ac87bee8b28436bc74ba2d10b1a6f2ee43ce6f4e0c20beaea2",
+      "implementation": "ceph_iam_crossacct_root_bucket_policy_allow_account_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_root_bucket_acl_grant_canonical_id@L2972",
+      "source_sha256": "2fee16c4ae57ebed91341c4b660cf3589c1501833575b857d32e8797d26fd075",
+      "implementation": "ceph_iam_crossacct_root_bucket_acl_grant_canonical_id",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_cross_account_root_bucket_acl_grant_account_email@L2980",
+      "source_sha256": "efaffdfbf51e36e0a993ea0a85ddf5434bfd3a46d892650bcd5aab06a61651a2",
+      "implementation": "ceph_iam_crossacct_root_bucket_acl_grant_account_email",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_cross_account。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_bucket_policy_allow@L1263",
+      "source_sha256": "02575e7f5cb6438fa4ef911a276f6c574de62f805c573b9f547b15f1d71cadce",
+      "implementation": "ceph_iam_account_user_bucket_policy_allow",
+      "review": "保留先用户策略/先桶策略或ACL的原执行顺序、原userARN/accountARN/独立accountID/userID/canonicalID/emailAddress原字面grant、精确两阶段403与十次原退避；真实fresh key直入原生S3消费者，严格原root身份清理。原始markers：pytest.mark.iam_account, pytest.mark.iam_user。17个完整函数两语言真实SDK逐项验证，所有IAM/S3 HTTP共享到达时间审计确认两类策略先后顺序，不以终态相同掩盖阶段次序；原id=UserId（fails_on_aws）、id=独立root_user_id与emailAddress=独立email不改写成同种grant。UserARN/accountARN按原实际CreateUser/GetUser构造，accountID及rootUserID/email保持独立metadata，测试特意与返回ARN不同防止反推oracle。真实新key直接用于真实S3消费者；所有bucket及policy按IAMroot原凭据清理，User/Key/inlinepolicy按原IAMaltroot及immutable UserId清理。原source单一user桶策略函数不添加用户内联Allow。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_group_create@L1467",
+      "source_sha256": "48baf92bb3415365a2eb14072da90a26f754e3dea6569c1a477b77bdf92d92eb",
+      "implementation": "ceph_iam_account_group_create",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_group_case_insensitive_name@L1499",
+      "source_sha256": "d2c9e2ea4550b6acd61157648096184fbe84bf02bcef44898f03bafd31ed4c33",
+      "implementation": "ceph_iam_account_group_case_insensitive_name",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.group。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_group_list@L1519",
+      "source_sha256": "45b203bd01e2f4e1109c888a7c6288e65a2a55b692b153c0ad77e303f2fc4a96",
+      "implementation": "ceph_iam_account_group_list",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.group。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_group_update@L1543",
+      "source_sha256": "5abc810a4a2e546d00662db7300b2a66754df10ceadc426ab7509484fd082dc8",
+      "implementation": "ceph_iam_account_group_update",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_inline_group_policy@L1588",
+      "source_sha256": "251cdd53910441d5773a851ed1a8af50c48b801198faf68cdc0df9e677024373",
+      "implementation": "ceph_iam_account_inline_group_policy",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_managed_group_policy@L1649",
+      "source_sha256": "1f87a9f2ea768b82ae3eaf17f9fbb94d118429f014b6b692503a0d3cd7a2ff0b",
+      "implementation": "ceph_iam_account_managed_group_policy",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_inline_group_policy_allow@L1706",
+      "source_sha256": "1d1373782a0d347b61521dec9d7647359c80bb8ef762a2397212608b495067d1",
+      "implementation": "ceph_iam_account_inline_group_policy_allow",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_managed_group_policy_allow@L1747",
+      "source_sha256": "d34cf297765b21b85104d164edd8f71ffccc2076a557e1e5dc942deef71df444",
+      "implementation": "ceph_iam_account_managed_group_policy_allow",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.group_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_policy@L1308",
+      "source_sha256": "0f50503350b8a42557fde3358b8749c48137d7fd4f11ae092a72087f4bf4b2aa",
+      "implementation": "ceph_iam_account_user_policy",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.user_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_policy_managed@L1365",
+      "source_sha256": "9c44df350828bedb6a165b8a9585d44910fe9b8c31db0cfc8f951ae70dc1659d",
+      "implementation": "ceph_iam_account_user_policy_managed",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.user_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_policy_allow@L1422",
+      "source_sha256": "d6593c27de6efe0986466d7d858ef7b0e1ef40607b7920da3dddd9bd9ed469bb",
+      "implementation": "ceph_iam_account_user_policy_allow",
+      "review": "保留真实分页、全部策略文档/固定托管ARN、原错误码、真实十次退避及生成密钥到实际S3消费者；按immutable ID先清理真实依赖再删资源。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.user_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_oidc_provider@L2438",
+      "source_sha256": "32bd2bbc4bac41712b62b1ed4d608eab24a1e58b2c3d597c96cd72338de85571",
+      "implementation": "ceph_iam_account_oidc_provider",
+      "review": "原http URL与EXAMPLE/SAMPLE1非hex thumbprint不修改；保持客户ID顺序/去重/删除、所有HTTP/错误断言；仅清理真实新建ARN且核对URL。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_add_new_client_id_to_oidc@L2471",
+      "source_sha256": "526b96a5dc3f2d8d8cf80c9ffe7e200b9bd68513486d8f48ff9ed1b452dfd091",
+      "implementation": "ceph_iam_verify_add_new_client_id_to_oidc",
+      "review": "原http URL与EXAMPLE/SAMPLE1非hex thumbprint不修改；保持客户ID顺序/去重/删除、所有HTTP/错误断言；仅清理真实新建ARN且核对URL。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_add_existing_client_id_to_oidc@L2510",
+      "source_sha256": "86fd390808df46d44eb451c5665f7c3a0a9f9aebcc4286052d9daaa0f288d2cd",
+      "implementation": "ceph_iam_verify_add_existing_client_id_to_oidc",
+      "review": "原http URL与EXAMPLE/SAMPLE1非hex thumbprint不修改；保持客户ID顺序/去重/删除、所有HTTP/错误断言；仅清理真实新建ARN且核对URL。固定revision原函数所有输入和断言逐项保留，原始标记：。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_remove_client_id_from_oidc@L2550",
+      "source_sha256": "98672b873b6923780562d2b374fef3a54ca3ac79435e84d99c261a7f21bf0dfd",
+      "implementation": "ceph_iam_verify_remove_client_id_from_oidc",
+      "review": "原http URL与EXAMPLE/SAMPLE1非hex thumbprint不修改；保持客户ID顺序/去重/删除、所有HTTP/错误断言；仅清理真实新建ARN且核对URL。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_update_thumbprintlist_of_oidc@L2590",
+      "source_sha256": "031d0997627007da0775bf55aabed8a72052be1d7920c4d251c723a492a91b19",
+      "implementation": "ceph_iam_verify_update_thumbprintlist_of_oidc",
+      "review": "原http URL与EXAMPLE/SAMPLE1非hex thumbprint不修改；保持客户ID顺序/去重/删除、所有HTTP/错误断言；仅清理真实新建ARN且核对URL。固定revision原函数所有输入和断言逐项保留，原始标记：。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_policy@L1992",
+      "source_sha256": "6644393ab807d9fb2af8330ceeea35b620f9f42393a61e0d187d80bfcc230741",
+      "implementation": "ceph_iam_account_role_policy",
+      "review": "保留全部源JSON字符串顺序、PolicyNames字典序、固定托管ARN、首次403及真实新凭据后续IAM会话；所有fresh依赖按immutable ID清理。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.iam_role, pytest.mark.role_policy。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_policy_managed@L2040",
+      "source_sha256": "cd00a14d6654db8adda006e79987bbc98ee90a4231c29b1063c3e4255a59f9ad",
+      "implementation": "ceph_iam_account_role_policy_managed",
+      "review": "保留全部源JSON字符串顺序、PolicyNames字典序、固定托管ARN、首次403及真实新凭据后续IAM会话；所有fresh依赖按immutable ID清理。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.role_policy, pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_list_permission@L1969",
+      "source_sha256": "e8350352690eba58221127dbc4eb9bc3f1f228383409e74045faa5ab5c20673f",
+      "implementation": "ceph_iam_account_role_list_permission",
+      "review": "保留全部源JSON字符串顺序、PolicyNames字典序、固定托管ARN、首次403及真实新凭据后续IAM会话；所有fresh依赖按immutable ID清理。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.iam_role。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_account_summary_root@L2987",
+      "source_sha256": "1a8be8524836007a6c7be916e2b850451bad8b6703cbec3ecd1b2e632b773126",
+      "implementation": "ceph_iam_get_account_summary_root",
+      "review": "保留全部源JSON字符串顺序、PolicyNames字典序、固定托管ARN、首次403及真实新凭据后续IAM会话；所有fresh依赖按immutable ID清理。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_account_summary_policy@L2996",
+      "source_sha256": "91ff7a8a676e8f5f20bccde42a00fd30f2c3983fb1a33db61d6d6bcafff26734",
+      "implementation": "ceph_iam_get_account_summary_policy",
+      "review": "保留全部源JSON字符串顺序、PolicyNames字典序、固定托管ARN、首次403及真实新凭据后续IAM会话；所有fresh依赖按immutable ID清理。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_current_user_access_key_create@L1089",
+      "source_sha256": "120c8d390819cb0f1b8b5a09fd50403d44daefff62169ebb41da61bcced43a7a",
+      "implementation": "ceph_iam_account_current_user_access_key_create",
+      "review": "保留省略UserName、真实新key到更新/分页/删除的链路；先列既有root key，只操作不在既有集合中的真实新ID，所有失败finally清理且绝不触及预存key。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.iam_user。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_current_user_access_key_update@L1139",
+      "source_sha256": "c5044e7974306f49684f8901d4f40d80f2048ddcad54bd5563c560621c1420b5",
+      "implementation": "ceph_iam_account_current_user_access_key_update",
+      "review": "保留省略UserName、真实新key到更新/分页/删除的链路；先列既有root key，只操作不在既有集合中的真实新ID，所有失败finally清理且绝不触及预存key。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.iam_user。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_current_user_access_key_delete@L1195",
+      "source_sha256": "4b4724cadb73f7b8edc2c69530d523cea7c567a0a5319e3467211839c6c65961",
+      "implementation": "ceph_iam_account_current_user_access_key_delete",
+      "review": "保留省略UserName、真实新key到更新/分页/删除的链路；先列既有root key，只操作不在既有集合中的真实新ID，所有失败finally清理且绝不触及预存key。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.iam_account, pytest.mark.iam_user。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_get_caller_identity_root@L2093",
+      "source_sha256": "77feecdcdc2a2a63a6faa8acdeeeed6c3eba82db935c24df6f5dc7baa04b6a10",
+      "implementation": "ceph_sts_caller_root",
+      "review": "原独立root user_id对三个字段完整断言；不从被测响应派生oracle。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_get_caller_identity_non_root_user@L2104",
+      "source_sha256": "1bbd3eccc40f2b1e4ef842340d1b84f8c27cce1975a3300912c0cfe26fd1cbb8",
+      "implementation": "ceph_sts_caller_user",
+      "review": "源CreateUser ARN推导account与真实UserId/Arn对照，真实CreateAccessKey进入新官方STS消费者，源删除后完整断言。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_get_caller_identity_after_assume_role@L2127",
+      "source_sha256": "abc8db84edf0ded620172cb2e01ae5e18d8798e648a15708c604752044ae57f8",
+      "implementation": "ceph_sts_caller_assumed_role",
+      "review": "真实fresh key→AssumeRole凭据→新GetCallerIdentity；保留十次重试、原session字符串与RoleId/Account/Arn全部断言，清理actual IDs。固定revision原函数所有输入和断言逐项保留，原始标记：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore。独立真实Query XML测试让官方Java/C++实际SDK返回直接进入此完整源场景；新密钥/STS临时凭据直接用于后续真实官方客户端及签名，真实清理按不可变ID确认归属，凭据不进入evidence。各源默认缺真实控制面身份/隔离授权或root独立metadata为not_run，不计云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_get_session_token@L160",
+      "source_sha256": "6a09f7f9ea5f609006331effc12f896bc3b91b9a8f1073df1d0ff7b1887bae52",
+      "implementation": "ceph_sts_get_session_token",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_allow@L190",
+      "source_sha256": "ad73f3ad53bb3dc51b4f124eb8aebd9ee7a08aa3e0e6af6ea04f235ee08d7f31",
+      "implementation": "ceph_sts_assume_role_allow",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_deny@L229",
+      "source_sha256": "db4cddbaafcc9d929cf7d56c05e1bf22bd64d3a01d9fe04fecf011432ff0d605",
+      "implementation": "ceph_sts_assume_role_deny",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_creds_expiry@L270",
+      "source_sha256": "88f538c597d89ca9918a7c50acef19077f9e515f68714879eb2796b85c4e1f5a",
+      "implementation": "ceph_sts_assume_role_creds_expiry",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_deny_head_nonexistent@L313",
+      "source_sha256": "d67f326a54a9a1f9cb00755324ddcb8bf3397dce7ab8d842517027872396ca91",
+      "implementation": "ceph_sts_assume_role_deny_head_nonexistent",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_allow_head_nonexistent@L357",
+      "source_sha256": "ffebab28b2c5041159079b5d97a86cdfc7cd3764571d205a12d258e0b5be9575",
+      "implementation": "ceph_sts_assume_role_allow_head_nonexistent",
+      "review": "保留legacy空account角色ARN、Path=/和Tags=[]、全部原策略字串/Principal及错误预期、真实alt调用STS/临时凭据调用S3；expiry原DurationSeconds900且真实等900秒，不缩短时序；保留上游helper KeyError与成功分支未绑定局部变量缺陷。六源Java/C++全部完整真实SDK验证：短5源保留原无空白JSON/legacy空account ARN/Tags=[]、alt调用STS及返回临时key/token新S3消费者；过期源两独立进程真实time.sleep900，Java904.181s/Cpp901.024s，两边原DurationSeconds900/ExpiredToken400断言通过，不改时钟，不以rawHTTP证据冒充云真实过期语义。保留上游create_role/put_role_policy/put_user_policy的ClientError response[Code]导致KeyError和expiry意外成功时未绑定局部变量缺陷，未把AWS不兼容输入修成合法IAM策略。实际独占新role/policy按返回RoleId确认清理，sessiontoken仅专用alt user上未预存的UUIDpolicy。原markers：pytest.mark.test_of_sts, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_allow_bucket_actions_in_user_policy@L446",
+      "source_sha256": "75d04228a14ab757daa1ae185d028e7d3274f651abeea70a8c5c5792155437f3",
+      "implementation": "ceph_iam_allow_bucket_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_deny_bucket_actions_in_user_policy@L494",
+      "source_sha256": "b9aab183c69aa27ad174caf4f53c21920d95affe305c29734bfa5ccb3b72f3bb",
+      "implementation": "ceph_iam_deny_bucket_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_allow_object_actions_in_user_policy@L529",
+      "source_sha256": "8275756d6f23af6b64aab0d0310759219607529ac7d2f89fd5e6e72bb8ba86e6",
+      "implementation": "ceph_iam_allow_object_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_deny_object_actions_in_user_policy@L569",
+      "source_sha256": "7b66a5f66a4fbb3d0ef5d4901b7717afe734861ad67c1dbb3a38397d98a94342",
+      "implementation": "ceph_iam_deny_object_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_allow_multipart_actions_in_user_policy@L608",
+      "source_sha256": "35c0add398a69f74a13511a2bdb2d50fe14c001353d26c431ba04f6c07af008a",
+      "implementation": "ceph_iam_allow_multipart_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_deny_multipart_actions_in_user_policy@L644",
+      "source_sha256": "1559ff0acdec82a61cd35d7e9636c0b572f95471393f4b351b541ea90a1a9ac1",
+      "implementation": "ceph_iam_deny_multipart_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_allow_tagging_actions_in_user_policy@L687",
+      "source_sha256": "217fcdfdca20a51b504d9d2486b660774675886b812cb55397600ec301d72685",
+      "implementation": "ceph_iam_allow_tagging_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_deny_tagging_actions_in_user_policy@L733",
+      "source_sha256": "3b046c65895890f657410f96eee8bd0d9d8a162fc2fed41ef75d65e8ca4530f0",
+      "implementation": "ceph_iam_deny_tagging_actions_in_user_policy",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_conflicting_user_policy_statements@L785",
+      "source_sha256": "9b5a1e31480c3841fc358dbe18234f7f46a2cff5735b5993daf3b4f9eac42b33",
+      "implementation": "ceph_iam_verify_conflicting_user_policy_statements",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_conflicting_user_policies@L817",
+      "source_sha256": "9e6a8437d554f7e4fd2c98feece4c81198aa9bf885a6de777a27c8c0f444adc8",
+      "implementation": "ceph_iam_verify_conflicting_user_policies",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_dbstore"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_verify_allow_iam_actions@L855",
+      "source_sha256": "bded47181cda9ec9c61e0f6db84bf05612d4dc716a6ca132691c3d034795bc04",
+      "implementation": "ceph_iam_verify_allow_iam_actions",
+      "review": "原IAM admin/S3 IAM admin/独立alt真实身份、原固定策略/正文/5MiB multipart/标签/所有403与状态断言；保留上游ListBuckets变量遮蔽缺陷，先移除自拒绝策略再按原Owner清理。完整11源均以v24真实Java/C++验证，原5MiB重复1KiB随机ASCII multipart、原Opaque UploadId及typed Abort204保真；DeleteObject通过delete_version且不传VersionId，物理仍同一官方DeleteObject，HTTP204不丢弃；标签官方SDK tags_*真实生产输出还原原TagSet标签大小写，未造数据；上游ListBuckets变量遮蔽缺陷保留（fixture故意仍列已删桶也原源通过）。源自拒绝先由原IAM admin移除，之后才由原桶Owner清理，最后UserId确认后再次清理policy。原markers：pytest.mark.user_policy, pytest.mark.iam_tenant"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_account_s@L17223",
+      "source_sha256": "20c7fcbe3018f72d00200ed1f4d5deb0d43e2a30e6300fee48b6f1682393b154",
+      "implementation": "ceph_logging_remaining_account_s",
+      "review": "固定原body/helper逐AST一致（测试函数仅增加目的docstring），全部原断言、真实5.5秒rolltime fallback保留。默认真实stock SDK对LoggingType模型拒绝映射原ParamValidationError，仅实际未知字段错误可映射，连接/服务错误不吞。三个账号向量完整main→root/root→root/root→main及真实IAM GetUser ARN→policy SourceAccount；另源真实IAM CreateRole→alt STS AssumeRole返回密钥/token→新官方SDK S3→实际日志Requester原ARN substring断言。独立原始HTTP覆盖两端完整正路径与Requester错误负路径；ARN传播改常量故意破坏被最终实际policy断言抓到。资源UUID+HEAD404+真实create响应，全部写键/实际日志键清理，先关闭日志及删桶再撤角色policy/Role，RoleId绑定并确认删除；缺独立userID、显式IAM/STS/root身份及IAM隔离授权not_run。HTTP fixture验证链路与原oracle，不冒充真实Ceph日志交付。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_requester_assumed_role@L15979",
+      "source_sha256": "81f0cfd313599325ba30ba071210cb255d973e731a72956520fb2baf1b3ee231",
+      "implementation": "ceph_logging_remaining_assumed_requester",
+      "review": "固定原body/helper逐AST一致（测试函数仅增加目的docstring），全部原断言、真实5.5秒rolltime fallback保留。默认真实stock SDK对LoggingType模型拒绝映射原ParamValidationError，仅实际未知字段错误可映射，连接/服务错误不吞。三个账号向量完整main→root/root→root/root→main及真实IAM GetUser ARN→policy SourceAccount；另源真实IAM CreateRole→alt STS AssumeRole返回密钥/token→新官方SDK S3→实际日志Requester原ARN substring断言。独立原始HTTP覆盖两端完整正路径与Requester错误负路径；ARN传播改常量故意破坏被最终实际policy断言抓到。资源UUID+HEAD404+真实create响应，全部写键/实际日志键清理，先关闭日志及删桶再撤角色policy/Role，RoleId绑定并确认删除；缺独立userID、显式IAM/STS/root身份及IAM隔离授权not_run。HTTP fixture验证链路与原oracle，不冒充真实Ceph日志交付。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_with_chunked_transfer_encoding@L1597",
+      "source_sha256": "54dd662498b3afdcab21f0ef171407543751a7bd995ea41067175cd894609ab7",
+      "implementation": "ceph_s3_tail_chunked_write",
+      "review": "保留原新桶、foo/bar和官方签名前唯一Transfer-Encoding:chunked扩展，严格实际HTTP200；不删Content-Length、不手写chunk framing、不替换SDK传输来通过。真实Java SDK在PUT前传输失败照实失败，Cpp真实chunked原文及200/400独立wire验证；BucketScope精确清理且头作用域不外溢。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity@L403",
+      "source_sha256": "f7269c71612df3a9f293d3d2ddbc199438380a24ad0a35be3c15d7075987bbf0",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify app_id federated trust produces real temporary credentials which create/delete a bucket with exact HTTP200/204. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_on_different_buckets@L502",
+      "source_sha256": "dbfa45bf1c3c801130ed5126127d4b7ce34c2907cede0b971e39f5aa5a5b0db5",
+      "implementation": "ceph_sts_web_session_policy_check_on_different_buckets",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify disjoint role/session bucket permissions deny both literal creates and preserve original missing-bucket object error. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_on_same_bucket@L571",
+      "source_sha256": "278f8d80932f512f1010767fd22fa242aed636fe0d88e8b10669c6ee82fe9ab3",
+      "implementation": "ceph_sts_web_session_policy_check_on_same_bucket",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify intersecting role/session permissions allow a real PUT on literal test1. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_put_obj_denial@L628",
+      "source_sha256": "6708e87f0baa95ab418f247c952d5d071f09006555c1d715174861a80784d6a8",
+      "implementation": "ceph_sts_web_session_policy_check_put_obj_denial",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify a GetObject-only session denies the original PutObject. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_swapping_role_policy_and_session_policy@L690",
+      "source_sha256": "bfee8e8b70e69d93238135bee48b74b00d3ca05ec8742d9c18da50639d829bdb",
+      "implementation": "ceph_sts_web_swapping_role_policy_and_session_policy",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify swapping broad and scoped role/session policies retains allowed PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_different_op_permissions@L747",
+      "source_sha256": "91842d1416a61ab996376197eb469b7d842c2f1d63d78a15ae4bb60309eccb71",
+      "implementation": "ceph_sts_web_session_policy_check_different_op_permissions",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify non-overlapping role PUT and session GET permissions deny PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_with_deny_effect@L809",
+      "source_sha256": "7aaddd9cb8d52101830466c29d3b132b4f633ce5659860ddc5fd9e3e04246ed0",
+      "implementation": "ceph_sts_web_session_policy_check_with_deny_effect",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify session Deny overrides role Allow for PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_check_with_deny_on_same_op@L870",
+      "source_sha256": "4356b1eb826d948110afa20e00511061fc36982f3d93231b22a8f6745e35c67d",
+      "implementation": "ceph_sts_web_session_policy_check_with_deny_on_same_op",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify explicit Deny on the same operation prevents PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_bucket_policy_role_arn@L931",
+      "source_sha256": "2edeb02093ac669f05c47d3bc6a2bfc1e89ff46b35e0f00e7ba302d59d135a37",
+      "implementation": "ceph_sts_web_session_policy_bucket_policy_role_arn",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify role-ARN bucket grant preserves original PUT success and GET AccessDenied. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_bucket_policy_session_arn@L1007",
+      "source_sha256": "36fa2c0857b2b02cf020b1aa2fe1949109f02febdbda7f3062e445e009eac366",
+      "implementation": "ceph_sts_web_session_policy_bucket_policy_session_arn",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify assumed-session ARN bucket grant permits the original PUT and GET. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_copy_object@L1081",
+      "source_sha256": "746743dba629b02da9566e041727d9dcc9f1fafeb1bd2bb4da3e30064f15b1f6",
+      "implementation": "ceph_sts_web_session_policy_copy_object",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify session bucket grant permits the original managed copy and destination GET. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_no_bucket_role_policy@L1162",
+      "source_sha256": "8a366dd2c793cd18114a9c7dfa9d1762a7a0c96dad9d0b351b53fca4dd9dcaa7",
+      "implementation": "ceph_sts_web_session_policy_no_bucket_role_policy",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify absent role permissions prevent session PUT despite session allow. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_session_policy_bucket_policy_deny@L1214",
+      "source_sha256": "51c5b60b3c2b498f721c5fa9ce7bd1c669751e2d5a0b71cbc28883101238ccbf",
+      "implementation": "ceph_sts_web_session_policy_bucket_policy_deny",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify explicit session-ARN bucket Deny prevents PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_with_sub@L1288",
+      "source_sha256": "f09659271e5eb1b31848ec73c1761be05faf87fb4137ed0ea65807ced3e5f073",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_with_sub",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify sub trust claim accepts actual supplied JWT and temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_with_azp@L1337",
+      "source_sha256": "40c2a43f177cf12bed58151edf1f9dfe9ccbc5f868795c45d4e30523325d1b17",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_with_azp",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify azp trust claim accepts actual supplied JWT and temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_with_request_tag@L1387",
+      "source_sha256": "ab923bfda137f4ac5580611e451d613aae6c86d251ab87fb14e82d98f3635da0",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_with_request_tag",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify RequestTag Department trust with actual user JWT permits temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_with_principal_tag@L1436",
+      "source_sha256": "cf2c704340890c8a7c378cd246679d0751c6a30930986e0a47634ac0be3fb32b",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_with_principal_tag",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify PrincipalTag Department role policy with actual user JWT permits bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_for_all_values@L1485",
+      "source_sha256": "82bd356c5d58f0d9b23e4c3918e3b78ff5ba5fcb92e36080184b0acc65e8ae01",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_for_all_values",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify original ForAllValues conditions permit temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_for_all_values_deny@L1534",
+      "source_sha256": "fddf8e093df4049f828b4e64ea6fafb3ae4d19e81c87410e47ff37616175a303",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_for_all_values_deny",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify original ForAllValues negative policy denies bucket create. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_tag_keys_trust_policy@L1585",
+      "source_sha256": "bef14ca31e01eb0ad40d600524410387e2a7d0f6221e823cabe296ebfb8c5bf0",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_tag_keys_trust_policy",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify original tag-key trust condition permits temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_tag_keys_role_policy@L1634",
+      "source_sha256": "f8fc11f0d2abe011c49393082d925b5b74e8cfd258b40ff1e529936b362fdc8a",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_tag_keys_role_policy",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify original tag-key role policy permits temporary bucket create/delete. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_resource_tag@L1683",
+      "source_sha256": "de91965e0e1068f717cb7d02b828d0121322934b9959ed616e2875545c1ba8c2",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_resource_tag",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify duplicate Department bucket tags are transmitted unchanged and original resource-tag PUT succeeds. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_resource_tag_deny@L1742",
+      "source_sha256": "98516f0e9b8a0708cb42b35aff01ad467634c118fa75cd38dbe40e501ac03a7a",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_resource_tag_deny",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify missing original resource tag denies session PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_wrong_resource_tag_deny@L1801",
+      "source_sha256": "d4a224893c3e489f071e183f0c07fed798c209ed6d081c3620b2143923bdd039",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_wrong_resource_tag_deny",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify incorrect original resource tag denies session PUT. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_resource_tag_princ_tag@L1863",
+      "source_sha256": "72df53584af2590d9d285f59e8b0d4aeeaa7f16a334d0777667673d27d312386",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_resource_tag_princ_tag",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify principal-derived resource tag permits original duplicate-tag PUT and GET. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_resource_tag_copy_obj@L1927",
+      "source_sha256": "e6da17151ea9fe3b75efb524fcf5e3de9be625396be1ea55e4f1fdb188d11084",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_resource_tag_copy_obj",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify original resource-tag copies within/across both real buckets and all destination GET statuses. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sts.py::test_assume_role_with_web_identity_role_resource_tag@L2018",
+      "source_sha256": "a5981279f4ab2c58338e1282018a9cf2b4c2061316e1d81f043e619c60a9330d",
+      "implementation": "ceph_sts_web_assume_role_with_web_identity_role_resource_tag",
+      "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify duplicate role/bucket Department tags remain unchanged and original role-resource-tag PUT succeeds. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
     }
   ]
 }

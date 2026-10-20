@@ -1,5 +1,6 @@
 """Exercise dynamic credential redaction through the real worker transport."""
 import json
+import base64
 import sys
 import unittest
 from osv.cli import redactor
@@ -13,7 +14,7 @@ class DynamicSecretsTest(unittest.TestCase):
         """Register nested raw credentials; expect literal and escaped text redacted without mutating payload."""
         registry=SecretRegistry()
         secret='new+secret/"\\雪'
-        payload={"Credentials":{"AccessKeyId":"fresh-access-key", "SecretAccessKey":secret,"SessionToken":"fresh-token"}}
+        payload={"Credentials":{"AccessKeyId":"fresh-access-key", "SecretAccessKey":secret,"SessionToken":"fresh-token","WebIdentityToken":"actual-web-jwt","SAMLAssertion":"actual-saml-text"}}
         registry.payload(payload)
         self.assertEqual(payload["Credentials"]["SecretAccessKey"],secret)
         for text in (secret,json.dumps(payload),json.dumps(payload,ensure_ascii=False)):
@@ -21,6 +22,8 @@ class DynamicSecretsTest(unittest.TestCase):
             self.assertNotIn(secret,scrubbed)
             self.assertNotIn("fresh-access-key",scrubbed)
             self.assertNotIn("fresh-token",scrubbed)
+            self.assertNotIn("actual-web-jwt",scrubbed)
+            self.assertNotIn("actual-saml-text",scrubbed)
             self.assertIn("[REDACTED]",scrubbed)
 
     def test_scope_isolation_and_late_worker_credentials(self):
@@ -66,3 +69,23 @@ sys.stdin.readline();print('issued-later-secret',file=sys.stderr,flush=True)
             self.assertIn("[REDACTED]",str(failure.exception))
             self.assertNotIn("issued-later-secret",str(failure.exception))
         finally:worker.close()
+
+    def test_encoded_response_credentials_are_redacted_even_when_registered_later(self):
+        """Capture actual-format raw body bytes before or after credentials arrive; expect opaque base64 diagnostics scrubbed while original in-memory bytes stay usable."""
+        for later,encoding in ((later,encoding) for later in (False,True) for encoding in ("utf-8","utf-16-le","utf-16-be")):
+            with self.subTest(later=later,encoding=encoding):
+                registry=SecretRegistry();secret="issued-opaque-secret"
+                encoded=base64.b64encode(("<Error><Message>"+secret+"</Message></Error>").encode(encoding)).decode()
+                payload={"response_body_b64":encoded}
+                if not later:registry.payload({"SecretAccessKey":secret})
+                registry.payload(payload)
+                if later:registry.payload({"SecretAccessKey":secret})
+                self.assertEqual(payload["response_body_b64"],encoded)
+                self.assertNotIn(encoded,registry.redact(json.dumps(payload)))
+                self.assertIn("[REDACTED]",registry.redact(json.dumps(payload)))
+
+    def test_url_encoded_and_xml_escaped_credentials_do_not_escape_redaction(self):
+        """Register literal session credentials; expect independent URL-encoded and XML-escaped diagnostics scrubbed as well as raw values."""
+        registry=SecretRegistry();registry.add("temporary+token/value=");registry.add("issued&secret")
+        self.assertEqual(registry.redact("X-Amz-Security-Token=temporary%2Btoken%2Fvalue%3D"),"X-Amz-Security-Token=[REDACTED]")
+        self.assertEqual(registry.redact("<Secret>issued&amp;secret</Secret>"),"<Secret>[REDACTED]</Secret>")

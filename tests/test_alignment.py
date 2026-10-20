@@ -53,7 +53,7 @@ class AlignmentTest(unittest.TestCase):
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
                 self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))
-                self.assertEqual(ceph["aligned"],731 if profile=="complete" else 0)
+                self.assertEqual(ceph["aligned"],842 if profile=="complete" else 0)
                 self.assertFalse(ceph["complete"])
                 self.assertGreater(ceph["not_migrated"],0)
                 self.assertEqual(len(result["cases"]),1005)

@@ -13,14 +13,14 @@ NAMES=('AllAccessPolicy','AllAccessPolicy'*10,'AllowAccessPolicy','AllowAccessPo
 
 
 @contextmanager
-def dedicated(p):
+def dedicated(p,names=NAMES):
     authorized(p);name=p.ctx.workload.get('iam_alt_user_name')
     if 'identity_iam' not in p.ctx.worker.capabilities:raise CaseNotRun('Tenant IAM requires its explicit IAM endpoint and credentials','identity_iam')
     if not isinstance(name,str) or not name:raise CaseNotRun('Inline source requires an explicitly dedicated existing alt IAM user','workload.iam_alt_user_name')
     owner=checked(rpc(p,'GetUser','iam',UserName=name))['User'];uid=owner['UserId']
     active=pages(p,'ListUserPolicies','PolicyNames','iam',UserName=name)
-    if any(item in active for item in NAMES):raise CaseNotRun('A source-fixed policy already exists; refusing to overwrite it','dedicated IAM user with absent source policy names')
-    for policy in NAMES:
+    if any(item in active for item in names):raise CaseNotRun('A source-fixed policy already exists; refusing to overwrite it','dedicated IAM user with absent source policy names')
+    for policy in names:
         result=rpc(p,'GetUserPolicy','iam',UserName=name,PolicyName=policy)
         if result.get('ok'):raise CaseNotRun('A source-fixed policy already exists; refusing to overwrite it','dedicated IAM user with absent source policy names')
         # The deliberately overlong PolicyName may be rejected by validation;
@@ -30,19 +30,19 @@ def dedicated(p):
     absent=rpc(p,'GetUser','iam',UserName=BAD_USER)
     if absent.get('ok'):raise CaseNotRun('Source fixed invalid user exists; refusing to modify it','isolated IAM account without '+BAD_USER)
     error(absent,'NoSuchEntity');attempted=set()
-    def call(operation,policy=None,user=None,document=None,status=None,negative=None):
+    def call(operation,policy=None,user=None,document=None,status=None,negative=None,source_helper=False):
         values={'UserName':name if user is None else user}
         if policy is not None:values['PolicyName']=policy
-        if document is not None:values['PolicyDocument']=json.dumps(document)
+        if document is not None:values['PolicyDocument']=document if isinstance(document,str) else json.dumps(document)
         if operation=='PutUserPolicy':attempted.add((values['UserName'],policy))
         result=rpc(p,operation,'iam',**values)
+        if source_helper and not result.get('ok') and result.get('status_code') is not None:raise KeyError('Code')
         if negative is not None:error(result,status=negative)
         else:
             checked(result)
             if status is not None:assert_equal(result.get('status_code'),status)
         return result
-    try:yield call
-    finally:
+    def cleanup():
         # Never delete policy on a replacement user or a newly appeared invalid
         # user. Only the explicitly authorized user's original immutable ID owns
         # this case's absent-before-write policy namespace.
@@ -60,6 +60,9 @@ def dedicated(p):
                     if policy=='AllAccessPolicy'*10 and result.get('status_code')==400:
                         assert_equal(policy in pages(p,'ListUserPolicies','PolicyNames','iam',UserName=name),False)
                     else:error(result,'NoSuchEntity')
+    call.cleanup=cleanup
+    try:yield call
+    finally:cleanup()
 
 
 def inline(p,mode):

@@ -1,5 +1,6 @@
 """Verify official SDK URL producers feed actual HTTP consumers without a replacement signer."""
 import os
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -121,3 +122,16 @@ class PresignedUrlSdkTest(unittest.TestCase):
                 self.assertEqual([row["status"] for row in results],["not_run"]*4)
                 ctx.workload.clear();results=run_cases(ctx,[CASES[0]])
                 self.assertEqual(results[0]["status"],"not_run");self.assertEqual(server.requests,[])
+
+    def test_real_sdk_session_token_query_is_redacted_in_diagnostics(self):
+        """Generate actual SDK URLs with a slash/plus session token; expect the original token in real query decoding but complete removal of its encoded form from final diagnostics."""
+        token="temporary+token/value="
+        for language in languages():
+            with self.subTest(language=language),fixture_worker(language,[],"s3",{"OSV_SESSION_TOKEN":token}) as (worker,server):
+                result=worker.call({"op":"presign","method":"GET","bucket":"unused","key":"foo","expires_seconds":10000,"signature_version":"v4"})
+                self.assertTrue(result["ok"],result)
+                query=parse_qs(urlsplit(result["url"]).query)
+                self.assertEqual(query["X-Amz-Security-Token"],[token])
+                diagnostic=worker.secret_registry.redact(json.dumps(result))
+                self.assertNotIn(token,diagnostic);self.assertNotIn("temporary%2Btoken%2Fvalue%3D",diagnostic)
+                self.assertEqual(server.requests,[])
