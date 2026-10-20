@@ -166,6 +166,27 @@ class SdkIntegrationTest(unittest.TestCase):
                 for worker in workers:worker.close()
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
+    def test_owned_bucket_cleans_opaque_keys_after_actual_sdk_listing(self):
+        """Store real whitespace keys then fail after a true SDK listing; expect original producer keys cleaned even when a typed XML getter trims them."""
+        from osv.bucket_scope import BucketScope
+        from osv.scenarios import Context
+        from osv.suites import Probe
+        for target in self.targets:
+            with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=Worker(target,30)
+                try:
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                    scope=BucketScope(Probe(ctx))
+                    with self.assertRaisesRegex(AssertionError,"deliberate failure"):
+                        with scope as bucket:
+                            for key in (" "," real "):bucket.put(key,b"source-value")
+                            bucket.call("list",prefix="")
+                            raise AssertionError("deliberate failure")
+                    self.assertTrue(scope.cleanup_completed)
+                    self.assertEqual(worker.call({"op":"bucket_head","bucket":scope.name})["status_code"],404)
+                finally:worker.close()
+        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
     def test_ceph_bucket_cases_create_and_clean_actual_owned_buckets(self):
         """Run the seven real SDK bucket scenarios; expect exact source responses, a usable default bucket and no extra buckets afterward."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -235,6 +256,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
             expected.extend((target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2))
             expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload"))
+            expected.extend((target["id"],name) for target in self.targets for name in ("ceph_exact_multipart_copy_invalid","ceph_exact_multipart_copy_improper","ceph_get_part_multiple","ceph_get_part_single","ceph_get_part_ordinary"))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -248,6 +270,9 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
+            self.assertEqual(len(report["coverage"]["catalog"]),229)
+            self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):
         """Mask copy in actual Java/C++ SDK handshakes; expect seven unexecuted rows per target, successful genuine copy_replace checks and no performance evidence."""

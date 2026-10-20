@@ -58,7 +58,7 @@ def execute(q):
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"]}
     if op=="bucket_create_raw":
         if "bucket" not in q:raise ValueError("raw bucket creation requires explicit bucket")
         if root.exists():return {"status_code":200}
@@ -208,10 +208,44 @@ def execute(q):
         key.with_suffix(".json").unlink(missing_ok=True)
     elif op == "list":
         return {"keys":[obj["key"] for obj in inventory(q["prefix"])]}
+    elif op == "mp_list":
+        uploads=[]
+        for entry in (root/".uploads").glob("*/metadata.json"):
+            metadata=json.loads(entry.read_text());name=metadata["key"]
+            if name.startswith(q.get("prefix","")):
+                uploads.append({"key":name,"upload_id":entry.parent.name,"initiated_ms":metadata["initiated_ms"]})
+        uploads.sort(key=lambda entry:(entry["key"],entry["upload_id"]))
+        if "key_marker" in q:
+            marker=q["key_marker"];upload_marker=q.get("upload_id_marker")
+            uploads=[row for row in uploads if row["key"]>marker or (row["key"]==marker and upload_marker is not None and row["upload_id"]>upload_marker)]
+        limit=q.get("max_uploads",1000);truncated=len(uploads)>limit;page=uploads[:limit]
+        return {"uploads":page,"truncated":truncated,"next_key_marker":page[-1]["key"] if truncated and page else None,"next_upload_id_marker":page[-1]["upload_id"] if truncated and page else None,"status_code":200}
+    elif op == "mp_copy":
+        if "version_id" in q:raise ValueError("local reference does not implement object versions")
+        source_root=root if q.get("source_bucket",q.get("bucket"))==q.get("bucket") else base_root/".buckets"/hashlib.sha256(q["source_bucket"].encode()).hexdigest()
+        source=source_root/".objects"/hashlib.sha256(q["source_key"].encode()).hexdigest()
+        data=source.read_bytes()
+        if "range_header" in q:
+            match=re.fullmatch(r"bytes=(\d+)-(\d+)",q["range_header"])
+            if not match:raise OperationError("InvalidArgument",400)
+            start,end=map(int,match.groups())
+            if start>end or end>=len(data):raise OperationError("InvalidRange",416)
+            data=data[start:end+1]
+        parts=root/".uploads"/q["upload_id"]
+        if not parts.exists():raise OperationError("NoSuchUpload",404)
+        (parts/str(q["part_number"])).write_bytes(data)
+        return {"etag":hashlib.sha256(data).hexdigest(),"status_code":200}
+    elif op in ("get_part","head_part"):
+        data=key.read_bytes();metadata=json.loads(key.with_suffix(".json").read_text())
+        sizes=metadata.get("part_sizes",[len(data)]);number=q["part_number"]
+        if number<1 or number>len(sizes):raise OperationError("InvalidPart",400)
+        start=sum(sizes[:number-1]);part=data[start:start+sizes[number-1]]
+        if op=="get_part":Path(q["output_path"]).write_bytes(part)
+        return {"etag":chr(34)+hashlib.md5(data).hexdigest()+chr(34),"size":len(part),"parts_count":len(sizes) if "part_sizes" in metadata else None}
     elif op in ("mp_create","mp_create_metadata"):
         ident = uuid.uuid4().hex
         (root/".uploads"/ident).mkdir(parents=True)
-        (root/".uploads"/ident/"metadata.json").write_text(json.dumps({"metadata":q.get("metadata",{}),"content_type":q.get("content_type","application/octet-stream")}))
+        (root/".uploads"/ident/"metadata.json").write_text(json.dumps({"key":q["key"],"initiated_ms":int(time.time()*1000),"metadata":q.get("metadata",{}),"content_type":q.get("content_type","application/octet-stream")}))
         return {"upload_id": ident}
     elif op == "mp_part":
         if not (root/".uploads"/q["upload_id"]).exists():raise OperationError("NoSuchUpload")
@@ -225,7 +259,7 @@ def execute(q):
             if saved and saved[0]==q["key"] and saved[1]==q.get("parts"):return saved[2]
             raise OperationError("NoSuchUpload",404)
         if op=="mp_complete_empty" or not q.get("parts"):raise OperationError("MalformedXML",400)
-        content = bytearray()
+        content = bytearray();sizes=[]
         for index,part in enumerate(q["parts"]):
             file=parts/str(part["part_number"])
             if not file.exists():raise OperationError("InvalidPart",400)
@@ -235,11 +269,13 @@ def execute(q):
             if index<len(q["parts"])-1 and len(data)<(5*1024*1024 if op=="mp_complete_observed" else int(os.environ.get("OSV_REFERENCE_MIN_PART_SIZE",str(5*1024*1024)))):
                 raise OperationError("EntityTooSmall",400)
             content.extend(data)
+            sizes.append(len(data))
         key.parent.mkdir(parents=True, exist_ok=True)
         key.write_bytes(content)
         metadata=json.loads((parts/"metadata.json").read_text())
         remember(q["key"],metadata["metadata"],metadata["content_type"])
-        result={"etag":hashlib.md5(content).hexdigest(),"status_code":200}
+        committed=json.loads(key.with_suffix(".json").read_text());committed["part_sizes"]=sizes;key.with_suffix(".json").write_text(json.dumps(committed))
+        result={"etag":chr(34)+hashlib.md5(content).hexdigest()+chr(34),"status_code":200}
         completed_uploads[(str(root),q["upload_id"])]=(q["key"],q["parts"],result)
         for part in parts.iterdir():
             part.unlink()

@@ -750,6 +750,66 @@
       "source_sha256": "40435caae69631d75d97d790c92066d6d1b2064237cefc3f8fb1214220608dca",
       "implementation": "ceph_exact_multipart_etag",
       "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_small@L6096",
+      "source_sha256": "df744d00739744a24038ca72fd9b02e90f1739b9aba5db8364dfb5e542d919aa",
+      "implementation": "ceph_exact_multipart_copy_small",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_invalid_range@L6113",
+      "source_sha256": "b789bedb9801247a7699bb7ebad3e54fb1b1f7d97ff61711d5762bb530f0a718",
+      "implementation": "ceph_exact_multipart_copy_invalid",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_improper_range@L6135",
+      "source_sha256": "9e076908d61a2273cca47ba3aded871d1ad1f93b20c809b74a3a2e2c95ea7274",
+      "implementation": "ceph_exact_multipart_copy_improper",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_without_range@L6165",
+      "source_sha256": "aacd26b3fb0e53210d03ea8dfe7503fd4a3c09f94c4f229e8a7c742cd62a4809",
+      "implementation": "ceph_exact_multipart_copy_without_range",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_special_names@L6192",
+      "source_sha256": "97162fbc851833df6c2b8d6b30b14c567bb7b5dcfdc095462bb5ec53c13625c2",
+      "implementation": "ceph_exact_multipart_copy_special",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_multiple_sizes@L6373",
+      "source_sha256": "5c1524052b62e9f5e6256675b32ed4afbb19a77fc35ef21c25654c358fda2671",
+      "implementation": "ceph_exact_multipart_copy_sizes",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_multipart_upload@L6511",
+      "source_sha256": "4decc25cf11649d66c44f529075bf8921ad65587644fb8285d7a6c5faefcf266",
+      "implementation": "ceph_exact_multipart_list",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_get_part@L6626",
+      "source_sha256": "3dadefb193176e6b8c9d3ddcbd4ed92de547c343b4648e65aaf3bc04b7e50f93",
+      "implementation": "ceph_get_part_multiple",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_single_get_part@L6723",
+      "source_sha256": "cfc455ecdd3522db077869fe7b70be90e733e745fee6889acab9960fd374b7da",
+      "implementation": "ceph_get_part_single",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_non_multipart_get_part@L6765",
+      "source_sha256": "1fc544af9650ed084ca679a27b959676c6f91bf4bafb4a17c0fdec282f3f648c",
+      "implementation": "ceph_get_part_ordinary",
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
     }
   ]
 }

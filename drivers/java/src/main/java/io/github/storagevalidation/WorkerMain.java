@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"));
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
@@ -341,28 +341,65 @@ public final class WorkerMain {
             case "put":
                 client.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
-            case "get": case "get_conditional": case "get_metadata": case "get_http": {
+            case "get": case "get_conditional": case "get_metadata": case "get_http": case "get_part": {
                 software.amazon.awssdk.services.s3.model.GetObjectRequest.Builder b=software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(key);
                 if(q.has("if_match")) b.ifMatch(text(q,"if_match"));
                 if(q.has("if_none_match")) b.ifNoneMatch(text(q,"if_none_match"));
                 if(q.has("if_modified_since_ms")) b.ifModifiedSince(java.time.Instant.ofEpochMilli(q.get("if_modified_since_ms").asLong()));
                 if(q.has("if_unmodified_since_ms")) b.ifUnmodifiedSince(java.time.Instant.ofEpochMilli(q.get("if_unmodified_since_ms").asLong()));
+                if(q.has("part_number")) b.partNumber(q.get("part_number").asInt());
                 if(q.has("range_header")) b.range(text(q,"range_header"));
                 if(q.has("offset")) b.range("bytes="+q.get("offset").asLong()+"-"+(q.get("offset").asLong()+q.get("length").asLong()-1));
                 try(software.amazon.awssdk.core.ResponseInputStream<software.amazon.awssdk.services.s3.model.GetObjectResponse> in=client.getObject(b.build())) {
                     Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING);
                     software.amazon.awssdk.services.s3.model.GetObjectResponse result=in.response();
                     Map<String,Object> observed=withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
+                    if("get_part".equals(op)) observed.put("parts_count",result.partsCount());
                     return "get_http".equals(op)?withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()):observed;
                 }
             }
-            case "head": case "head_metadata": { software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(b->b.bucket(bucket).key(key)); return withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata()); }
+            case "head": case "head_metadata": case "head_part": {
+                software.amazon.awssdk.services.s3.model.HeadObjectRequest.Builder b=software.amazon.awssdk.services.s3.model.HeadObjectRequest.builder().bucket(bucket).key(key);
+                if(q.has("part_number")) b.partNumber(q.get("part_number").asInt());
+                software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(b.build());
+                Map<String,Object> observed=withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
+                if("head_part".equals(op)) observed.put("parts_count",result.partsCount());return observed;
+            }
             case "delete": client.deleteObject(b->b.bucket(bucket).key(key)); return empty();
             case "list": {
                 List<String> keys=new ArrayList<>();
                 for(software.amazon.awssdk.services.s3.model.ListObjectsV2Response page:client.listObjectsV2Paginator(b->b.bucket(bucket).prefix(text(q,"prefix"))))
                     for(software.amazon.awssdk.services.s3.model.S3Object object:page.contents()) keys.add(object.key());
                 return one("keys",keys);
+            }
+            case "mp_copy": {
+                software.amazon.awssdk.services.s3.model.UploadPartCopyRequest.Builder b=software.amazon.awssdk.services.s3.model.UploadPartCopyRequest.builder()
+                    .sourceBucket(q.path("source_bucket").asText(bucket)).sourceKey(text(q,"source_key")).destinationBucket(bucket).destinationKey(key)
+                    .uploadId(text(q,"upload_id")).partNumber(q.get("part_number").asInt());
+                if(q.has("range_header")) b.copySourceRange(text(q,"range_header"));
+                if(q.has("version_id")) b.sourceVersionId(text(q,"version_id"));
+                software.amazon.awssdk.services.s3.model.UploadPartCopyResponse result=client.uploadPartCopy(b.build());
+                return withHttp(one("etag",result.copyPartResult().eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "mp_list": {
+                software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest.Builder b=software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest.builder().bucket(bucket);
+                if(q.has("prefix")) b.prefix(text(q,"prefix"));
+                if(q.has("delimiter")) b.delimiter(text(q,"delimiter"));
+                if(q.has("key_marker")) b.keyMarker(text(q,"key_marker"));
+                if(q.has("upload_id_marker")) b.uploadIdMarker(text(q,"upload_id_marker"));
+                if(q.has("max_uploads")) b.maxUploads(q.get("max_uploads").asInt());
+                software.amazon.awssdk.services.s3.model.ListMultipartUploadsResponse result=client.listMultipartUploads(b.build());
+                List<Map<String,Object>> uploads=new ArrayList<>();
+                for(software.amazon.awssdk.services.s3.model.MultipartUpload item:result.uploads()) {
+                    Map<String,Object> row=new LinkedHashMap<>();row.put("key",item.key());row.put("upload_id",item.uploadId());row.put("initiated_ms",millis(item.initiated()));row.put("storage_class",item.storageClassAsString());
+                    if(item.owner()!=null) {Map<String,Object> owner=new LinkedHashMap<>();owner.put("id",item.owner().id());owner.put("display_name",item.owner().displayName());row.put("owner",owner);}
+                    if(item.initiator()!=null) {Map<String,Object> owner=new LinkedHashMap<>();owner.put("id",item.initiator().id());owner.put("display_name",item.initiator().displayName());row.put("initiator",owner);}
+                    uploads.add(row);
+                }
+                Map<String,Object> observed=new LinkedHashMap<>();observed.put("uploads",uploads);observed.put("truncated",result.isTruncated());observed.put("next_key_marker",result.nextKeyMarker());observed.put("next_upload_id_marker",result.nextUploadIdMarker());
+                observed.put("key_marker",result.keyMarker());observed.put("upload_id_marker",result.uploadIdMarker());observed.put("max_uploads",result.maxUploads());observed.put("prefix",result.prefix());observed.put("delimiter",result.delimiter());
+                List<String> prefixes=new ArrayList<>();for(software.amazon.awssdk.services.s3.model.CommonPrefix item:result.commonPrefixes()) prefixes.add(item.prefix());observed.put("common_prefixes",prefixes);
+                return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
             case "mp_create": case "mp_create_metadata": {
                 software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.builder().bucket(bucket).key(key);

@@ -7,13 +7,22 @@ from .suites import case,run_cases,CEPH
 
 MIB=1024*1024
 
+def source_data(size,part_size=5*MIB,seed=101):
+    """Keep Ceph's ASCII-letter, per-part repeated-1-KiB data shape with an independent reproducible seed."""
+    rng=random.Random(seed);parts=[]
+    for offset in range(0,size,part_size):
+        pattern=bytes(rng.choice(b"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") for _ in range(1024))
+        count=min(size-offset,part_size)
+        parts.append(pattern*(count//1024)+pattern[:count%1024])
+    return b"".join(parts)
+
 @contextmanager
-def uploading(bucket,p,**options):
+def uploading(bucket,p,key="mymultipart",**options):
     """Abort the actual upload even when an assertion fails; surface cleanup errors rather than leaking parts."""
-    ident=bucket.call("mp_create_metadata",key="mymultipart",**options)["upload_id"]
+    ident=bucket.call("mp_create_metadata",key=key,**options)["upload_id"]
     try:yield ident
     finally:
-        response=bucket.raw("mp_abort_raw",key="mymultipart",upload_id=ident)
+        response=bucket.raw("mp_abort_raw",key=key,upload_id=ident)
         if not response["ok"] and (response.get("status_code"),response.get("error_code"))!=(404,"NoSuchUpload"):
             raise RuntimeError("multipart cleanup failed for "+bucket.name+" upload "+ident+": "+str(response))
 
@@ -57,18 +66,18 @@ def upload(p,mode):
         if mode=="sizes":
             for size in (5*MIB,5*MIB+100*1024,5*MIB+600*1024,10*MIB+100*1024,10*MIB+600*1024,10*MIB):
                 with uploading(bucket,p) as ident:
-                    complete(bucket,ident,prepare(bucket,p,ident,random.Random(size).randbytes(size)))
+                    complete(bucket,ident,prepare(bucket,p,ident,source_data(size,seed=size)))
             return
         if mode=="resend":
             for resend in ((0,),(1,),(2,),(1,2),(0,1,2,3,4,5)):
-                data=random.Random(103).randbytes(30*MIB)
+                data=source_data(30*MIB,seed=103)
                 with uploading(bucket,p,content_type="text/bla",metadata={"foo":"bar"}) as ident:
                     complete(bucket,ident,prepare(bucket,p,ident,data,resend=resend))
                     check_data(bucket,p,data,metadata=True,ranges=True)
             return
         if mode=="small":
             with uploading(bucket,p) as ident:
-                parts=prepare(bucket,p,ident,b"x")
+                parts=prepare(bucket,p,ident,source_data(1))
                 complete(bucket,ident,parts)
                 assert_equal(read(bucket,p)[0]["size"],1)
                 complete(bucket,ident,parts)
@@ -87,7 +96,7 @@ def upload(p,mode):
                 assert_equal(read(bucket,p)[1],data)
             return
         if mode=="full":
-            data=random.Random(101).randbytes(30*MIB)
+            data=source_data(30*MIB)
             with uploading(bucket,p,content_type="text/bla",metadata={"foo":"bar"}) as ident:
                 parts=prepare(bucket,p,ident,data)
                 complete(bucket,ident,parts);complete(bucket,ident,parts)
@@ -97,7 +106,7 @@ def upload(p,mode):
             return
         if mode=="abort":
             with uploading(bucket,p) as ident:
-                prepare(bucket,p,ident,random.Random(102).randbytes(10*MIB))
+                prepare(bucket,p,ident,source_data(10*MIB,seed=102))
                 bucket.call("mp_abort_raw",key="mymultipart",upload_id=ident)
                 assert_equal("Contents" in bucket.call("list_v2_observed",prefix="mymultipart")["fields"],False)
             return
@@ -108,7 +117,7 @@ def upload(p,mode):
         with uploading(bucket,p) as ident:
             if mode=="empty":result=bucket.raw("mp_complete_empty",key="mymultipart",upload_id=ident)
             else:
-                data=b"\x00" if mode in ("missing_part","etag") else random.Random(104).randbytes(100*1024)
+                data=b"\x00" if mode in ("missing_part","etag") else source_data(100*1024,10*1024,104)
                 parts=prepare(bucket,p,ident,data,10*1024 if mode=="too_small" else 5*MIB)
                 if mode=="missing_part":parts[0]["part_number"]=9999
                 elif mode=="etag":parts[0]["etag"]="ffffffffffffffffffffffffffffffff"

@@ -115,3 +115,9 @@ Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id
 文件参考驱动仅为工具自检实现基础非版本删除；版本请求明确拒绝且不声明版本能力。
 
 `mp_create_metadata` 使用实际 SDK 创建分块上传，可选 `content_type`/`metadata`；返回真实 `upload_id`。`mp_complete_observed` 接收调用者原始 `parts` 顺序，返回实际 `etag`、`status_code`、`http_headers`；不排序或合成 ETag。`mp_complete_empty` 省略完成请求体，用于原始 Ceph MalformedXML 场景。`mp_abort_raw` 保留实际 NoSuchUpload 等错误，不能转换为幂等成功。以上精确能力目前为 AWS Java/C++ 链路；其余 worker 不宣称支持。
+
+`mp_copy`：`key` 为目的键，`source_bucket`/`source_key` 为未编码的原始源对象，`upload_id`/`part_number` 为真实上传标识；可选原始 `range_header`。调用 SDK UploadPartCopy，返回服务端 `etag`/HTTP 字段，不通过 GET/PUT 模拟。C++ 由 SDK 序列化 CopySource，不能再次编码。版本化分块复制尚未接入 C++。
+
+`mp_list`：单页真实 ListMultipartUploads，支持 `prefix`、`delimiter`、`key_marker`、`upload_id_marker`、`max_uploads`；返回实际 `uploads`（键、ID、时间及 SDK 暴露的 owner/initiator）、`common_prefixes`、截断状态与两个后续标记。
+
+`get_part` / `head_part`：调用 SDK 的 PartNumber 参数，输入 `key`/`part_number`，GET 另需 `output_path`；返回 SDK 实际 `parts_count`、`etag`、`size`，保留缺失值和服务错误。以上能力当前为 AWS Java/C++。
