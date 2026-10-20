@@ -13,3 +13,14 @@ These are adapted scenario/phase implementations using our SDK protocol, not the
 The pinned inventory in `osv/data/upstream.json` contains source identities, fingerprints and
 parameter annotations for auditing. It does not execute upstream source code.
 Vendor SDKs are obtained separately and retain their own licenses and notices.
+
+`drivers/schema/bucket-api.json` contains a documentation-stripped subset of the
+AWS SDK for C++ 1.11.675 S3 API model. The source URL, full-source SHA-256 and
+explicit C++ payload bindings are retained in that file. This is interface metadata
+used to generate typed SDK builders/getters and operation allowlists; it contains
+no AWS official test cases. The source AWS SDK is distributed under Apache-2.0;
+its license is preserved in
+[third_party/aws-sdk-api-model/LICENSE](third_party/aws-sdk-api-model/LICENSE).
+
+All `osv/ceph_*.py` translations, including later bucket, multipart and versioning
+groups, retain the same pinned Ceph provenance and permission notice above.

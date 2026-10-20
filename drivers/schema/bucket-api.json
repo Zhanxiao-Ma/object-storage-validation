@@ -1,0 +1,1491 @@
+{
+  "provenance": {
+    "source": "https://github.com/aws/aws-sdk-cpp/blob/1.11.675/tools/code-generation/api-descriptions/s3-2006-03-01.normal.json",
+    "source_sha256": "6be3b05aac4ff8719e9a30a376de413523e9eab28a248195c8ab1cf9baacac80",
+    "sdk_version": "1.11.675",
+    "license": "Apache-2.0",
+    "qualification": "SDK API model subset; contains no AWS official test cases"
+  },
+  "operations": {
+    "GetBucketTagging": {
+      "name": "GetBucketTagging",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?tagging"
+      },
+      "input": {
+        "shape": "GetBucketTaggingRequest"
+      },
+      "output": {
+        "shape": "GetBucketTaggingOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketTagging": {
+      "name": "PutBucketTagging",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?tagging"
+      },
+      "input": {
+        "shape": "PutBucketTaggingRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketTagging": {
+      "name": "DeleteBucketTagging",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?tagging",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketTaggingRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketCors": {
+      "name": "GetBucketCors",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?cors"
+      },
+      "input": {
+        "shape": "GetBucketCorsRequest"
+      },
+      "output": {
+        "shape": "GetBucketCorsOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketCors": {
+      "name": "PutBucketCors",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?cors"
+      },
+      "input": {
+        "shape": "PutBucketCorsRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketCors": {
+      "name": "DeleteBucketCors",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?cors",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketCorsRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketLifecycleConfiguration": {
+      "name": "GetBucketLifecycleConfiguration",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?lifecycle"
+      },
+      "input": {
+        "shape": "GetBucketLifecycleConfigurationRequest"
+      },
+      "output": {
+        "shape": "GetBucketLifecycleConfigurationOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketLifecycleConfiguration": {
+      "name": "PutBucketLifecycleConfiguration",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?lifecycle"
+      },
+      "input": {
+        "shape": "PutBucketLifecycleConfigurationRequest"
+      },
+      "output": {
+        "shape": "PutBucketLifecycleConfigurationOutput"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketLifecycle": {
+      "name": "DeleteBucketLifecycle",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?lifecycle",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketLifecycleRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketPolicy": {
+      "name": "GetBucketPolicy",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?policy"
+      },
+      "input": {
+        "shape": "GetBucketPolicyRequest"
+      },
+      "output": {
+        "shape": "GetBucketPolicyOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketPolicy": {
+      "name": "PutBucketPolicy",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?policy"
+      },
+      "input": {
+        "shape": "PutBucketPolicyRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketPolicy": {
+      "name": "DeleteBucketPolicy",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?policy",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketPolicyRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketWebsite": {
+      "name": "GetBucketWebsite",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?website"
+      },
+      "input": {
+        "shape": "GetBucketWebsiteRequest"
+      },
+      "output": {
+        "shape": "GetBucketWebsiteOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketWebsite": {
+      "name": "PutBucketWebsite",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?website"
+      },
+      "input": {
+        "shape": "PutBucketWebsiteRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketWebsite": {
+      "name": "DeleteBucketWebsite",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?website",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketWebsiteRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "GetBucketEncryption": {
+      "name": "GetBucketEncryption",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?encryption"
+      },
+      "input": {
+        "shape": "GetBucketEncryptionRequest"
+      },
+      "output": {
+        "shape": "GetBucketEncryptionOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketEncryption": {
+      "name": "PutBucketEncryption",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?encryption"
+      },
+      "input": {
+        "shape": "PutBucketEncryptionRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "DeleteBucketEncryption": {
+      "name": "DeleteBucketEncryption",
+      "http": {
+        "method": "DELETE",
+        "requestUri": "/{Bucket}?encryption",
+        "responseCode": 204
+      },
+      "input": {
+        "shape": "DeleteBucketEncryptionRequest"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    }
+  },
+  "shapes": {
+    "AbortIncompleteMultipartUpload": {
+      "type": "structure",
+      "members": {
+        "DaysAfterInitiation": {
+          "shape": "DaysAfterInitiation"
+        }
+      }
+    },
+    "AccountId": {
+      "type": "string"
+    },
+    "AllowedHeader": {
+      "type": "string"
+    },
+    "AllowedHeaders": {
+      "type": "list",
+      "member": {
+        "shape": "AllowedHeader"
+      },
+      "flattened": true
+    },
+    "AllowedMethod": {
+      "type": "string"
+    },
+    "AllowedMethods": {
+      "type": "list",
+      "member": {
+        "shape": "AllowedMethod"
+      },
+      "flattened": true
+    },
+    "AllowedOrigin": {
+      "type": "string"
+    },
+    "AllowedOrigins": {
+      "type": "list",
+      "member": {
+        "shape": "AllowedOrigin"
+      },
+      "flattened": true
+    },
+    "BucketKeyEnabled": {
+      "type": "boolean",
+      "box": true
+    },
+    "BucketLifecycleConfiguration": {
+      "type": "structure",
+      "required": [
+        "Rules"
+      ],
+      "members": {
+        "Rules": {
+          "shape": "LifecycleRules",
+          "locationName": "Rule"
+        }
+      }
+    },
+    "BucketName": {
+      "type": "string"
+    },
+    "CORSConfiguration": {
+      "type": "structure",
+      "required": [
+        "CORSRules"
+      ],
+      "members": {
+        "CORSRules": {
+          "shape": "CORSRules",
+          "locationName": "CORSRule"
+        }
+      }
+    },
+    "CORSRule": {
+      "type": "structure",
+      "required": [
+        "AllowedMethods",
+        "AllowedOrigins"
+      ],
+      "members": {
+        "ID": {
+          "shape": "ID"
+        },
+        "AllowedHeaders": {
+          "shape": "AllowedHeaders",
+          "locationName": "AllowedHeader"
+        },
+        "AllowedMethods": {
+          "shape": "AllowedMethods",
+          "locationName": "AllowedMethod"
+        },
+        "AllowedOrigins": {
+          "shape": "AllowedOrigins",
+          "locationName": "AllowedOrigin"
+        },
+        "ExposeHeaders": {
+          "shape": "ExposeHeaders",
+          "locationName": "ExposeHeader"
+        },
+        "MaxAgeSeconds": {
+          "shape": "MaxAgeSeconds"
+        }
+      }
+    },
+    "CORSRules": {
+      "type": "list",
+      "member": {
+        "shape": "CORSRule"
+      },
+      "flattened": true
+    },
+    "ChecksumAlgorithm": {
+      "type": "string",
+      "enum": [
+        "CRC32",
+        "CRC32C",
+        "SHA1",
+        "SHA256",
+        "CRC64NVME"
+      ]
+    },
+    "Condition": {
+      "type": "structure",
+      "members": {
+        "HttpErrorCodeReturnedEquals": {
+          "shape": "HttpErrorCodeReturnedEquals"
+        },
+        "KeyPrefixEquals": {
+          "shape": "KeyPrefixEquals"
+        }
+      }
+    },
+    "ConfirmRemoveSelfBucketAccess": {
+      "type": "boolean",
+      "box": true
+    },
+    "ContentMD5": {
+      "type": "string"
+    },
+    "Date": {
+      "type": "timestamp",
+      "timestampFormat": "iso8601"
+    },
+    "Days": {
+      "type": "integer",
+      "box": true
+    },
+    "DaysAfterInitiation": {
+      "type": "integer",
+      "box": true
+    },
+    "DeleteBucketCorsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "DeleteBucketEncryptionRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "DeleteBucketLifecycleRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "DeleteBucketPolicyRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "DeleteBucketTaggingRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "DeleteBucketWebsiteRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "ErrorDocument": {
+      "type": "structure",
+      "required": [
+        "Key"
+      ],
+      "members": {
+        "Key": {
+          "shape": "ObjectKey"
+        }
+      }
+    },
+    "ExpirationStatus": {
+      "type": "string",
+      "enum": [
+        "Enabled",
+        "Disabled"
+      ]
+    },
+    "ExpiredObjectDeleteMarker": {
+      "type": "boolean",
+      "box": true
+    },
+    "ExposeHeader": {
+      "type": "string"
+    },
+    "ExposeHeaders": {
+      "type": "list",
+      "member": {
+        "shape": "ExposeHeader"
+      },
+      "flattened": true
+    },
+    "GetBucketCorsOutput": {
+      "type": "structure",
+      "members": {
+        "CORSRules": {
+          "shape": "CORSRules",
+          "locationName": "CORSRule"
+        }
+      }
+    },
+    "GetBucketCorsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketEncryptionOutput": {
+      "type": "structure",
+      "members": {
+        "ServerSideEncryptionConfiguration": {
+          "shape": "ServerSideEncryptionConfiguration"
+        }
+      },
+      "payload": "ServerSideEncryptionConfiguration"
+    },
+    "GetBucketEncryptionRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketLifecycleConfigurationOutput": {
+      "type": "structure",
+      "members": {
+        "Rules": {
+          "shape": "LifecycleRules",
+          "locationName": "Rule"
+        },
+        "TransitionDefaultMinimumObjectSize": {
+          "shape": "TransitionDefaultMinimumObjectSize",
+          "location": "header",
+          "locationName": "x-amz-transition-default-minimum-object-size"
+        }
+      }
+    },
+    "GetBucketLifecycleConfigurationRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketPolicyOutput": {
+      "type": "structure",
+      "members": {
+        "Policy": {
+          "shape": "Policy"
+        }
+      },
+      "payload": "Policy",
+      "cpp_streaming_payload": "Policy"
+    },
+    "GetBucketPolicyRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketTaggingOutput": {
+      "type": "structure",
+      "required": [
+        "TagSet"
+      ],
+      "members": {
+        "TagSet": {
+          "shape": "TagSet"
+        }
+      }
+    },
+    "GetBucketTaggingRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketWebsiteOutput": {
+      "type": "structure",
+      "members": {
+        "RedirectAllRequestsTo": {
+          "shape": "RedirectAllRequestsTo"
+        },
+        "IndexDocument": {
+          "shape": "IndexDocument"
+        },
+        "ErrorDocument": {
+          "shape": "ErrorDocument"
+        },
+        "RoutingRules": {
+          "shape": "RoutingRules"
+        }
+      }
+    },
+    "GetBucketWebsiteRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "HostName": {
+      "type": "string"
+    },
+    "HttpErrorCodeReturnedEquals": {
+      "type": "string"
+    },
+    "HttpRedirectCode": {
+      "type": "string"
+    },
+    "ID": {
+      "type": "string"
+    },
+    "IndexDocument": {
+      "type": "structure",
+      "required": [
+        "Suffix"
+      ],
+      "members": {
+        "Suffix": {
+          "shape": "Suffix"
+        }
+      }
+    },
+    "KeyPrefixEquals": {
+      "type": "string"
+    },
+    "LifecycleExpiration": {
+      "type": "structure",
+      "members": {
+        "Date": {
+          "shape": "Date"
+        },
+        "Days": {
+          "shape": "Days"
+        },
+        "ExpiredObjectDeleteMarker": {
+          "shape": "ExpiredObjectDeleteMarker"
+        }
+      }
+    },
+    "LifecycleRule": {
+      "type": "structure",
+      "required": [
+        "Status"
+      ],
+      "members": {
+        "Expiration": {
+          "shape": "LifecycleExpiration"
+        },
+        "ID": {
+          "shape": "ID"
+        },
+        "Prefix": {
+          "shape": "Prefix",
+          "deprecated": true
+        },
+        "Filter": {
+          "shape": "LifecycleRuleFilter"
+        },
+        "Status": {
+          "shape": "ExpirationStatus"
+        },
+        "Transitions": {
+          "shape": "TransitionList",
+          "locationName": "Transition"
+        },
+        "NoncurrentVersionTransitions": {
+          "shape": "NoncurrentVersionTransitionList",
+          "locationName": "NoncurrentVersionTransition"
+        },
+        "NoncurrentVersionExpiration": {
+          "shape": "NoncurrentVersionExpiration"
+        },
+        "AbortIncompleteMultipartUpload": {
+          "shape": "AbortIncompleteMultipartUpload"
+        }
+      }
+    },
+    "LifecycleRuleAndOperator": {
+      "type": "structure",
+      "members": {
+        "Prefix": {
+          "shape": "Prefix"
+        },
+        "Tags": {
+          "shape": "TagSet",
+          "flattened": true,
+          "locationName": "Tag"
+        },
+        "ObjectSizeGreaterThan": {
+          "shape": "ObjectSizeGreaterThanBytes"
+        },
+        "ObjectSizeLessThan": {
+          "shape": "ObjectSizeLessThanBytes"
+        }
+      }
+    },
+    "LifecycleRuleFilter": {
+      "type": "structure",
+      "members": {
+        "Prefix": {
+          "shape": "Prefix"
+        },
+        "Tag": {
+          "shape": "Tag"
+        },
+        "ObjectSizeGreaterThan": {
+          "shape": "ObjectSizeGreaterThanBytes"
+        },
+        "ObjectSizeLessThan": {
+          "shape": "ObjectSizeLessThanBytes"
+        },
+        "And": {
+          "shape": "LifecycleRuleAndOperator"
+        }
+      }
+    },
+    "LifecycleRules": {
+      "type": "list",
+      "member": {
+        "shape": "LifecycleRule"
+      },
+      "flattened": true
+    },
+    "MaxAgeSeconds": {
+      "type": "integer",
+      "box": true
+    },
+    "NoncurrentVersionExpiration": {
+      "type": "structure",
+      "members": {
+        "NoncurrentDays": {
+          "shape": "Days"
+        },
+        "NewerNoncurrentVersions": {
+          "shape": "VersionCount"
+        }
+      }
+    },
+    "NoncurrentVersionTransition": {
+      "type": "structure",
+      "members": {
+        "NoncurrentDays": {
+          "shape": "Days"
+        },
+        "StorageClass": {
+          "shape": "TransitionStorageClass"
+        },
+        "NewerNoncurrentVersions": {
+          "shape": "VersionCount"
+        }
+      }
+    },
+    "NoncurrentVersionTransitionList": {
+      "type": "list",
+      "member": {
+        "shape": "NoncurrentVersionTransition"
+      },
+      "flattened": true
+    },
+    "ObjectKey": {
+      "type": "string",
+      "min": 1
+    },
+    "ObjectSizeGreaterThanBytes": {
+      "type": "long",
+      "box": true
+    },
+    "ObjectSizeLessThanBytes": {
+      "type": "long",
+      "box": true
+    },
+    "Policy": {
+      "type": "string"
+    },
+    "Prefix": {
+      "type": "string"
+    },
+    "Protocol": {
+      "type": "string",
+      "enum": [
+        "http",
+        "https"
+      ]
+    },
+    "PutBucketCorsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "CORSConfiguration"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "CORSConfiguration": {
+          "shape": "CORSConfiguration",
+          "locationName": "CORSConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "CORSConfiguration"
+    },
+    "PutBucketEncryptionRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "ServerSideEncryptionConfiguration"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ServerSideEncryptionConfiguration": {
+          "shape": "ServerSideEncryptionConfiguration",
+          "locationName": "ServerSideEncryptionConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "ServerSideEncryptionConfiguration"
+    },
+    "PutBucketLifecycleConfigurationOutput": {
+      "type": "structure",
+      "members": {
+        "TransitionDefaultMinimumObjectSize": {
+          "shape": "TransitionDefaultMinimumObjectSize",
+          "location": "header",
+          "locationName": "x-amz-transition-default-minimum-object-size"
+        }
+      }
+    },
+    "PutBucketLifecycleConfigurationRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "LifecycleConfiguration": {
+          "shape": "BucketLifecycleConfiguration",
+          "locationName": "LifecycleConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "TransitionDefaultMinimumObjectSize": {
+          "shape": "TransitionDefaultMinimumObjectSize",
+          "location": "header",
+          "locationName": "x-amz-transition-default-minimum-object-size"
+        }
+      },
+      "payload": "LifecycleConfiguration"
+    },
+    "PutBucketPolicyRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Policy"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ConfirmRemoveSelfBucketAccess": {
+          "shape": "ConfirmRemoveSelfBucketAccess",
+          "location": "header",
+          "locationName": "x-amz-confirm-remove-self-bucket-access"
+        },
+        "Policy": {
+          "shape": "Policy"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "Policy",
+      "cpp_streaming_payload": "Policy"
+    },
+    "PutBucketTaggingRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Tagging"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "Tagging": {
+          "shape": "Tagging",
+          "locationName": "Tagging",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "Tagging"
+    },
+    "PutBucketWebsiteRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "WebsiteConfiguration"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "WebsiteConfiguration": {
+          "shape": "WebsiteConfiguration",
+          "locationName": "WebsiteConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "WebsiteConfiguration"
+    },
+    "Redirect": {
+      "type": "structure",
+      "members": {
+        "HostName": {
+          "shape": "HostName"
+        },
+        "HttpRedirectCode": {
+          "shape": "HttpRedirectCode"
+        },
+        "Protocol": {
+          "shape": "Protocol"
+        },
+        "ReplaceKeyPrefixWith": {
+          "shape": "ReplaceKeyPrefixWith"
+        },
+        "ReplaceKeyWith": {
+          "shape": "ReplaceKeyWith"
+        }
+      }
+    },
+    "RedirectAllRequestsTo": {
+      "type": "structure",
+      "required": [
+        "HostName"
+      ],
+      "members": {
+        "HostName": {
+          "shape": "HostName"
+        },
+        "Protocol": {
+          "shape": "Protocol"
+        }
+      }
+    },
+    "ReplaceKeyPrefixWith": {
+      "type": "string"
+    },
+    "ReplaceKeyWith": {
+      "type": "string"
+    },
+    "RoutingRule": {
+      "type": "structure",
+      "required": [
+        "Redirect"
+      ],
+      "members": {
+        "Condition": {
+          "shape": "Condition"
+        },
+        "Redirect": {
+          "shape": "Redirect"
+        }
+      }
+    },
+    "RoutingRules": {
+      "type": "list",
+      "member": {
+        "shape": "RoutingRule",
+        "locationName": "RoutingRule"
+      }
+    },
+    "SSEKMSKeyId": {
+      "type": "string",
+      "sensitive": true
+    },
+    "ServerSideEncryption": {
+      "type": "string",
+      "enum": [
+        "AES256",
+        "aws:fsx",
+        "aws:kms",
+        "aws:kms:dsse"
+      ]
+    },
+    "ServerSideEncryptionByDefault": {
+      "type": "structure",
+      "required": [
+        "SSEAlgorithm"
+      ],
+      "members": {
+        "SSEAlgorithm": {
+          "shape": "ServerSideEncryption"
+        },
+        "KMSMasterKeyID": {
+          "shape": "SSEKMSKeyId"
+        }
+      }
+    },
+    "ServerSideEncryptionConfiguration": {
+      "type": "structure",
+      "required": [
+        "Rules"
+      ],
+      "members": {
+        "Rules": {
+          "shape": "ServerSideEncryptionRules",
+          "locationName": "Rule"
+        }
+      }
+    },
+    "ServerSideEncryptionRule": {
+      "type": "structure",
+      "members": {
+        "ApplyServerSideEncryptionByDefault": {
+          "shape": "ServerSideEncryptionByDefault"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled"
+        }
+      }
+    },
+    "ServerSideEncryptionRules": {
+      "type": "list",
+      "member": {
+        "shape": "ServerSideEncryptionRule"
+      },
+      "flattened": true
+    },
+    "Suffix": {
+      "type": "string"
+    },
+    "Tag": {
+      "type": "structure",
+      "required": [
+        "Key",
+        "Value"
+      ],
+      "members": {
+        "Key": {
+          "shape": "ObjectKey"
+        },
+        "Value": {
+          "shape": "Value"
+        }
+      }
+    },
+    "TagSet": {
+      "type": "list",
+      "member": {
+        "shape": "Tag",
+        "locationName": "Tag"
+      }
+    },
+    "Tagging": {
+      "type": "structure",
+      "required": [
+        "TagSet"
+      ],
+      "members": {
+        "TagSet": {
+          "shape": "TagSet"
+        }
+      }
+    },
+    "Transition": {
+      "type": "structure",
+      "members": {
+        "Date": {
+          "shape": "Date"
+        },
+        "Days": {
+          "shape": "Days"
+        },
+        "StorageClass": {
+          "shape": "TransitionStorageClass"
+        }
+      }
+    },
+    "TransitionDefaultMinimumObjectSize": {
+      "type": "string",
+      "enum": [
+        "varies_by_storage_class",
+        "all_storage_classes_128K"
+      ]
+    },
+    "TransitionList": {
+      "type": "list",
+      "member": {
+        "shape": "Transition"
+      },
+      "flattened": true
+    },
+    "TransitionStorageClass": {
+      "type": "string",
+      "enum": [
+        "GLACIER",
+        "STANDARD_IA",
+        "ONEZONE_IA",
+        "INTELLIGENT_TIERING",
+        "DEEP_ARCHIVE",
+        "GLACIER_IR"
+      ]
+    },
+    "Value": {
+      "type": "string"
+    },
+    "VersionCount": {
+      "type": "integer",
+      "box": true
+    },
+    "WebsiteConfiguration": {
+      "type": "structure",
+      "members": {
+        "ErrorDocument": {
+          "shape": "ErrorDocument"
+        },
+        "IndexDocument": {
+          "shape": "IndexDocument"
+        },
+        "RedirectAllRequestsTo": {
+          "shape": "RedirectAllRequestsTo"
+        },
+        "RoutingRules": {
+          "shape": "RoutingRules"
+        }
+      }
+    }
+  }
+}

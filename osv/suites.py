@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 10
+CATALOG_VERSION = 11
 
 
 @dataclass(frozen=True)
@@ -115,6 +115,15 @@ class Probe:
                 self.raw("mp_abort", upload_id=upload)
 
 
+class CaseNotRun(RuntimeError):
+    """Keep unmet source prerequisites visible and blocking instead of manufacturing substitute test inputs."""
+    def __init__(self,message,*requirements):
+        if not isinstance(message,str) or not message or not requirements or any(not isinstance(value,str) or not value for value in requirements):
+            raise ValueError("CaseNotRun requires a message and explicit missing requirements")
+        super().__init__(message)
+        self.requirements=list(requirements)
+
+
 def run_cases(ctx, cases):
     results = []
     for case in cases:
@@ -133,6 +142,8 @@ def run_cases(ctx, cases):
             if behavior is not None:
                 result["behavior"] = str(behavior)
                 if isinstance(behavior,dict):result["evidence"]=behavior
+        except CaseNotRun as error:
+            result={"case":case.name,"status":"not_run","reason":"missing_prerequisites","missing_requirements":error.requirements,"error":str(error)}
         except Exception as error:
             result = {"case": case.name, "status": "fail", "error": str(error)}
         result["gate"]=not case.observation
@@ -296,7 +307,9 @@ def register_suites(registry):
     register_get_part(registry)
     from .ceph_versioning import register as register_versioning
     register_versioning(registry)
+    from .ceph_bucket_config import register as register_bucket_config
+    register_bucket_config(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning"),
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

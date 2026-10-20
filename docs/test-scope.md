@@ -8,7 +8,7 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 10；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 11；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，总计 250 项（246 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项，总计 274 项（270 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -266,3 +266,11 @@ Java/C++ 都调用实际 AWS SDK 的 VersionId、ListObjectVersions、Put/GetBuc
 文件系统 reference 没有实现云端版本控制。这 21 项在本地 reference 上报告 not_run/unsupported_operations，并阻断性能输出及使 CLI 退出 1；不会为获取通过结果而模拟 SDK 版本行为。Java/C++ HTTP 契约与实际 SDK/Moto 测试独立执行；这些本地 HTTP 结果不是厂商云端认证。
 
 当前 Moto 5.1.15/固定 SDK 组合保留了暂停版本历史、批量创建标记字段、分块完成返回 ID 和部分删除标记错误头的失败；C++ 还保留纯空白版本键的 SDK 返回值差异。原始预期不因本地环境失败而改变。
+
+### 桶标签、CORS、生命周期和默认加密
+
+`ceph_bucket_config` 新增 24 个锁定版本场景：桶标签完整生命周期、CORS 创建前/删除后 404 与数组读回、生命周期配置读写删除、生成 ID、原始错误状态/日期/重复或超长 ID、旧 Prefix/现代 Filter/删除标记/非当前版本/分块清理配置，以及 S3/KMS 默认加密的设置、读取、删除。KMS ID 使用 `workload.kms_key_id`；缺省时保留上游 `fool-me-again` 输入。
+
+非当前版本迁移场景要求 `workload.storage_classes` 至少包含三种配置值；缺少时保留源用例的跳过前提，报告 `not_run/missing_prerequisites` 和具体缺项，阻断完整档性能结论。不会臆造云厂商支持的存储类型。文件系统 reference 不实现这些云端配置，新增 24 项连同版本控制共 45 项报告缺能力。
+
+配置由 Java/C++ 官方 SDK 的真实请求模型序列化，响应值取实际 SDK getter。当前固定 C++ SDK 模型不再提供旧 LifecycleRule.Prefix，相关请求保留明确的客户端模型错误；不会删除该字段、改成 Filter 或伪造服务端拒绝。Java 对无效日期的客户端解析失败，以及 Moto 接受超长/重复 ID、小写状态的结果同样保留，不能据此直接判定云端 S3 不兼容。

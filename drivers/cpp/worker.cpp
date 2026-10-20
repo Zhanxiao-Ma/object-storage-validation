@@ -73,6 +73,7 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 }
 
 #include "versioning_ops.h"
+#include "bucket_api_generated.h"
 
 /**
  * Runs AWS C++ SDK S3 operations for direct comparison with other C++ adapters.
@@ -103,6 +104,7 @@ public:
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
         if(is_version_operation(op))return execute_version_operation(*client,q,bucket,key);
+        if(osv_bucket_api::handles(op))return osv_bucket_api::execute(*client,q);
         if(op=="delete_many" || op=="delete_many_versions") {
             Aws::S3::Model::DeleteObjectsRequest request;request.SetBucket(bucket);Aws::S3::Model::Delete deletion;
             for(const auto& item:q.at("objects")) {
@@ -383,6 +385,7 @@ int main() {
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

@@ -936,6 +936,150 @@
       "source_sha256": "6396f36b5e77d97e37038dc4a2b7f3398ca425bb4948a8a5947d3de984ece4cb",
       "implementation": "ceph_version_marker_header_suspended",
       "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_set_cors@L6881",
+      "source_sha256": "e68bd74dbeef0b8ee91ad57f03721d23513bb7bbd586f9ac753a186097fbf9ff",
+      "implementation": "ceph_config_cors",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_set_bucket_tagging@L7148",
+      "source_sha256": "cfa23eb99651bf17cc68fd5adc40aa0be9cebd87b7231acc92dfd8bdaa653a42",
+      "implementation": "ceph_config_tags",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set@L8441",
+      "source_sha256": "18488a998a2016d74a65672731f318c79ac7ab2420b0825fa7c8bcf069bde3b1",
+      "implementation": "ceph_config_lifecycle_set",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_get@L8451",
+      "source_sha256": "5f8c9066a13c1e1d46530776b56bfc872262aa6fa6030707df45b5a0dd1d2156",
+      "implementation": "ceph_config_lifecycle_get",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_delete@L8462",
+      "source_sha256": "6e5cfe312fd2ad91e327a043719ec09eb4b5be3a1be80c5e69366c37c036df2f",
+      "implementation": "ceph_config_lifecycle_delete",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_get_no_id@L8494",
+      "source_sha256": "bbf992673f728bdf5c6ef450f04d275f00c3bace0789205e9f7c43667787cf0d",
+      "implementation": "ceph_config_lifecycle_no_id",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_id_too_long@L9012",
+      "source_sha256": "520aef504d48e5813635260e81ba293c4badc2fcbe0f711d8f5885c4d987461a",
+      "implementation": "ceph_config_lifecycle_id_long",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_same_id@L9024",
+      "source_sha256": "1e15ce2f81b937ee276896853ea4e59d89ad571c8b214861310859013a1f1f6a",
+      "implementation": "ceph_config_lifecycle_same_id",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_invalid_status@L9037",
+      "source_sha256": "bb82eeb730f64c171b0315d68acf5af933c13271af9867aefe21b036ba450276",
+      "implementation": "ceph_config_lifecycle_invalid_status",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_date@L9065",
+      "source_sha256": "a0709eef7e7e850828fac9d91d8e70dd9a719cfa45bdf5115d5a5f88724eda80",
+      "implementation": "ceph_config_lifecycle_date",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_invalid_date@L9075",
+      "source_sha256": "dbd9235ca313097773d6c46a332e5c627fee7c412b2cc90a756ef20c9ca37ecd",
+      "implementation": "ceph_config_lifecycle_invalid_date",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_noncurrent@L9292",
+      "source_sha256": "8c5d51f1c0468b5a4387f25e1f8607f2c802c5a95af11e2d0eea70ac350758b2",
+      "implementation": "ceph_config_lifecycle_noncurrent",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_deletemarker@L9331",
+      "source_sha256": "7ec598a01987e370a1b25832ea5935beffbf239c11666db04cbf6bc4bb8995ec",
+      "implementation": "ceph_config_lifecycle_marker",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_filter@L9340",
+      "source_sha256": "e9acb2e3c64c1ac345b93d06a8d98b8d07b22dd9e12e18730a21450d59ba7c07",
+      "implementation": "ceph_config_lifecycle_filter",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_empty_filter@L9349",
+      "source_sha256": "f5f2cc022829d3e20cb2a154a5294bee5ad11c8112bee72b05051dc3153b8ee0",
+      "implementation": "ceph_config_lifecycle_empty_filter",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_multipart@L9427",
+      "source_sha256": "30d36d58f41b6279ff1a5bc9cba7ffb1af3aecfdd59f534ab346959604e7ebad",
+      "implementation": "ceph_config_lifecycle_multipart",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_transition_set_invalid_date@L9476",
+      "source_sha256": "a8b52b448030c757fe8749cfb77813014a864019a09d7de8b5df4efca38f08aa",
+      "implementation": "ceph_config_lifecycle_transition_invalid_date",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_set_noncurrent_transition@L9602",
+      "source_sha256": "91b030211a56aed913c07bfc4475e01cbfe58b1d746c5dcc5c2e552a39d90edd",
+      "implementation": "ceph_config_lifecycle_noncurrent_transition",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_encryption_s3@L14532",
+      "source_sha256": "979328579f8dae7083e28a89f39cd927b170fb7a0d5bf1e64a72b54f91d2afe4",
+      "implementation": "ceph_config_encryption_s3_put",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_encryption_kms@L14538",
+      "source_sha256": "cbab98fac550822ee6b300ceffdcce0194259bbd396a6a3123d5ca7ab98dc697",
+      "implementation": "ceph_config_encryption_kms_put",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_bucket_encryption_s3@L14545",
+      "source_sha256": "e4e00b8278935db52d11e8ff7f3ec8f3bd75b0a5e88d259fef0425aa9fa0b2aa",
+      "implementation": "ceph_config_encryption_s3_get",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_bucket_encryption_kms@L14565",
+      "source_sha256": "8f2b052df02e1bcc05079177c2ee9a2def3ca8533e0193a6dd07fe028761f0ce",
+      "implementation": "ceph_config_encryption_kms_get",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_bucket_encryption_s3@L14589",
+      "source_sha256": "63dcc51f6e90f03de0ba11d7cb8160848c0645a3b30cdb9eaa10b947a9d99c0d",
+      "implementation": "ceph_config_encryption_s3_delete",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_bucket_encryption_kms@L14611",
+      "source_sha256": "b1198c85dc2bb525cc96bdbc2da10fea631233935c5a7b30cd1c3a34d6ba4d82",
+      "implementation": "ceph_config_encryption_kms_delete",
+      "review": "逐项核对桶标签、CORS、生命周期和默认加密的原始配置、完整请求序列、状态/错误码、生成 ID、字段/数组及缺少存储类配置时跳过的前提。时间按真实 SDK timestamp 类型绑定 UTC 毫秒；原始无效日期保留为输入；无效状态的旧 Boto API 别名映射到同 URI/请求体的当前 SDK 方法。不替换旧 Prefix 为 Filter，不伪造 SDK 无法发出的请求或服务端 400；实际客户端限制及执行成败另列。"
     }
   ]
 }

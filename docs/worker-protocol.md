@@ -123,3 +123,9 @@ Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id
 `get_part` / `head_part`：调用 SDK 的 PartNumber 参数，输入 `key`/`part_number`，GET 另需 `output_path`；返回 SDK 实际 `parts_count`、`etag`、`size`，保留缺失值和服务错误。以上能力当前为 AWS Java/C++。
 
 版本控制操作（目前 AWS Java/C++）：`versioning_get` 返回服务端存在的 `versioning_status`/`mfa_delete`；`versioning_put` 发送 `status` 及可选 `mfa_delete`。`put_version` 读取 `body_path` 上传，`get_version`/`head_version` 接收可选 `version_id`，`delete_version` 可按实际 ID 删除或创建删除标记；只返回服务端暴露的 `version_id`/`delete_marker`，不从请求推测结果。GET 另需 `output_path`。`versions_list` 是单页 ListObjectVersions，可选 `prefix`/`delimiter`/`key_marker`/`version_id_marker`/`max_keys`，返回 SDK 顺序的 `versions`/`delete_markers`、实际字段有无、截断状态及两个后续标记。成功与失败 HTTP 响应头均保留。分块完成也返回实际存在的版本 ID。
+
+`api.<Operation>` 提供独立的配置模型调用命名空间，例如 `api.PutBucketCors`。`input` 使用大小写敏感的 API 成员名和嵌套 JSON 结构；作用域请求会写入本次独立桶，冲突的 `input.Bucket` 被拒绝。已接入标签、CORS、生命周期、策略、网站、默认加密共 18 个 API；缺少实现的 worker 不声明这些能力。
+
+Java 使用 SDK 公开 SdkField 描述及 builder/getter；C++ 根据 `drivers/schema/bucket-api.json` 生成真实 SDK setter/getter 调用。时间戳输入接受 UTC 毫秒或 ISO 时间，输出为实际 SDK 的毫秒值。未知成员、SDK 整数不可表示的输入在发送前明确报错，不生成 HTTP 状态。显式 null 可选成员按 SDK 的未设置值处理。响应中缺失集合保留 SDK 模型的缺失语义；C++ 顶层字段有无从实际响应 XML/头观察，值仍来自 SDK。策略字符串使用 SDK 的实际请求/响应流。
+
+模型描述来源是固定 SDK 接口元数据，不是 AWS 官方测试代码。更新模型后执行 `python3 scripts/generate_bucket_api.py`，并用 `--check` 验证生成物。常规 get/put 性能操作继续直接调用已有 SDK 方法，不经过配置模型转换。

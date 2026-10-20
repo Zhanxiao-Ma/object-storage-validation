@@ -31,6 +31,10 @@ def expected_version_diagnostics(language):
     if language=="cpp":names.add("ceph_version_special")
     return names
 
+def expected_config_diagnostics(language):
+    modes=("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart") if language=="cpp" else ("id_long","same_id","invalid_status","invalid_date","transition_invalid_date")
+    return {"ceph_config_lifecycle_"+mode for mode in modes}
+
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_SDK_TESTS") == "1", "enable explicitly after building both SDK workers")
 class SdkIntegrationTest(unittest.TestCase):
@@ -226,6 +230,29 @@ class SdkIntegrationTest(unittest.TestCase):
                 finally:worker.close()
         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
+    def test_configured_storage_classes_execute_original_transition_input(self):
+        """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
+        from osv.ceph_bucket_config import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        for target in self.targets:
+            with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=Worker(target,30);original=worker.call;requests=[]
+                def observe(request):
+                    if request["op"]=="api.PutBucketLifecycleConfiguration":requests.append(request)
+                    return original(request)
+                worker.call=observe
+                try:
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"storage_classes":["STANDARD","GLACIER","DEEP_ARCHIVE"]})
+                    rows=run_cases(ctx,(next(c for c in CASES if c.name=="ceph_config_lifecycle_noncurrent_transition"),))
+                    self.assertEqual(len(requests),1)
+                    rule=requests[0]["input"]["LifecycleConfiguration"]["Rules"][0]
+                    self.assertEqual(rule["NoncurrentVersionTransitions"],[{"NoncurrentDays":2,"StorageClass":"GLACIER"},{"NoncurrentDays":4,"StorageClass":"DEEP_ARCHIVE"}])
+                    self.assertEqual(rows[0]["status"],"fail" if target["language"]=="cpp" else "pass",rows)
+                    if target["language"]=="cpp":self.assertIn("SDK model has no member: Prefix",rows[0]["error"])
+                    self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                finally:worker.close()
+
     def test_corrupt_version_oracles_fail_and_clean_real_history(self):
         """Corrupt one actual marker/count/ID observation after genuine SDK writes; expect source assertions to fail and every historical object/marker bucket to be removed."""
         from osv.ceph_versioning import CASES
@@ -324,6 +351,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload"))
             expected.extend((target["id"],name) for target in self.targets for name in ("ceph_exact_multipart_copy_invalid","ceph_exact_multipart_copy_improper","ceph_get_part_multiple","ceph_get_part_single","ceph_get_part_ordinary"))
             expected.extend((target["id"],name) for target in self.targets for name in expected_version_diagnostics(target["language"]))
+            expected.extend((target["id"],name) for target in self.targets for name in expected_config_diagnostics(target["language"]))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -337,8 +365,10 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),250)
-            self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
+            self.assertEqual(len(report["coverage"]["catalog"]),274)
+            missing=[row for row in report["cases"] if row["status"]=="not_run"]
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],"ceph_config_lifecycle_noncurrent_transition") for target in self.targets})
+            self.assertTrue(all(row["reason"]=="missing_prerequisites" and row["missing_requirements"]==["workload.storage_classes: at least 3"] for row in missing))
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):

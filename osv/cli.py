@@ -72,6 +72,8 @@ def load_config(path, profile_override=None):
         raise ValueError("performance_model must be objbench or operations")
     from .objbench import normalize
     workload["objbench"] = normalize(workload.get("objbench", {}))
+    if workload.get("kms_key_id") is not None and not isinstance(workload["kms_key_id"],str):raise ValueError("kms_key_id must be a string or null")
+    if "storage_classes" in workload and (not isinstance(workload["storage_classes"],list) or not all(isinstance(value,str) and value for value in workload["storage_classes"])):raise ValueError("storage_classes must be a list of nonempty strings")
     registry = build_registry(config)
     if "compatibility_suites" not in workload:
         profile = workload.setdefault("profile", "normal")
