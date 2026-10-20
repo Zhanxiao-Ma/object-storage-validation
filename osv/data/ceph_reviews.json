@@ -1422,6 +1422,30 @@
       "source_sha256": "6e851a9de7ec6c1a08619da13c11fa693b087c9c0742b3624795e3507f0f05e8",
       "implementation": "ceph_encryption_read_declare",
       "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy@L11510",
+      "source_sha256": "afc9280cda9d67574d483acc4dc0a898fd500b7b887b75abf427bbc853fa223a",
+      "implementation": "ceph_policy_list_v1",
+      "review": "核对固定源码策略、对象输入及全部列举断言：asdf/abcd、s3:ListBucket、AWS:* Principal、同桶/通配资源；两个策略跨桶用例直接把真实 GetBucketPolicy 的 Policy 字符串送入真实 PutBucketPolicy，未重写返回值。另一个身份使用独立实际 SDK 客户端，缺其凭据时缺失 identity_alt 能力，不能回退主身份执行。HTTP 合约验证实际凭据签名、会话令牌/匿名隔离以及真实生产者到消费者的策略字节。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucketv2_policy@L11540",
+      "source_sha256": "c590800eea06a5bcb09767bbb7c9854384555ee60e3f610c14f7ee9d4030b2fb",
+      "implementation": "ceph_policy_list_v2",
+      "review": "核对固定源码策略、对象输入及全部列举断言：asdf/abcd、s3:ListBucket、AWS:* Principal、同桶/通配资源；两个策略跨桶用例直接把真实 GetBucketPolicy 的 Policy 字符串送入真实 PutBucketPolicy，未重写返回值。另一个身份使用独立实际 SDK 客户端，缺其凭据时缺失 identity_alt 能力，不能回退主身份执行。HTTP 合约验证实际凭据签名、会话令牌/匿名隔离以及真实生产者到消费者的策略字节。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_another_bucket@L11821",
+      "source_sha256": "7c13e141aa8700e25a45c9085e2b0dbb096abd1edfc321e48473be50dd172aa2",
+      "implementation": "ceph_policy_list_v1_another",
+      "review": "核对固定源码策略、对象输入及全部列举断言：asdf/abcd、s3:ListBucket、AWS:* Principal、同桶/通配资源；两个策略跨桶用例直接把真实 GetBucketPolicy 的 Policy 字符串送入真实 PutBucketPolicy，未重写返回值。另一个身份使用独立实际 SDK 客户端，缺其凭据时缺失 identity_alt 能力，不能回退主身份执行。HTTP 合约验证实际凭据签名、会话令牌/匿名隔离以及真实生产者到消费者的策略字节。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucketv2_policy_another_bucket@L11859",
+      "source_sha256": "ddd5503fb45db174d564cd6d2f572b7ddbcb4211a63bacc4d300f46f1f416502",
+      "implementation": "ceph_policy_list_v2_another",
+      "review": "核对固定源码策略、对象输入及全部列举断言：asdf/abcd、s3:ListBucket、AWS:* Principal、同桶/通配资源；两个策略跨桶用例直接把真实 GetBucketPolicy 的 Policy 字符串送入真实 PutBucketPolicy，未重写返回值。另一个身份使用独立实际 SDK 客户端，缺其凭据时缺失 identity_alt 能力，不能回退主身份执行。HTTP 合约验证实际凭据签名、会话令牌/匿名隔离以及真实生产者到消费者的策略字节。"
     }
   ]
 }

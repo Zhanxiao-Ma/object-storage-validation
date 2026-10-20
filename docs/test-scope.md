@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项，总计 331 项（327 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 4 项，总计 335 项（331 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -306,3 +306,11 @@ Java/C++ 经实际 SDK 模型与传输执行；创建启用头、原始非法值
 `workload.kms_key_id` 提供有效 KMS 资源标识；缺失时 10 个依赖主 KMS key 的场景明确 not_run，保留缺失要求并阻止性能统计，不填造有效 key。其中 8 项源码显式 skip，HEAD/普通读取 2 项对应其主 KMS 环境前提。错误输入 3 项照原输入执行，不因为没有有效 key 跳过。
 
 Java/C++ 公共逐请求头入口由 `EncryptionHeaders`/同等 C++ helper 统一维护 SSE-C、SSE-S3、KMS 字段；保持原 SSE-C 操作兼容，普通性能操作不走头映射。真实 HTTP 检查签名、缺失/空值、请求隔离及独立响应字段。配置本地测试 key 时两种 SDK 的正向传输均完成；Moto 未拒绝的 5 项原预期失败保留。缺配置时每种语言额外 10 项未执行；均不是实际 KMS 云认证。
+
+### 独立身份与策略列举
+
+AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`bad_auth`、`anonymous`。每个身份使用单独缓存的官方 SDK 客户端，端点、region、重试和连接配置一致。匿名用官方匿名凭据，不回退主身份。主身份仍使用原环境变量；其他身份分别读取 `OSV_ALT_ACCESS_KEY/SECRET_KEY/SESSION_TOKEN`、`OSV_TENANT_*`、`OSV_BAD_AUTH_*`。私密凭据不进入握手元数据。未配置的身份不声明相应 `identity_*` 能力，直接调用会明确报错。
+
+`ceph_bucket_policy` 迁移 V1/V2 策略列举及跨桶复用策略 4 项，保留原始 asdf/abcd、Principal、Action、资源 ARN 和另一身份列举。跨桶场景直接消费真实 GetBucketPolicy 输出，不自行重建策略。真实 HTTP 检查不同签名凭据/会话令牌、匿名头缺失、回到主身份后的隔离以及策略字节从生产者进入消费者。
+
+缺另一个身份凭据时四项明确 not_run，阻止完善档性能统计。本地配置另一个测试身份时 Java 完成四项，C++ 保留本地服务返回导致的真实 SDK 策略解析错误。该本地检查不认证云端权限行为；ACL、跨租户授权与 IAM/STS/SNS 场景仍按清单显示迁移状态。

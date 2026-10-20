@@ -68,6 +68,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
+                        if("s3".equals(provider)) capabilities.addAll(S3Identities.capabilities());
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
@@ -201,23 +202,10 @@ public final class WorkerMain {
     static final class AwsStore implements Store {
         final software.amazon.awssdk.services.s3.S3Client client;
         final String bucket = required("BUCKET");
-        AwsStore() {
-            software.amazon.awssdk.auth.credentials.AwsCredentials credentials = env("SESSION_TOKEN", "").isEmpty()
-                ? software.amazon.awssdk.auth.credentials.AwsBasicCredentials.create(required("ACCESS_KEY"),required("SECRET_KEY"))
-                : software.amazon.awssdk.auth.credentials.AwsSessionCredentials.create(required("ACCESS_KEY"),required("SECRET_KEY"),required("SESSION_TOKEN"));
-            client = software.amazon.awssdk.services.s3.S3Client.builder()
-                .endpointOverride(java.net.URI.create(required("ENDPOINT")))
-                .region(software.amazon.awssdk.regions.Region.of(required("REGION")))
-                .credentialsProvider(software.amazon.awssdk.auth.credentials.StaticCredentialsProvider.create(credentials))
-                .serviceConfiguration(software.amazon.awssdk.services.s3.S3Configuration.builder()
-                    .pathStyleAccessEnabled(Boolean.parseBoolean(env("PATH_STYLE","false"))).build())
-                .overrideConfiguration(c -> c.apiCallTimeout(java.time.Duration.ofSeconds(30))
-                    .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build()))
-                .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder()
-                    .maxConnections(Integer.parseInt(env("CONNECTIONS","16"))))
-                .build();
-        }
+        final S3Identities identities=new S3Identities();
+        AwsStore() { client=identities.get("main"); }
         public Map<String,Object> execute(JsonNode q) throws Exception {
+            software.amazon.awssdk.services.s3.S3Client client=q.has("identity")?identities.select(q):this.client;
             String key=text(q,"key"), op=text(q,"op");
             if("put_encryption".equals(op)) op="put_sse_c";
             else if("get_encryption".equals(op)) op="get_sse_c";
@@ -441,7 +429,7 @@ public final class WorkerMain {
             default: throw new UnsupportedOperationException(op);
             }
         }
-        public void close() { client.close(); }
+        public void close() { identities.close(); }
     }
 
     /**

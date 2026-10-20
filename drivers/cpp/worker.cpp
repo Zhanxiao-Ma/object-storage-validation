@@ -90,30 +90,20 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 #include "versioning_ops.h"
 #include "bucket_api_generated.h"
 
+#include "s3_identities.h"
+
 /**
  * Runs AWS C++ SDK S3 operations for direct comparison with other C++ adapters.
  * A persistent client excludes process startup; each timed operation includes payload I/O.
  */
 class S3Worker {
     std::string bucket = required("OSV_BUCKET");
+    S3Identities identities;
     std::shared_ptr<Aws::S3::S3Client> client;
 public:
-    S3Worker() {
-        Aws::Client::ClientConfiguration configuration;
-        configuration.endpointOverride = required("OSV_ENDPOINT");
-        configuration.region = required("OSV_REGION");
-        configuration.scheme = configuration.endpointOverride.find("http://") == 0
-            ? Aws::Http::Scheme::HTTP : Aws::Http::Scheme::HTTPS;
-        configuration.maxConnections = std::stoul(env("OSV_CONNECTIONS", "16"));
-        configuration.requestTimeoutMs = 30000;
-        configuration.connectTimeoutMs = 10000;
-        configuration.retryStrategy = Aws::MakeShared<Aws::Client::DefaultRetryStrategy>(
-            "osv", std::stol(env("OSV_RETRIES", "0")));
-        Aws::Auth::AWSCredentials credentials(required("OSV_ACCESS_KEY"), required("OSV_SECRET_KEY"), env("OSV_SESSION_TOKEN"));
-        client = std::make_shared<Aws::S3::S3Client>(credentials, configuration,
-            Aws::Client::AWSAuthV4Signer::PayloadSigningPolicy::Never, env("OSV_PATH_STYLE", "false") != "true");
-    }
+    S3Worker():client(identities.get("main")) {}
     json execute(const json& q) {
+        auto client=q.contains("identity")?identities.select(q):this->client;
         std::string op = q.at("op"), key = q.value("key", "");
         if(op=="put_encryption")op="put_sse_c";
         else if(op=="get_encryption")op="get_sse_c";
@@ -410,6 +400,7 @@ int main() {
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");

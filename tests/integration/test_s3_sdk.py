@@ -68,7 +68,9 @@ class SdkIntegrationTest(unittest.TestCase):
         cls.environment = patch.dict(os.environ, {
             "OSV_ACCESS_KEY": "local-test", "OSV_SECRET_KEY": "local-test", "OSV_SESSION_TOKEN": "",
             "OSV_ENDPOINT": f"http://{host}:{port}", "OSV_REGION": "us-east-1",
-            "OSV_BUCKET": "osv-sdk-integration", "OSV_PATH_STYLE": "true", "OSV_RETRIES": "0"})
+            "OSV_BUCKET": "osv-sdk-integration", "OSV_PATH_STYLE": "true", "OSV_RETRIES": "0",
+            "OSV_ALT_ACCESS_KEY":"","OSV_ALT_SECRET_KEY":"","OSV_ALT_SESSION_TOKEN":"",
+            "OSV_TENANT_ACCESS_KEY":"","OSV_TENANT_SECRET_KEY":"","OSV_BAD_AUTH_ACCESS_KEY":"","OSV_BAD_AUTH_SECRET_KEY":""})
         cls.environment.start()
         cls.addClassCleanup(cls.environment.stop)
         cls.client = boto3.client("s3", endpoint_url=f"http://{host}:{port}", region_name="us-east-1",
@@ -315,6 +317,24 @@ class SdkIntegrationTest(unittest.TestCase):
                         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                     finally:worker.close()
 
+    def test_alternate_policy_source_cases_require_configured_identity(self):
+        """Run source policies with actual alternate SDK credentials; expect genuine local diagnostics and every owned bucket removed, without inferring cloud authorization certification."""
+        from osv.ceph_bucket_policy import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        with patch.dict(os.environ,{"OSV_ALT_ACCESS_KEY":"alternate-test-key","OSV_ALT_SECRET_KEY":"alternate-test-secret","OSV_ALT_SESSION_TOKEN":""}):
+            for target in self.targets:
+                with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,30)
+                    try:
+                        self.assertIn("identity_alt",worker.info["capabilities"])
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                        rows=run_cases(ctx,CASES)
+                        self.assertTrue(all(row["status"]==("fail" if target["language"]=="cpp" else "pass") for row in rows),rows)
+                        self.assertEqual(len(rows),4)
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+
     def test_configured_storage_classes_execute_original_transition_input(self):
         """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
         from osv.ceph_bucket_config import CASES
@@ -469,10 +489,15 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),331)
+            self.assertEqual(len(report["coverage"]["catalog"]),335)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites())})
-            self.assertTrue(all(row["reason"]=="missing_prerequisites" and row["missing_requirements"]==(["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"]) for row in missing))
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            for row in missing:
+                if row["case"].startswith("ceph_policy_"):
+                    self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
+                else:
+                    self.assertEqual(row["reason"],"missing_prerequisites")
+                    self.assertEqual(row["missing_requirements"],["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):
