@@ -34,6 +34,18 @@ class ObjbenchTest(unittest.TestCase):
             self.assertAlmostEqual(listing["verified_objects_s"],listing["verified_ops_s"]*7)
             self.assertEqual([file for file in (directory/"objects").rglob("*") if file.is_file()],[])
 
+    def test_default_list_phase_executes_once_per_effective_lane(self):
+        """Omit the LIST repetition override and run real IO; expect one verified enumeration per lane as in pinned objbench."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=self.manifest(directory)
+            data=json.loads(path.read_text());data["workload"]["objbench"].pop("list_requests_per_lane")
+            data["workload"]["rounds"]=1;path.write_text(json.dumps(data))
+            report=run(load_config(path),directory/"results")
+            listings=[row for row in report["samples"] if row["op"]=="list"]
+            self.assertEqual(len(listings),2)
+            self.assertTrue(all(row["ok"] and row["objects"]==7 for row in listings))
+            self.assertEqual(report["workload"]["objbench"]["list_requests_per_lane"],1)
+
     def test_warmup_rounds_are_real_but_excluded_from_summary(self):
         """Execute one additional complete warmup round; expect 36 warmup requests and only two measured rounds in summaries."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -65,6 +77,7 @@ class ObjbenchTest(unittest.TestCase):
     def test_upstream_defaults_and_parameter_boundaries(self):
         """Check pinned workload defaults and reject invalid/unbounded datasets before any worker or allocation starts."""
         defaults=normalize({})
+        self.assertEqual(defaults["list_requests_per_lane"],1)
         self.assertEqual((defaults["small_objects"],defaults["small_object_size"],defaults["big_object_size"],defaults["block_size"]),
                          (100,128*1024,1024**3,4*1024**2))
         for parameters in ({"small_objects":0},{"block_size":True},{"block_size":257*1024**2},

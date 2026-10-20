@@ -33,3 +33,13 @@ inline nlohmann::json timestamp_ms(const std::string& value) {
     }
     return static_cast<int64_t>(timegm(&parsed))*1000+fraction;
 }
+
+/** Format epoch milliseconds as an HTTP UTC date for SDKs accepting textual request conditions. */
+inline std::string http_date(int64_t milliseconds) {
+    const auto seconds=static_cast<std::time_t>(milliseconds/1000);
+    std::tm utc{};
+    if(!gmtime_r(&seconds,&utc)) throw std::runtime_error("condition date is out of range");
+    std::ostringstream output; output.imbue(std::locale::classic());
+    output << std::put_time(&utc,"%a, %d %b %Y %H:%M:%S GMT");
+    return output.str();
+}

@@ -64,7 +64,7 @@ class SdkIntegrationTest(unittest.TestCase):
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
             self.assertEqual(report["coverage"]["profile"], "normal")
-            self.assertEqual(len(report["coverage"]["catalog"]), 23)
+            self.assertEqual(len(report["coverage"]["catalog"]), 24)
             self.assertEqual([case for case in report["cases"] if case["status"] == "fail"], [])
             self.assertEqual(len(report["summary"]), 5*len(self.targets))
             self.assertEqual(len(report["samples"]), 55*len(self.targets))
@@ -101,6 +101,13 @@ class SdkIntegrationTest(unittest.TestCase):
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
+            for target in self.targets:
+                observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
+                self.assertEqual(observed["status"],"observation")
+                self.assertFalse(observed["evidence"]["source_matches"])
+                self.assertEqual(observed["evidence"]["observed"]["error_code"],"InvalidRange")
+                strict=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="ceph_range_invalid_start")
+                self.assertEqual(strict["status"],"pass")
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])

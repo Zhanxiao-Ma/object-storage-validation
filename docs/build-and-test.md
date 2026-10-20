@@ -222,3 +222,14 @@ SDK 计时从 JSON 请求解析完成后开始，包含请求映射、实际 SDK
 新增空白分隔符场景还发现固定 AWS C++ SDK 1.11.675 将 LIST 响应中的纯空格/换行 Delimiter 解析为空字符串。
 Java SDK 在相同响应下保留原值；独立固定 XML 回放能复现，因而这两项不能归因于 Moto 或云厂商。
 完善档仍要求原值准确，C++ 链路对应两项必须报失败。集成回归断言的是工具准确检出差异，绝不把失败门槛改成通过。
+
+## 条件读取、元数据与复制契约
+
+```bash
+OSV_RUN_CONDITION_TESTS=1 OSV_RUN_METADATA_TESTS=1 OSV_RUN_COPY_TESTS=1 OSV_OBS_LIBRARY_PATH=/path/to/obs-runtime python3 -m unittest discover -s tests/integration -p 'test_*_sdk.py' -v
+```
+
+可通过 OSV_PAGE_TEST_TARGETS 选择已构建的真实链路。上述测试验证四个条件头和日期、实际 412 拒绝、PUT/HEAD/GET 元数据、复制源一次编码、Content-Type 与元数据替换。
+固定响应只验证 SDK 请求及解析；实际复制的生产者→消费者数据流另由 Moto 和本地 reference 场景验证，不据此声称云端复制成功。
+OBS C SDK 发出的条件日期使用 UTC 字样，其余当前链路使用 GMT；测试保留实际拼写，不能把 SDK 请求格式与云端接受该请求混为一谈。
+已通过故意移除 TOS C++ 复制 Content-Type 请求头的适配，确认真实 SDK 契约测试会失败，恢复后通过；来源预期区分也有故意破坏后的失败验证。

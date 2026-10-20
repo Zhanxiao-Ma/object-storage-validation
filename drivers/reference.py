@@ -29,9 +29,9 @@ def path(key):
     return candidate
 
 
-def remember(key):
+def remember(key,metadata=None,content_type="application/octet-stream"):
     file=path(key)
-    file.with_suffix(".json").write_text(json.dumps({"key":key}))
+    file.with_suffix(".json").write_text(json.dumps({"key":key,"metadata":metadata or {},"content_type":content_type}))
 
 
 def inventory(prefix):
@@ -50,7 +50,7 @@ def execute(q):
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"]}
     key = path(q.get("key", "unused"))
     if op == "bucket_create":
         root.mkdir(exist_ok=True,parents=True)
@@ -73,19 +73,38 @@ def execute(q):
                 "common_prefixes":[name for name in selected if entries[name] is None],
                 "truncated":truncated,"next_token":selected[-1] if truncated else "",
                 "prefix":q.get("prefix",""),"delimiter":q.get("delimiter",""),"max_keys":limit}
-    elif op == "put":
+    elif op in ("put","put_metadata"):
         key.parent.mkdir(parents=True, exist_ok=True)
         key.write_bytes(Path(q["body_path"]).read_bytes())
-        remember(q["key"])
-    elif op == "get":
+        remember(q["key"],q.get("metadata",{}),q.get("content_type","application/octet-stream"))
+    elif op in ("get", "get_conditional", "get_metadata"):
         content = key.read_bytes()
+        etag='"'+hashlib.md5(content).hexdigest()+'"'
+        modified=int(key.stat().st_mtime)*1000
+        if "if_match" in q and q["if_match"] not in (etag,"*"):raise OperationError("PreconditionFailed")
+        if "if_unmodified_since_ms" in q and modified>q["if_unmodified_since_ms"] and "if_match" not in q:raise OperationError("PreconditionFailed")
+        if "if_none_match" in q and q["if_none_match"] in (etag,"*"):raise OperationError("NotModified")
+        if "if_modified_since_ms" in q and modified<=q["if_modified_since_ms"] and "if_none_match" not in q:raise OperationError("NotModified")
         if "offset" in q:
             if q["offset"]>=len(content):raise OperationError("InvalidRange")
             content = content[q["offset"]:q["offset"]+q["length"]]
         Path(q["output_path"]).write_bytes(content)
-    elif op == "head":
+        if op=="get_metadata":
+            info=json.loads(key.with_suffix(".json").read_text())
+            return {"key":q["key"],"size":len(content),"last_modified_ms":int(key.stat().st_mtime*1000),
+                    "etag":etag.strip('"'),"metadata":info["metadata"],"content_type":info["content_type"]}
+    elif op in ("head","head_metadata"):
         return {"key":q["key"],"size": key.stat().st_size,"last_modified_ms":int(key.stat().st_mtime*1000),
-                "etag":hashlib.md5(key.read_bytes()).hexdigest()}
+                "etag":hashlib.md5(key.read_bytes()).hexdigest(),**{k:v for k,v in json.loads(key.with_suffix(".json").read_text()).items() if k in ("metadata","content_type")}}
+    elif op in ("copy","copy_replace"):
+        source=path(q["source_key"])
+        data=source.read_bytes()
+        if q["source_key"]==q["key"] and op=="copy":raise OperationError("InvalidRequest")
+        info=json.loads(source.with_suffix(".json").read_text())
+        key.parent.mkdir(parents=True,exist_ok=True);key.write_bytes(data)
+        remember(q["key"],q["metadata"] if op=="copy_replace" else info["metadata"],
+                 q["content_type"] if op=="copy_replace" else info["content_type"])
+        return {"etag":hashlib.md5(data).hexdigest()}
     elif op == "delete":
         key.unlink(missing_ok=True)
         key.with_suffix(".json").unlink(missing_ok=True)

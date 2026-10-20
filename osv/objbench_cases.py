@@ -16,8 +16,24 @@ def bucket_create(p):
 
 def hello_ranges(p):
     p.put(b"hello")
-    for offset,length,expected in ((0,1,b"h"),(4,1,b"o"),(2,3,b"llo"),(2,2,b"ll")):
+    for offset,length,expected in ((0,5,b"hello"),(0,1,b"h"),(4,1,b"o"),(2,3,b"llo"),(2,2,b"ll")):
         assert_equal(p.read(offset=offset,length=length),expected)
+
+
+def start_overflow_warning(p):
+    """Retain JuiceFS's empty-success preference and warning severity separately from strict raw-S3 error assertions."""
+    p.put(b"hello")
+    result=p.raw("get",offset=6,length=2,output_path=str(p.ctx.output))
+    observed={"ok":result["ok"]}
+    if result["ok"]:
+        actual=p.ctx.output.read_bytes()
+        # Successful content must still be correct; a nonempty response indicates an integrity failure.
+        assert_equal(actual,b"")
+        observed["bytes"]=0
+    else:observed.update({key:result[key] for key in ("error_kind","error_code","status_code","error") if key in result})
+    return {"source_expected":"successful read with empty bytes","source_severity":"warning",
+            "source_matches":result["ok"],"observed":observed,
+            "scope":"JuiceFS ObjectStorage abstraction; strict Ceph S3 InvalidRange is a separate case"}
 
 
 def list_fields(p):
@@ -118,6 +134,8 @@ def multipart_objbench(p):
 
 
 CASES=(
+    case("juicefs_range_start_overflow","JuiceFS 起点越界的 warning 预期","记录是否成功返回空内容；416 不得混记为符合 JuiceFS 预期",
+         "put get",start_overflow_warning,"get partial object",JUICE,True),
     case("bucket_create_idempotent","创建桶操作重复调用","不存在则创建，已有桶不报错","bucket_create",bucket_create,"create a bucket"),
     case("hello_partial_ranges","原版 hello 四种部分读取组合","h/o/llo/ll 四组内容准确","put get",hello_ranges,"get partial object"),
     case("list_object_fields","列举键、大小、时间与 HEAD 信息","键和大小正确，修改时间在 30 秒窗口内","put list_page head",list_fields,"list objects; head an object"),

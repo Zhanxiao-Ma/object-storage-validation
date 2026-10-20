@@ -1,0 +1,53 @@
+{
+  "revision": "5b3987116eca0b4b8fa57d6b10f3db57bab196b6",
+  "reviews": [
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_set_get_metadata_none_to_good@L1873",
+      "source_sha256": "3fa58356c54466c3089d698d4e51f3678217ec66abfae5c53f94cb143e89f201",
+      "implementation": "ceph_metadata_value",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_set_get_metadata_none_to_empty@L1877",
+      "source_sha256": "cd9a685da9c5ada424301ffe4cc99c9106a7c57d2da8f29a111f6805392e073f",
+      "implementation": "ceph_metadata_empty",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_set_get_metadata_overwrite_to_empty@L1881",
+      "source_sha256": "543bdf6c6468a93e46e8ff32b07f3dee12721ddc59f512f9ebc0744b3f03cb1f",
+      "implementation": "ceph_metadata_overwrite_empty",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_metadata_replaced_on_put@L1922",
+      "source_sha256": "3fccfd4902e79bde57d32abc298c37f298462ff3a8ed55d839ed54f8a56b5ccf",
+      "implementation": "ceph_metadata_plain_put_replaces",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifmatch_good@L3024",
+      "source_sha256": "ffc59ecef2f9025be284b7316812647c8507e15e5d1d7e1d1b742ae860e87670",
+      "implementation": "ceph_get_ifmatch_good",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifnonematch_failed@L3056",
+      "source_sha256": "0c5f1508487bbf5012bc3d5de47e2c6001a66ee317c5c988f64fa05e30519f69",
+      "implementation": "ceph_get_ifnonematch_failed",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifmodifiedsince_good@L3065",
+      "source_sha256": "d8de41ca586b588ea5332678985d86d40402825e62c382c126dd37326db56a2a",
+      "implementation": "ceph_get_ifmodifiedsince_good",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifunmodifiedsince_failed@L3108",
+      "source_sha256": "12c80d301467a162fb5ff27ea3e4aec5d69761082878b60fc89dc63bef2688d2",
+      "implementation": "ceph_get_ifunmodifiedsince_failed",
+      "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    }
+  ]
+}

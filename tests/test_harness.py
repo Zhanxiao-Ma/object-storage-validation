@@ -151,12 +151,12 @@ class HarnessTest(unittest.TestCase):
             manifest.write_text(json.dumps(data))
             data = load_config(manifest)
             registry = build_registry(data)
-            registry.add_operation(Operation("copy_probe", frozenset({"copy"}), lambda ctx: {"op":"copy"}, lambda *args: 0))
-            data["workload"]["operations"] = ["copy_probe"]
+            registry.add_operation(Operation("unsupported_probe", frozenset({"unimplemented_operation"}), lambda ctx: {"op":"unimplemented_operation"}, lambda *args: 0))
+            data["workload"]["operations"] = ["unsupported_probe"]
             with patch("osv.cli.build_registry", return_value=registry):
                 report = run(data, directory/"results")
             self.assertEqual(report["samples"], [])
-            self.assertTrue(any(c["case"] == "setup" and c["status"] == "fail" and "copy" in c["error"] for c in report["cases"]))
+            self.assertTrue(any(c["case"] == "setup" and c["status"] == "fail" and "unimplemented_operation" in c["error"] for c in report["cases"]))
 
     def test_extension_registration_and_configuration_boundaries(self):
         """Reject duplicate names, invalid metrics, unknown operations, and repeated plugins before worker startup."""

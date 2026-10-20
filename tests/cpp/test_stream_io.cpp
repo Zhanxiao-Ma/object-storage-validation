@@ -57,6 +57,10 @@ int main() {
         require(timestamp_ms("2023-11-14T22:13:20.123456Z")==1700000000123LL);
         require(timestamp_ms("2023-11-14T22:13:20.1Z")==1700000000100LL);
         require(timestamp_ms("").is_null());
+        // Format literal independent dates, including year 2100 and subsecond truncation, for real SDK conditions.
+        require(http_date(1700000000123LL)=="Tue, 14 Nov 2023 22:13:20 GMT");
+        require(http_date(0)=="Thu, 01 Jan 1970 00:00:00 GMT");
+        require(http_date(4128522211000LL)=="Fri, 29 Oct 2100 19:43:31 GMT");
         bool invalid=false; try { timestamp_ms("invalid"); } catch(const std::runtime_error&) { invalid=true; }
         require(invalid);
         std::filesystem::remove_all(root);

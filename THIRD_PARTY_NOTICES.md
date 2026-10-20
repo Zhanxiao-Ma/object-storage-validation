@@ -1,6 +1,6 @@
 # Upstream references and notices
 
-The language-neutral scenario translations and test vectors in `osv/ceph_objects.py` reference
+The language-neutral scenario translations and test vectors in `osv/ceph_objects.py`, `osv/ceph_conditions.py`, `osv/ceph_metadata.py`, and `osv/ceph_copy.py` reference
 Ceph s3-tests, revision `5b3987116eca0b4b8fa57d6b10f3db57bab196b6`.
 Copyright (c) 2011 New Dream Network, LLC. The upstream permission notice is preserved in
 [third_party/ceph-s3-tests-LICENSE](third_party/ceph-s3-tests-LICENSE).

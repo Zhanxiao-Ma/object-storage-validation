@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 3
+CATALOG_VERSION = 4
 
 
 @dataclass(frozen=True)
@@ -126,6 +126,7 @@ def run_cases(ctx, cases):
             result = {"case": case.name, "status": "observation" if case.observation else "pass"}
             if behavior is not None:
                 result["behavior"] = str(behavior)
+                if isinstance(behavior,dict):result["evidence"]=behavior
         except Exception as error:
             result = {"case": case.name, "status": "fail", "error": str(error)}
         results.append(result)
@@ -184,12 +185,16 @@ def observed_range(p, mode):
     p.put(data)
     offset = len(data) if mode in ("empty", "start_overflow") else len(data)-1
     result = p.raw("get", offset=offset, length=2, output_path=str(p.ctx.output))
+    expectation="successful read with clipped bytes" if mode=="end_overflow" else "successful read with empty bytes"
+    evidence={"source_expected":expectation,"source_severity":"warning" if mode!="empty" else "record-only",
+              "source_matches":False,"observed":{"ok":result["ok"]}}
     if not result["ok"]:
-        # Preserve errors without turning unsupported or rejected ranges into a pass.
-        return "rejected: "+str(result.get("error_kind"))+": "+str(result.get("error", ""))
+        evidence["observed"].update({key:result[key] for key in ("error_kind","error_code","status_code","error") if key in result})
+        return evidence
     actual = p.ctx.output.read_bytes()
     assert_equal(actual, data[offset:offset+2])
-    return "accepted with expected clipped bytes"
+    evidence["source_matches"]=True; evidence["observed"]["bytes"]=len(actual)
+    return evidence
 
 
 def case(name, purpose, expected, ops, execute, reference, source=JUICE, observation=False):
@@ -243,7 +248,7 @@ EXTENDED = (
 EXCLUSIONS = (
     "桶删除、账户管理及跨桶权限用例（尚未迁移；bucket_create 只针对配置的桶）",
     "文件系统 chmod/chown/mtime（不属于本工具对象接口）",
-    "CopyObject/UploadPartCopy、批量删除、用户元数据及条件请求（尚未实现操作协议）",
+    "跨桶复制、UploadPartCopy、批量删除及条件写入（尚未迁移；同桶复制、元数据和条件 GET 已实现）",
     "版本控制、ACL/Policy、加密、生命周期、对象锁与归档恢复（尚未实现）",
     "LIST 的全部协议版本、参数组合和响应字段（已增加单页参数与元数据；尚未全量迁移）",
     "HTTP 状态/响应头逐字段一致性、签名负面用例、故障注入（尚未实现）",
@@ -258,7 +263,13 @@ def register_suites(registry):
     register(registry)
     from .ceph_objects import register as register_ceph
     register_ceph(registry)
+    from .ceph_conditions import register as register_conditions
+    register_conditions(registry)
+    from .ceph_metadata import register as register_metadata
+    register_metadata(registry)
+    from .ceph_copy import register as register_copy
+    register_copy(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries"),
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

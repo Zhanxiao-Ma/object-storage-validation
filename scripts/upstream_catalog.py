@@ -20,6 +20,7 @@ def extract_ceph(source,path,revision):
                 rows.append({"id":path+"::"+scope+node.name+f"@L{node.lineno}","qualified_name":scope+node.name,"name":node.name,"line":node.lineno,
                     "sha256":hashlib.sha256(segment.encode()).hexdigest(),
                     "assertions":sum(isinstance(item,ast.Assert) for item in ast.walk(node)),
+                    "markers":[ast.unparse(item) for item in node.decorator_list],
                     "parameters":[ast.unparse(item) for item in node.decorator_list if isinstance(item,ast.Call) and "parametrize" in ast.unparse(item.func)],
                     "source":f"https://github.com/ceph/s3-tests/blob/{revision}/{path}#L{node.lineno}"})
     visit(tree.body)

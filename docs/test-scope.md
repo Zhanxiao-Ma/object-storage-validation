@@ -8,11 +8,11 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 3；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 4；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
-`core_objects` 的 14 项，加 `objbench_objects` 的 9 项：共 23 项，其中 22 个门槛、1 个观察。
+`core_objects` 的 14 项，加 `objbench_objects` 的 10 项：共 24 项，其中 22 个门槛、2 个观察。
 
 | 用例 ID | 断言 |
 |---|---|
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项和 `ceph_object_boundaries` 的 39 项，总计 80 项（77 个门槛、3 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项和同桶复制 9 项，总计 102 项（98 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -79,7 +79,7 @@ Ceph 参考函数逐项记录在 `osv/suites.py` 和报告的 coverage.catalog �
 
 - 桶删除、跨桶和账户管理场景；当前只创建/复用配置桶并使用随机对象前缀。
 - 文件系统 chmod/chown/mtime。
-- CopyObject、UploadPartCopy、批量删除、用户元数据、条件请求。
+- 跨桶复制、UploadPartCopy、批量删除；同桶 CopyObject、元数据和条件 GET 已有具体迁移场景，完整边界仍在继续迁移。
 - 版本控制、ACL/Policy、加密、生命周期、对象锁、归档恢复。
 - LIST 全部 V1/V2 参数与返回字段组合；已实现一批单页参数、原始元数据与排序检查，尚未全量。
 - HTTP 状态和响应头逐字段检查、签名负面用例、故障注入、限流与恢复。
@@ -112,7 +112,7 @@ Profile 只组合 Suite，不含语言或厂商分支。插件扩展见 [扩展�
 1. 100 个 128 KiB 小对象并发 PUT，再 GET 并逐字节散列校验。
 2. 1 GiB 数据按 4 MiB 拆成 256 个独立对象并发 PUT/GET；不是单对象 Multipart 性能。
 3. 额外执行随机 Range 阶段，用 seed 固定偏移并校验准确字节。
-4. 每个有效 lane 100 次 LIST，再对全部对象 HEAD、DELETE，最后验证数据集已删除。
+4. 每个有效 lane 一次 LIST，再对全部对象 HEAD、DELETE，最后验证数据集已删除。
 
 `workload.objbench` 可以配置 small_objects、small_object_size、big_object_size、block_size、
 list_requests_per_lane、warmup_rounds。块数向上取整，最后一块保持完整块大小；报告记录实际字节数。
@@ -158,7 +158,7 @@ within_budget 仅表示本次观测落在预定预算内，不是统计等价证
 - JuiceFS：29c60bbbeea410c6c0cb7a49540044e0c099dffb，16 个功能项与 10 个性能项。
 - Ceph：5b3987116eca0b4b8fa57d6b10f3db57bab196b6，八个文件，979 个源码定义；4 个同名定义被后续定义覆盖，实际函数数为 975。
 - 这些是源码定义/阶段数，不是 pytest 参数展开后的执行数。不能以本工具 case 数量除以上游函数数声称覆盖率。
-- Ceph 行引用匹配只标 partial；未核对完整参数、断言与协议版本，不自动标 aligned。
+- Ceph 行引用匹配默认只标 partial；只有逐项核对输入与全部断言、且源码指纹与 `ceph_reviews.json` 完全一致的记录才标 aligned。上游源码变化后回退 partial；实现映射不代表实云通过。
 - 本地 Moto 5.1.15 在 MaxKeys=0 时返回 IsTruncated=true，与锁定 Ceph 的 false 断言不符。
   完善档会如实失败并阻止该目标的性能阶段；回归测试专门验证此差异没有被隐藏。这不是任何云厂商的实测结论。
 
@@ -167,3 +167,17 @@ LIST 已迁移普通/下划线数据集的四组分页遍历、纯公共前缀�
 吞吐量使用各阶段的真实墙钟时间，包含框架生成输入、读回校验及本地文件 I/O，不能解释为纯 SDK 网络吞吐。
 样本的 SDK elapsed_ns 不包含 Python 生成/校验及 JSONL 序列化，但包含实际 SDK 调用与驱动文件 I/O。
 判断 SDK 差异时须同时查看延迟分位数、吞吐量、CPU/网络瓶颈和实际数据集参数；本地自检不作为性能证据。
+
+## 两个来源的预期差异
+
+已确认的 Range 起点越界差异：JuiceFS `ObjectStorage.Get` 希望成功返回空内容，偏离时上游为 warning；Ceph 的原始 S3 Range 要求 416/InvalidRange。
+正常档的 `juicefs_range_start_overflow` 单独记录 `source_expected`、`source_matches`、`source_severity` 和实际错误；它是 observation，不计作符合来源预期的 pass。
+完善档的 `ceph_range_invalid_start` 独立检查严格的服务端错误。一次 416 可以同时造成前一项的来源偏好不匹配、后一项的严格语义通过。
+绝不使用“返回空或报错均通过”的合并断言。成功响应若返回错误字节，仍作为完整性失败。
+
+另需区分判定级别：JuiceFS 将 multipart 检查中的错误整体降为 warning；本工具把已选择负载所必需的分块内容正确性作为门槛。这是本工具的判定策略，不声称完全复制上游分级。
+`bucket_create` 是“缺失则创建、已有则复用”的对象层操作；它会先检查已有桶，不能用该结果代替 Ceph 对原始重复 CreateBucket 返回值的检查。后者仍需独立迁移。
+
+新增条件读取覆盖实际 ETag 的匹配/不匹配、历史/未来修改时间，拒绝必须是可核对的服务端 304/412 或明确错误码。
+元数据覆盖普通值、空值、覆盖为空及普通 PUT 清除旧元数据；读回检查真实 HEAD/GET 元数据。
+复制覆盖零对象、16 MiB、同桶复制、Content-Type、原地复制拒绝/替换、3 字节与 1 MiB 两组元数据保留/替换、缺失来源对象。

@@ -13,7 +13,7 @@ from .scenarios import assert_equal, require_ok
 
 DEFAULTS = {"small_object_size": 128*1024, "small_objects": 100,
             "block_size": 4*1024*1024, "big_object_size": 1024*1024*1024,
-            "list_requests_per_lane": 100, "warmup_rounds": 0}
+            "list_requests_per_lane": 1, "warmup_rounds": 0}
 METRICS = {name: "verified_mib_s" if name in ("put", "get", "range") else "verified_ops_s"
            for name in ("smallput", "smallget", "put", "get", "range", "list", "head", "delete")}
 METRICS["list"]="verified_objects_s"

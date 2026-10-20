@@ -1,4 +1,5 @@
 #include "object_metadata.h"
+#include <util/codec_util.h>
 #include <cos_api.h>
 #include <cos_sys_config.h>
 #include <Poco/URI.h>
@@ -69,12 +70,22 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","cos"},{"api","native"},{"language","cpp"},
             {"sdk_version",COS_CPP_SDK_VERSON},{"protocol_version",1},
-            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page"}},
+            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"}},
             {"endpoint",env("OSV_ENDPOINT")},{"region",env("OSV_REGION")},{"bucket",bucket},
             {"retries",env("OSV_RETRIES","0")},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
             {"range_integrity","whole-object ETag MD5 check disabled for ranges; harness verifies returned bytes"},
             {"connection_limit_semantics","max idle connections per host, not a total connection cap"},
             {"measurement","operation including local payload IO; excludes JSONL serialization"}};
+        if(op=="copy" || op=="copy_replace") {
+            vendor::PutObjectCopyReq request(bucket,key); configure(request);
+            request.SetXCosCopySource(q.value("source_bucket",bucket)+".cos."+required("OSV_REGION")+".myqcloud.com/"+vendor::CodecUtil::EncodeKey(q.at("source_key").get<std::string>()));
+            if(op=="copy_replace") {
+                request.SetXCosMetadataDirective("Replaced"); request.AddHeader("Content-Type",q.at("content_type").get<std::string>());
+                for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddHeader("x-cos-meta-"+it.key(),it.value().get<std::string>());
+            }
+            vendor::PutObjectCopyResp response; check(client->PutObjectCopy(request,&response));
+            return {{"etag",response.GetEtag()}};
+        }
         if(op=="bucket_create") {
             vendor::HeadBucketReq head(bucket); configure(head); vendor::HeadBucketResp exists;
             auto status=client->HeadBucket(head,&exists);
@@ -87,15 +98,23 @@ public:
             vendor::GetBucketResp page; check(client->GetBucket(request,&page)); json keys=json::array(),objects=json::array();
             for(const auto& object:page.GetContents()) { keys.push_back(object.m_key); objects.push_back({{"key",object.m_key},{"size",std::stoll(object.m_size)},{"last_modified_ms",timestamp_ms(object.m_last_modified)},{"etag",object.m_etag}}); }
             return {{"keys",keys},{"objects",objects},{"common_prefixes",page.GetCommonPrefixes()},{"truncated",page.IsTruncated()},{"next_token",page.GetNextMarker()},{"prefix",page.GetPrefix()},{"delimiter",page.GetDelimiter()},{"max_keys",page.GetMaxKeys()}};
-        } else if(op=="put") {
+        } else if((op=="put" || op=="put_metadata")) {
             std::ifstream input(q.at("body_path").get<std::string>(),std::ios::binary);
             if(!input) throw std::runtime_error("cannot open body_path");
             vendor::PutObjectByStreamReq request(bucket,key,input); configure(request);
+            if(op=="put_metadata") {
+                request.SetContentType(q.at("content_type").get<std::string>());
+                for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.SetXCosMeta(it.key(),it.value().get<std::string>());
+            }
             vendor::PutObjectByStreamResp response; check(client->PutObject(request,&response));
-        } else if(op=="get") {
+        } else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
             std::ofstream output(q.at("output_path").get<std::string>(),std::ios::binary|std::ios::trunc);
             if(!output) throw std::runtime_error("cannot open output_path");
             vendor::GetObjectByStreamReq request(bucket,key,output); configure(request);
+            if(q.contains("if_match")) request.AddHeader("If-Match",q.at("if_match").get<std::string>());
+            if(q.contains("if_none_match")) request.AddHeader("If-None-Match",q.at("if_none_match").get<std::string>());
+            if(q.contains("if_modified_since_ms")) request.AddHeader("If-Modified-Since",http_date(q.at("if_modified_since_ms").get<int64_t>()));
+            if(q.contains("if_unmodified_since_ms")) request.AddHeader("If-Unmodified-Since",http_date(q.at("if_unmodified_since_ms").get<int64_t>()));
             if(q.contains("offset")) {
                 request.AddHeader("Range","bytes="+std::to_string(q.at("offset").get<int64_t>())+"-"
                     +std::to_string(q.at("offset").get<int64_t>()+q.at("length").get<int64_t>()-1));
@@ -105,9 +124,10 @@ public:
             }
             vendor::GetObjectByStreamResp response; check(client->GetObject(request,&response));
             output.close(); if(!output) throw std::runtime_error("response write failed");
-        } else if(op=="head") {
+            return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()},{"content_type",response.GetContentType()},{"metadata",response.GetXCosMetas()}};
+        } else if((op=="head" || op=="head_metadata")) {
             vendor::HeadObjectReq request(bucket,key); configure(request);
-            vendor::HeadObjectResp response; check(client->HeadObject(request,&response)); return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()}};
+            vendor::HeadObjectResp response; check(client->HeadObject(request,&response)); return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()},{"content_type",response.GetContentType()},{"metadata",response.GetXCosMetas()}};
         } else if(op=="list") {
             json keys=json::array(); std::string marker;
             for(;;) {

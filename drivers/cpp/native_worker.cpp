@@ -81,6 +81,17 @@ public:
     json execute(const json& q) {
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","oss"},{"api","native"},{"language","cpp"},{"sdk_version",OSV_NATIVE_VERSION}};
+        if(op=="copy" || op=="copy_replace") {
+            vendor::ObjectMetaData metadata;
+            if(op=="copy_replace") {
+                metadata.setContentType(q.at("content_type").get<std::string>());
+                for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) metadata.addUserHeader(it.key(),it.value().get<std::string>());
+            }
+            vendor::CopyObjectRequest request(bucket,key,metadata);
+            request.setCopySource(q.value("source_bucket",bucket),q.at("source_key").get<std::string>());
+            if(op=="copy_replace") request.setMetadataDirective(vendor::CopyActionList::Replace);
+            return {{"etag",result(client->CopyObject(request)).ETag()}};
+        }
         if(op=="bucket_create") { if(!client->DoesBucketExist(bucket)) result(client->CreateBucket(bucket)); }
         else if(op=="list_page") {
             vendor::ListObjectsRequest request(bucket); request.setPrefix(q.value("prefix","")); request.setMaxKeys(q.value("max_keys",1000));
@@ -91,12 +102,24 @@ public:
             for(const auto& object:page.ObjectSummarys()) { keys.push_back(object.Key()); objects.push_back({{"key",object.Key()},{"size",object.Size()},{"last_modified_ms",timestamp_ms(object.LastModified())},{"etag",object.ETag()}}); }
             return {{"keys",keys},{"objects",objects},{"common_prefixes",page.CommonPrefixes()},{"truncated",page.IsTruncated()},{"next_token",page.NextMarker()},{"prefix",page.Prefix()},{"delimiter",page.Delimiter()},{"max_keys",page.MaxKeys()}};
         }
-        else if(op=="put") { result(client->PutObject(bucket,key,body(q))); }
-        else if(op=="get") {
+        else if((op=="put" || op=="put_metadata")) {
+            vendor::PutObjectRequest request(bucket,key,body(q));
+            if(op=="put_metadata") {
+                request.MetaData().setContentType(q.at("content_type").get<std::string>());
+                for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.MetaData().addUserHeader(it.key(),it.value().get<std::string>());
+            }
+            result(client->PutObject(request));
+        }
+        else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
             vendor::GetObjectRequest request(bucket,key);
+            if(q.contains("if_match")) request.setMatchingETagConstraints({q.at("if_match").get<std::string>()});
+            if(q.contains("if_none_match")) request.setNonmatchingETagConstraints({q.at("if_none_match").get<std::string>()});
+            if(q.contains("if_modified_since_ms")) request.setModifiedSinceConstraint(http_date(q.at("if_modified_since_ms").get<int64_t>()));
+            if(q.contains("if_unmodified_since_ms")) request.setUnmodifiedSinceConstraint(http_date(q.at("if_unmodified_since_ms").get<int64_t>()));
             if(q.contains("offset")) request.setRange(q.at("offset").get<int64_t>(),q.at("offset").get<int64_t>()+q.at("length").get<int64_t>()-1);
-            save(q,result(client->GetObject(request)).Content());
-        } else if(op=="head") { auto object=result(client->HeadObject(bucket,key)); return {{"key",key},{"size",object.ContentLength()},{"last_modified_ms",timestamp_ms(object.LastModified())},{"etag",object.ETag()}}; }
+            auto object=result(client->GetObject(request)); save(q,object.Content()); const auto& meta=object.Metadata();
+            return {{"key",key},{"size",meta.ContentLength()},{"last_modified_ms",timestamp_ms(meta.LastModified())},{"etag",meta.ETag()},{"content_type",meta.ContentType()},{"metadata",meta.UserMetaData()}};
+        } else if((op=="head" || op=="head_metadata")) { auto object=result(client->HeadObject(bucket,key)); return {{"key",key},{"size",object.ContentLength()},{"last_modified_ms",timestamp_ms(object.LastModified())},{"etag",object.ETag()},{"content_type",object.ContentType()},{"metadata",object.UserMetaData()}}; }
         else if(op=="delete") { result(client->DeleteObject(bucket,key)); }
         else if(op=="list") {
             json keys=json::array(); std::string marker; vendor::ListObjectsRequest request(bucket); request.setPrefix(q.at("prefix").get<std::string>());
@@ -146,6 +169,17 @@ public:
     json execute(const json& q) {
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","tos"},{"api","native"},{"language","cpp"},{"sdk_version",OSV_NATIVE_VERSION}};
+        if(op=="copy" || op=="copy_replace") {
+            vendor::CopyObjectV2Input request(bucket,key,q.value("source_bucket",bucket),q.at("source_key").get<std::string>());
+            if(op=="copy_replace") {
+                request.setMetadataDirective(vendor::MetadataDirectiveType::REPLACE);
+                request.setContentType(q.at("content_type").get<std::string>());
+                // SDK 2.6.30 copyObjectSetOptionHeader omits this setter; use its public request-header API.
+                request.setRequestHeader({{"Content-Type",q.at("content_type").get<std::string>()}});
+                request.setMeta(q.at("metadata").get<std::map<std::string,std::string>>());
+            }
+            return {{"etag",result(client->copyObject(request)).getETag()}};
+        }
         if(op=="bucket_create") {
             auto head=client->headBucket(vendor::HeadBucketV2Input(bucket));
             if(!head.isSuccess()) { if(head.error().getStatusCode()!=404) result(head); result(client->createBucket(vendor::CreateBucketV2Input(bucket))); }
@@ -161,12 +195,17 @@ public:
             for(const auto& prefix:page.getCommonPrefixes()) prefixes.push_back(prefix.getPrefix());
             return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.isTruncated()},{"next_token",page.getNextContinuationToken()},{"prefix",page.getPrefix()},{"delimiter",page.getDelimiter()},{"max_keys",page.getMaxKeys()}};
         }
-        else if(op=="put") { auto stream=body(q); vendor::PutObjectV2Input request(bucket,key,stream); request.setContentLength(length(stream)); result(client->putObject(request)); }
-        else if(op=="get") {
+        else if((op=="put" || op=="put_metadata")) { auto stream=body(q); vendor::PutObjectV2Input request(bucket,key,stream); request.setContentLength(length(stream)); if(op=="put_metadata") { request.setContentType(q.at("content_type").get<std::string>()); request.setMeta(q.at("metadata").get<std::map<std::string,std::string>>()); } result(client->putObject(request)); }
+        else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
             vendor::GetObjectV2Input request(bucket,key);
+            if(q.contains("if_match")) request.setIfMatch(q.at("if_match").get<std::string>());
+            if(q.contains("if_none_match")) request.setIfNoneMatch(q.at("if_none_match").get<std::string>());
+            if(q.contains("if_modified_since_ms")) request.setIfModifiedSince(q.at("if_modified_since_ms").get<int64_t>()/1000);
+            if(q.contains("if_unmodified_since_ms")) request.setIfUnmodifiedSince(q.at("if_unmodified_since_ms").get<int64_t>()/1000);
             if(q.contains("offset")) { request.setRangeStart(q.at("offset")); request.setRangeEnd(q.at("offset").get<int64_t>()+q.at("length").get<int64_t>()-1); }
-            save(q,result(client->getObject(request)).getContent());
-        } else if(op=="head") { auto object=result(client->headObject(vendor::HeadObjectV2Input(bucket,key))); return {{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETag()}}; }
+            auto object=result(client->getObject(request)); save(q,object.getContent());
+            return {{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETags()},{"content_type",object.getContentType()},{"metadata",object.getMeta()}};
+        } else if((op=="head" || op=="head_metadata")) { auto object=result(client->headObject(vendor::HeadObjectV2Input(bucket,key))); return {{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETag()},{"content_type",object.getContentType()},{"metadata",object.getMeta()}}; }
         else if(op=="delete") { result(client->deleteObject(vendor::DeleteObjectInput(bucket,key))); }
         else if(op=="list") {
             json keys=json::array(); vendor::ListObjectsType2Input request; request.setBucket(bucket); request.setPrefix(q.at("prefix"));
@@ -207,7 +246,7 @@ int main() {
             try { auto request=json::parse(line); start=std::chrono::steady_clock::now(); response=worker.execute(request);
                 if(request.at("op")=="info") {
                     response["protocol_version"]=1;
-                    response["capabilities"]={"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page"};
+                    response["capabilities"]={"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"};
                     response["endpoint"]=env("OSV_ENDPOINT"); response["bucket"]=env("OSV_BUCKET");
                     response["region"]=env("OSV_REGION"); response["retries"]=env("OSV_RETRIES","0");
                     response["connections_per_worker"]=env("OSV_CONNECTIONS","16");

@@ -116,8 +116,8 @@ python3 -m osv catalog examples/java-oss.json --profile complete
 
 | 档位 | 当前兼容性目录 | 参考范围 |
 |---|---|---|
-| `normal` 正常档（默认） | 22 个门槛 + 1 个行为观察 | 锁定 objbench 的对象检查：256 MiB PUT、实际列举字段/排序、控制字符、三块并发并变长/变短重传；保留额外基础检查 |
-| `complete` 完善档 | 77 个门槛 + 3 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
+| `normal` 正常档（默认） | 22 个门槛 + 2 个行为观察 | 锁定 objbench 的对象检查：256 MiB PUT、实际列举字段/排序、控制字符、三块并发并变长/变短重传；保留额外基础检查 |
+| `complete` 完善档 | 98 个门槛 + 4 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
 
 档位选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
 不依赖其二进制或 Python/Go SDK。完善档不等于 Ceph 全量覆盖，未实现范围在报告中明确列出。
@@ -170,7 +170,7 @@ python3 -m osv alignment examples/java-oss.json --profile complete
 Ceph 清单包含八个测试文件、979 个定义，其中 4 个同名定义被后续定义覆盖，实际函数数为 975；
 这不是 pytest 参数展开后的执行数。当前 Ceph 仍有未迁移项，`complete` 档位名称不代表迁移已完成。
 
-默认 `objbench` 性能模型为 100 个 128 KiB 小对象、1 GiB 数据按 4 MiB 拆为独立对象、每 lane 100 次列举。
+默认 `objbench` 性能模型为 100 个 128 KiB 小对象、1 GiB 数据按 4 MiB 拆为独立对象、每 lane 一次列举。
 依次执行 smallput/smallget/put/get、额外 Range、LIST/HEAD/DELETE，完整校验读取内容和最终删除。
 可通过 `workload.objbench` 设置 `small_objects`、`small_object_size`、`block_size`、`big_object_size`、
 `list_requests_per_lane` 和 `warmup_rounds`。向上取整生成完整块，实际数据量、有效并发和参数均进入报告。

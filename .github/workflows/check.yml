@@ -40,6 +40,13 @@ jobs:
         env:
           OSV_RUN_PAGE_TESTS: '1'
           OSV_PAGE_TEST_TARGETS: java:s3,java:oss,java:obs,java:tos,java:cos
+      - name: Java conditional, metadata and copy SDK contracts
+        run: python3 -m unittest discover -s tests/integration -p 'test_*_sdk.py' -v
+        env:
+          OSV_RUN_CONDITION_TESTS: '1'
+          OSV_RUN_METADATA_TESTS: '1'
+          OSV_RUN_COPY_TESTS: '1'
+          OSV_PAGE_TEST_TARGETS: java:s3,java:oss,java:obs,java:tos,java:cos
       - name: Install local S3 integration server
         run: python3 -m pip install 'moto[server]==5.1.15' boto3
       - name: Java AWS SDK normal, multikey and strict Ceph diagnostics
@@ -82,5 +89,13 @@ jobs:
         run: python3 -m unittest discover -s tests/integration -p test_page_sdk.py -v
         env:
           OSV_RUN_PAGE_TESTS: '1'
+          OSV_PAGE_TEST_TARGETS: cpp:obs
+          OSV_OBS_LIBRARY_PATH: ${{ github.workspace }}/.deps/obs-runtime
+      - name: OBS C SDK conditional, metadata and copy contracts
+        run: python3 -m unittest discover -s tests/integration -p 'test_*_sdk.py' -v
+        env:
+          OSV_RUN_CONDITION_TESTS: '1'
+          OSV_RUN_METADATA_TESTS: '1'
+          OSV_RUN_COPY_TESTS: '1'
           OSV_PAGE_TEST_TARGETS: cpp:obs
           OSV_OBS_LIBRARY_PATH: ${{ github.workspace }}/.deps/obs-runtime

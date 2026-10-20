@@ -51,3 +51,19 @@ worker 提前退出时记录经过凭据脱敏、长度受限的 stderr，避免
 OBS Java 原生链路要求 SDK 初始化后仍为 OBS 签名；IP、path-style 或 CNAME 导致的 AWS V2 回退必须报错。
 TOS C++ 提前拒绝上游 SDK 不接受的 IP、显式端口和 S3 端点。诊断保留在脱敏的初始化错误中。
 SDK 的 stdout 日志重定向到 stderr，协议 stdout 只包含 JSONL，避免 SDK 日志破坏帧。
+
+## 条件读取、元数据和复制
+
+新增能力必须在握手中明确声明，旧 worker 不能忽略参数后假装支持：
+
+| 操作 | 请求 | 返回 |
+|---|---|---|
+| get_conditional | key/output_path；可选 if_match、if_none_match、if_modified_since_ms、if_unmodified_since_ms；可组合 offset/length | 实际读取结果或 SDK 的真实拒绝；日期单位为 epoch 毫秒，HTTP 精度为秒 |
+| put_metadata | key/body_path、content_type、metadata 字符串映射 | 实际上传结果 |
+| head_metadata / get_metadata | key，GET 另需 output_path | 实际 content_type、metadata、size、etag、last_modified_ms；GET 读取完整字节 |
+| copy / copy_replace | key 为目的键，source_key；可选 source_bucket；replace 另需 metadata/content_type | 实际复制结果的 etag；跨桶适用性尚未完整验证 |
+
+JuiceFS warning 偏好结果作为 observation，并在 `report.json` 的 evidence 中保存 `source_matches` 等信息；不能当作来源断言通过。
+COS Java 显式开启 SDK 的 throw304Directly/throw412Directly，避免默认返回 null 丢失真实服务端异常。
+TOS C++ SDK 2.6.30 的 CopyObject 虽有 Content-Type setter，却未将其写入请求；适配器通过 SDK 的公开 request-header API 设置该头，保留为已知适配行为。
+TOS Java CopySource 使用 form 风格的空格编码；复制源测试区分空格的 + 与原始加号的 %2B，并检查只解码一次。

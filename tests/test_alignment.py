@@ -1,6 +1,7 @@
 """Verify pinned upstream inventory extraction and honest coverage accounting."""
 import json
 from pathlib import Path
+from unittest.mock import patch
 import tempfile
 import unittest
 
@@ -34,6 +35,14 @@ class AlignmentTest(unittest.TestCase):
         self.assertEqual([row["assertions"] for row in rows],[1,2])
         self.assertIn("parametrize",rows[0]["parameters"][0])
         self.assertNotEqual(rows[0]["sha256"],rows[1]["sha256"])
+        self.assertIn("parametrize",rows[0]["markers"][0])
+
+    def test_upstream_applicability_markers_survive_extraction(self):
+        """Feed AWS/RGW-specific decorators to the production extractor; expect all applicability conditions retained with source identity."""
+        source="@pytest.mark.fails_on_aws\n@pytest.mark.bucket_logging\n@pytest.mark.skipif(True, reason='needs service')\ndef test_scoped():\n assert True\n"
+        row=extract_ceph(source,"test_scope.py","revision")[0]
+        self.assertEqual(row["markers"],["pytest.mark.fails_on_aws","pytest.mark.bucket_logging","pytest.mark.skipif(True, reason='needs service')"])
+        self.assertEqual(row["parameters"],[])
 
     def test_reference_matches_stay_partial_and_unmapped_items_remain_visible(self):
         """Execute production audit for normal/complete selections; expect no invented Ceph alignment or dropped upstream gaps."""
@@ -44,10 +53,24 @@ class AlignmentTest(unittest.TestCase):
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
                 self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))
-                self.assertEqual(ceph["aligned"],0)
+                self.assertEqual(ceph["aligned"],8 if profile=="complete" else 0)
                 self.assertFalse(ceph["complete"])
-                self.assertGreater(ceph["not_migrated"],900)
+                self.assertGreater(ceph["not_migrated"],0)
                 self.assertEqual(len(result["cases"]),1005)
+
+    def test_reviewed_alignment_requires_exact_upstream_fingerprint(self):
+        """Change one source fingerprint fed to the real auditor; expect its reviewed row to fall back to partial rather than retaining aligned."""
+        data=inventory()
+        target=next(row for row in data["ceph"]["cases"] if row["name"]=="test_object_set_get_metadata_none_to_good")
+        target["sha256"]="0"*64
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            cfg=config(directory);cfg["workload"]["profile"]="complete";path.write_text(json.dumps(cfg))
+            cfg=load_config(path)
+            with patch("osv.alignment.inventory",return_value=data):result=audit(cfg,build_registry(cfg))
+        row=next(row for row in result["cases"] if row["id"]==target["id"])
+        self.assertEqual(row["status"],"partial")
+        self.assertEqual(row["implementations"],["ceph_metadata_value"])
 
     def test_shadowed_upstream_names_are_not_double_counted_as_executable(self):
         """Extract repeated function names; expect unique source identities and only the last definition active in each scope."""

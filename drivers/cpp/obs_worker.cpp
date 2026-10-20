@@ -50,6 +50,8 @@ struct Response {
     bool callback_failed=false;
     uint64_t size=0;
     int64_t modified=0;
+    json metadata=json::object();
+    std::string content_type;
     json objects=json::array();
     std::vector<std::string> prefixes;
     std::string etag, detail, next_marker;
@@ -65,6 +67,11 @@ static obs_status properties(const obs_response_properties* fields, void* contex
         state.size=fields->content_length;
         state.modified=fields->last_modified;
         state.etag=fields->etag ? fields->etag : "";
+        state.content_type=fields->content_type ? fields->content_type : "";
+        for(int i=0;i<fields->meta_data_count;++i) {
+            const auto& field=fields->meta_data[i];
+            if(field.name && field.value) state.metadata[field.name]=field.value;
+        }
         return OBS_STATUS_OK;
     } catch(...) { state.callback_failed=true; return OBS_STATUS_AbortedByCallback; }
 }
@@ -185,7 +192,7 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","obs"},{"language","cpp"},{"sdk_language","c"},{"api","native"},
             {"sdk","huaweicloud-sdk-c-obs"},{"sdk_version",OSV_OBS_SDK_VERSION},{"sdk_source_revision",OSV_OBS_SOURCE_REVISION},
-            {"protocol_version",1},{"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page"}},
+            {"protocol_version",1},{"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"}},
             {"endpoint",endpoint},{"bucket",bucket},{"region",env("OSV_REGION")},{"auth_mode","OBS_OBS_TYPE"},
             {"path_style",false},{"cname",options.bucket_options.useCname},{"retries","sdk-default; not configurable"},
             {"sdk_retry_loop_budget",OSV_OBS_ATTEMPTS},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
@@ -195,6 +202,22 @@ public:
         Response state;
         obs_response_handler response_handler{properties,complete};
         obs_object_info object{}; object.key=key.data();
+        if(op=="copy" || op=="copy_replace") {
+            std::string source_bucket=q.value("source_bucket",bucket),source_key=q.at("source_key");
+            obs_options source_options=options; source_options.bucket_options.bucket_name=source_bucket.data();
+            std::array<char,256> etag{}; int64_t modified=0;
+            obs_copy_destination_object_info destination{}; destination.destination_bucket=bucket.data(); destination.destination_key=key.data();
+            destination.etag_return=etag.data(); destination.etag_return_size=etag.size(); destination.last_modified_return=&modified;
+            obs_put_properties props{}; init_put_properties(&props);
+            std::string type=q.value("content_type",""); std::map<std::string,std::string> metadata; std::vector<obs_name_value> fields;
+            if(op=="copy_replace") {
+                metadata=q.at("metadata").get<std::map<std::string,std::string>>();
+                for(auto& entry:metadata) fields.push_back({const_cast<char*>(entry.first.c_str()),entry.second.data()});
+                props.content_type=type.data(); props.meta_data_count=fields.size(); props.meta_data=fields.data();
+            }
+            copy_object(&source_options,source_key.data(),nullptr,&destination,op=="copy"?1:0,op=="copy"?nullptr:&props,nullptr,&response_handler,&state);
+            check(state); return {{"etag",std::string(etag.data())}};
+        }
         if(op=="bucket_create") {
             obs_head_bucket(&options,&response_handler,&state);
             if(state.status!=OBS_STATUS_OK) {
@@ -211,15 +234,28 @@ public:
             obs_list_objects_handler handler{response_handler,list_page};
             list_bucket_objects_with_params(&options,&params,&handler,&state); check(state);
             return {{"keys",state.keys},{"objects",state.objects},{"common_prefixes",state.prefixes},{"truncated",state.truncated},{"next_token",state.next_marker}};
-        } else if(op=="put") {
+        } else if((op=="put" || op=="put_metadata")) {
             auto length=open_body(state,q);
             obs_put_properties props{}; init_put_properties(&props);
+            std::string type=q.value("content_type","");
+            std::map<std::string,std::string> metadata;
+            std::vector<obs_name_value> fields;
+            if(op=="put_metadata") {
+                metadata=q.at("metadata").get<std::map<std::string,std::string>>();
+                for(auto& entry:metadata) fields.push_back({const_cast<char*>(entry.first.c_str()),entry.second.data()});
+                props.content_type=type.data(); props.meta_data_count=fields.size(); props.meta_data=fields.data();
+            }
             obs_put_object_handler handler{response_handler,read_body,nullptr};
             put_object(&options,key.data(),length,&props,nullptr,&handler,&state);
-        } else if(op=="get") {
+        } else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
             state.output.open(q.at("output_path").get<std::string>(),std::ios::binary|std::ios::trunc);
             if(!state.output) throw std::runtime_error("cannot open output_path");
             obs_get_conditions conditions{}; init_get_properties(&conditions);
+            std::string match=q.value("if_match",""),none=q.value("if_none_match","");
+            if(q.contains("if_match")) conditions.if_match_etag=match.data();
+            if(q.contains("if_none_match")) conditions.if_not_match_etag=none.data();
+            if(q.contains("if_modified_since_ms")) conditions.if_modified_since=q.at("if_modified_since_ms").get<int64_t>()/1000;
+            if(q.contains("if_unmodified_since_ms")) conditions.if_not_modified_since=q.at("if_unmodified_since_ms").get<int64_t>()/1000;
             if(q.contains("offset")) {
                 conditions.start_byte=q.at("offset").get<uint64_t>(); conditions.byte_count=q.at("length").get<uint64_t>();
                 if(conditions.byte_count==0) throw std::runtime_error("Range length must be positive");
@@ -227,8 +263,10 @@ public:
             obs_get_object_handler handler{response_handler,write_body,nullptr};
             get_object(&options,&object,&conditions,nullptr,&handler,&state);
             state.output.close(); if(!state.output) state.callback_failed=true;
-        } else if(op=="head") {
-            get_object_metadata(&options,&object,nullptr,&response_handler,&state); check(state); return {{"key",key},{"size",state.size},{"last_modified_ms",state.modified*1000},{"etag",state.etag}};
+            check(state);
+            return {{"key",key},{"size",state.size},{"last_modified_ms",state.modified*1000},{"etag",state.etag},{"content_type",state.content_type},{"metadata",state.metadata}};
+        } else if((op=="head" || op=="head_metadata")) {
+            get_object_metadata(&options,&object,nullptr,&response_handler,&state); check(state); return {{"key",key},{"size",state.size},{"last_modified_ms",state.modified*1000},{"etag",state.etag},{"content_type",state.content_type},{"metadata",state.metadata}};
         } else if(op=="delete") {
             delete_object(&options,&object,&response_handler,&state);
         } else if(op=="list") {
@@ -256,7 +294,7 @@ public:
             obs_upload_handler handler{response_handler,read_body,nullptr};
             upload_part(&options,key.data(),&part,length,&props,nullptr,&handler,&state);
             check(state); if(state.etag.empty()) throw std::runtime_error("missing part ETag");
-            return {{"etag",state.etag}};
+            return {{"etag",state.etag},{"content_type",state.content_type},{"metadata",state.metadata}};
         } else if(op=="mp_complete") {
             std::string upload_id=q.at("upload_id"); std::vector<std::string> etags;
             for(const auto& part:q.at("parts")) etags.push_back(part.at("etag").get<std::string>());

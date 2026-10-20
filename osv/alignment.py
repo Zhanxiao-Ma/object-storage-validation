@@ -6,7 +6,7 @@ import re
 JUICE_FUNCTIONAL={
  "create a bucket":["bucket_create_idempotent"],"put an object":["object_roundtrip"],
  "get an object":["object_roundtrip"],"get non-exist":["missing_get"],
- "get partial object":["hello_partial_ranges","range_end_overflow"],
+ "get partial object":["hello_partial_ranges","range_end_overflow","juicefs_range_start_overflow"],
  "head an object":["object_roundtrip","list_object_fields"],
  "delete an object":["delete_existing"],"delete non-exist":["delete_missing"],
  "list objects":["list_object_fields","list_after_marker","list_sorted_100"],
@@ -22,6 +22,8 @@ def inventory():
 def audit(config,registry):
     """Never turn a name/reference match into a claim of full upstream parameter/assertion equivalence."""
     upstream=inventory();selected=config["workload"]["compatibility_suites"]
+    review_data=json.loads(files("osv").joinpath("data/ceph_reviews.json").read_text())
+    reviews={row["source_id"]:row for row in review_data["reviews"]} if review_data["revision"]==upstream["ceph"]["revision"] else {}
     catalog=[case for name in selected for case in registry.suites[name].catalog]
     names={case["case"] for case in catalog}
     rows=[]
@@ -40,8 +42,10 @@ def audit(config,registry):
     for row in upstream["ceph"]["cases"]:
         local=[case["case"] for case in catalog if row["name"] in re.findall(r"\btest_\w+\b",case["reference"])]
         shadowed=not row.get("active_definition",True)
-        rows.append({**row,"project":"ceph","status":"not_applicable" if shadowed else "partial" if local else "not_migrated","implementations":[] if shadowed else local,
-                     "reason":"上游同名定义被后续函数覆盖，不是实际收集的用例" if shadowed else "已迁移相关场景；仍须核对完整参数组合、响应字段、权限与协议版本" if local else "尚未迁移"})
+        review=reviews.get(row["id"],{})
+        aligned=review.get("implementation") in local and review.get("source_sha256")==row["sha256"]
+        rows.append({**row,"project":"ceph","status":"not_applicable" if shadowed else "aligned" if aligned else "partial" if local else "not_migrated","implementations":[] if shadowed else local,
+                     "reason":"上游同名定义被后续函数覆盖，不是实际收集的用例" if shadowed else "已核对固定版本输入与全部断言；对象前缀隔离替代独立桶，实际 SDK 执行结果另见报告" if aligned else "已迁移相关场景；仍须核对完整参数组合、响应字段、权限与协议版本" if local else "尚未迁移"})
     summaries=[]
     for project in ("juicefs","ceph"):
         selected=[row for row in rows if row["project"]==project]
