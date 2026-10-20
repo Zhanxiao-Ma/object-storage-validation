@@ -2243,7 +2243,7 @@
       "source_id": "s3tests/functional/test_s3.py::test_object_copy_versioned_url_encoding@L5807",
       "source_sha256": "ac4cc082445dc4f2cbbeca7b09b8c8f3965abc8fa293cc7c53f6c4a90dd9f1ca",
       "implementation": "ceph_metadata_edges_copy_encoded",
-      "review": "原始空 foo?bar 与 bar&foo，真实源 HEAD 的 VersionId 消费到 SDK 复制，再真实目的 HEAD；保留 SDK 自身键/版本编码行为；需 copy_source_version。"
+      "review": "原始空 foo?bar 与 bar&foo；真实源 HEAD 的 VersionId 消费到官方 SDK 复制，再真实目的 HEAD。C++ 请求桥接分别编码路径/版本参数，防止版本查询被误当对象键；实际官方签名及独立原始请求检查。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_object_put_acl_mtime@L3401",
@@ -2376,6 +2376,360 @@
       "source_sha256": "f1f6a92c9a61ca50b7f5510fcef7eae2ad69166a90153eeae3b63529f2542a3e",
       "implementation": "ceph_checksum_helper_sha1",
       "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_if_match@L19470",
+      "source_sha256": "d6b90bcb6085928945dc3e7ded16acb21034de9dad589bd6687423066b1fe6ee",
+      "implementation": "ceph_conditional_versions_put_basic",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_current_object_if_none_match@L19567",
+      "source_sha256": "b6129cbf1e0d970ee6a875f397788fd4dbdc716d14c56a004b5a34ddcf483d2a",
+      "implementation": "ceph_conditional_versions_put_current_none",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_current_object_if_match@L19623",
+      "source_sha256": "b76df46d497fc14db6e0ed45c8f2d6156fc984951c6c09b61d0746316b9b7ec4",
+      "implementation": "ceph_conditional_versions_put_current_match",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_put_object_if_match@L19532",
+      "source_sha256": "351ac6b466fdbbabb14b89851270bc48f4a24bd40ac65520887d14bffaf175dc",
+      "implementation": "ceph_conditional_versions_multipart_basic",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_put_current_object_if_none_match@L19596",
+      "source_sha256": "a59386cec2596a8b906a1fc7df41e0d75d28f67e1e4460e9795f3b24231a44a5",
+      "implementation": "ceph_conditional_versions_multipart_current_none",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_put_current_object_if_match@L19654",
+      "source_sha256": "9e29f6bb90ded2c4b9fbd5c8429ef53b855c1b5604865a7791ce1285777d0108",
+      "implementation": "ceph_conditional_versions_multipart_current_match",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_current_if_match@L19681",
+      "source_sha256": "dc7f32c05101eef2e8c1c917ae05e4a63e1f366ab7db330c3129af0f85976b54",
+      "implementation": "ceph_conditional_versions_put_marker",
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。实际DELETE的DeleteMarker必须真，标记后两次IfMatch缺对象404，源无额外后续断言不升级。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match@L19709",
+      "source_sha256": "8a0b0b630e7660116f8795c5d18870ebe35eb2d2ad245b0a0248edb474a2af5e",
+      "implementation": "ceph_conditional_versions_delete_match",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match_last_modified_time@L19798",
+      "source_sha256": "e4c804607c4457f3c0eacdb82aaa9df9bdc5051ec4ac92e1697fe6a9b1226bb4",
+      "implementation": "ceph_conditional_versions_delete_mtime",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match_size@L19866",
+      "source_sha256": "230ecdd9892eb4f7824a349c1c614ca38363ce1bbbccd821fcb4aece92d19ad2",
+      "implementation": "ceph_conditional_versions_delete_size",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match@L19933",
+      "source_sha256": "74fc0d0fb0581f21e33a309fa7e483fb6a641308e1d64ffcbcb6ff5857ecdd76",
+      "implementation": "ceph_conditional_versions_bulk_match",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match_last_modified_time@L19998",
+      "source_sha256": "3fa4b129367e845bdf10d8221ffaddb6e3bf08e8aa5d0309dd5aff2cc59a4975",
+      "implementation": "ceph_conditional_versions_bulk_mtime",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match_size@L20071",
+      "source_sha256": "518797d30e0b447b24d257e2961c733194eb2cc6b6dffb7bf6aa7d710eb75c73",
+      "implementation": "ceph_conditional_versions_bulk_size",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match@L19734",
+      "source_sha256": "1fc0e0ca78dace36ce0c56efe78382402f77912eb1c878668f5b39ccf1c77f55",
+      "implementation": "ceph_conditional_versions_delete_match_current",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留源注释称删除marker但实际传入最初对象VersionId的行为，不纠正源缺陷。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match_last_modified_time@L19819",
+      "source_sha256": "e89c62019cb36cfacb35231c33d10d470f252caa89da9f32b0fda7edb1c97251",
+      "implementation": "ceph_conditional_versions_delete_mtime_current",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match_size@L19887",
+      "source_sha256": "d40c8d6997601642051cfe4eadd093c54f91b7cc1dd1adc4de3060383656bc91",
+      "implementation": "ceph_conditional_versions_delete_size_current",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留DeleteMarker字段存在性断言，未升级为值必须true。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match@L19953",
+      "source_sha256": "7de076b900dfc23439327457453f36a28d4cca3c665bf37e92cd5959a6c5da39",
+      "implementation": "ceph_conditional_versions_bulk_match_current",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match_last_modified_time@L20020",
+      "source_sha256": "9abf493356567e4ec33012585d4d2b14c46d3a8e2afe3f693d4c26fa3857e9ed",
+      "implementation": "ceph_conditional_versions_bulk_mtime_current",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match_size@L20093",
+      "source_sha256": "90fa3ce072a6e3df969a76525d0ed7750eafd1379c2b8d3bdf0bca9fabbcc0a5",
+      "implementation": "ceph_conditional_versions_bulk_size_current",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match@L19769",
+      "source_sha256": "e5636dd14d201f1cf60137cae60f346ff6352483fed98aee19ca4c358f5af3e7",
+      "implementation": "ceph_conditional_versions_delete_match_version",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match_last_modified_time@L19843",
+      "source_sha256": "d14f6cd8a499d07dbcf4ce9ff7a9182a3f81eefb6993ec29c424dc8d582c456e",
+      "implementation": "ceph_conditional_versions_delete_mtime_version",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match_size@L19910",
+      "source_sha256": "6ce1c500090670c7bb095d17a1b55cfcfabf2aac792f9db0fb4bef2b955a2aa4",
+      "implementation": "ceph_conditional_versions_delete_size_version",
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match@L19975",
+      "source_sha256": "b71e63f7f96b3b0f0c3947a28c6edacdf4f1f81145fc272f647842bd55351f3d",
+      "implementation": "ceph_conditional_versions_bulk_match_version",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match_last_modified_time@L20045",
+      "source_sha256": "5f59fd06bd1e87be191e41678de07edc95ad348fac136436f73645c5fc9c8f4b",
+      "implementation": "ceph_conditional_versions_bulk_mtime_version",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留特有的HEAD历史版本后再次PUT形成不同当前版本，批量删除仍消费原历史VersionId/mtime。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match_size@L20118",
+      "source_sha256": "571aa014a045762c1eaeec2bf030fce0f46a89169cea8ec8c7cb98bfeeaa7b61",
+      "implementation": "ceph_conditional_versions_bulk_size_version",
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_bucket_policy_status@L14086",
+      "source_sha256": "2c46231d1cd2234574db12ec15b0ccb08adbec089833c29c51e24108488a06ce",
+      "implementation": "ceph_public_status_empty",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_public_acl_bucket_policy_status@L14092",
+      "source_sha256": "c2e09488974e987dd16960cf3dc463fd1b0d2c143e2ba7f914feaed9e015eb92",
+      "implementation": "ceph_public_status_public_acl",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_authpublic_acl_bucket_policy_status@L14099",
+      "source_sha256": "2f8f3a99fe843de3b0092419fcc6c3c2cc94295ee6ffaf5fc7f914383786835f",
+      "implementation": "ceph_public_status_authenticated_acl",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_publicpolicy_acl_bucket_policy_status@L14107",
+      "source_sha256": "2fc05123d31ef75df664caa6ae6c06ab3e2a5dc94b1927bb738adcbf5c8a1236",
+      "implementation": "ceph_public_status_public_policy",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_nonpublicpolicy_acl_bucket_policy_status@L14135",
+      "source_sha256": "5b1cdeda7a7848ed3bd3775ce91293cc32c198ba2a6f1c3497a0c6ae9e33515b",
+      "implementation": "ceph_public_status_source_ip",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_nonpublicpolicy_principal_bucket_policy_status@L14167",
+      "source_sha256": "8426720a5da0a10717d8cbe6b916a18d285319096019d1d402fb4eac9c3b92c5",
+      "implementation": "ceph_public_status_principal",
+      "review": "已核对固定版本原始输入和全部断言；保留原始 IsPublic 布尔值、ACL、固定租户 Principal 和 10.0.0.0/32 条件，不协调厂商预期"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_block_public_put_bucket_acls@L14283",
+      "source_sha256": "bd22cb824b2f8e9c8095ca82b09ed01214ee078f68a7ec5c1f8c2aef6b0f4126",
+      "implementation": "ceph_public_controls_bucket_acl",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_block_public_object_canned_acls@L14312",
+      "source_sha256": "8ea48c0e8072fac10c395bc486a15b1960c99ee32c77583098183b76115ce3a4",
+      "implementation": "ceph_public_controls_object_acl",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_block_public_policy@L14340",
+      "source_sha256": "0a8d3a60beab42839745b4e545053743466b76a2da771672397fb74b299f81d5",
+      "implementation": "ceph_public_controls_policy",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_block_public_policy_with_principal@L14357",
+      "source_sha256": "1b6f52360cfce2cabbd1a230babd937d0f028e880205c8b5c41551b778b46427",
+      "implementation": "ceph_public_controls_principal",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_block_public_restrict_public_buckets@L14375",
+      "source_sha256": "88067c26676a7530c0627cf5a7e158e5b438112567a18475a39eb53e0e6df7c0",
+      "implementation": "ceph_public_controls_restrict",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ignore_public_acls@L14415",
+      "source_sha256": "3bfa44478bcb5343596743c7ad291e627fb2575dfc709bf005e1f0250bcaea64",
+      "implementation": "ceph_public_controls_ignore_acl",
+      "review": "已核对固定版本原始输入和全部断言；保留原始四布尔值、全部状态/正文断言、实际匿名/另用户请求；策略 finally 删除"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_create_bucket_bucket_owner_enforced@L20283",
+      "source_sha256": "e26f30f9ff091567c951a15f04034b9727012eb562483b925fd913a65755de43",
+      "implementation": "ceph_public_ownership_create_bucket_owner_enforced",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_ownership_bucket_owner_enforced@L20319",
+      "source_sha256": "8335e75bf15c11ff013828c2cdd80ba6f47944c5eda9545e5c975dd778733ea5",
+      "implementation": "ceph_public_ownership_put_bucket_owner_enforced",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_create_bucket_bucket_owner_preferred@L20295",
+      "source_sha256": "e346b0af4d3064c6392a22cc34562689313f0d9cc111bbfbe276df97e208ac79",
+      "implementation": "ceph_public_ownership_create_bucket_owner_preferred",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_ownership_bucket_owner_preferred@L20344",
+      "source_sha256": "3a04e1e6ab06bc775947fc8432c18656db126f20870782e77b41621a791e8480",
+      "implementation": "ceph_public_ownership_put_bucket_owner_preferred",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_create_bucket_object_writer@L20307",
+      "source_sha256": "8509d02b4a3aa71b7fb1b3526158db287f17a47a5568b699cad45c5869970ff9",
+      "implementation": "ceph_public_ownership_create_object_writer",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_ownership_object_writer@L20357",
+      "source_sha256": "df3e18898465a64c42f1a3a53d59adf75a80ba3fd4366b2ee801e34b1c83aaed",
+      "implementation": "ceph_public_ownership_put_object_writer",
+      "review": "已核对固定版本原始输入和全部断言；完整保留源 PUT/分块/COPY/ACL 的每个所有者 ID+名称断言及错误码；配置期望身份，清理所有实际 multipart ID；逐项审计三个原始 ownership helpers 的 PUT、CreateMultipartUpload、CopyObject 每组三ACL与最终PutBucketAcl/PutObjectAcl，以及GetObjectAcl/ListParts原始Owner.ID+DisplayName元组；保存所有成功分块ID并finally同alt身份Abort，不把异常成功当通过"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_zero_size@L5514",
+      "source_sha256": "09971a69334b2af3ca2e4cfb497f5c0a8482e65a1d3ef695439175928df5ab57",
+      "implementation": "ceph_copy_contract_zero",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_16m@L5529",
+      "source_sha256": "e5f1be265af68dbb4247e996b8759e54980b8f950453114d6def56026a2c7004",
+      "implementation": "ceph_copy_contract_16m",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_same_bucket@L5543",
+      "source_sha256": "68e213e56821e4314eb5a1633b5f1abc4383397dd88029193f52166725374590",
+      "implementation": "ceph_copy_contract_same",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_verify_contenttype@L5558",
+      "source_sha256": "e5dfd4f0e353c44771e5f6b2f99927e4ea5d49ba73234ea3d37c809c56e44122",
+      "implementation": "ceph_copy_contract_content_type",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_to_itself@L5576",
+      "source_sha256": "20b4aa4a07a86553b469ab21a182f6588f77d9976a6c006211066679ec649601",
+      "implementation": "ceph_copy_contract_self",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_key_not_found@L5731",
+      "source_sha256": "eb8002a916ce27195903ecf8fe8b36850d1777aef29c8d287ec0e510e2737c3d",
+      "implementation": "ceph_copy_contract_missing",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_retaining_metadata@L5680",
+      "source_sha256": "f51feafcc35e11bea81c92640b36d001f49e71395a2f05a45479d0b51352043c",
+      "implementation": "ceph_copy_contract_metadata_retain",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_replacing_metadata@L5700",
+      "source_sha256": "c5e585ea8f3adb32c079978fbfa243095abd1bd2007845faa79b9f441053c491",
+      "implementation": "ceph_copy_contract_metadata_replace",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_not_owned_bucket@L5619",
+      "source_sha256": "9a32e73cc240e8b6b40a401d89b02331c3950f379259cc68c552e30bd7aa6548",
+      "implementation": "ceph_copy_contract_other_owner",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_versioning_multipart_upload@L5912",
+      "source_sha256": "e58b9ebf1fd482f35928d3119dabd3162990a096a6f0196ce6bda4a60dff7676",
+      "implementation": "ceph_copy_contract_version_chains",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_copy_obj_version@L8118",
+      "source_sha256": "974bcaa0ccfb22059f04ec86f22e14eceb4890e5e4bdddef3322b6fd23a71906",
+      "implementation": "ceph_copy_contract_versions",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_versioned@L6285",
+      "source_sha256": "f6271def005d156ebc5e757249af1c39bdbc4d6a31cf5db57353a34dadc5efa5",
+      "implementation": "ceph_copy_contract_multipart_versions",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_multipart_upload_write@L7469",
+      "source_sha256": "a79d6b8f0da4cc03977c7bb7e4c714811ef70f8de344f66d55a8a546e605726e",
+      "implementation": "ceph_copy_contract_atomic_upload",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_upload_part_copy_percent_encoded_key@L19344",
+      "source_sha256": "3a90993fe1096d646e47fadc56022f7df739917625f444038c3649080dbdeb95",
+      "implementation": "ceph_copy_contract_percent_source",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_multipart_upload_owner@L6542",
+      "source_sha256": "ed33e6adc6deb1779a261867a62880f5d461d758b4291a6e4e0c0bb76a93c720",
+      "implementation": "ceph_copy_contract_multipart_owners",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_to_itself_with_metadata@L5590",
+      "source_sha256": "d9a91ee91a65659038ea789eba9f4623eb82ae6c56335b68decde17fe3f2a5a2",
+      "implementation": "ceph_copy_contract_self_metadata",
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
     }
   ]
 }

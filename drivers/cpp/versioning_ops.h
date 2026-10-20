@@ -79,6 +79,7 @@ inline json execute_version_operation(Aws::S3::S3Client& client,const json& q,co
         if(q.contains("version_id"))request.SetVersionId(q.at("version_id").get<std::string>());
         auto outcome=client.HeadObject(request);checked(outcome);require_http();const auto& result=outcome.GetResult();
         observed.update({{"key",key},{"size",result.GetContentLength()},{"etag",std::string(result.GetETag().c_str())}});
+        if(observed["http_headers"].contains("last-modified"))observed["last_modified_ms"]=result.GetLastModified().Millis();
         if(!result.GetVersionId().empty())observed["version_id"]=std::string(result.GetVersionId().c_str());
         if(observed["http_headers"].contains("x-amz-delete-marker"))observed["delete_marker"]=result.GetDeleteMarker();
     }

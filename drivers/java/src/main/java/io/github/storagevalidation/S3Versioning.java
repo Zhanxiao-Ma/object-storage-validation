@@ -19,6 +19,26 @@ final class S3Versioning {
 
     static boolean handles(String operation) { return OPERATIONS.contains(operation); }
 
+    static boolean supportsDeleteConditions() {
+        Set<String> fields=new HashSet<>();
+        for(software.amazon.awssdk.core.SdkField<?> field:ObjectIdentifier.builder().sdkFields())fields.add(field.memberName());
+        return fields.containsAll(Arrays.asList("ETag","LastModifiedTime","Size"));
+    }
+
+    static void applyDeleteConditions(ObjectIdentifier.Builder builder,JsonNode item) {
+        com.fasterxml.jackson.databind.node.ObjectNode fields=JSON.createObjectNode();
+        if(item.has("etag")) {
+            if(!item.get("etag").isTextual())throw new IllegalArgumentException("etag must be textual");
+            fields.set("ETag",item.get("etag"));
+        }
+        for(String name:Arrays.asList("last_modified_ms","size"))if(item.has(name)) {
+            JsonNode value=item.get(name);
+            if(!value.isIntegralNumber() || !value.canConvertToLong())throw new IllegalArgumentException(name+" must be a signed 64-bit integer");
+            fields.set("size".equals(name)?"Size":"LastModifiedTime",value);
+        }
+        if(fields.size()>0)SdkModelJson.read(builder,fields);
+    }
+
     static Map<String,Object> execute(S3Client client,String op,JsonNode q,String bucket,String key) throws Exception {
         switch(op) {
         case "versioning_get": {
@@ -58,6 +78,7 @@ final class S3Versioning {
             if(q.has("version_id")) b.versionId(text(q,"version_id"));
             HeadObjectResponse result=client.headObject(b.build());
             Map<String,Object> observed=fields("key",key,"size",result.contentLength(),"etag",result.eTag());
+            if(result.lastModified()!=null) observed.put("last_modified_ms",millis(result.lastModified()));
             if(result.versionId()!=null) observed.put("version_id",result.versionId());
             if(result.deleteMarker()!=null) observed.put("delete_marker",result.deleteMarker());
             return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());

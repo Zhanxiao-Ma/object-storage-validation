@@ -91,6 +91,7 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 #include "versioning_ops.h"
 #include "bucket_api_generated.h"
 #include "checksum_models.h"
+#include "copy_request.h"
 
 #include "wire_headers.h"
 #include "s3_identities.h"
@@ -120,9 +121,19 @@ public:
         if(osv_bucket_api::handles(op))return osv_bucket_api::execute(*client,q);
         if(op=="delete_many" || op=="delete_many_versions") {
             Aws::S3::Model::DeleteObjectsRequest request;request.SetBucket(bucket);Aws::S3::Model::Delete deletion;
+            if(!q.contains("objects") || !q.at("objects").is_array())throw std::runtime_error("objects must be an array");
+            static const std::set<std::string> allowed={"key","version_id","etag","last_modified_ms","size"};
             for(const auto& item:q.at("objects")) {
+                if(!item.is_object())throw std::runtime_error("delete identifier must be an object");
+                for(auto field=item.begin();field!=item.end();++field)if(!allowed.count(field.key()))throw std::runtime_error("unknown delete identifier member: "+field.key());
+                if(!item.contains("key") || !item.at("key").is_string())throw std::runtime_error("key must be textual");
+                if(item.contains("version_id") && !item.at("version_id").is_string())throw std::runtime_error("version_id must be textual");
                 Aws::S3::Model::ObjectIdentifier id;id.SetKey(item.at("key").get<std::string>());
-                if(item.contains("version_id"))id.SetVersionId(item.at("version_id").get<std::string>());deletion.AddObjects(id);
+                if(item.contains("version_id"))id.SetVersionId(item.at("version_id").get<std::string>());
+                if(item.contains("etag"))id.SetETag(item.at("etag").get<std::string>());
+                if(item.contains("last_modified_ms"))id.SetLastModifiedTime(Aws::Utils::DateTime(osv_bucket_api::signed_integer(item.at("last_modified_ms"),std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"last_modified_ms")));
+                if(item.contains("size"))id.SetSize(osv_bucket_api::signed_integer(item.at("size"),std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"size"));
+                deletion.AddObjects(id);
             }
             if(q.contains("quiet"))deletion.SetQuiet(q.at("quiet").get<bool>());request.SetDelete(deletion);
             json observed;HttpObservationScope observation(&observed,true);
@@ -184,14 +195,14 @@ public:
             return http;
         }
         if(op=="copy" || op=="copy_replace") {
-            Aws::S3::Model::CopyObjectRequest request; request.SetBucket(bucket); request.SetKey(key);
+            VersionedCopyRequest<Aws::S3::Model::CopyObjectRequest> request; request.SetBucket(bucket); request.SetKey(key);
             std::string source=q.value("source_bucket",bucket)+"/"+q.at("source_key").get<std::string>();
-            if(q.contains("source_version_id"))source+="?versionId="+q.at("source_version_id").get<std::string>();
+            if(q.contains("source_version_id"))request.SetSourceVersion(q.at("source_version_id").get<std::string>());
             request.SetCopySource(source);
             if(q.contains("acl"))request.SetACL(Aws::S3::Model::ObjectCannedACLMapper::GetObjectCannedACLForName(q.at("acl").get<std::string>()));
             if(op=="copy_replace") {
                 request.SetMetadataDirective(Aws::S3::Model::MetadataDirective::REPLACE);
-                request.SetContentType(q.at("content_type").get<std::string>());
+                if(q.contains("content_type"))request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             }
             auto outcome=client->CopyObject(request); checked(outcome);
@@ -322,11 +333,11 @@ public:
             }
             return {{"keys", keys}};
         } else if (op == "mp_copy") {
-            Aws::S3::Model::UploadPartCopyRequest request;
+            VersionedCopyRequest<Aws::S3::Model::UploadPartCopyRequest> request;
             request.SetBucket(bucket);request.SetKey(key);request.SetUploadId(q.at("upload_id").get<std::string>());request.SetPartNumber(q.at("part_number").get<int>());
             // This SDK's request serializer URL-encodes CopySource itself.
             std::string source=q.value("source_bucket",bucket)+"/"+q.at("source_key").get<std::string>();
-            if(q.contains("version_id"))throw std::runtime_error("versioned multipart copy is not implemented by this worker");
+            if(q.contains("version_id"))request.SetSourceVersion(q.at("version_id").get<std::string>());
             request.SetCopySource(source);
             if(q.contains("range_header")) request.SetCopySourceRange(q.at("range_header").get<std::string>());
             json http;HttpObservationScope observation(&http);
@@ -420,10 +431,10 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& capability:osv_checksums::capabilities())response["capabilities"].push_back(capability);
-                    response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
+                    response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
@@ -432,7 +443,7 @@ int main() {
                 }
                 response["ok"] = true;
             } catch (const SdkError& error) {
-                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}, {"status_code",error.status},{"error_code",error.error_code},{"http_headers",error.headers}};
+                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}, {"status_code",error.status},{"error_code",error.error_code},{"error_message",error.what()},{"http_headers",error.headers}};
             } catch (const std::exception& error) {
                 response = {{"ok", false}, {"error", error.what()}, {"error_kind", "worker_error"}};
             }

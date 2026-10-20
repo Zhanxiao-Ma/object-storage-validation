@@ -15,6 +15,19 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Pinned Moto response/template discrepancies and actual typed SDK outputs are independent of the source case oracles.
 # Original Ceph expectations remain unchanged; these helpers only assert that the local regression report preserves known failures.
+def expected_conditional_version_diagnostics(language):
+    writes={"ceph_conditional_versions_"+name for name in ("put_basic","put_current_match","put_current_none","put_marker","multipart_basic","multipart_current_match","multipart_current_none")}
+    deletes={"ceph_conditional_versions_delete_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
+    bulk={"ceph_conditional_versions_bulk_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
+    return writes|deletes|(bulk if language=="cpp" else set())
+
+
+def expected_public_controls_diagnostics(language):
+    status={"ceph_public_status_"+mode for mode in ("empty","public_acl","authenticated_acl","public_policy","source_ip","principal")}
+    controls={"ceph_public_controls_"+mode for mode in ("bucket_acl","object_acl","policy","restrict")}
+    return status|controls|({"ceph_public_controls_principal"} if language=="cpp" else set())
+
+
 def expected_request_header_diagnostics():
     return {"ceph_header_object_"+name for name in ("md5_invalid_short","md5_bad","md5_empty","length_empty","length_negative","length_none","authorization_empty","authorization_none")}|{"ceph_header_bucket_"+name for name in ("length_empty","length_negative","authorization_empty","authorization_none")}|{"ceph_header_acl_bad_canned"}
 
@@ -552,10 +565,11 @@ class SdkIntegrationTest(unittest.TestCase):
             for target in self.targets:
                 extra=policy_fail|{"ceph_metadata_edges_content_encoding"}
                 if target["language"]=="cpp":
-                    extra=extra|{"ceph_policy_condition_s3_kms","ceph_policy_condition_kms_s3"}|{"ceph_metadata_edges_"+name for name in ("special_keys","copy_versions","copy_encoded")}
+                    extra=extra|{"ceph_policy_condition_s3_kms","ceph_policy_condition_kms_s3"}|{"ceph_metadata_edges_"+name for name in ("special_keys",)}
                     extra=extra|({item.name for item in checksum_cases}-{"ceph_attributes_object","ceph_attributes_versioned","ceph_checksum_attributes_sha256"})
                 else:extra=extra|({item.name for item in checksum_cases}-checksum_missing)
                 expected.extend((target["id"],name) for name in extra)
+            expected.extend((target["id"],name) for target in self.targets for name in expected_conditional_version_diagnostics(target["language"])|expected_public_controls_diagnostics(target["language"]))
             self.assertEqual(sorted(failures),sorted(expected))
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
@@ -567,14 +581,21 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),490)
+            self.assertEqual(len(report["coverage"]["catalog"]),549)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
             metadata_missing={"ceph_metadata_edges_"+name for name in ("owner_read","owner_full","owner_stable","attributes_stable","acl_headers","copy_canned","copy_granted")}
+            public_missing={"ceph_public_controls_ignore_acl"}|{"ceph_public_ownership_"+when+mode for when in ("create_","put_") for mode in ("bucket_owner_enforced","bucket_owner_preferred","object_writer")}
+            copy_missing={"ceph_copy_contract_other_owner","ceph_copy_contract_multipart_owners"}
+            conditional_missing={"ceph_conditional_versions_bulk_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|public_missing|copy_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in public_missing|copy_missing|conditional_missing:
+                    self.assertEqual(row["reason"],"unsupported_operations")
+                    self.assertEqual(row["missing_operations"],["delete_many_conditions"] if row["case"] in conditional_missing else ["identity_alt"])
+                    continue
                 if row["case"] in checksum_missing:
                     self.assertEqual(row["reason"],"unsupported_operations")
                     self.assertTrue(row["missing_operations"])

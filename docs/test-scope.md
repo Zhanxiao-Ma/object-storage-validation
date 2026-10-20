@@ -8,7 +8,7 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 15；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 16；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，总计 490 项（486 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，总计 549 项（545 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -149,6 +149,14 @@ Range 观察项也不证明标准 HTTP 状态正确；成功响应若字节错�
 元数据边界包括特殊对象键/前缀、HEAD/ACL 与清单字段关系、Unicode 请求头、文件上传、ACL 变更前后的拥有者/时间/属性、指定版本复制及 Content-Encoding。实际 SDK 的请求编码和响应字段缺失保留在失败证据中。
 
 GetObjectAttributes 与摘要覆盖普通/版本/SSE-C/分块对象、分块属性分页、SHA256/CRC64NVME 及五种算法的 ChecksumType。使用真实 SDK typed 字段；固定 Java SDK 不提供 CRC64NVME/ChecksumType 时相应用例为 not_run。C++ 的实际 aws-chunked trailer、返回空字段与字段缺失分别记录，不能补造摘要值。
+
+### 当前对象/版本条件与公共控制
+
+25 项条件场景保留当前版本、指定旧版本和删除标记上的 If-Match/If-None-Match、mtime/size 条件，包括 PUT、CompleteMultipartUpload、DeleteObject、DeleteObjects。历史时间和版本 ID 由真实 HEAD 产生；批量条件使用 typed XML 字段。旧 Java SDK 缺少批量条件模型时这九项显式 not_run。
+
+18 项公共控制覆盖 PolicyStatus 的原始 IsPublic、四项公共访问阻止参数，以及创建时/事后设置三种对象所有权模式。所有权场景完整执行 PUT、分块、Copy 和 ACL 辅助流程，需要显式另一身份及独立期望 ID/DisplayName。
+
+16 项完整复制场景保留零/16 MiB 对象、元数据/类型、原地复制、私有源、三历史版本和分块复制、创建/取消上传的原子可见性、百分号源键及 Owner/Initiator。原始请求省略 ContentType 时不补造该输入。
 
 ## 选择与扩展
 

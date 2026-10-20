@@ -68,7 +68,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
-                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl"));capabilities.addAll(S3Checksums.capabilities()); }
+                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions"); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
@@ -87,7 +87,7 @@ public final class WorkerMain {
                     result.put("error", error.getClass().getSimpleName()+": "+error.getMessage());
                     if(error instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
                         software.amazon.awssdk.services.s3.model.S3Exception e=(software.amazon.awssdk.services.s3.model.S3Exception)error;
-                        result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null && e.awsErrorDetails().sdkHttpResponse()!=null) result.put("http_headers",e.awsErrorDetails().sdkHttpResponse().headers()); if(e.awsErrorDetails()!=null) result.put("error_code",e.awsErrorDetails().errorCode());
+                        result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null && e.awsErrorDetails().sdkHttpResponse()!=null) result.put("http_headers",e.awsErrorDetails().sdkHttpResponse().headers()); if(e.awsErrorDetails()!=null) {result.put("error_code",e.awsErrorDetails().errorCode());result.put("error_message",e.awsErrorDetails().errorMessage());}
                     } else if(error instanceof com.aliyun.oss.OSSException) result.put("error_code",((com.aliyun.oss.OSSException)error).getErrorCode());
                     else if(error instanceof com.obs.services.exception.ObsException) { result.put("status_code",((com.obs.services.exception.ObsException)error).getResponseCode()); result.put("error_code",((com.obs.services.exception.ObsException)error).getErrorCode()); }
                     else if(error instanceof com.volcengine.tos.TosServerException) { result.put("status_code",((com.volcengine.tos.TosServerException)error).getStatusCode()); result.put("error_code",((com.volcengine.tos.TosServerException)error).getCode()); }
@@ -224,9 +224,17 @@ public final class WorkerMain {
             switch(op) {
             case "delete_many": case "delete_many_versions": {
                 List<software.amazon.awssdk.services.s3.model.ObjectIdentifier> identifiers=new ArrayList<>();
+                if(!q.has("objects") || !q.get("objects").isArray())throw new IllegalArgumentException("objects must be an array");
+                Set<String> allowed=Set.of("key","version_id","etag","last_modified_ms","size");
                 for(JsonNode item:q.get("objects")) {
+                    if(!item.isObject())throw new IllegalArgumentException("delete identifier must be an object");
+                    item.fieldNames().forEachRemaining(name->{if(!allowed.contains(name))throw new IllegalArgumentException("unknown delete identifier member: "+name);});
+                    if(!item.has("key") || !item.get("key").isTextual())throw new IllegalArgumentException("key must be textual");
+                    if(item.has("version_id") && !item.get("version_id").isTextual())throw new IllegalArgumentException("version_id must be textual");
                     software.amazon.awssdk.services.s3.model.ObjectIdentifier.Builder id=software.amazon.awssdk.services.s3.model.ObjectIdentifier.builder().key(text(item,"key"));
-                    if(item.has("version_id")) id.versionId(text(item,"version_id"));identifiers.add(id.build());
+                    if(item.has("version_id")) id.versionId(text(item,"version_id"));
+                    S3Versioning.applyDeleteConditions(id,item);
+                    identifiers.add(id.build());
                 }
                 software.amazon.awssdk.services.s3.model.Delete.Builder deletion=software.amazon.awssdk.services.s3.model.Delete.builder().objects(identifiers);
                 if(q.has("quiet")) deletion.quiet(q.get("quiet").asBoolean());
@@ -326,7 +334,10 @@ public final class WorkerMain {
                     .sourceBucket(sourceBucket).sourceKey(sourceKey).destinationBucket(bucket).destinationKey(key);
                 if(q.has("source_version_id"))request.sourceVersionId(text(q,"source_version_id"));
                 if(q.has("acl"))request.acl(text(q,"acl"));
-                if("copy_replace".equals(op)) request.metadataDirective("REPLACE").metadata(userMetadata(q)).contentType(text(q,"content_type"));
+                if("copy_replace".equals(op)) {
+                    request.metadataDirective("REPLACE").metadata(userMetadata(q));
+                    if(q.has("content_type")) request.contentType(text(q,"content_type"));
+                }
                 return one("etag",client.copyObject(request.build()).copyObjectResult().eTag());
             }
             case "bucket_create": {

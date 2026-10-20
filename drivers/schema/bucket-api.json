@@ -571,6 +571,37 @@
           "shape": "NoSuchKey"
         }
       ]
+    },
+    "GetBucketPolicyStatus": {
+      "name": "GetBucketPolicyStatus",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?policyStatus"
+      },
+      "input": {
+        "shape": "GetBucketPolicyStatusRequest"
+      },
+      "output": {
+        "shape": "GetBucketPolicyStatusOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "ListParts": {
+      "name": "ListParts",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}/{Key+}"
+      },
+      "input": {
+        "shape": "ListPartsRequest"
+      },
+      "output": {
+        "shape": "ListPartsOutput"
+      }
     }
   },
   "shapes": {
@@ -2912,6 +2943,234 @@
     "ObjectSize": {
       "type": "long",
       "box": true
+    },
+    "GetBucketPolicyStatusRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketPolicyStatusOutput": {
+      "type": "structure",
+      "members": {
+        "PolicyStatus": {
+          "shape": "PolicyStatus"
+        }
+      },
+      "payload": "PolicyStatus"
+    },
+    "PolicyStatus": {
+      "type": "structure",
+      "members": {
+        "IsPublic": {
+          "shape": "IsPublic",
+          "locationName": "IsPublic"
+        }
+      }
+    },
+    "IsPublic": {
+      "type": "boolean",
+      "box": true
+    },
+    "ListPartsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key",
+        "UploadId"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "MaxParts": {
+          "shape": "MaxParts",
+          "location": "querystring",
+          "locationName": "max-parts"
+        },
+        "PartNumberMarker": {
+          "shape": "PartNumberMarker",
+          "location": "querystring",
+          "locationName": "part-number-marker"
+        },
+        "UploadId": {
+          "shape": "MultipartUploadId",
+          "location": "querystring",
+          "locationName": "uploadId"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        }
+      }
+    },
+    "MultipartUploadId": {
+      "type": "string"
+    },
+    "ListPartsOutput": {
+      "type": "structure",
+      "members": {
+        "AbortDate": {
+          "shape": "AbortDate",
+          "location": "header",
+          "locationName": "x-amz-abort-date"
+        },
+        "AbortRuleId": {
+          "shape": "AbortRuleId",
+          "location": "header",
+          "locationName": "x-amz-abort-rule-id"
+        },
+        "Bucket": {
+          "shape": "BucketName"
+        },
+        "Key": {
+          "shape": "ObjectKey"
+        },
+        "UploadId": {
+          "shape": "MultipartUploadId"
+        },
+        "PartNumberMarker": {
+          "shape": "PartNumberMarker"
+        },
+        "NextPartNumberMarker": {
+          "shape": "NextPartNumberMarker"
+        },
+        "MaxParts": {
+          "shape": "MaxParts"
+        },
+        "IsTruncated": {
+          "shape": "IsTruncated"
+        },
+        "Parts": {
+          "shape": "Parts",
+          "locationName": "Part"
+        },
+        "Initiator": {
+          "shape": "Initiator"
+        },
+        "Owner": {
+          "shape": "Owner"
+        },
+        "StorageClass": {
+          "shape": "StorageClass"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType"
+        }
+      }
+    },
+    "AbortDate": {
+      "type": "timestamp"
+    },
+    "AbortRuleId": {
+      "type": "string"
+    },
+    "Parts": {
+      "type": "list",
+      "member": {
+        "shape": "Part"
+      },
+      "flattened": true
+    },
+    "Part": {
+      "type": "structure",
+      "members": {
+        "PartNumber": {
+          "shape": "PartNumber"
+        },
+        "LastModified": {
+          "shape": "LastModified"
+        },
+        "ETag": {
+          "shape": "ETag"
+        },
+        "Size": {
+          "shape": "Size"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256"
+        }
+      }
+    },
+    "Initiator": {
+      "type": "structure",
+      "members": {
+        "ID": {
+          "shape": "ID"
+        },
+        "DisplayName": {
+          "shape": "DisplayName"
+        }
+      }
     }
   }
 }

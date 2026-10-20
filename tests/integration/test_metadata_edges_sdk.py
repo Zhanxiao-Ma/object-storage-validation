@@ -62,7 +62,7 @@ class MetadataEdgesSdkTest(unittest.TestCase):
                     self.assertEqual(len(rows),18)
                     self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},set())
                     expected={"ceph_metadata_edges_owner_read","ceph_metadata_edges_owner_full","ceph_metadata_edges_acl_headers","ceph_metadata_edges_content_encoding"}
-                    if language=="cpp":expected.update({"ceph_metadata_edges_special_keys","ceph_metadata_edges_copy_versions","ceph_metadata_edges_copy_encoded"})
+                    if language=="cpp":expected.add("ceph_metadata_edges_special_keys")
                     self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected,rows)
                     self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{item.name for item in CASES}-expected)
                     failures={row["case"]:row["error"] for row in rows if row["status"]=="fail"}
@@ -70,9 +70,6 @@ class MetadataEdgesSdkTest(unittest.TestCase):
                     self.assertIn("list index out of range",failures["ceph_metadata_edges_owner_full"])
                     self.assertIn("FULL_CONTROL",failures["ceph_metadata_edges_acl_headers"])
                     self.assertIn("gzip, aws-chunked",failures["ceph_metadata_edges_content_encoding"])
-                    if language=="cpp":
-                        self.assertIn("specified key does not exist",failures["ceph_metadata_edges_copy_versions"])
-                        self.assertIn("specified key does not exist",failures["ceph_metadata_edges_copy_encoded"])
                     self.assertEqual({item["Name"] for item in self.client.list_buckets()["Buckets"]},{"osv-metadata-edges"})
                 finally:worker.close()
 
@@ -109,10 +106,12 @@ class MetadataCopyWireTest(unittest.TestCase):
                 self.assertTrue(observed["ok"],observed);self.assertEqual(observed["etag"],'"independent-copy-etag"')
                 self.assertEqual(len(server.requests),1)
                 headers={name.lower():value for name,value in server.requests[0][2].items()}
-                # These pinned SDKs intentionally expose distinct query-separator serialization.
-                self.assertEqual("?versionId=" in headers["x-amz-copy-source"],language=="java")
-                if language=="cpp":self.assertIn("%3FversionId%3D",headers["x-amz-copy-source"])
-                self.assertEqual(unquote(headers["x-amz-copy-source"]).lstrip("/"),"source-bucket/"+key+"?versionId="+version)
+                path,separator,raw_version=headers["x-amz-copy-source"].partition("?versionId=")
+                self.assertEqual(separator,"?versionId=")
+                self.assertEqual(unquote(path).lstrip("/"),"source-bucket/"+key)
+                self.assertEqual(unquote(raw_version),version)
+                self.assertNotIn("?",path);self.assertNotIn("&",raw_version)
+                self.assertNotIn("+",raw_version)
                 self.assertEqual(headers["x-amz-acl"],"public-read")
                 self.assertIn("x-amz-acl",headers["authorization"]);self.assertIn("x-amz-copy-source",headers["authorization"])
 
@@ -138,5 +137,8 @@ class MetadataCopyWireTest(unittest.TestCase):
                 self.assertEqual(len(server.requests),15)
                 headers={name.lower():value for name,value in server.requests[6][2].items()}
                 bucket=server.requests[0][1].strip("/").split("?",1)[0]
-                self.assertEqual(unquote(headers["x-amz-copy-source"]).lstrip("/"),bucket+"/foo?bar?versionId="+version)
+                source,separator,raw_version=headers["x-amz-copy-source"].partition("?versionId=")
+                self.assertEqual(separator,"?versionId=")
+                self.assertEqual(unquote(source).lstrip("/"),bucket+"/foo?bar")
+                self.assertEqual(unquote(raw_version),version)
                 self.assertEqual(server.requests[5][0],"HEAD");self.assertEqual(server.requests[7][0],"HEAD")

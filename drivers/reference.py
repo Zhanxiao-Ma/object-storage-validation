@@ -204,11 +204,11 @@ def execute(q):
     elif op in ("copy","copy_replace"):
         source=copy_source(q)
         data=source.read_bytes()
-        if source==key and op=="copy":raise OperationError("InvalidRequest")
+        if source==key and op=="copy":raise OperationError("InvalidRequest",400)
         info=json.loads(source.with_suffix(".json").read_text())
         key.parent.mkdir(parents=True,exist_ok=True);key.write_bytes(data)
         remember(q["key"],q["metadata"] if op=="copy_replace" else info["metadata"],
-                 q["content_type"] if op=="copy_replace" else info["content_type"])
+                 q.get("content_type","application/octet-stream") if op=="copy_replace" else info["content_type"])
         return {"etag":hashlib.md5(data).hexdigest()}
     elif op == "delete":
         key.unlink(missing_ok=True)

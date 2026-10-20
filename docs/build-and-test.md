@@ -278,3 +278,19 @@ PYTHONPATH=tests/integration:. OSV_RUN_POLICY_CONDITION_TESTS=1 OSV_RUN_METADATA
 ```
 
 这些测试核对真实签名请求、源函数的生产者输出到后续请求、缺字段及清理；固定 SDK/Moto 的诊断差异保留为 fail/not_run，不用于云厂商性能比较。
+
+
+版本条件、公共控制和完整复制的定向回归：
+
+```bash
+PYTHONPATH=tests/integration:. OSV_RUN_CONDITIONAL_VERSIONS_TESTS=1 OSV_RUN_PUBLIC_CONTROL_TESTS=1 OSV_RUN_COPY_CONTRACT_TESTS=1 python3 -m unittest test_conditional_versions_sdk test_public_controls_sdk test_copy_contracts_sdk -v
+```
+
+版本复制的原始请求边界测试要求查询分隔符保持字面 `?versionId=`，路径和版本值分别编码。批量删除输入测试要求所有非法项在发 HTTP 前被拒绝，包含有效首项后接非法项，避免执行部分删除。
+
+
+本地 Moto 每个实例运行于独立 spawn 进程，避免其模块级全局账户/桶状态跨测试泄漏；服务端仍串行处理，客户端并发保持原样。隔离回归同时验证同账户/同桶/同键的两个服务读回不同原始字节，以及前一个服务停止后新服务账户为空：
+
+```bash
+PYTHONPATH=tests/integration:. OSV_RUN_MOTO_TESTS=1 python3 -m unittest test_local_moto -v
+```

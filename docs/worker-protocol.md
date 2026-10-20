@@ -143,3 +143,10 @@ AWS S3 Java/C++ 的 `copy`/`copy_replace` 支持可选 `acl` 和 `source_version
 `api.GetObjectAttributes` 使用通用 typed API 模型入口，`input` 提供 `Key`、`ObjectAttributes` 和可选 `VersionId`/`MaxParts`/`PartNumberMarker`/SSE-C 字段。`data` 保留 SDK 解码的嵌套对象及真实缺字段。
 
 摘要请求使用 `checksum` 对象，字段名称保持 AWS 模型原名，例如 `ChecksumAlgorithm`、`ChecksumSHA256`、`ChecksumType`。`put_http`、分块创建/上传/完成支持对应模型的实际字段；完成请求的 `parts` 项可携带各块 `Checksum*`。`head_http` 可选 `checksum_mode=ENABLED`，`get_part` 支持同类输入。响应 `checksum` 仅包含 SDK 实际解码的摘要字段；HTTP 原始头独立保留。握手按真实模型声明 `checksum_sha256`/`checksum_sha1`/`checksum_crc32`/`checksum_crc32c`/`checksum_crc64nvme` 与 `checksum_type`，未知或该模型不支持的字段在发起 HTTP 前拒绝。
+
+
+`delete_many_versions.objects` 的可选 `etag`、`last_modified_ms`、`size` 分别进入官方 ObjectIdentifier 的 ETag、LastModifiedTime、Size 字段；要求 `delete_many_conditions` 能力。固定旧 Java SDK 不提供这些字段，入口明确拒绝；不通过自造 XML 绕过。对象数组及每项字段严格校验，未知字段、错误类型或整数越界整请求在 HTTP 前失败，零大小和 epoch 0 保留。`head_version.last_modified_ms` 仅返回 SDK 实际解码的修改时间。
+
+`mp_copy` 的可选 `version_id` 要求 `mp_copy_version`。固定 C++ SDK 只提供 CopySource 路径字段，桥接通过官方 Request 的虚方法扩展：基类编码路径，再追加单独编码的 `?versionId=` 参数，随后由官方签名器发送；普通 Copy 和 UploadPartCopy 共用规则。版本参数不存在、空字符串、字面 `null` 和特殊字符分别验证，不能把整头解码后比较而掩盖路径/查询混淆。
+
+`api.GetBucketPolicyStatus`、`api.ListParts` 复用 typed API 模型入口。`sdk_error_message` 表示响应 `error_message` 暴露真实 SDK 的错误消息（可能为空或缺失），与包含异常上下文的 `error` 分开。
