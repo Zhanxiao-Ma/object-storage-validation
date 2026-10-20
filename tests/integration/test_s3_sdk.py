@@ -540,6 +540,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
+            expected.extend((target["id"],name) for target in self.targets for name in ("ceph_put_condition_match_existing","ceph_put_condition_none_etag","ceph_copy_condition_match_bad"))
             expected.extend((target["id"],name) for target in self.targets for name in expected_request_header_diagnostics())
             expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
@@ -555,7 +556,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),393)
+            self.assertEqual(len(report["coverage"]["catalog"]),405)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:

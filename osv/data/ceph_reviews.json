@@ -1794,6 +1794,78 @@
       "source_sha256": "6157296fad06fd58a2edac9a2367b79ee92bac21fecb39db7976f1749e42b67f",
       "implementation": "ceph_header_acl_length_none",
       "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_good@L3119",
+      "source_sha256": "6c1bf85a758517373e7dcaf31d436b588e2d5d08b093b6f7e0d389109082967f",
+      "implementation": "ceph_put_condition_match_etag",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_failed@L3140",
+      "source_sha256": "cd3c00b2dba432492325d57a12c6662be95e93be64fb596b9696d8e21f60b6fa",
+      "implementation": "ceph_put_condition_match_bad",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_overwrite_existed_good@L3162",
+      "source_sha256": "3e1c2a61a35282c5fac5fd618a63e60e869dcc4e93cb6117f69a56ece10b02bb",
+      "implementation": "ceph_put_condition_match_existing",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_nonexisted_failed@L3180",
+      "source_sha256": "05cbb04f76ca93d305f93bf347b248b72b803ed8d3a4e30abaf4b09d17f424aa",
+      "implementation": "ceph_put_condition_match_absent",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_good@L3197",
+      "source_sha256": "911e1a1c9a000a191b8ac67a50a747760665b375288d00fd571078e132298ed9",
+      "implementation": "ceph_put_condition_none_bad",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_failed@L3215",
+      "source_sha256": "b38812be3a622c437e4428c0d78ba23664867db925ff041509d2717f660ca197",
+      "implementation": "ceph_put_condition_none_etag",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_nonexisted_good@L3239",
+      "source_sha256": "28f4529bac7fd81a7c7255b2da0df8d75fc69cef0c40693b6b00d6d638a03012",
+      "implementation": "ceph_put_condition_none_absent",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_overwrite_existed_failed@L3253",
+      "source_sha256": "0b703009f4b877d865e199441f298bb49288fc0c1d454069f5552425072bae33",
+      "implementation": "ceph_put_condition_none_existing",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_object_ifmatch_good@L14028",
+      "source_sha256": "b853a1525893969562d1abef7f7698e00e2aacb3840083137e2a6d6701ffe954",
+      "implementation": "ceph_copy_condition_match_etag",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_object_ifmatch_failed@L14041",
+      "source_sha256": "908f78ac0a5b479629a5f0fc5efcc9c2d47964ee27b4405ba6c0f96d776ddf95",
+      "implementation": "ceph_copy_condition_match_bad",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_object_ifnonematch_good@L14054",
+      "source_sha256": "9a8aa223a7083b2d883c1454b3d9823497cee8c987b00e38ba7f0f95ff98407b",
+      "implementation": "ceph_copy_condition_none_etag",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_object_ifnonematch_failed@L14066",
+      "source_sha256": "e559588d7596c9bf4d6625ba51a24b1f97d123a77ef02c712fa4a58ded12dae8",
+      "implementation": "ceph_copy_condition_none_bad",
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
     }
   ]
 }

@@ -107,7 +107,7 @@ S3 侧的重试次数仍按配置生效。比较报告需保留该差异，不�
 # 默认正常档，或显式指定
 python3 -m osv run examples/selftest.json --profile normal --output results/normal-001
 # 同一套驱动执行更广的对象边界用例
-# 本地 reference 缺少版本控制/配置 API，完整档会如实报告 162 项 not_run 并退出 1
+# 本地 reference 缺少版本控制/配置 API，完整档会如实报告 174 项 not_run 并退出 1
 python3 -m osv run examples/selftest.json --profile complete --output results/complete-001
 # 换成 Java/C++ manifest 即执行对应真实 SDK；check 只校验配置
 python3 -m osv check examples/java-oss.json --profile complete
@@ -118,7 +118,7 @@ python3 -m osv catalog examples/java-oss.json --profile complete
 | 档位 | 当前兼容性目录 | 参考范围 |
 |---|---|---|
 | `normal` 正常档（默认） | 22 个门槛 + 2 个行为观察 | 锁定 objbench 的对象检查：256 MiB PUT、实际列举字段/排序、控制字符、三块并发并变长/变短重传；保留额外基础检查 |
-| `complete` 完善档 | 389 个门槛 + 4 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
+| `complete` 完善档 | 401 个门槛 + 4 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
 
 档位选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
 不依赖其二进制或 Python/Go SDK。完善档不等于 Ceph 全量覆盖，未实现范围在报告中明确列出。
