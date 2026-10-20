@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw"));
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
@@ -364,15 +364,23 @@ public final class WorkerMain {
                     for(software.amazon.awssdk.services.s3.model.S3Object object:page.contents()) keys.add(object.key());
                 return one("keys",keys);
             }
-            case "mp_create": return one("upload_id",client.createMultipartUpload(b->b.bucket(bucket).key(key)).uploadId());
+            case "mp_create": case "mp_create_metadata": {
+                software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest.builder().bucket(bucket).key(key);
+                if(q.has("content_type")) b.contentType(text(q,"content_type"));
+                if(q.has("metadata")) b.metadata(JSON.convertValue(q.get("metadata"),new com.fasterxml.jackson.core.type.TypeReference<Map<String,String>>(){}));
+                return one("upload_id",client.createMultipartUpload(b.build()).uploadId());
+            }
             case "mp_part": return one("etag",client.uploadPart(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id")).partNumber(q.get("part_number").asInt()),
                 software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))).eTag());
-            case "mp_complete": {
+            case "mp_complete": case "mp_complete_observed": case "mp_complete_empty": {
                 List<software.amazon.awssdk.services.s3.model.CompletedPart> parts=new ArrayList<>();
-                for(JsonNode part:q.get("parts")) parts.add(software.amazon.awssdk.services.s3.model.CompletedPart.builder().partNumber(part.get("part_number").asInt()).eTag(text(part,"etag")).build());
-                client.completeMultipartUpload(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id")).multipartUpload(m->m.parts(parts))); return empty();
+                for(JsonNode part:q.path("parts")) parts.add(software.amazon.awssdk.services.s3.model.CompletedPart.builder().partNumber(part.get("part_number").asInt()).eTag(text(part,"etag")).build());
+                software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id"));
+                if(!"mp_complete_empty".equals(op)) b.multipartUpload(m->m.parts(parts));
+                software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse result=client.completeMultipartUpload(b.build());
+                return withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
-            case "mp_abort": client.abortMultipartUpload(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id"))); return empty();
+            case "mp_abort": case "mp_abort_raw": client.abortMultipartUpload(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id"))); return empty();
             default: throw new UnsupportedOperationException(op);
             }
         }

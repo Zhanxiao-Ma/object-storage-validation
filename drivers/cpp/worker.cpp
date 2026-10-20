@@ -280,9 +280,11 @@ public:
                 request.SetContinuationToken(next);
             }
             return {{"keys", keys}};
-        } else if (op == "mp_create") {
+        } else if (op == "mp_create" || op == "mp_create_metadata") {
             Aws::S3::Model::CreateMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            if(q.contains("content_type")) request.SetContentType(q.at("content_type").get<std::string>());
+            if(q.contains("metadata")) for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             auto outcome = client->CreateMultipartUpload(request); checked(outcome);
             return {{"upload_id", std::string(outcome.GetResult().GetUploadId().c_str())}};
         } else if (op == "mp_part") {
@@ -296,18 +298,22 @@ public:
             request.SetBody(stream);
             auto outcome = client->UploadPart(request); checked(outcome);
             return {{"etag", std::string(outcome.GetResult().GetETag().c_str())}};
-        } else if (op == "mp_complete") {
+        } else if (op == "mp_complete" || op == "mp_complete_observed" || op == "mp_complete_empty") {
             Aws::S3::Model::CompleteMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             request.SetUploadId(q.at("upload_id").get<std::string>());
             Aws::S3::Model::CompletedMultipartUpload upload;
-            for (const auto& part : q.at("parts")) {
+            for (const auto& part : q.value("parts", json::array())) {
                 Aws::S3::Model::CompletedPart p;
                 p.SetPartNumber(part.at("part_number").get<int>()); p.SetETag(part.at("etag").get<std::string>());
                 upload.AddParts(p);
             }
-            request.SetMultipartUpload(upload); checked(client->CompleteMultipartUpload(request));
-        } else if (op == "mp_abort") {
+            if(op!="mp_complete_empty") request.SetMultipartUpload(upload);
+            json http;HttpObservationScope observation(&http);
+            auto outcome=client->CompleteMultipartUpload(request); checked(outcome);
+            if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
+            http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;
+        } else if (op == "mp_abort" || op == "mp_abort_raw") {
             Aws::S3::Model::AbortMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key); request.SetUploadId(q.at("upload_id").get<std::string>());
             checked(client->AbortMultipartUpload(request));
@@ -330,7 +336,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

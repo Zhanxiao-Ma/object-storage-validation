@@ -672,6 +672,84 @@
       "source_sha256": "ce4a6b2612fc335de7d0dfaa87c605ddb612db8a8c4a74c51fde0fa150e8bcfc",
       "implementation": "ceph_delete_many_v2_limit",
       "review": "保留固定源码的 3 键/1001 键、两次删除、Deleted 数量、Errors/Contents 字段缺失和实际 400 断言。V1/V2 真实分页计数；1001 键完整交给单次 SDK DeleteObjects，适配器不拆分或生成拒绝。SDK 固定响应合同证明请求到达；Moto 的接受行为保留为失败，实际资源清理另行验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_empty@L5988",
+      "source_sha256": "e10fe27d0e689abf469d8eef86f9732890431b2779d4fcd75e808d33c9c33b1c",
+      "implementation": "ceph_exact_multipart_empty",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_complete_without_create@L6001",
+      "source_sha256": "18c71d1f1955f785b1c17b27b3b27c6d39e2c25c289f841f091303e6e4a7a4f1",
+      "implementation": "ceph_exact_multipart_missing_upload",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_small@L6020",
+      "source_sha256": "ea219cb07d6d61fdf7a6a97c192445d700468d2182e0a7ea92529623b39f6743",
+      "implementation": "ceph_exact_multipart_small",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload@L6226",
+      "source_sha256": "06d832b8d1c7951aa3394867eaadfbbd05670d6b7297d867dd3123205abcdbaf",
+      "implementation": "ceph_exact_multipart_full",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_resend_part@L6331",
+      "source_sha256": "584b8eed78e485be2fa952dce00fb9ac6ea9bc47f7f495e015e6bd24b1c57f02",
+      "implementation": "ceph_exact_multipart_resend",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_multiple_sizes@L6342",
+      "source_sha256": "59cd52f703e2dce2b433f78a0357c27ac42a4dd9a65d84ac8a480563c38512de",
+      "implementation": "ceph_exact_multipart_sizes",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_size_too_small@L6411",
+      "source_sha256": "4e933a168addfcced83ef89606b3e1585267902a4834f43b9bffa8d9bbb0bf02",
+      "implementation": "ceph_exact_multipart_too_small",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_contents@L6458",
+      "source_sha256": "7a46114037da08d77d08f4e6a54529e8858a09987d8ade444d0dcaf88be2c80b",
+      "implementation": "ceph_exact_multipart_contents",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_overwrite_existing_object@L6462",
+      "source_sha256": "fb4025cf2a04c06c45e1f9d283dce3223333148ede5e62259318b096aa6bd651",
+      "implementation": "ceph_exact_multipart_overwrite",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_abort_multipart_upload@L6487",
+      "source_sha256": "5f87864969986d05f00bd09a68a7a5a9329d73e62fb34bb01241cc522ccb94f1",
+      "implementation": "ceph_exact_multipart_abort",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_abort_multipart_upload_not_found@L6499",
+      "source_sha256": "38ea2e212f83b72fce9e48d6cc60d8c8d9ca31212860e69f2568404b58d6dc2c",
+      "implementation": "ceph_exact_multipart_abort_missing",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_missing_part@L6587",
+      "source_sha256": "caaa9fde2a5b745241b87ec104233a650f36c38e4ff0c997619fdccb8b7e69d5",
+      "implementation": "ceph_exact_multipart_missing_part",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_incorrect_etag@L6606",
+      "source_sha256": "40435caae69631d75d97d790c92066d6d1b2064237cefc3f8fb1214220608dca",
+      "implementation": "ceph_exact_multipart_etag",
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
     }
   ]
 }

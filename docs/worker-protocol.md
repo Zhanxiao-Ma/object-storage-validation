@@ -113,3 +113,5 @@ Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id
 这些值来自 SDK；不按输入制造确认，也不把单对象失败藏在整体 HTTP 200 中。
 一次调用对应一次完整 SDK DeleteObjects，不做自动拆分或桥接层数量拒绝。
 文件参考驱动仅为工具自检实现基础非版本删除；版本请求明确拒绝且不声明版本能力。
+
+`mp_create_metadata` 使用实际 SDK 创建分块上传，可选 `content_type`/`metadata`；返回真实 `upload_id`。`mp_complete_observed` 接收调用者原始 `parts` 顺序，返回实际 `etag`、`status_code`、`http_headers`；不排序或合成 ETag。`mp_complete_empty` 省略完成请求体，用于原始 Ceph MalformedXML 场景。`mp_abort_raw` 保留实际 NoSuchUpload 等错误，不能转换为幂等成功。以上精确能力目前为 AWS Java/C++ 链路；其余 worker 不宣称支持。

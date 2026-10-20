@@ -18,6 +18,7 @@ import uuid
 root = Path(os.environ["OSV_REFERENCE_ROOT"]).resolve()
 root.mkdir(parents=True, exist_ok=True)
 base_root=root
+completed_uploads={}
 
 
 class OperationError(ValueError):
@@ -57,7 +58,7 @@ def execute(q):
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw"]}
     if op=="bucket_create_raw":
         if "bucket" not in q:raise ValueError("raw bucket creation requires explicit bucket")
         if root.exists():return {"status_code":200}
@@ -73,7 +74,9 @@ def execute(q):
         if any(file.is_file() and file.name!=".bucket.json" for file in root.rglob("*")):raise OperationError("BucketNotEmpty",409)
         for folder in sorted((file for file in root.rglob("*") if file.is_dir()),key=lambda file:len(file.parts),reverse=True):folder.rmdir()
         (root/".bucket.json").unlink()
-        root.rmdir();return {"status_code":204}
+        root.rmdir()
+        for ident in [ident for ident in completed_uploads if ident[0]==str(root)]:del completed_uploads[ident]
+        return {"status_code":204}
     if op in ("list_v1_page","list_v2_observed"):
         options={**q,"op":"list_page"}
         if "start_after" in q:options["marker"]=q["start_after"]
@@ -205,36 +208,46 @@ def execute(q):
         key.with_suffix(".json").unlink(missing_ok=True)
     elif op == "list":
         return {"keys":[obj["key"] for obj in inventory(q["prefix"])]}
-    elif op == "mp_create":
+    elif op in ("mp_create","mp_create_metadata"):
         ident = uuid.uuid4().hex
         (root/".uploads"/ident).mkdir(parents=True)
+        (root/".uploads"/ident/"metadata.json").write_text(json.dumps({"metadata":q.get("metadata",{}),"content_type":q.get("content_type","application/octet-stream")}))
         return {"upload_id": ident}
     elif op == "mp_part":
         if not (root/".uploads"/q["upload_id"]).exists():raise OperationError("NoSuchUpload")
         data = Path(q["body_path"]).read_bytes()
         (root/".uploads"/q["upload_id"]/str(q["part_number"])).write_bytes(data)
         return {"etag": hashlib.sha256(data).hexdigest()}
-    elif op == "mp_complete":
+    elif op in ("mp_complete","mp_complete_observed","mp_complete_empty"):
         parts = root/".uploads"/q["upload_id"]
-        if not parts.exists():raise OperationError("NoSuchUpload")
+        if not parts.exists():
+            saved=completed_uploads.get((str(root),q["upload_id"]))
+            if saved and saved[0]==q["key"] and saved[1]==q.get("parts"):return saved[2]
+            raise OperationError("NoSuchUpload",404)
+        if op=="mp_complete_empty" or not q.get("parts"):raise OperationError("MalformedXML",400)
         content = bytearray()
         for index,part in enumerate(q["parts"]):
             file=parts/str(part["part_number"])
-            if not file.exists():raise OperationError("InvalidPart")
+            if not file.exists():raise OperationError("InvalidPart",400)
             data = file.read_bytes()
             if hashlib.sha256(data).hexdigest() != part["etag"]:
-                raise OperationError("InvalidPart")
-            if index<len(q["parts"])-1 and len(data)<int(os.environ.get("OSV_REFERENCE_MIN_PART_SIZE",str(5*1024*1024))):
-                raise OperationError("EntityTooSmall")
+                raise OperationError("InvalidPart",400)
+            if index<len(q["parts"])-1 and len(data)<(5*1024*1024 if op=="mp_complete_observed" else int(os.environ.get("OSV_REFERENCE_MIN_PART_SIZE",str(5*1024*1024)))):
+                raise OperationError("EntityTooSmall",400)
             content.extend(data)
         key.parent.mkdir(parents=True, exist_ok=True)
         key.write_bytes(content)
-        remember(q["key"])
+        metadata=json.loads((parts/"metadata.json").read_text())
+        remember(q["key"],metadata["metadata"],metadata["content_type"])
+        result={"etag":hashlib.md5(content).hexdigest(),"status_code":200}
+        completed_uploads[(str(root),q["upload_id"])]=(q["key"],q["parts"],result)
         for part in parts.iterdir():
             part.unlink()
         parts.rmdir()
-    elif op == "mp_abort":
+        return result
+    elif op in ("mp_abort","mp_abort_raw"):
         parts = root/".uploads"/q["upload_id"]
+        if not parts.exists() and op=="mp_abort_raw":raise OperationError("NoSuchUpload",404)
         if parts.exists():
             for part in parts.iterdir():
                 part.unlink()

@@ -254,3 +254,5 @@ AWS C++ Curl 的响应头回调只在收到响应体数据时触发，无法覆�
 固定 Moto 不等同于标准或云厂商；断言中的源预期不因本地服务返回值而修改。
 
 批量删除合同使用 `OSV_RUN_DELETE_TESTS=1` 运行 `test_delete_many_sdk.py`，检查一次性 1001 键请求、混合结果、版本标记和 Quiet。
+
+分块 SDK 原始请求契约：`OSV_RUN_MULTIPART_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_multipart_sdk -v`。覆盖元数据头、完成 XML 顺序、服务端 ETag/请求 ID、空请求体及精确错误响应。

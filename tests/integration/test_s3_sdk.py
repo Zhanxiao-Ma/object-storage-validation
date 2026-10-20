@@ -130,6 +130,20 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(len(report["coverage"]["catalog"]),4);self.assertEqual(report["samples"],[])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
+    def test_exact_ceph_multipart_keeps_real_sizes_and_source_failures(self):
+        """Run 13 multipart translations through actual SDK IO; expect only Moto empty/missing-upload 500 mismatches and no remaining test buckets."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["ceph_exact_multipart"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
+            report=run(load_config(path),directory/"results")
+            failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
+            self.assertEqual(failures,{(target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload")})
+            self.assertEqual(len(report["coverage"]["catalog"]),13);self.assertEqual(report["samples"],[])
+            self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
     def test_cross_sdk_bulk_delete_consumes_actual_other_sdk_objects(self):
         """Write through one SDK and bulk-delete through the other in each direction; expect real empty listings and verified owned-bucket cleanup."""
         if len(self.targets)!=2:self.skipTest("requires both language workers")
@@ -220,6 +234,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
             expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
             expected.extend((target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2))
+            expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload"))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
