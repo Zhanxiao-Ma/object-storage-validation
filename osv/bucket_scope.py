@@ -13,9 +13,14 @@ class BucketScope:
         if not isinstance(self.name,str) or not re.fullmatch(r"osv-[0-9a-f]{32}",self.name):raise ValueError("isolated bucket must use the generated osv UUID namespace")
         self.created=False
         self.cleanup_completed=False
+        self.written_keys=set()
 
     def raw(self,op,**options):
         if "bucket" in options:raise ValueError("cannot override the owned bucket scope")
+        # Retain the real producer's opaque keys before a possibly ambiguous request.
+        # Typed XML list parsers can trim whitespace keys; they are still valid objects.
+        if op in ("put","put_http","put_metadata","copy","copy_replace","mp_create","mp_create_metadata","mp_complete","mp_complete_observed") and "key" in options:
+            self.written_keys.add(options["key"])
         return self.probe.ctx.worker.call({"op":op,"bucket":self.name,**options})
 
     def call(self,op,**options):
@@ -42,8 +47,18 @@ class BucketScope:
         try:
             exists=self.raw("bucket_head")
             if exists["ok"]:
-                for key in self.call("list",prefix="")["keys"]:self.call("delete",key=key)
-                self.call("bucket_delete")
+                failures=[]
+                for key in sorted(self.written_keys):
+                    result=self.raw("delete",key=key)
+                    if not result["ok"]:failures.append(result)
+                remaining=self.raw("list",prefix="")
+                if remaining["ok"]:
+                    for key in remaining["keys"]:
+                        result=self.raw("delete",key=key)
+                        if not result["ok"]:failures.append(result)
+                else:failures.append(remaining)
+                result=self.raw("bucket_delete")
+                if not result["ok"]:raise RuntimeError(str(result)+"; earlier cleanup responses: "+str(failures))
                 gone=self.raw("bucket_head")
                 if gone["ok"] or (gone.get("error_kind"),gone.get("status_code"))!=("not_found",404):raise RuntimeError("bucket absence not confirmed after deletion: "+str(gone))
             elif (exists.get("error_kind"),exists.get("status_code"))!=("not_found",404):raise RuntimeError(str(exists))

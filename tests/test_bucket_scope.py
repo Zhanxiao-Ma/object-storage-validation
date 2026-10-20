@@ -72,3 +72,61 @@ class BucketScopeTest(unittest.TestCase):
                         worker.process.kill();worker.process.wait(timeout=5)
                         raise AssertionError("original failure")
             finally:worker.close()
+
+    def test_original_written_keys_survive_lossy_listing_and_lost_write_response(self):
+        """Write opaque keys through real storage then trim only observed list values or lose a successful PUT response; expect original keys deleted and cleanup confirmed."""
+        for lost_response in (False,True):
+            with self.subTest(lost_response=lost_response),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=self.worker(directory);p=self.probe(worker,directory);original=worker.call;deleted=[]
+                def observe(request):
+                    result=original(request)
+                    if request["op"]=="list" and result["ok"]:result["keys"]=[key.strip() for key in result["keys"]]
+                    if request["op"]=="delete":deleted.append(request["key"])
+                    if lost_response and request["op"]=="put" and result["ok"]:return {"ok":False,"error_kind":"sdk_error","error":"write response lost"}
+                    return result
+                worker.call=observe;scope=BucketScope(p)
+                try:
+                    with self.assertRaisesRegex((AssertionError,RuntimeError),"write response lost" if lost_response else "original failure"):
+                        with scope as bucket:
+                            for key in (" ","\t","\n","\r\n"," real "):bucket.put(key,b"true-producer-value")
+                            raise AssertionError("original failure")
+                    self.assertTrue(scope.cleanup_completed)
+                    self.assertEqual(set(deleted),{" "} if lost_response else {" ","\t","\n","\r\n"," real "})
+                    self.assertEqual(original({"op":"bucket_head","bucket":scope.name})["status_code"],404)
+                    self.assertEqual([file for file in (directory/"objects").rglob("*") if file.is_file()],[])
+                finally:worker.close()
+
+    def test_cleanup_uses_final_bucket_absence_after_ambiguous_delete_or_list(self):
+        """Lose a real deletion response or fail listing after known-key cleanup; expect final actual bucket deletion/HEAD to establish cleanup without relaxing object-case assertions."""
+        for broken in ("delete_response","list_response"):
+            with self.subTest(broken=broken),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=self.worker(directory);p=self.probe(worker,directory);original=worker.call
+                def observe(request):
+                    result=original(request)
+                    if (request["op"]=="delete" and broken=="delete_response") or (request["op"]=="list" and broken=="list_response"):
+                        return {"ok":False,"error_kind":"sdk_error","status_code":500,"error":"response lost after real operation"}
+                    return result
+                worker.call=observe;scope=BucketScope(p)
+                try:
+                    with scope as bucket:bucket.put("opaque-key",b"actual-producer")
+                    self.assertTrue(scope.cleanup_completed)
+                    self.assertEqual(original({"op":"bucket_head","bucket":scope.name})["status_code"],404)
+                finally:worker.close()
+
+    def test_persistent_delete_denial_cannot_be_reported_as_clean(self):
+        """Deny both actual cleanup delete attempts while keeping real producer bytes; expect nonempty-bucket failure and cleanup_completed false."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);worker=self.worker(directory);p=self.probe(worker,directory);original=worker.call
+            def deny(request):
+                if request["op"]=="delete":return {"ok":False,"error_kind":"sdk_error","status_code":403,"error":"independent deletion denial"}
+                return original(request)
+            worker.call=deny;scope=BucketScope(p)
+            try:
+                with self.assertRaisesRegex(RuntimeError,"isolated bucket cleanup failed.*independent deletion denial"):
+                    with scope as bucket:bucket.put("still-present",b"actual-producer")
+                self.assertFalse(scope.cleanup_completed)
+                self.assertTrue(original({"op":"get","bucket":scope.name,"key":"still-present","output_path":str(p.ctx.output)})["ok"])
+                self.assertEqual(p.ctx.output.read_bytes(),b"actual-producer")
+                self.assertTrue(original({"op":"delete","bucket":scope.name,"key":"still-present"})["ok"])
+                self.assertTrue(original({"op":"bucket_delete","bucket":scope.name})["ok"])
+            finally:worker.close()
