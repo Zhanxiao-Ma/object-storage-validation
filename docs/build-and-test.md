@@ -246,3 +246,9 @@ HTTP 测试用 `OSV_PAGE_TEST_TARGETS` 选择链路，标签/写入和 HEAD 字�
 它把零字节成功 GET 表示为空指针流；worker 只在实际 HTTP 200、显式 Content-Length=0 且对象长度为零时写出空文件，仍检查文件 IO 错误。
 AWS C++ Curl 的响应头回调只在收到响应体数据时触发，无法覆盖空 PUT/HEAD/DELETE；worker 通过公开 HTTP factory 委托官方 Curl 客户端并检查实际响应。
 无 HTTP 响应的连接错误保留 SDK 原错误，不构造成功状态。
+
+
+精确桶/列举合同测试分别使用 `OSV_RUN_BUCKET_TESTS=1` 和 `OSV_RUN_LIST_TESTS=1`，
+通过 `OSV_S3_TEST_LANGUAGES=java,cpp` 选择已经构建的实际 AWS SDK workers。
+`test_s3_sdk.py` 还在独立 Moto 服务中执行桶生命周期和完整 LIST 场景，检查失败路径清理与默认桶数据隔离。
+固定 Moto 不等同于标准或云厂商；断言中的源预期不因本地服务返回值而修改。

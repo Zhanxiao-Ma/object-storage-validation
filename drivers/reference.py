@@ -6,6 +6,7 @@ and read; multipart state lives separately until the completion operation commit
 """
 import hashlib
 from email.utils import formatdate
+from urllib.parse import quote
 import json
 import os
 import re
@@ -16,13 +17,15 @@ import uuid
 
 root = Path(os.environ["OSV_REFERENCE_ROOT"]).resolve()
 root.mkdir(parents=True, exist_ok=True)
+base_root=root
 
 
 class OperationError(ValueError):
     """Represent a rejected local object operation with an explicit semantic code, not an SDK claim."""
-    def __init__(self,code):
+    def __init__(self,code,status=None):
         super().__init__(code)
         self.code=code
+        self.status=status
 
 
 def path(key):
@@ -49,10 +52,60 @@ def inventory(prefix):
 
 
 def execute(q):
+    global root
+    root=base_root if "bucket" not in q else base_root/".buckets"/hashlib.sha256(q["bucket"].encode()).hexdigest()
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed"]}
+    if op=="bucket_create_raw":
+        if "bucket" not in q:raise ValueError("raw bucket creation requires explicit bucket")
+        if root.exists():return {"status_code":200}
+        root.mkdir(parents=True)
+        (root/".bucket.json").write_text(json.dumps({"name":q["bucket"],"location":q.get("location")}))
+        return {"status_code":200}
+    if op in ("bucket_head","bucket_delete","bucket_location") or "bucket" in q:
+        if not root.exists():raise OperationError("NoSuchBucket",404)
+    if op=="bucket_head":return {"status_code":200}
+    if op=="bucket_location":return {"location":json.loads((root/".bucket.json").read_text()).get("location"),"status_code":200}
+    if op=="bucket_delete":
+        if "bucket" not in q:raise ValueError("raw bucket deletion requires explicit bucket")
+        if any(file.is_file() and file.name!=".bucket.json" for file in root.rglob("*")):raise OperationError("BucketNotEmpty",409)
+        for folder in sorted((file for file in root.rglob("*") if file.is_dir()),key=lambda file:len(file.parts),reverse=True):folder.rmdir()
+        (root/".bucket.json").unlink()
+        root.rmdir();return {"status_code":204}
+    if op in ("list_v1_page","list_v2_observed"):
+        options={**q,"op":"list_page"}
+        if "start_after" in q:options["marker"]=q["start_after"]
+        page=execute(options);v2=op=="list_v2_observed"
+        fields=["Name","Prefix","MaxKeys","IsTruncated"]
+        if q.get("delimiter"):fields.append("Delimiter")
+        if page["objects"]:fields.append("Contents")
+        if page["common_prefixes"]:fields.append("CommonPrefixes")
+        for item in page["objects"]:
+            item["etag"]=chr(34)+item["etag"]+chr(34)
+            item["storage_class"]="STANDARD"
+            if not v2 or q.get("fetch_owner",False):item["owner"]={"id":str(path(item["key"]).stat().st_uid)}
+        page.update(status_code=200,http_headers={},fields=fields,delimiter=q.get("delimiter") or None,field_presence_source="local_model")
+        if v2:
+            page["key_count"]=len(page["keys"])+len(page["common_prefixes"]);fields.append("KeyCount")
+            page["token"]=q.get("token");page["start_after"]=q.get("start_after")
+            if "token" in q:fields.append("ContinuationToken")
+            if "start_after" in q:fields.append("StartAfter")
+            if page["truncated"]:fields.append("NextContinuationToken")
+            else:page["next_token"]=None
+        else:
+            page["marker"]=q.get("marker","");fields.append("Marker")
+            page["next_marker"]=page["next_token"] if page["truncated"] and q.get("delimiter") else None
+            if page["next_marker"] is not None:fields.append("NextMarker")
+            page.pop("next_token",None)
+        if q.get("encoding_type")=="url":
+            fields.append("EncodingType");page["encoding_type"]="url"
+            for name in ("keys","common_prefixes"):page[name]=[quote(value,safe="/") for value in page[name]]
+            for item in page["objects"]:item["key"]=quote(item["key"],safe="/")
+            for name in ("prefix","delimiter","marker","next_marker","start_after"):
+                if page.get(name) is not None:page[name]=quote(page[name],safe="/")
+        return page
     key = path(q.get("key", "unused"))
     if op == "bucket_create":
         root.mkdir(exist_ok=True,parents=True)
@@ -187,9 +240,10 @@ for line in sys.stdin:
     try:
         result = {**execute(json.loads(line)), "ok": True}
     except OperationError as error:
-        result={"ok":False,"error_kind":"local_error","error_code":error.code,"error":str(error)}
+        result={"ok":False,"error_kind":"not_found" if error.status==404 else "local_error","error_code":error.code,"error":str(error)}
+        if error.status is not None:result["status_code"]=error.status
     except FileNotFoundError:
-        result = {"ok": False, "error_kind": "not_found", "error": "file missing"}
+        result = {"ok": False, "error_kind": "not_found", "error_code":"NoSuchKey", "status_code":404, "error": "file missing"}
     except Exception as error:
         result = {"ok": False, "error_kind": "local_error", "error": str(error)}
     result["elapsed_ns"] = time.monotonic_ns()-start

@@ -1,12 +1,15 @@
 #include "stream_io.h"
 #include "object_metadata.h"
 #include "http_observer.h"
+#include "list_observation.h"
 #include <aws/s3/model/CreateBucketRequest.h>
 #include <aws/s3/model/CopyObjectRequest.h>
 #include <aws/s3/model/PutObjectTaggingRequest.h>
 #include <aws/s3/model/GetObjectTaggingRequest.h>
 #include <aws/s3/model/DeleteObjectTaggingRequest.h>
 #include <aws/s3/model/HeadBucketRequest.h>
+#include <aws/s3/model/DeleteBucketRequest.h>
+#include <aws/s3/model/GetBucketLocationRequest.h>
 #include <aws/core/Aws.h>
 #include <aws/core/http/HttpResponse.h>
 #include <aws/core/VersionConfig.h>
@@ -20,6 +23,7 @@
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/HeadObjectRequest.h>
 #include <aws/s3/model/ListObjectsV2Request.h>
+#include <aws/s3/model/ListObjectsRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
 #include <nlohmann/json.hpp>
@@ -87,8 +91,48 @@ public:
     }
     json execute(const json& q) {
         std::string op = q.at("op"), key = q.value("key", "");
+        const std::string& bucket=q.contains("bucket")?q.at("bucket").get_ref<const std::string&>():this->bucket;
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
+        if(op=="list_v1_page" || op=="list_v2_observed") {
+            json observed;HttpObservationScope observation(&observed,true);
+            if(op=="list_v1_page") {
+                Aws::S3::Model::ListObjectsRequest request;request.SetBucket(bucket);
+                if(q.contains("prefix")) request.SetPrefix(q.at("prefix").get<std::string>());
+                if(q.contains("delimiter")) request.SetDelimiter(q.at("delimiter").get<std::string>());
+                if(q.contains("marker")) request.SetMarker(q.at("marker").get<std::string>());
+                if(q.contains("max_keys")) request.SetMaxKeys(q.at("max_keys").get<int>());
+                if(q.contains("encoding_type")) request.SetEncodingType(Aws::S3::Model::EncodingTypeMapper::GetEncodingTypeForName(q.at("encoding_type").get<std::string>()));
+                auto outcome=client->ListObjects(request);checked(outcome);return observed_list_page(outcome.GetResult(),observed);
+            }
+            Aws::S3::Model::ListObjectsV2Request request;request.SetBucket(bucket);
+            if(q.contains("prefix")) request.SetPrefix(q.at("prefix").get<std::string>());
+            if(q.contains("delimiter")) request.SetDelimiter(q.at("delimiter").get<std::string>());
+            if(q.contains("start_after")) request.SetStartAfter(q.at("start_after").get<std::string>());
+            if(q.contains("token")) request.SetContinuationToken(q.at("token").get<std::string>());
+            if(q.contains("max_keys")) request.SetMaxKeys(q.at("max_keys").get<int>());
+            if(q.contains("fetch_owner")) request.SetFetchOwner(q.at("fetch_owner").get<bool>());
+            if(q.contains("encoding_type")) request.SetEncodingType(Aws::S3::Model::EncodingTypeMapper::GetEncodingTypeForName(q.at("encoding_type").get<std::string>()));
+            auto outcome=client->ListObjectsV2(request);checked(outcome);return observed_list_page(outcome.GetResult(),observed);
+        }
+        if(op=="bucket_create_raw" || op=="bucket_head" || op=="bucket_delete" || op=="bucket_location") {
+            json http;HttpObservationScope observation(&http);
+            if(op=="bucket_create_raw") {
+                Aws::S3::Model::CreateBucketRequest request;request.SetBucket(bucket);
+                if(q.contains("location")) {Aws::S3::Model::CreateBucketConfiguration configuration;configuration.SetLocationConstraint(Aws::S3::Model::BucketLocationConstraintMapper::GetBucketLocationConstraintForName(q.at("location").get<std::string>()));request.SetCreateBucketConfiguration(configuration);}
+                checked(client->CreateBucket(request));
+            } else if(op=="bucket_head") {
+                Aws::S3::Model::HeadBucketRequest request;request.SetBucket(bucket);checked(client->HeadBucket(request));
+            } else if(op=="bucket_delete") {
+                Aws::S3::Model::DeleteBucketRequest request;request.SetBucket(bucket);checked(client->DeleteBucket(request));
+            } else {
+                Aws::S3::Model::GetBucketLocationRequest request;request.SetBucket(bucket);auto outcome=client->GetBucketLocation(request);checked(outcome);
+                auto location=Aws::S3::Model::BucketLocationConstraintMapper::GetNameForBucketLocationConstraint(outcome.GetResult().GetLocationConstraint());
+                http["location"]=location.empty()?json(nullptr):json(std::string(location.c_str()));
+            }
+            if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
+            return http;
+        }
         if(op=="copy" || op=="copy_replace") {
             Aws::S3::Model::CopyObjectRequest request; request.SetBucket(bucket); request.SetKey(key);
             request.SetCopySource(q.value("source_bucket",bucket)+"/"+q.at("source_key").get<std::string>());
@@ -261,7 +305,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

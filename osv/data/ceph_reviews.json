@@ -162,6 +162,492 @@
       "source_sha256": "db3e5f669c473cc45c33869eab8d82450e2f4519601ab77e2fb241bf59e9b983",
       "implementation": "ceph_literal_update",
       "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_head@L3345",
+      "source_sha256": "48f2d536fd27fce40aa5067a719c21930a22ca25adcc3c63b6ea481bc73e599a",
+      "implementation": "ceph_bucket_head",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_delete_nonempty@L1537",
+      "source_sha256": "eaa0b935f96b64afafcb8bbdc294efe4120e0140e56916e54b7c00e6534dccf0",
+      "implementation": "ceph_bucket_delete_nonempty",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_delete@L1607",
+      "source_sha256": "342984cd4e0347376e1dfe69c5a089b8b6e8508b9a98df04e06ab12dc23aeb73",
+      "implementation": "ceph_bucket_create_delete",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_read_not_exist@L1618",
+      "source_sha256": "36239560d17ce4c6fe0ad0bdee481d8d391f72b5d0423001a863e956b270e367",
+      "implementation": "ceph_bucket_missing_key",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_head_notexist@L3352",
+      "source_sha256": "b93995b60ed251fba065b73054bb3c4e84761750f789128028259b5bc2cd96eb",
+      "implementation": "ceph_bucket_missing_head",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_delete_notexist@L1527",
+      "source_sha256": "b3250e216fab861645e9f50453b03e72816f17fdc99aceab403e05b695cba409",
+      "implementation": "ceph_bucket_missing_delete",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucketv2_notexist@L1517",
+      "source_sha256": "51c5509261c1adff457e3ade28689c3b2ed8789017de44f1661d1065a6c2720f",
+      "implementation": "ceph_bucket_missing_list_v2",
+      "review": "逐项核对固定源码的实际 HTTP 状态/错误码与输入。使用真实独立 UUID 桶；保留 foo 内容、bar 缺失键和重复删除。额外 HEAD 建立不存在前置条件；用例后清理对象与桶并确认不存在。已通过 Java/C++ AWS SDK→Moto；其它原生驱动未接入，不算通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_basic@L207",
+      "source_sha256": "cc4099df9b6616cf02c7a0e974d2a7920922b41c073eb7d268da328677316932",
+      "implementation": "ceph_exact_list_v1_delimiter_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_alt@L366",
+      "source_sha256": "c9ab39b427540396aa6e45f57c1d31bdc2b17a97eb08644f6572b896e21cb863",
+      "implementation": "ceph_exact_list_v1_delimiter_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_percentage@L443",
+      "source_sha256": "a84fc504f87ef71156f8bdcb2969f831f9729097edf6f94d5bc17b7dfdc35086",
+      "implementation": "ceph_exact_list_v1_delimiter_percentage",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_whitespace@L474",
+      "source_sha256": "e008b5bbeae833b7497f8acc164811b712657fcceceb063f6811f71725e2239e",
+      "implementation": "ceph_exact_list_v1_delimiter_whitespace",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_dot@L505",
+      "source_sha256": "7862e9eccd72f6a4707c28726d1dd82f8d3591a1138ea1a3ac802a00409d7a4b",
+      "implementation": "ceph_exact_list_v1_delimiter_dot",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_unreadable@L536",
+      "source_sha256": "83ff8b187d65e91544f167a0b75f57fa6d6255f2b43f12b72c9fdbffc91859c3",
+      "implementation": "ceph_exact_list_v1_delimiter_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_empty@L563",
+      "source_sha256": "171ef1aee2298dd702987ae50b7330c53341edc88a29d07308c35b2dfa273498",
+      "implementation": "ceph_exact_list_v1_delimiter_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_none@L592",
+      "source_sha256": "7be0e0bff3d81584dc82aa56fe7615e3f288901c7246a3dc7927e5d098dc8d06",
+      "implementation": "ceph_exact_list_v1_delimiter_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_not_exist@L651",
+      "source_sha256": "dbc2f0a9ad90e9eae563a23f5c67da96cae3fa76af6d910f991b995d51d2901b",
+      "implementation": "ceph_exact_list_v1_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_basic@L697",
+      "source_sha256": "504f2a2297c2a9b0d8f9bb90b3af9aaf3c40ea3c9a02900e42538e08145da94c",
+      "implementation": "ceph_exact_list_v1_prefix_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_alt@L725",
+      "source_sha256": "ce8f3345e366fe51c69dd14adcb6ffba2b489e0dd0b67647fa2de5223f72bb0e",
+      "implementation": "ceph_exact_list_v1_prefix_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_empty@L752",
+      "source_sha256": "37284efeccd125813a133a21eec224920ff42aaf1f3e73e80506bd670f05e70b",
+      "implementation": "ceph_exact_list_v1_prefix_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_none@L779",
+      "source_sha256": "a04070d1aee0fe8d77821a5de69cede66c040f8970099806de8dec8730cac312",
+      "implementation": "ceph_exact_list_v1_prefix_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_not_exist@L806",
+      "source_sha256": "bf43cb3c8abcfb6f01f1a2ba6eecdc931374abad0dc9e9824f7d6536639ded2a",
+      "implementation": "ceph_exact_list_v1_prefix_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_unreadable@L833",
+      "source_sha256": "a8632c806606b0bf9bb9edad277137fd99da41659040c147405d56142f041495",
+      "implementation": "ceph_exact_list_v1_prefix_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_delimiter_basic@L860",
+      "source_sha256": "87abb3d764648609ece5e65184ecc26eecec720d63196f193401fdf63bcd5047",
+      "implementation": "ceph_exact_list_v1_prefix_delimiter_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_delimiter_alt@L889",
+      "source_sha256": "946d3aba8f1d3684d7ac16406451185ba2638ed09ccbb779290796c9d78d69d9",
+      "implementation": "ceph_exact_list_v1_prefix_delimiter_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_delimiter_prefix_not_exist@L918",
+      "source_sha256": "aa8bea2fe18ae71f6fb9103dc13e2d216c5e3725783721c5db0db64b87c11114",
+      "implementation": "ceph_exact_list_v1_prefix_delimiter_prefix_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_delimiter_delimiter_not_exist@L943",
+      "source_sha256": "c88bc82155517d5609b852ef275a27a624da0ec94fa2e9ab142244f5118d98c8",
+      "implementation": "ceph_exact_list_v1_prefix_delimiter_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_prefix_delimiter_prefix_delimiter_not_exist@L968",
+      "source_sha256": "48f69d0f1813246d0099b44f184c683b4de0bc1cf8992834af1276cccc15e62e",
+      "implementation": "ceph_exact_list_v1_prefix_delimiter_prefix_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_maxkeys_zero@L1030",
+      "source_sha256": "8b1ba16b09133c6b106a8b3f1d3c210646a96dbba99101fc29fea0ea7a23d7d3",
+      "implementation": "ceph_exact_list_v1_maxkeys_zero",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_maxkeys_none@L1053",
+      "source_sha256": "7ec3f34c01790314157d9eb64bb1d987834c04ba6610c9593b2f9fe924529201",
+      "implementation": "ceph_exact_list_v1_maxkeys_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_encoding_basic@L250",
+      "source_sha256": "a13681732e47118c075386b09186c5de70ab5e65581ecaf1965a3b524f66bdf2",
+      "implementation": "ceph_exact_list_v1_encoding_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_basic@L221",
+      "source_sha256": "2cec37d21a6b2dc28a825918e6ac916af301486af83bfec30374563b58949d88",
+      "implementation": "ceph_exact_list_v2_delimiter_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_alt@L383",
+      "source_sha256": "16cb9866ce41169c68c8544ce1db39adc36f1303651a5e015aec0389b45b0401",
+      "implementation": "ceph_exact_list_v2_delimiter_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_percentage@L459",
+      "source_sha256": "67cca4c3cf6b7acc0183c210e1f2ba4ee4fbf7d6e79d6a9d47fdc544bcce388a",
+      "implementation": "ceph_exact_list_v2_delimiter_percentage",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_whitespace@L490",
+      "source_sha256": "246174ef2e5b7fa6f7ef799e90d36fa1b1a4f73b2f6de3bba1dfa9382e2f9cf6",
+      "implementation": "ceph_exact_list_v2_delimiter_whitespace",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_dot@L521",
+      "source_sha256": "5a1d5a077f8c40373a5a2f0ce4e6090b0ddebe17b5e88d7365b4229f603f0bf6",
+      "implementation": "ceph_exact_list_v2_delimiter_dot",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_unreadable@L550",
+      "source_sha256": "ff2ba2bfe141ddfee270097749ef7afcd4fb8f92b804e9fc50a1912a1d3d11fe",
+      "implementation": "ceph_exact_list_v2_delimiter_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_empty@L578",
+      "source_sha256": "9e36fc748fca7a2b065a9ef9040d1177045bac804f0a45a5df7752ab825fefa2",
+      "implementation": "ceph_exact_list_v2_delimiter_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_none@L607",
+      "source_sha256": "6bb1b12c74201d38a3756fd6bb984174ecc0cfc975b3fbdc3a44693950a2d4f1",
+      "implementation": "ceph_exact_list_v2_delimiter_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_not_exist@L666",
+      "source_sha256": "00d42d653658d1cdf96c39f3fbe8ddbb69d4e2b0539bf963630b24b8ad366e8a",
+      "implementation": "ceph_exact_list_v2_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_basic@L711",
+      "source_sha256": "48c8cd0d9bc1528092dce3afced2451540b6c482e88068fd14b1d7a1be92d01f",
+      "implementation": "ceph_exact_list_v2_prefix_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_alt@L739",
+      "source_sha256": "e87234415f69f6830882c8de8c2da4d2ba0aa8b4de703003367ea9647187a74e",
+      "implementation": "ceph_exact_list_v2_prefix_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_empty@L766",
+      "source_sha256": "b61e32c2e5f62c6bbd60bd99edcae86a0d505184d235a3710630cdaeb78dab53",
+      "implementation": "ceph_exact_list_v2_prefix_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_none@L793",
+      "source_sha256": "69260bea71baaf2323d00d27001b006995d8db7d2fb340b0aa77a3dd08786a2d",
+      "implementation": "ceph_exact_list_v2_prefix_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_not_exist@L820",
+      "source_sha256": "c0fae98df474b77bccaa5461e95a8c718f050d59f7853f39e221037bc4af4853",
+      "implementation": "ceph_exact_list_v2_prefix_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_unreadable@L847",
+      "source_sha256": "695ea35f3a149094085afa5291ebd8ccc18574efa2df273b50b1a38deca70c5c",
+      "implementation": "ceph_exact_list_v2_prefix_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_delimiter_basic@L875",
+      "source_sha256": "48a77fc87e071f0d411a1b600c602e95190b20d20e495940d8aec6f9a0e77b54",
+      "implementation": "ceph_exact_list_v2_prefix_delimiter_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_delimiter_alt@L904",
+      "source_sha256": "30063d7620ddadcfa2a9a3ddb5425ec0e84ec5f2ea32246de931f6a8af654366",
+      "implementation": "ceph_exact_list_v2_prefix_delimiter_alt",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_delimiter_prefix_not_exist@L931",
+      "source_sha256": "17ddeda302f27f78556ad491cb529df0515e1ce1f640b08aece0f3ef6413c5ad",
+      "implementation": "ceph_exact_list_v2_prefix_delimiter_prefix_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_delimiter_delimiter_not_exist@L956",
+      "source_sha256": "873ed8f78be3b496ea5a306bef0f2ebf7a912c3c1dc815ce362a9af97a82e543",
+      "implementation": "ceph_exact_list_v2_prefix_delimiter_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_prefix_delimiter_prefix_delimiter_not_exist@L981",
+      "source_sha256": "edcdd6b3a68936daed90127fcb8a72aef87984db53a082fe7db34560190e9dc5",
+      "implementation": "ceph_exact_list_v2_prefix_delimiter_prefix_delimiter_not_exist",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_maxkeys_zero@L1042",
+      "source_sha256": "59817a3ed46ebcdaa831e58cb7510325c3e0bf0a41051fa46a1bba4b9798656e",
+      "implementation": "ceph_exact_list_v2_maxkeys_zero",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_maxkeys_none@L1065",
+      "source_sha256": "794c813aed4d4bb3689b8958eac6daa8bf4febaa6aa7b2746d573c1a93b0b33a",
+      "implementation": "ceph_exact_list_v2_maxkeys_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_encoding_basic@L237",
+      "source_sha256": "7f4ef2e104ac6adca4f19111b16130b7c71f704ad06c56bd96bf4bf335850a3b",
+      "implementation": "ceph_exact_list_v2_encoding_basic",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_many@L162",
+      "source_sha256": "12af17715d689fb5333149d7468f48e320f9648d7063b9c550cbbe0dfab79086",
+      "implementation": "ceph_exact_list_v1_many",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_maxkeys_one@L994",
+      "source_sha256": "58a0484c13972ba2dc1f45d1097e5369d8459e332c50dbe583056e3629fbebcf",
+      "implementation": "ceph_exact_list_v1_maxkeys_one",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_many@L180",
+      "source_sha256": "b753c07b5e4a4600d2b274acd8e153b8aa3aef89ace406a5545bc4e36360223e",
+      "implementation": "ceph_exact_list_v2_many",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_maxkeys_one@L1013",
+      "source_sha256": "36a7fbf5d504c36b18e23b516abbf53eacd7f277aea3605eea23faac6569ba4f",
+      "implementation": "ceph_exact_list_v2_maxkeys_one",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_prefix@L312",
+      "source_sha256": "9c7cb865d2b45c1950a4bc526c0387d129ffb78edfd05b6e10ee5f21f50aadfd",
+      "implementation": "ceph_exact_list_v1_delimiter_prefix",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_prefix_underscore@L400",
+      "source_sha256": "a0e603c2aee7de96dab15d967513e686a2353d5f82bd585702b10d885f1afe8c",
+      "implementation": "ceph_exact_list_v1_delimiter_prefix_underscore",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_prefix_ends_with_delimiter@L362",
+      "source_sha256": "362a7d84cbb1609aef4c2fb9f97a160d1eb724482ac7264fdf04691d395fd4a8",
+      "implementation": "ceph_exact_list_v1_delimiter_prefix_ends_with_delimiter",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_prefix@L335",
+      "source_sha256": "ac5193ba359ad8bb1191c1fb3bcb4bdcdb0a49bf2642f29b873baddb37b7829a",
+      "implementation": "ceph_exact_list_v2_delimiter_prefix",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_prefix_underscore@L422",
+      "source_sha256": "a0bedca336c1095a724a56b819e65f7b093a2df958c467afaab07b37aa2fb82e",
+      "implementation": "ceph_exact_list_v2_delimiter_prefix_underscore",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_prefix_ends_with_delimiter@L358",
+      "source_sha256": "0122c8d00ef7d36712c70f04cd342ca6d4603bcb100f1defa55e591c9f05dabb",
+      "implementation": "ceph_exact_list_v2_delimiter_prefix_ends_with_delimiter",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_marker_none@L1257",
+      "source_sha256": "f6d128c6940df5f626b9523444ad94c96855099e4bd592f377dd9a8d0a857ffd",
+      "implementation": "ceph_exact_list_v1_marker_none",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_marker_empty@L1266",
+      "source_sha256": "08f6bf0cc213f35c3739f983ff5584c9ba52bcb0cd12b75096cbee0e5e5696c0",
+      "implementation": "ceph_exact_list_v1_marker_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_marker_unreadable@L1323",
+      "source_sha256": "274714359264a104c02eeaf1fb76f09544209d49c61192531445724e02af9c51",
+      "implementation": "ceph_exact_list_v1_marker_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_marker_not_in_list@L1346",
+      "source_sha256": "821b785833a9e5284f8b36222042abdedf6fef22499c036fd80f1d0f01c767cc",
+      "implementation": "ceph_exact_list_v1_marker_not_in_list",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_marker_after_list@L1367",
+      "source_sha256": "63327b5a4e21643e735077d7505a2b10d7a63308d459ed2cf3c7343be1119388",
+      "implementation": "ceph_exact_list_v1_marker_after_list",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_startafter_unreadable@L1335",
+      "source_sha256": "649112fb6b7dfac656b5ff920ce6db5fb8bdb41cec1f2c97dcfa985d3e0a7d4c",
+      "implementation": "ceph_exact_list_v2_startafter_unreadable",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_startafter_not_in_list@L1357",
+      "source_sha256": "98de05935a91dcd49cee46219494be3a72dd413a7f119b658d8c8549923c8b8a",
+      "implementation": "ceph_exact_list_v2_startafter_not_in_list",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_startafter_after_list@L1379",
+      "source_sha256": "681d0bf0b4e09ff7c6964568517c561559a4802a83b78db9df40c45e3c26a023",
+      "implementation": "ceph_exact_list_v2_startafter_after_list",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_continuationtoken_empty@L1278",
+      "source_sha256": "a405ee8e0f6b32f2786677ea08ee75c25a56137b39ca7115f1ee040bc0377da6",
+      "implementation": "ceph_exact_list_v2_continuationtoken_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_continuationtoken@L1290",
+      "source_sha256": "ab51fdb2117372369e8e64839be1ae42e173e0446b463b1387fbdb0fbb2e7d65",
+      "implementation": "ceph_exact_list_v2_continuationtoken_walk",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_both_continuationtoken_startafter@L1307",
+      "source_sha256": "e5ec19e7e5d33c7588046f6bc321ce0cbda7978ee546c46a7ebd2e9ceef63639",
+      "implementation": "ceph_exact_list_v2_continuationtoken_both",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_fetchowner_notempty@L622",
+      "source_sha256": "843a5e3c7cd081c65666a5fd43d201ada5b89dca3f93ba0549cdcb845f4de63a",
+      "implementation": "ceph_exact_list_v2_fetchowner_notempty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_fetchowner_defaultempty@L632",
+      "source_sha256": "1c81787bdcf2901508c8a79ab85a5b8a45d755cc2571feeb91f8bd1a9172b3c7",
+      "implementation": "ceph_exact_list_v2_fetchowner_defaultempty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_fetchowner_empty@L642",
+      "source_sha256": "3e2a2cbf8b4bc3b8bea381402423971ce4161bd58d899ffc45b9c44fc0192dc7",
+      "implementation": "ceph_exact_list_v2_fetchowner_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_basic_key_count@L197",
+      "source_sha256": "629eadc87a37e820746bde56f1e874b77286f2b0863f6e6ed856acff64dada3d",
+      "implementation": "ceph_exact_list_v2_key_count",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_empty@L113",
+      "source_sha256": "f4eb1136f6e5e56180c80bde14ba78c9bc4cb7d3995246a2d85d0cb05dde2472",
+      "implementation": "ceph_exact_list_v1_bucket_empty",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_distinct@L119",
+      "source_sha256": "b30b8420cc01ae226a2f6acdf33914342797ad3d8d879a364224745c409848d9",
+      "implementation": "ceph_exact_list_v1_bucket_distinct",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_delimiter_not_skip_special@L682",
+      "source_sha256": "6958679e2ab212a771fc9ec3f3d7215e28766cff74f48c19cbc92936ce1f81ca",
+      "implementation": "ceph_exact_list_v1_delimiter_not_skip_special",
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
     }
   ]
 }

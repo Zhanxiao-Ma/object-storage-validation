@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed"));
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
@@ -135,6 +135,36 @@ public final class WorkerMain {
         });
         return metadata;
     }
+    /** Keep SDK field absence and Owner presence observable; request options never supply response metadata. */
+    static Map<String,Object> observedAwsPage(software.amazon.awssdk.services.s3.model.S3Response response,
+            List<software.amazon.awssdk.services.s3.model.S3Object> items,
+            List<software.amazon.awssdk.services.s3.model.CommonPrefix> prefixes,
+            boolean hasItems,boolean hasPrefixes,Map<String,Object> decoded,boolean v2) {
+        List<Map<String,Object>> objects=new ArrayList<>();List<String> keys=new ArrayList<>(),groups=new ArrayList<>(),present=new ArrayList<>();
+        for(software.amazon.awssdk.services.s3.model.S3Object item:items) {
+            if(item.key()==null) throw new IllegalStateException("SDK listing object has no Key");
+            Map<String,Object> row=new LinkedHashMap<>();row.put("key",item.key());keys.add(item.key());
+            if(item.size()!=null) row.put("size",item.size());
+            if(item.lastModified()!=null) row.put("last_modified_ms",millis(item.lastModified()));
+            if(item.eTag()!=null) row.put("etag",item.eTag());
+            if(item.storageClassAsString()!=null) row.put("storage_class",item.storageClassAsString());
+            if(item.owner()!=null) {
+                Map<String,Object> owner=new LinkedHashMap<>();
+                if(item.owner().id()!=null) owner.put("id",item.owner().id());
+                if(item.owner().displayName()!=null) owner.put("display_name",item.owner().displayName());
+                row.put("owner",owner);
+            }
+            objects.add(row);
+        }
+        for(software.amazon.awssdk.services.s3.model.CommonPrefix prefix:prefixes) groups.add(prefix.prefix());
+        decoded.forEach((name,value)->{if(value!=null)present.add(name);});
+        if(hasItems)present.add("Contents");if(hasPrefixes)present.add("CommonPrefixes");
+        Map<String,Object> observed=fields("keys",keys,"objects",objects,"common_prefixes",groups,"fields",present,
+            "prefix",decoded.get("Prefix"),"delimiter",decoded.get("Delimiter"),"max_keys",decoded.get("MaxKeys"),"truncated",decoded.get("IsTruncated"));
+        if(v2) observed.putAll(fields("key_count",decoded.get("KeyCount"),"token",decoded.get("ContinuationToken"),"next_token",decoded.get("NextContinuationToken"),"start_after",decoded.get("StartAfter")));
+        else observed.putAll(fields("marker",decoded.get("Marker"),"next_marker",decoded.get("NextMarker")));
+        return withHttp(observed,response.sdkHttpResponse().statusCode(),response.sdkHttpResponse().headers());
+    }
     static Map<String,Object> withMetadata(Map<String,Object> object,String contentType,Map<?,?> metadata) {
         Map<String,Object> result=new LinkedHashMap<>(object);
         result.put("content_type",contentType);
@@ -188,7 +218,45 @@ public final class WorkerMain {
         }
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
+            String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
             switch(op) {
+            case "list_v1_page": {
+                software.amazon.awssdk.services.s3.model.ListObjectsRequest.Builder request=software.amazon.awssdk.services.s3.model.ListObjectsRequest.builder().bucket(bucket);
+                if(q.has("prefix"))request.prefix(text(q,"prefix"));if(q.has("delimiter"))request.delimiter(text(q,"delimiter"));
+                if(q.has("marker"))request.marker(text(q,"marker"));if(q.has("max_keys"))request.maxKeys(q.get("max_keys").asInt());
+                if(q.has("encoding_type"))request.encodingType(text(q,"encoding_type"));
+                software.amazon.awssdk.services.s3.model.ListObjectsResponse result=client.listObjects(request.build());
+                return observedAwsPage(result,result.contents(),result.commonPrefixes(),result.hasContents(),result.hasCommonPrefixes(),
+                    fields("Name",result.name(),"Prefix",result.prefix(),"Delimiter",result.delimiter(),"Marker",result.marker(),"NextMarker",result.nextMarker(),"MaxKeys",result.maxKeys(),"IsTruncated",result.isTruncated(),"EncodingType",result.encodingTypeAsString()),false);
+            }
+            case "list_v2_observed": {
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Request.Builder request=software.amazon.awssdk.services.s3.model.ListObjectsV2Request.builder().bucket(bucket);
+                if(q.has("prefix"))request.prefix(text(q,"prefix"));if(q.has("delimiter"))request.delimiter(text(q,"delimiter"));
+                if(q.has("start_after"))request.startAfter(text(q,"start_after"));if(q.has("token"))request.continuationToken(text(q,"token"));
+                if(q.has("max_keys"))request.maxKeys(q.get("max_keys").asInt());if(q.has("fetch_owner"))request.fetchOwner(q.get("fetch_owner").asBoolean());
+                if(q.has("encoding_type"))request.encodingType(text(q,"encoding_type"));
+                software.amazon.awssdk.services.s3.model.ListObjectsV2Response result=client.listObjectsV2(request.build());
+                return observedAwsPage(result,result.contents(),result.commonPrefixes(),result.hasContents(),result.hasCommonPrefixes(),
+                    fields("Name",result.name(),"Prefix",result.prefix(),"Delimiter",result.delimiter(),"ContinuationToken",result.continuationToken(),"NextContinuationToken",result.nextContinuationToken(),"StartAfter",result.startAfter(),"KeyCount",result.keyCount(),"MaxKeys",result.maxKeys(),"IsTruncated",result.isTruncated(),"EncodingType",result.encodingTypeAsString()),true);
+            }
+            case "bucket_create_raw": {
+                software.amazon.awssdk.services.s3.model.CreateBucketRequest.Builder request=software.amazon.awssdk.services.s3.model.CreateBucketRequest.builder().bucket(bucket);
+                if(q.has("location")) request.createBucketConfiguration(c->c.locationConstraint(text(q,"location")));
+                software.amazon.awssdk.services.s3.model.CreateBucketResponse result=client.createBucket(request.build());
+                return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "bucket_head": {
+                software.amazon.awssdk.services.s3.model.HeadBucketResponse result=client.headBucket(b->b.bucket(bucket));
+                return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "bucket_delete": {
+                software.amazon.awssdk.services.s3.model.DeleteBucketResponse result=client.deleteBucket(b->b.bucket(bucket));
+                return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "bucket_location": {
+                software.amazon.awssdk.services.s3.model.GetBucketLocationResponse result=client.getBucketLocation(b->b.bucket(bucket));
+                return withHttp(one("location",result.locationConstraintAsString()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
             case "put_http": {
                 software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
                 if(q.has("cache_control")) request.cacheControl(text(q,"cache_control"));

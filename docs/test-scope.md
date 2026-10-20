@@ -8,7 +8,7 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 5；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源是场景参考，不表示逐字段复现上游用例。当前目录版本为 6；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/生命周期 5 项，总计 121 项（117 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项，总计 202 项（198 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -91,12 +91,39 @@ Moto 5.1.15 对 11 个标签返回 `BadRequest`，该项如实失败；固定响
 `ceph_headers` 新增原版 bar 对象的 HTTP 200 与带引号 MD5 ETag、Cache-Control、Expires（按秒比较），以及零对象 HEAD 和 bar/soup 写读更新删除。
 `put_http`/`head_http` 当前接入 Java/C++ AWS SDK，其余原生驱动相关项明确 `not_run`。
 
+### 独立测试桶
+
+`ceph_buckets` 在 Java/C++ AWS SDK 上新增 7 项：独立桶 HEAD、非空桶删除拒绝、创建后删除再删除、
+空桶内缺失对象，以及不存在桶的 HEAD/DELETE/LIST V2。
+这些用例创建 `osv-<32位 UUID>` 的真实临时桶，使用显式逐请求桶参数；正常档仍使用 manifest 配置桶。
+新桶先以实际 HEAD 404 确认不存在，拒绝复用已有名称。断言成功或失败后，都列举并删除自己的对象、删除桶，最后再 HEAD 确认不存在。
+JSON 结果记录 `isolated_bucket` 与 `cleanup_confirmed`。原生驱动尚未接入这些桶操作，相关项是 `not_run`。
+
+运行完善档需要凭据允许在该测试命名空间内创建桶、列举、读写删除对象及删除桶。
+创建请求遭遇结果不确定的传输错误时，报告保留测试桶名供核查；不会自动处理所有权不确定的桶。
+清理失败保留原断言和具体桶名，阻止性能结论。版本控制测试仍未迁移，当前清理器只处理普通对象。
+
+### 独立桶中的精确 LIST
+
+`ceph_exact_listing` 新增 74 项，分别调用真正的 ListObjects V1 和 ListObjectsV2。
+保留源数据集、空/省略 Prefix 和 Delimiter、MaxKeys=0/1/默认值、marker/start-after 回显、
+V1 NextMarker、V2 token 回显和优先级、KeyCount、Owner 有无、URL 编码及四组 delimiter 分页遍历。
+包含原版 1000 个目录键加 4 个特殊后继键的边界；测试数据实际上传，完成后逐项清理。
+
+Java 使用 SDK 模型的字段有无；C++ 通过官方 Curl 客户端的实际响应观察 XML 字段有无，
+随后将同一响应流复位交给真正的 SDK 解码。返回值始终来自 SDK getter，不使用请求参数补回响应值。
+这使缺失字段、空字符串、SDK 自身的解码表现可以区分。XML 观察仅用于显式 LIST 兼容操作，不用于性能阶段。
+
+Ceph 原始编码/回显等预期保持不变；当前 Java SDK 的 URL 解码及固定 Moto 的响应差异原样记录为失败，
+留待后续预期规则阶段处理。固定响应合同检查适配器观测是否准确，不把这些结果解释为云厂商兼容性结论。
+逐项映射中的 `reviewed_implementation` 指明实际完成全部源断言核对的用例，相关但未完整迁移的旧用例仍可同时列在 implementations 中。
+
 ### 未覆盖范围
 
 “完善档”是本工具的扩展对象语义档位，**不等于 Ceph 全量测试，也不是 S3 认证**。
 以下在报告中保留为未覆盖范围，不生成通过结果：
 
-- 桶删除、跨桶和账户管理场景；当前只创建/复用配置桶并使用随机对象前缀。
+- 桶命名规则、跨桶和账户管理场景；独立桶创建、HEAD、删除及部分错误场景已经迁移，完整组合仍待补齐。
 - 文件系统 chmod/chown/mtime。
 - 跨桶复制、UploadPartCopy、批量删除；同桶 CopyObject、元数据和条件 GET 已有具体迁移场景，完整边界仍在继续迁移。
 - 版本控制、ACL/Policy、加密、生命周期、对象锁、归档恢复。

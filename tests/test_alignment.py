@@ -53,7 +53,7 @@ class AlignmentTest(unittest.TestCase):
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
                 self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))
-                self.assertEqual(ceph["aligned"],27 if profile=="complete" else 0)
+                self.assertEqual(ceph["aligned"],108 if profile=="complete" else 0)
                 self.assertFalse(ceph["complete"])
                 self.assertGreater(ceph["not_migrated"],0)
                 self.assertEqual(len(result["cases"]),1005)
@@ -70,6 +70,7 @@ class AlignmentTest(unittest.TestCase):
             with patch("osv.alignment.inventory",return_value=data):result=audit(cfg,build_registry(cfg))
         row=next(row for row in result["cases"] if row["id"]==target["id"])
         self.assertEqual(row["status"],"partial")
+        self.assertIsNone(row["reviewed_implementation"])
         self.assertEqual(row["implementations"],["ceph_metadata_value"])
 
     def test_shadowed_upstream_names_are_not_double_counted_as_executable(self):

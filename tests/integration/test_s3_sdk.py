@@ -13,6 +13,19 @@ from osv.worker import Worker
 
 ROOT = Path(__file__).resolve().parents[2]
 
+# Pinned Moto response/template discrepancies and actual typed SDK outputs are independent of the source case oracles.
+# Original Ceph expectations remain unchanged; these helpers only assert that the local regression report preserves known failures.
+def expected_exact_list_diagnostics(language):
+    common={"ceph_exact_list_"+name for name in (
+        "v1_maxkeys_zero","v2_maxkeys_zero","v1_delimiter_prefix","v1_delimiter_prefix_underscore",
+        "v1_marker_none","v1_marker_empty","v1_marker_unreadable","v1_marker_not_in_list","v1_marker_after_list",
+        "v2_continuationtoken_empty","v2_continuationtoken_walk","v2_continuationtoken_both","v2_fetchowner_empty")}
+    if language=="java":common.update({"ceph_exact_list_v1_encoding_basic","ceph_exact_list_v2_encoding_basic"})
+    else:
+        common.update("ceph_exact_list_v"+str(version)+"_"+name for version in (1,2) for name in ("delimiter_whitespace","delimiter_unreadable","prefix_unreadable"))
+        common.update({"ceph_exact_list_v1_encoding_basic","ceph_exact_list_v2_startafter_unreadable"})
+    return common
+
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_SDK_TESTS") == "1", "enable explicitly after building both SDK workers")
 class SdkIntegrationTest(unittest.TestCase):
@@ -89,6 +102,61 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
+    def test_exact_ceph_listing_keeps_original_failures_and_cleans_every_bucket(self):
+        """Execute all 74 exact LIST translations through actual SDK IO; expect known Moto/SDK discrepancies, blocked performance and no leaked buckets."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["ceph_exact_listing"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual(len(report["coverage"]["catalog"]),74)
+            failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
+            self.assertEqual(failures,{(target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"])})
+            self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
+            self.assertEqual(report["samples"],[])
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
+    def test_ceph_bucket_cases_create_and_clean_actual_owned_buckets(self):
+        """Run the seven real SDK bucket scenarios; expect exact source responses, a usable default bucket and no extra buckets afterward."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["ceph_buckets"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual(len(report["coverage"]["catalog"]),7)
+            self.assertEqual([row for row in report["cases"] if row["status"]!="pass"],[])
+            self.assertTrue(report["samples"])
+            scopes=[row["evidence"] for row in report["cases"] if row.get("evidence")]
+            self.assertEqual(len(scopes),4*len(self.targets));self.assertTrue(all(row["cleanup_confirmed"] for row in scopes))
+            self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
+    def test_real_sdk_bucket_scope_cleans_after_failed_assertion(self):
+        """Fail inside the real bucket owner helper after a genuine SDK write/read; expect cleanup while independently stored default-bucket bytes survive."""
+        from osv.bucket_scope import BucketScope
+        from osv.scenarios import Context
+        from osv.suites import Probe
+        self.client.put_object(Bucket="osv-sdk-integration",Key="scope-sentinel",Body=b"configured-data")
+        try:
+            for target in self.targets:
+                with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,30)
+                    try:
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                        scope=BucketScope(Probe(ctx))
+                        with self.assertRaisesRegex(AssertionError,"deliberate source failure"):
+                            with scope as bucket:
+                                bucket.put("scope-sentinel",b"owned-data")
+                                bucket.call("get",key="scope-sentinel",output_path=str(ctx.output));self.assertEqual(ctx.output.read_bytes(),b"owned-data")
+                                raise AssertionError("deliberate source failure")
+                        self.assertTrue(scope.cleanup_completed)
+                        result=worker.call({"op":"get","key":"scope-sentinel","output_path":str(ctx.output)})
+                        self.assertTrue(result["ok"],result);self.assertEqual(ctx.output.read_bytes(),b"configured-data")
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+        finally:self.client.delete_object(Bucket="osv-sdk-integration",Key="scope-sentinel")
+
     def test_real_sdk_multikey_objbench_model(self):
         """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -105,7 +173,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_complete_profile_preserves_moto_zero_maxkeys_incompatibility(self):
-        """Run strict cases through real SDKs; expect Moto MaxKeys=0 plus C++ whitespace parsing discrepancies to fail and block performance."""
+        """Run the complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and blocked performance."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
@@ -115,6 +183,7 @@ class SdkIntegrationTest(unittest.TestCase):
             failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"]
             expected=[(target["id"],"ceph_list_maxkeys_zero") for target in self.targets]
             expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
+            expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))

@@ -5,8 +5,11 @@
 #include <aws/core/http/standard/StandardHttpRequest.h>
 #include <aws/core/http/HttpResponse.h>
 #include <aws/core/http/URI.h>
+#include <aws/core/utils/xml/XmlSerializer.h>
+#include <set>
 
 inline thread_local nlohmann::json* osv_http_destination=nullptr;
+inline thread_local bool osv_http_capture_xml_fields=false;
 
 /**
  * Capture status/headers even for empty service responses, where the SDK body callback never fires.
@@ -19,7 +22,24 @@ public:
         Aws::Utils::RateLimits::RateLimiterInterface* readLimiter=nullptr,
         Aws::Utils::RateLimits::RateLimiterInterface* writeLimiter=nullptr) const override {
         auto response=Aws::Http::CurlHttpClient::MakeRequest(request,readLimiter,writeLimiter);
-        if(osv_http_destination && response && static_cast<int>(response->GetResponseCode())>0) *osv_http_destination=http_observation(static_cast<int>(response->GetResponseCode()),response->GetHeaders());
+        if(osv_http_destination && response && static_cast<int>(response->GetResponseCode())>0) {
+            *osv_http_destination=http_observation(static_cast<int>(response->GetResponseCode()),response->GetHeaders());
+            if(osv_http_capture_xml_fields) {
+                auto& body=response->GetResponseBody();auto position=body.tellg();
+                if(position==std::streampos(-1)) throw std::runtime_error("cannot observe non-seekable XML response");
+                auto document=Aws::Utils::Xml::XmlDocument::CreateFromXmlStream(body);
+                body.clear();body.seekg(position);
+                if(!body) throw std::runtime_error("cannot restore SDK XML response stream");
+                std::set<std::string> names;
+                auto root=document.GetRootElement();
+                if(document.WasParseSuccessful() && !root.IsNull()) {
+                    (*osv_http_destination)["xml_root"]=std::string(root.GetName().c_str());
+                    for(auto node=root.FirstChild();!node.IsNull();node=node.NextNode()) names.emplace(node.GetName().c_str());
+                } else (*osv_http_destination)["xml_root"]=nullptr;
+                (*osv_http_destination)["fields"]=names;
+            }
+        }
+
         return response;
     }
 };
@@ -50,9 +70,10 @@ public:
  */
 class HttpObservationScope final {
     nlohmann::json* previous;
+    bool previous_xml;
 public:
-    explicit HttpObservationScope(nlohmann::json* destination):previous(osv_http_destination) {osv_http_destination=destination;}
-    ~HttpObservationScope() {osv_http_destination=previous;}
+    explicit HttpObservationScope(nlohmann::json* destination,bool capture_xml=false):previous(osv_http_destination),previous_xml(osv_http_capture_xml_fields) {osv_http_destination=destination;osv_http_capture_xml_fields=capture_xml;}
+    ~HttpObservationScope() {osv_http_destination=previous;osv_http_capture_xml_fields=previous_xml;}
     HttpObservationScope(const HttpObservationScope&)=delete;
     HttpObservationScope& operator=(const HttpObservationScope&)=delete;
 };

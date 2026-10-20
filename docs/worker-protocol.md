@@ -80,3 +80,25 @@ TOS Java CopySource 使用 form 风格的空格编码；复制源测试区分空
 
 `put_http` 接受 `body_path` 及可选 `cache_control`/`expires_ms`，返回实际 ETag、HTTP 状态和响应头。
 `head_http` 返回实际大小、HTTP 状态和响应头。两项当前接入 Java/C++ AWS SDK；不能由本地计算出的 MD5 替代服务端 ETag。
+
+
+## 独立桶扩展
+
+Java/C++ AWS worker 接受可选 `bucket`，缺省使用 manifest 的 `OSV_BUCKET`，不会改变会话默认值。
+`bucket_create_raw` 是实际 CreateBucket，接受可选 `location`；`bucket_head`、`bucket_delete`、`bucket_location` 分别调用实际 SDK 对应操作。
+成功保留真实 HTTP 状态/响应头，location 返回 SDK 实际位置约束（默认区域可能是 null）。
+这与正常档的 `bucket_create`（确保配置桶存在）是不同操作。
+声明这些新能力的驱动必须同时在对象操作中正确处理逐请求 bucket，不能把独立桶请求路由到默认桶。
+
+
+## 精确 LIST 观察扩展
+
+`list_v1_page` 与 `list_v2_observed` 当前由 Java/C++ AWS worker 提供，使用实际 SDK 方法、单次请求且不自动翻页。
+两者接受可选 `bucket`/`prefix`/`delimiter`/`max_keys`/`encoding_type`。
+V1 接受 `marker`；V2 接受 `start_after`/`token`/`fetch_owner`。省略和空字符串原样交给 SDK。
+返回 `keys`/`objects`/`common_prefixes`、实际 `prefix`/`delimiter`/`max_keys`/`truncated`，以及已观测标准字段名数组 `fields`。
+V1 另返回 `marker`/`next_marker`，V2 另返回 `token`/`next_token`/`start_after`/`key_count`；字段缺失以 null 和 fields 中无该名称表示。
+对象 `owner` 仅在 SDK 实际解码了 Owner 时出现，不能按 fetch_owner 请求值生成或删除。
+
+C++ 观察实际 XML 字段有无后复位原流，SDK 仍负责数据解码；Java 保留 SDK 模型暴露的字段和 URL 解码结果。
+不重编码 SDK 值来迎合上游断言。当前固定 SDK 的 FetchOwner=false 序列化，Java 为 false、C++ 为 0；合同测试记录实际请求。

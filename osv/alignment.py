@@ -44,7 +44,7 @@ def audit(config,registry):
         shadowed=not row.get("active_definition",True)
         review=reviews.get(row["id"],{})
         aligned=review.get("implementation") in local and review.get("source_sha256")==row["sha256"]
-        rows.append({**row,"project":"ceph","status":"not_applicable" if shadowed else "aligned" if aligned else "partial" if local else "not_migrated","implementations":[] if shadowed else local,
+        rows.append({**row,"project":"ceph","status":"not_applicable" if shadowed else "aligned" if aligned else "partial" if local else "not_migrated","implementations":[] if shadowed else local,"reviewed_implementation":review.get("implementation") if aligned and not shadowed else None,
                      "reason":"上游同名定义被后续函数覆盖，不是实际收集的用例" if shadowed else "已核对固定版本输入与全部断言；对象前缀隔离替代独立桶，实际 SDK 执行结果另见报告" if aligned else "已迁移相关场景；仍须核对完整参数组合、响应字段、权限与协议版本" if local else "尚未迁移"})
     summaries=[]
     for project in ("juicefs","ceph"):
