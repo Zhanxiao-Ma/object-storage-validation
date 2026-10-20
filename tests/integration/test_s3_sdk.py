@@ -543,7 +543,29 @@ class SdkIntegrationTest(unittest.TestCase):
                 "profile":"complete","performance_model":"operations","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
-            failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"]
+            from osv.ceph_select_register import CASES as select_cases
+            select_names={item.name for item in select_cases}
+            # Original randomized SQL sources remain diagnostics. Their weak
+            # helper and Moto SQL implementation do not certify SDK or SQL
+            # compatibility; independent native eventstream tests do that.
+            failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail" and row["case"] not in select_names]
+            select_not_run={"ceph_select_output_serial_expressions":["upstream_todo"],"ceph_select_json_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"],"ceph_select_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"]}
+            self.assertEqual(len(select_names),34)
+            for target in self.targets:
+                select_rows=[row for row in report["cases"] if row["target"]==target["id"] and row["case"] in select_names]
+                self.assertEqual(len(select_rows),34)
+                for row in select_rows:
+                    if row["case"] in select_not_run:
+                        self.assertEqual(row["status"],"not_run");self.assertEqual(row["reason"],"missing_prerequisites");self.assertEqual(row["missing_requirements"],select_not_run[row["case"]])
+                    else:
+                        self.assertIn(row["status"],("pass","fail"))
+                        if row["status"]=="pass":
+                            self.assertIn("does not compare result equality",row["evidence"]["oracle_limitation"])
+                            self.assertEqual(row["evidence"]["decoder"],"official SDK event stream; per-Records-event UTF-8 handling retained")
+                        else:
+                            self.assertIsInstance(row["error"],str)
+                            self.assertNotIn("Source bucket was not generated",row["error"])
+                            self.assertNotIn("isolated bucket cleanup failed",row["error"])
             expected=[(target["id"],"ceph_list_maxkeys_zero") for target in self.targets]
             expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
             expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
@@ -609,7 +631,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),936)
+            self.assertEqual(len(report["coverage"]["catalog"]),1047)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -665,11 +687,33 @@ class SdkIntegrationTest(unittest.TestCase):
             logging_remaining_missing={c.name for c in logging_remaining_cases}
             new_missing|=logging_remaining_missing
             new_missing|={c.name for c in advanced_control_cases}|{c.name for c in sts_web_cases}|{c.name for c in root_policy_cases}
+            from osv.ceph_logging_remaining_extensions import CASES as logging_extension_source_cases
+            from osv.ceph_logging_remaining_parallel import CASES as logging_parallel_source_cases
+            from osv.ceph_auxiliary import CASES as auxiliary_cases
+            self.assertEqual(len(logging_extension_source_cases),41)
+            self.assertEqual(len(logging_parallel_source_cases),27)
+            self.assertEqual(len(auxiliary_cases),6)
+            from osv.ceph_logging_remaining_last import CASES as logging_last_cases
+            self.assertEqual(len(logging_last_cases),2)
+            new_missing|={item.name for item in logging_last_cases}
+            new_missing|={item.name for item in logging_extension_source_cases}|{item.name for item in logging_parallel_source_cases}|{item.name for item in auxiliary_cases}|set(select_not_run)
+            protocol_missing={item.name:("missing_prerequisites",["workload.ceph_logging_wire_extensions"]) for item in (*logging_extension_source_cases,*logging_parallel_source_cases)}
+            protocol_missing["ceph_logging_remaining_account_j"]=("unsupported_operations",["identity_iam_root"])
+            protocol_missing["ceph_logging_parallel_put_and_flush"]=("missing_prerequisites",["OSV_CONNECTIONS>=100 actual SDK handshake"])
+            for item in auxiliary_cases:
+                protocol_missing[item.name]=("unsupported_operations",["identity_iam_alt_root","identity_iam_root"] if item.name in {"ceph_sns_cross_account_topic","ceph_sns_cross_account_topic_publish"} else ["identity_iam_root"])
+            protocol_missing["ceph_logging_remaining_tenant_j"]=("unsupported_operations",["identity_tenant"])
+            protocol_missing["ceph_logging_remaining_object_meta"]=("missing_prerequisites",["workload.object_lock_cleanup_authorized=true"])
             cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}
             self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (new_missing|(legacy_missing|cpp_expiration_missing if target["language"]=="cpp" else set())|access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in protocol_missing:
+                    reason,requirements=protocol_missing[row["case"]]
+                    self.assertEqual(row["reason"],reason)
+                    self.assertEqual(row["missing_operations" if reason=="unsupported_operations" else "missing_requirements"],requirements)
+                    continue
                 if row["case"] in logging_remaining_missing:
                     self.assertEqual(row["reason"],"unsupported_operations")
                     self.assertEqual(row["missing_operations"],["identity_iam_root"] if row["case"]=="ceph_logging_remaining_account_s" else ["identity_alt","identity_iam"])

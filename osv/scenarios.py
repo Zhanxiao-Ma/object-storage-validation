@@ -61,7 +61,8 @@ class Registry:
     def _add(self, items, item):
         if not re.fullmatch(r"[a-zA-Z][a-zA-Z0-9_.-]{0,63}", item.name) or item.name in items:
             raise ValueError(f"invalid or duplicate extension name: {item.name}")
-        if not item.required_operations or not all(isinstance(op, str) and op for op in item.required_operations):
+        local_suite=isinstance(item,Suite) and item.case_capabilities and bool(item.catalog)
+        if (not item.required_operations and not local_suite) or not all(isinstance(op, str) and op for op in item.required_operations):
             raise ValueError("extension must declare required worker operations")
         items[item.name] = item
 
@@ -103,7 +104,7 @@ class Registry:
             operations=set()
             for case in suite.catalog:
                 values=case.get("operations")
-                if not isinstance(values,list) or not values or not all(isinstance(op,str) and op for op in values):
+                if not isinstance(values,list) or not all(isinstance(op,str) and op for op in values):
                     raise ValueError("case capability checks require explicit operation lists")
                 operations.update(values)
             if operations!=set(suite.required_operations):

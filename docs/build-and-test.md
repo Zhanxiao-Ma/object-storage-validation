@@ -303,3 +303,25 @@ PYTHONPATH=tests/integration:. OSV_RUN_STATE_BOUNDARY_TESTS=1 OSV_RUN_BASIC_BOUN
 ```
 
 本地固定凭证和区域的 HTTP/Moto fixtures 设置 `AWS_EC2_METADATA_DISABLED=true`，防止 C++ 默认配置构造等待无关 EC2 metadata 探测。生产 runner 环境不作此改动；本地启动耗时下降不作为云存储性能证据。
+
+
+## Select、日志扩展与异步链路的定向验证
+
+完成真实 SDK 构建后，可单独运行以下测试。通过 `OSV_S3_TEST_LANGUAGES=java` 或 `cpp` 选择已构建的链路；C++ 同时需要正确的 `LD_LIBRARY_PATH`。IAM/STS 的 C++ 回归需要 `--with-control`；SNS/S3Control 回归需要 `--with-auxiliary`（同时启用控制面）。上游 AWS SDK 应安装对应组件，例如配置 `-DBUILD_ONLY=s3;iam;sts;sns;s3control` 后，再通过资源守卫运行 `python3 scripts/build.py cpp --prefix /path/to/sdk-install --with-auxiliary`。完整 Moto 固定诊断回归以启用这些桥接的 SDK 构建为基准。
+
+```bash
+OSV_RUN_SELECT_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_select_sdk -v
+OSV_RUN_CEPH_LOGGING_WIRE_TESTS=1 OSV_RUN_LOGGING_REMAINING_EXTENSION_TESTS=1 OSV_RUN_LOGGING_REMAINING_PARALLEL_TESTS=1 OSV_RUN_LOGGING_REMAINING_LAST_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_ceph_logging_sdk test_logging_remaining_extensions_sdk test_logging_remaining_parallel_sdk test_logging_remaining_last_sdk -v
+OSV_RUN_ASYNC_SDK_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_async_sdk -v
+OSV_RUN_AUXILIARY_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_auxiliary_sdk -v
+```
+
+Select 使用官方 Java 异步 SDK / C++ SDK 解码真实 eventstream；固定响应测试提供独立 CRC 帧，不实现 SQL 引擎。Records 按实际事件分别解码 UTF-8，保留 Progress/Stats/End 与原生错误。原 Ceph `s3select_assert_result` 只检查非空，不比较结果相等，因此它通过不能证明 SQL 结果正确。Moto 上随机 SQL 的 pass/fail 单独记录，不属于旧版固定 Moto 诊断集合的兼容认证；结束后仍检查实际测试桶已清理。
+
+两个原聚合源包含固定桶 `testbuck2`，必须显式配置 `workload.ceph_literal_bucket_names_authorized: true`，源执行前及创建前均以真实 HEAD404 确认不存在；不会替换为 UUID。未授权或已存在时在任何源写入前 `not_run`。原输出格式 TODO 用例始终为 `not_run upstream_todo`。
+
+CreateBucket 已提交但响应丢失时，原 SDK 错误仍使源失败。候选桶存在且配置了独立 `workload.identities.main.canonical_id` 后，必须让实际候选 ACL、新建独立控制桶 ACL 与该 ID 全部匹配才清理；否则报告包含未知桶名与 `cleanup_pending`，不会删除所有权未经证明的候选。
+
+Ceph 日志扩展要求显式启用 `workload.ceph_logging_wire_extensions`，表示使用官方 SDK 公共 hook 的协议适配，不代表 stock AWS SDK 原生提供这些字段。并行源使用同一实际 SDK client 的异步请求，原300次PUT与30次flush源要求真实连接池至少100，以及实际握手 `async_jobs_limit>=330`；当前驱动声明512。旧驱动未声明时按64处理，该源保持 `not_run`，避免降低原交错空间。SNS 与账号级 S3Control 源要求独立端点、身份及隔离授权；不能回退到 S3 主身份或修改共享账号。
+
+这些组均使用独立测试开关，OBS 原生 SDK 的 discover 不会因此启动 Java/C++ S3 或辅助服务测试。普通 CI 明确设置 `OSV_RUN_STS_EXPIRY_TESTS=0`；原900秒过期源仅在显式启用时等待真实900秒，不能缩短时间作为替代证据。

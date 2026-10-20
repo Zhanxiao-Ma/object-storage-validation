@@ -14,6 +14,24 @@ from test_harness import config,ROOT
 
 class CaseCapabilityTest(unittest.TestCase):
     """Exercise genuine producer/consumer IO and the CLI instead of simulating capability dispatch in tests."""
+    def test_explicit_zero_sdk_operations_run_local_utility_and_preserve_source_todo(self):
+        """Purpose: route genuine zero-SDK-operation sources through registration and CLI; expect the real utility's five boundaries to pass and the original TODO to remain not_run without invented SDK capabilities."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);data=config(directory)
+            data['workload'].update(compatibility_suites=['ceph_utils','ceph_select'],operations=['head'],requests=1,rounds=1,concurrency=1,warmup_requests=0)
+            path=directory/'manifest.json';path.write_text(json.dumps(data))
+            result=subprocess.run([sys.executable,'-m','osv','run',str(path),'--output',str(directory/'results')],cwd=ROOT,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+            report=json.loads((directory/'results/report.json').read_text())
+            rows={r['case']:r for r in report['cases']};self.assertEqual(len(rows),35)
+            utility=rows['ceph_utils_generate'];self.assertEqual(utility['status'],'pass')
+            self.assertEqual(utility['evidence']['execution_kind'],'local_utility')
+            self.assertEqual(utility['evidence']['original_sizes'],[0,1,5242879,5242880,5242881])
+            todo=rows['ceph_select_output_serial_expressions'];self.assertEqual(todo['status'],'not_run')
+            self.assertEqual(todo['missing_requirements'],['upstream_todo'])
+            self.assertEqual(report['samples'],[])
+            self.assertFalse([r for r in report['cases'] if r['status']=='fail'])
+
     def test_missing_copy_runs_other_cases_but_blocks_measurement_and_exit(self):
         """Hide only copy in a real worker handshake; expect seven explicit not_run cases, real unrelated passes, zero measurements and exit 1."""
         with tempfile.TemporaryDirectory() as temporary:

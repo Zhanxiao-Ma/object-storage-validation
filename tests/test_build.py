@@ -16,6 +16,25 @@ from scripts.build import build_environment, GIB
 class BuildEnvironmentTest(unittest.TestCase):
     """Prevent fixed JVM reservations from exceeding a small but valid build budget."""
 
+    @unittest.skipUnless(os.environ.get('OSV_RUN_BUILD_TESTS')=='1' and shutil.which('mvn'),'enable guarded real Maven freshness regression explicitly')
+    def test_actual_guarded_java_build_consumes_changed_source_with_old_timestamp(self):
+        """Purpose: build real SDK sources, change a class while preserving an older source timestamp, and rebuild; expect the final actual jar to contain the changed producer output rather than stale class bytes."""
+        import zipfile
+        root=Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            project=Path(temporary)
+            shutil.copytree(root/'drivers/java',project/'drivers/java',ignore=shutil.ignore_patterns('target'))
+            (project/'scripts').mkdir();shutil.copy2(root/'scripts/build.py',project/'scripts/build.py')
+            source=project/'drivers/java/src/main/java/io/github/storagevalidation/BuildFreshnessProbe.java'
+            for marker in ('freshness-before','freshness-after'):
+                source.write_text('package io.github.storagevalidation;\n/** Detect stale generated-source bytecode by exposing a distinct literal in the real compiled class. */\nfinal class BuildFreshnessProbe { static String value(){return "'+marker+'";} }\n')
+                if marker.endswith('after'):os.utime(source,(946684800,946684800))
+                result=subprocess.run([sys.executable,str(project/'scripts/build.py'),'java'],cwd=project,capture_output=True,text=True,timeout=180)
+                self.assertEqual(result.returncode,0,(result.stdout+result.stderr)[-8000:])
+                with zipfile.ZipFile(project/'drivers/java/target/sdk-worker-0.1.0.jar') as jar:
+                    actual=jar.read('io/github/storagevalidation/BuildFreshnessProbe.class')
+                self.assertIn(marker.encode(),actual)
+
     def test_real_jvm_starts_with_minimum_and_ci_budgets(self):
         """Launch a real JVM using production options at 2 and 2.6 GiB caps; expect successful startup in both cases."""
         for budget in (2*GIB, int(2.6*GIB)):

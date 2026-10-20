@@ -20,7 +20,7 @@ final class S3Concurrency {
             if(!request.isObject() || !request.has("op") || !request.get("op").isTextual())
                 throw new IllegalArgumentException("concurrent request requires a textual op");
             String op=request.get("op").textValue();
-            if(op.isEmpty() || "concurrent_requests".equals(op) || "info".equals(op))
+            if(op.isEmpty() || "concurrent_requests".equals(op) || S3AsyncJobs.handles(op) || "info".equals(op))
                 throw new IllegalArgumentException("invalid concurrent operation: "+op);
             for(String name:Arrays.asList("identity","wire_headers","wire_query","checksum_when_required","capture_response_body"))
                 if(request.has(name))throw new IllegalArgumentException("concurrent request requires the default client: "+name);

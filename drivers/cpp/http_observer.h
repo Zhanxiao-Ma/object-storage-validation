@@ -1,6 +1,7 @@
 #pragma once
 #include "object_metadata.h"
 #include "response_body_capture.h"
+#include "ceph_logging_wire.h"
 #include <aws/core/http/HttpClientFactory.h>
 #include <aws/core/http/curl/CurlHttpClient.h>
 #include <aws/core/http/standard/StandardHttpRequest.h>
@@ -69,6 +70,7 @@ public:
         return CreateHttpRequest(Aws::Http::URI(uri),method,stream);
     }
     std::shared_ptr<Aws::Http::HttpRequest> CreateHttpRequest(const Aws::Http::URI& uri,Aws::Http::HttpMethod method,const Aws::IOStreamFactory& stream) const override {
+        method=osv_ceph_logging_post?Aws::Http::HttpMethod::HTTP_POST:method;
         auto request=Aws::MakeShared<Aws::Http::Standard::StandardHttpRequest>("osv",uri,method);
         request->SetResponseStreamFactory(stream);return request;
     }

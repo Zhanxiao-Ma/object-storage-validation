@@ -88,6 +88,12 @@ def load_config(path, profile_override=None):
         try:valid_interval=type(value) in (int,float) and math.isfinite(value) and value>0
         except OverflowError:valid_interval=False
         if not valid_interval:raise ValueError(interval_field+" must be finite and positive")
+    for field in ("ceph_logging_wire_extensions","sns_mutation_authorized","isolated_account_mutation_authorized"):
+        workload.setdefault(field,False)
+        if type(workload[field]) is not bool:
+            raise ValueError(field+" must be boolean")
+    if "account_id" in workload and (not isinstance(workload["account_id"],str) or not workload["account_id"]):
+        raise ValueError("account_id must be a nonempty string")
     workload.setdefault("iam_mutation_authorized",False)
     if type(workload["iam_mutation_authorized"]) is not bool:
         raise ValueError("iam_mutation_authorized must be boolean")

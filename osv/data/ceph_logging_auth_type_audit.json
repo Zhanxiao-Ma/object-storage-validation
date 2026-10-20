@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "source_revision": "5b3987116eca0b4b8fa57d6b10f3db57bab196b6",
+  "state": "partial_static_source_only",
+  "register_executable_cases": false,
+  "active_case_count": 1,
+  "source_file": "s3tests/functional/test_s3.py",
+  "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py#L15843",
+  "license": "MIT",
+  "license_notice": "Copyright (c) 2011 New Dream Network, LLC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE.\n",
+  "cases": [
+    {
+      "name": "test_bucket_logging_bucket_auth_type",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15843,
+      "source_sha256": "d3921943431711695b25f4d7f8a56babb20911ddd207284656e8b0b3a534a48a",
+      "source": "def test_bucket_logging_bucket_auth_type():\n    src_bucket_name = get_new_bucket_name()\n    src_bucket = get_new_bucket_resource(name=src_bucket_name)\n    log_bucket_name = get_new_bucket_name()\n    log_bucket = get_new_bucket_resource(name=log_bucket_name)\n    client = get_client()\n    prefix = 'log/'\n    key = 'my-test-object'\n    _set_log_bucket_policy(client, log_bucket_name, [src_bucket_name], [prefix])\n\n    client.put_object(Bucket=src_bucket_name, Key=key, Body=randcontent())\n    client.put_object_acl(ACL='public-read',Bucket=src_bucket_name, Key=key)\n\n    response = client.list_objects_v2(Bucket=src_bucket_name)\n    keys = _get_keys(response)\n\n    # minimal configuration\n    logging_enabled = {'TargetBucket': log_bucket_name, 'TargetPrefix': prefix}\n    response = client.put_bucket_logging(Bucket=src_bucket_name, BucketLoggingStatus={\n        'LoggingEnabled': logging_enabled,\n    })\n    assert response['ResponseMetadata']['HTTPStatusCode'] == 200\n\n    # AuthType AuthHeader:\n    response = client.get_object(Bucket=src_bucket_name, Key=key)\n    client.list_objects_v2(Bucket=src_bucket_name)\n\n    _flush_logs(client, src_bucket_name)\n    response = client.list_objects_v2(Bucket=log_bucket_name)\n    log_keys = _get_keys(response)\n    assert len(log_keys) == 1\n\n    for log_key in log_keys:\n        response = client.get_object(Bucket=log_bucket_name, Key=log_key)\n        body = _get_body(response)\n        assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)\n        assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"AuthHeader\")\n\n\n    #AuthType \"-\" (unauthenticated)\n    unauthenticated_client = get_unauthenticated_client()\n    unauthenticated_client.get_object(Bucket=src_bucket_name, Key=key)\n\n    _flush_logs(client, src_bucket_name)\n    response = client.list_objects_v2(Bucket=log_bucket_name)\n    log_keys = _get_keys(response)\n\n    log_key = log_keys[-1]\n    response = client.get_object(Bucket=log_bucket_name, Key=log_key)\n    body = _get_body(response)\n    assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)\n    assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"-\")\n\n    #AuthType \"QueryString\" (presigned SigV4)\n    params = {'Bucket': src_bucket_name, 'Key': key}\n    url = client.generate_presigned_url(ClientMethod='get_object', Params=params, ExpiresIn=100000, HttpMethod='GET')\n\n    res = requests.options(url, verify=get_config_ssl_verify()).__dict__\n    assert res['status_code'] == 400\n\n    res = requests.get(url, verify=get_config_ssl_verify()).__dict__\n    assert res['status_code'] == 200\n\n    _flush_logs(client, src_bucket_name)\n    response = client.list_objects_v2(Bucket=log_bucket_name)\n    log_keys = _get_keys(response)\n\n    log_key = log_keys[-1]\n    response = client.get_object(Bucket=log_bucket_name, Key=log_key)\n    body = _get_body(response)\n    assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)\n    assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"QueryString\")\n    assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"SigVersion\", \"SigV4\")\n\n    #AuthType \"QueryString\" (presigned SigV2)\n    client_v2 = get_v2_client()\n    params = {'Bucket': src_bucket_name, 'Key': key}\n    url = client_v2.generate_presigned_url(ClientMethod='get_object', Params=params, ExpiresIn=100000, HttpMethod='GET')\n\n    res = requests.options(url, verify=get_config_ssl_verify()).__dict__\n    assert res['status_code'] == 400\n\n    res = requests.get(url, verify=get_config_ssl_verify()).__dict__\n    assert res['status_code'] == 200\n\n    _flush_logs(client, src_bucket_name)\n    response = client.list_objects_v2(Bucket=log_bucket_name)\n    log_keys = _get_keys(response)\n\n    log_key = log_keys[-1]\n    response = client.get_object(Bucket=log_bucket_name, Key=log_key)\n    body = _get_body(response)\n    assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)\n    assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"QueryString\")\n    assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"SigVersion\", \"SigV2\")",
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_bucket_auth_type@L15843",
+      "markers": [
+        "pytest.mark.bucket_logging",
+        "pytest.mark.fails_on_aws"
+      ],
+      "alignment_status": "partial",
+      "blocker": "Actual original SigV2 presigned query requires a genuine legacy signer/backend; SignatureV4 cannot substitute. No custom HMAC adapter has been authorized.",
+      "assertions": [
+        "assert response['ResponseMetadata']['HTTPStatusCode'] == 200",
+        "assert len(log_keys) == 1",
+        "assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"-\")",
+        "assert res['status_code'] == 400",
+        "assert res['status_code'] == 200",
+        "assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"QueryString\")",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"SigVersion\", \"SigV4\")",
+        "assert res['status_code'] == 400",
+        "assert res['status_code'] == 200",
+        "assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"QueryString\")",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"SigVersion\", \"SigV2\")",
+        "assert _verify_records(body, src_bucket_name, 'REST.GET.OBJECT', [key], \"Standard\", 1)",
+        "assert _verify_record_field(body, src_bucket_name, 'REST.GET.OBJECT', key, \"Standard\", \"AuthType\", \"AuthHeader\")"
+      ]
+    }
+  ],
+  "helpers": [
+    {
+      "name": "_flush_logs",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15698,
+      "source_sha256": "08ebcd55539410b5be675ef1237321d2de38ef56f006d27196595a8bc899f56e",
+      "source": "def _flush_logs(client, src_bucket_name, dummy_key=\"dummy\"):\n    if _has_bucket_logging_extension():\n        result = client.post_bucket_logging(Bucket=src_bucket_name)\n        assert result['ResponseMetadata']['HTTPStatusCode'] == 200\n        return result['FlushedLoggingObject']\n    else:\n        time.sleep(expected_object_roll_time*1.1)\n        client.put_object(Bucket=src_bucket_name, Key=dummy_key, Body='dummy')\n        return None"
+    },
+    {
+      "name": "_get_body",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 1830,
+      "source_sha256": "e486a4ae13d35863359a4786e893635eb4fbf502794cbc7be9528aed11baa4e9",
+      "source": "def _get_body(response):\n    body = response['Body']\n    got = body.read()\n    if type(got) is bytes:\n        got = got.decode()\n    return got"
+    },
+    {
+      "name": "_get_keys",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 141,
+      "source_sha256": "a5a2e8c38159c904348c012154bbe77180a7bc8e8d0d19e86f5797b6fe69f97f",
+      "source": "def _get_keys(response):\n    \"\"\"\n    return lists of strings that are the keys from a client.list_objects() response\n    \"\"\"\n    keys = []\n    if 'Contents' in response:\n        objects_list = response['Contents']\n        keys = [obj['Key'] for obj in objects_list]\n    return keys"
+    },
+    {
+      "name": "_has_bucket_logging_extension",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15387,
+      "source_sha256": "31e6440d9050c358898125096f3b6e77b9257334fae2a7bb43951128d760e239",
+      "source": "def _has_bucket_logging_extension():\n    src_bucket_name = get_new_bucket_name()\n    log_bucket_name = get_new_bucket_name()\n    client = get_client()\n    log_prefix = 'log/'\n    logging_enabled = {'TargetBucket': log_bucket_name, 'TargetPrefix': log_prefix, 'LoggingType': 'Journal'}\n    try:\n        response = client.put_bucket_logging(Bucket=src_bucket_name, BucketLoggingStatus={\n            'LoggingEnabled': logging_enabled,\n        })\n    except ParamValidationError as e:\n        return False\n    except ClientError as e:\n        # should fail on non-existing bucket\n        return True\n\n    return True"
+    },
+    {
+      "name": "_parse_journal_log_record",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15459,
+      "source_sha256": "be88066ebe864757cdb4eb87fefd15aa867d497d7bb3010246056cacf720fed4",
+      "source": "def _parse_journal_log_record(record):\n    record = record.replace('[', '\"').replace(']', '\"')\n    chunks = shlex.split(record)\n    assert len(chunks) == 8\n    return {\n            'BucketOwner':      chunks[0],\n            'BucketName':       chunks[1],\n            'RequestDateTime':  chunks[2],\n            'Operation':        chunks[3],\n            'Key':              chunks[4],\n            'ObjectSize':       chunks[5],\n            'VersionID':        chunks[6],\n            'ETAG':             chunks[7],\n            }"
+    },
+    {
+      "name": "_parse_log_record",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15474,
+      "source_sha256": "1994cba4b092f0a90cf6aa3a8518b00ddfd159ab7988c5f327907599f54b19a4",
+      "source": "def _parse_log_record(record, record_type):\n    if record_type == 'Standard':\n        return _parse_standard_log_record(record)\n    elif record_type == 'Journal':\n        return _parse_journal_log_record(record)\n    else:\n        assert False, 'unknown log record type'"
+    },
+    {
+      "name": "_parse_standard_log_record",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15425,
+      "source_sha256": "6109cebc35394d426c4d49009c168852309a3c234d214626c9780b035588920a",
+      "source": "def _parse_standard_log_record(record):\n    record = record.replace('[', '\"').replace(']', '\"')\n    chunks = shlex.split(record)\n    assert len(chunks) == 26\n    return {\n            'BucketOwner':      chunks[0],\n            'BucketName':       chunks[1],\n            'RequestDateTime':  chunks[2],\n            'RemoteIP':         chunks[3],\n            'Requester':        chunks[4],\n            'RequestID':        chunks[5],\n            'Operation':        chunks[6],\n            'Key':              chunks[7],\n            'RequestURI':       chunks[8],\n            'HTTPStatus':       chunks[9],\n            'ErrorCode':        chunks[10],\n            'BytesSent':        chunks[11],\n            'ObjectSize':       chunks[12],\n            'TotalTime':        chunks[13],\n            'TurnAroundTime':   chunks[14],\n            'Referrer':         chunks[15],\n            'UserAgent':        chunks[16],\n            'VersionID':        chunks[17],\n            'HostID':           chunks[18],\n            'SigVersion':       chunks[19],\n            'CipherSuite':      chunks[20],\n            'AuthType':         chunks[21],\n            'HostHeader':       chunks[22],\n            'TLSVersion':       chunks[23],\n            'AccessPointARN':   chunks[24],\n            'ACLRequired':      chunks[25],\n            }"
+    },
+    {
+      "name": "_set_log_bucket_policy",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15383,
+      "source_sha256": "c6adff500ec9cce0145251f7013c446e6b44c241bbe8e12d5b89ff55936e72e8",
+      "source": "def _set_log_bucket_policy(client, log_bucket_name, src_buckets, log_prefixes):\n    _set_log_bucket_policy_tenant(client, \"\", log_bucket_name, \"\", get_main_user_id(), src_buckets, log_prefixes)"
+    },
+    {
+      "name": "_set_log_bucket_policy_tenant",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15353,
+      "source_sha256": "e437352aeddb9588540a09027c18f638f37461d9ca0e25be7fa7f81ed9fcc04d",
+      "source": "def _set_log_bucket_policy_tenant(client, log_tenant, log_bucket_name, src_tenant, src_user, src_buckets, log_prefixes):\n    statements = []\n    for j in range(len(src_buckets)):\n        if len(log_prefixes) == 1:\n            prefix = log_prefixes[0]\n        else:\n            prefix = log_prefixes[j]\n        statements.append({\n            \"Sid\": \"S3ServerAccessLogsPolicy\",\n            \"Effect\": \"Allow\",\n            \"Principal\": {\"Service\": \"logging.s3.amazonaws.com\"},\n            \"Action\": [\"s3:PutObject\"],\n            \"Resource\": \"arn:aws:s3::{}:{}/{}\".format(log_tenant, log_bucket_name, prefix),\n            \"Condition\": {\n                \"ArnLike\": {\"aws:SourceArn\": \"arn:aws:s3::{}:{}\".format(src_tenant, src_buckets[j])},\n                \"StringEquals\": {\n                    \"aws:SourceAccount\": src_user\n                    }\n            }\n        })\n\n    policy_document = json.dumps({\n        \"Version\": \"2012-10-17\",\n        \"Statement\": statements\n        })\n\n    result = client.put_bucket_policy(Bucket=log_bucket_name, Policy=policy_document)\n    assert(result['ResponseMetadata']['HTTPStatusCode'] == 204)"
+    },
+    {
+      "name": "_verify_record_field",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15508,
+      "source_sha256": "1e9a9945de7ddde8bec43bd060126401eb33d3bca6dc653d4e7467fcbd3eca0a",
+      "source": "def _verify_record_field(records, bucket_name, event_type, object_key, record_type, field_name, expected_value):\n    for record in iter(records.splitlines()):\n        if bucket_name in record and event_type in record and object_key in record:\n            parsed_record = _parse_log_record(record, record_type)\n            logger.info('bucket log record: %s', json.dumps(parsed_record, indent=4))\n            try:\n                value = parsed_record[field_name]\n                return expected_value == value\n            except KeyError:\n                return False\n    return False"
+    },
+    {
+      "name": "_verify_records",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15489,
+      "source_sha256": "7f978d3dd9aaecb983a923ad1873913995cd81ddc0d073c47704171a9050b2f7",
+      "source": "def _verify_records(records, bucket_name, event_type, src_keys, record_type, expected_count, exact_match=False):\n    keys_found = []\n    all_keys = []\n    for record in iter(records.splitlines()):\n        parsed_record = _parse_log_record(record, record_type)\n        logger.debug('bucket log record: %s', json.dumps(parsed_record, indent=4))\n        if bucket_name in record and event_type in record:\n            all_keys.append(parsed_record['Key'])\n            for key in src_keys:\n                if key in record:\n                    keys_found.append(key)\n                    break\n    logger.info('%d keys found in bucket log: %s', len(all_keys), str(all_keys))\n    logger.info('%d keys from the source bucket: %s', len(src_keys), str(src_keys))\n    if exact_match:\n        return len(keys_found) == expected_count and len(keys_found) == len(all_keys)\n    return len(keys_found) == expected_count"
+    },
+    {
+      "name": "randcontent",
+      "source_file": "s3tests/functional/test_s3.py",
+      "source_line": 15521,
+      "source_sha256": "4b469dd0d5e447c1fdcd93e98aefad927e7e1f103eae3fedd381810aa3ff0961",
+      "source": "def randcontent():\n    letters = string.ascii_lowercase\n    length = random.randint(10, 1024)\n    return ''.join(random.choice(letters) for i in range(length))"
+    }
+  ],
+  "external_identity_factories": [
+    {
+      "name": "get_client",
+      "source_file": "s3tests/functional/__init__.py",
+      "source_line": 429,
+      "source_sha256": "22add2fb9342123b9771e7f5fdcdc8e4d58aad76c9b957a3b87e76224dca0745",
+      "source": "def get_client(client_config=None):\n    if client_config == None:\n        client_config = Config(signature_version='s3v4')\n\n    client = boto3.client(service_name='s3',\n                        aws_access_key_id=config.main_access_key,\n                        aws_secret_access_key=config.main_secret_key,\n                        endpoint_url=config.default_endpoint,\n                        use_ssl=config.default_is_secure,\n                        verify=config.default_ssl_verify,\n                        config=client_config)\n    return client"
+    },
+    {
+      "name": "get_unauthenticated_client",
+      "source_file": "s3tests/functional/__init__.py",
+      "source_line": 594,
+      "source_sha256": "47803adbef3599e1eda25bd46dba2452d2bc7f4c5a66d941bbe50bbe38b2a77e",
+      "source": "def get_unauthenticated_client():\n    client = boto3.client(service_name='s3',\n                        aws_access_key_id='',\n                        aws_secret_access_key='',\n                        endpoint_url=config.default_endpoint,\n                        use_ssl=config.default_is_secure,\n                        verify=config.default_ssl_verify,\n                        config=Config(signature_version=UNSIGNED))\n    return client"
+    },
+    {
+      "name": "get_v2_client",
+      "source_file": "s3tests/functional/__init__.py",
+      "source_line": 442,
+      "source_sha256": "e1bacf7eade2335a489a20ae19d48009e2889195107130f80d1737d4200af417",
+      "source": "def get_v2_client():\n    client = boto3.client(service_name='s3',\n                        aws_access_key_id=config.main_access_key,\n                        aws_secret_access_key=config.main_secret_key,\n                        endpoint_url=config.default_endpoint,\n                        use_ssl=config.default_is_secure,\n                        verify=config.default_ssl_verify,\n                        config=Config(signature_version='s3'))\n    return client"
+    }
+  ],
+  "required_full_stages": [
+    {
+      "phase": "AuthHeader",
+      "producer": "actual configured official SDK signed GET and LIST",
+      "expected_auth_type": "AuthHeader"
+    },
+    {
+      "phase": "Anonymous",
+      "producer": "actual unsigned official SDK GET",
+      "expected_auth_type": "-"
+    },
+    {
+      "phase": "QueryStringSigV4",
+      "producer": "actual SDK SigV4 presign, ExpiresIn100000, HttpMethodGET",
+      "raw_http": {
+        "OPTIONS": 400,
+        "GET": 200
+      },
+      "expected_auth_type": "QueryString",
+      "expected_signature_version": "SigV4"
+    },
+    {
+      "phase": "QueryStringSigV2",
+      "producer": "actual legacy SDK SigV2 presign, ExpiresIn100000, HttpMethodGET",
+      "raw_http": {
+        "OPTIONS": 400,
+        "GET": 200
+      },
+      "expected_auth_type": "QueryString",
+      "expected_signature_version": "SigV2"
+    }
+  ],
+  "evidence_limit": "This preserves source/helper bodies and exact expected flows only; no executable case, SDK V2 implementation, service compatibility result or performance evidence is claimed."
+}

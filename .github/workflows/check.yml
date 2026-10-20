@@ -181,6 +181,33 @@ jobs:
           OSV_RUN_WIRE_HEADER_TESTS: '1'
           OSV_RUN_SDK_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java S3 Select native eventstreams and original source vectors
+        timeout-minutes: 15
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_select_sdk -v
+        env:
+          OSV_RUN_SELECT_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java explicit Ceph logging protocol adapter and parallel original workloads
+        timeout-minutes: 20
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_ceph_logging_sdk test_logging_remaining_extensions_sdk test_logging_remaining_parallel_sdk test_logging_remaining_last_sdk -v
+        env:
+          OSV_RUN_CEPH_LOGGING_WIRE_TESTS: '1'
+          OSV_RUN_LOGGING_REMAINING_EXTENSION_TESTS: '1'
+          OSV_RUN_LOGGING_REMAINING_PARALLEL_TESTS: '1'
+          OSV_RUN_LOGGING_REMAINING_LAST_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java same-client asynchronous SDK result ownership
+        timeout-minutes: 10
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_async_sdk -v
+        env:
+          OSV_RUN_ASYNC_SDK_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java original SNS and isolated account-control sources
+        timeout-minutes: 10
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_auxiliary_sdk -v
+        env:
+          OSV_RUN_AUXILIARY_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:

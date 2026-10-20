@@ -5052,6 +5052,672 @@
       "source_sha256": "a5981279f4ab2c58338e1282018a9cf2b4c2061316e1d81f043e619c60a9330d",
       "implementation": "ceph_sts_web_assume_role_with_web_identity_role_resource_tag",
       "review": "固定源码body逐AST相同（仅增加本项目目的docstring）及原policy原文/分支/全部断言静态迁移；真实官方IAM→STS→S3 RPC。Verify duplicate role/bucket Department tags remain unchanged and original role-resource-tag PUT succeeds. 原空account ARN、原重复标签及helper错误e.response[Code]/未赋值局部变量等缺陷保留。真实JWT仅显式环境变量；固定issuer不重写；缺外部OIDC/token/隔离授权明确not_run。OIDC预先List防接管，实际新增ARN+URL验证；role预先NoSuchEntity并按实际RoleId清理；owned bucket预先HEAD404、实际创建后精确键/桶清理；失败及歧义也恢复真实生产者标识。独立raw HTTP覆盖完整源链与错误反路径，不将协议fixture当真实IdP认证证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_generate_where_clause@L90",
+      "source_sha256": "66a3d1d5d59de15c6159952b93b603bfd5c6306f7f63fa2614b5b821bc62605a",
+      "implementation": "ceph_select_generate_where_clause",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_generate_projection@L103",
+      "source_sha256": "27e797ad2974b4c9c30c129df77e1b3f1be734602fd74a4eccc854751f22e6a6",
+      "implementation": "ceph_select_generate_projection",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_count_operation@L419",
+      "source_sha256": "7ba57df92ca99e65c9c7193a056789f947ce8fb2d5ab8494429b43b0e7804894",
+      "implementation": "ceph_select_count_operation",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_count_json_operation@L430",
+      "source_sha256": "d22e377c5a92adfdf825170cc0d9972252a607361dd034d6b4f7f213eac18dd7",
+      "implementation": "ceph_select_count_json_operation",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_json_column_sum_min_max@L449",
+      "source_sha256": "c4a04e057241b380b78342b8d5ef0f435abb0b85cabc4b72319a972098f34fb4",
+      "implementation": "ceph_select_json_column_sum_min_max",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_json_nullif_expressions@L527",
+      "source_sha256": "65514116800a1553cc1020656315beccceeeb60f212235918cde47dcd680ec97",
+      "implementation": "ceph_select_json_nullif_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_column_sum_min_max@L568",
+      "source_sha256": "ede2cafbe635d0803063e703684e5b5ea585a095c8dd4f858edc799cd9eabd19",
+      "implementation": "ceph_select_column_sum_min_max",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_nulliftrue_expressions@L700",
+      "source_sha256": "88eed10b1075997d002a17c61072f42157e4b878189cf880a5992de49d5c9bcc",
+      "implementation": "ceph_select_nulliftrue_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_is_not_null_expressions@L728",
+      "source_sha256": "2436c0b1537514b50f14db2c70216cd81d99e581271e3cbe1ec9991626a6dd07",
+      "implementation": "ceph_select_is_not_null_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_true_false_in_expressions@L839",
+      "source_sha256": "ee89b27cc6052f16d92376b40c43f6c1544506f00d6db789999b0b703fc9c971",
+      "implementation": "ceph_select_true_false_in_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_truefalselike_expressions@L976",
+      "source_sha256": "6c029cd3d12b527c7d18aa22a15754e44dc6f9ef50d893c5808d91851ca7acd1",
+      "implementation": "ceph_select_truefalselike_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_nullif_expressions@L1022",
+      "source_sha256": "8213e8821cf67b3763dabd2b864b6d856628b137ff4d343bdc868504dc62a503",
+      "implementation": "ceph_select_nullif_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_lowerupper_expressions@L1050",
+      "source_sha256": "02d2c6de24d8bbd3dcaf058447b089ffcff2f50e955c804fb668a898a26236b0",
+      "implementation": "ceph_select_lowerupper_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_in_expressions@L1068",
+      "source_sha256": "87d66ed831ac96cdc5c47035eea25a87f35c8d7fcb751371df6295cf26d04b96",
+      "implementation": "ceph_select_in_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_like_expressions@L1109",
+      "source_sha256": "4ca7e131c82a54f96ec625baf5b370b94e5670894875f96f9aa14d5bb8949838",
+      "implementation": "ceph_select_like_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_complex_expressions@L1156",
+      "source_sha256": "af4680f550ca1991d916776aabc866b96d8076d465fbedab6ded12e85415ec60",
+      "implementation": "ceph_select_complex_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_alias@L1189",
+      "source_sha256": "1a461020a235a6b5f7fd647e4fd4cd0cc51b77fefbee4ab3cd41181b03a24122",
+      "implementation": "ceph_select_alias",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_alias_cyclic_refernce@L1211",
+      "source_sha256": "7cdbbbb2321a96b3213ef64f8d4e1ee137a2a42afab6f9bc5b8c0d715f59ae0c",
+      "implementation": "ceph_select_alias_cyclic_refernce",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_datetime@L1230",
+      "source_sha256": "452091f89240d70f3c1685fd0daa275a51bda3fcaca27e73865ab7b6d1d301ac",
+      "implementation": "ceph_select_datetime",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_true_false_datetime@L1261",
+      "source_sha256": "eaacf965b7b56e075d17d264f0106482cfcf453f878656e3ae688a6704bc28f5",
+      "implementation": "ceph_select_true_false_datetime",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_csv_parser@L1295",
+      "source_sha256": "d8c7bbcb9711eb6796cfd01b628d2960df51c1eb5249554550939c5fa729df39",
+      "implementation": "ceph_select_csv_parser",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_csv_definition@L1335",
+      "source_sha256": "b8dfecf14f430a79d6ee1a8da4dbc6465f61594c1d0cb0df3f61b32d049260e9",
+      "implementation": "ceph_select_csv_definition",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_schema_definition@L1365",
+      "source_sha256": "bd1e27641a62fb2519f70947e6d597615c3dad49c1cd8c02c1b51a425b05f02e",
+      "implementation": "ceph_select_schema_definition",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_when_then_else_expressions@L1399",
+      "source_sha256": "3b9efcb5223894903dd57b575cc8a7379401aa3ecc8a88c31248b932ec3ea80a",
+      "implementation": "ceph_select_when_then_else_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_coalesce_expressions@L1429",
+      "source_sha256": "3804e1c23810d2e7a1eb255eee9eca4ec5458199c5aa828b13c57fc6ebf9eb74",
+      "implementation": "ceph_select_coalesce_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_cast_expressions@L1452",
+      "source_sha256": "1efb71ae42ff9191ba5a8c45dd813d1e37464f62cb01fcc6be92c8654d6bbc2c",
+      "implementation": "ceph_select_cast_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_version@L1474",
+      "source_sha256": "9392cffbeaeca85e9bf622a6407c954b96d7f007b3848f93c1161e990cd75519",
+      "implementation": "ceph_select_version",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_trim_expressions@L1492",
+      "source_sha256": "6d81d7d0b96e5bcb8367455d83b2c3c2af677e4a2a9f5644df9939753f62c93d",
+      "implementation": "ceph_select_trim_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_truefalse_trim_expressions@L1532",
+      "source_sha256": "2dc8bfc817fe8e769aff18fc2dfde4f2f2f06afcf8a5eea1e02657179bd73721",
+      "implementation": "ceph_select_truefalse_trim_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_escape_expressions@L1572",
+      "source_sha256": "5e7b415ea96e842feccb5def7434a5da35b448039df0cfb3262a29209ed7e86e",
+      "implementation": "ceph_select_escape_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_case_value_expressions@L1594",
+      "source_sha256": "763e3372867ebbfcfa01e62532c06a07e7ab09a4c0ed644d8064a6e3684d1e32",
+      "implementation": "ceph_select_case_value_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_bool_cast_expressions@L1610",
+      "source_sha256": "71b99f2eed6721d5ba252db9973bfc521418f7bc20356ff571b9ab492fa5c8cd",
+      "implementation": "ceph_select_bool_cast_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_progress_expressions@L1626",
+      "source_sha256": "7d5b5c2c21f406da7e74fc206f8f2ab1aa48c09b70796a27d76e28f092361aa7",
+      "implementation": "ceph_select_progress_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3select.py::test_output_serial_expressions@L1659",
+      "source_sha256": "5ed384f5a70351028108ea6a7c6e3ad60415fe0e1ab0d23fbd99b7b3499232c0",
+      "implementation": "ceph_select_output_serial_expressions",
+      "review": "固定revision原函数body与所有19个active helper以AST源段逐字静态迁移；34 active定义SHA与inventory核对，4 shadowed定义保持既有N/A。原s3select_assert_result仅非空检查、不比较结果相等，明确写入case.expected，不能把通过解读为SQL结果正确。实际官方Java异步/Cpp事件stream decoder，不实现SQL引擎或替代解码器；每个Records事件分别进入原UTF8 decode，Progress严格最大BytesScanned、Stats/End及原异常捕获边界保留。 原开头立即return TODO无任何操作或oracle，执行明确not_run upstream_todo，不能服务pass。 原markers：pytest.mark.s3select v26 Java与v25 Cpp共12个定向方法分别全部通过：真实官方事件解码、序列化、HTTP403、服务eventerror、CRC、缺End、原CSVcount/JSONcount整source与Progress/UTF8；其余31个非TODO源为完整原body/输入/断言静态迁移及共用实际SDK桥接，未声称这31个也逐源执行了完整SQL fixture，更未声称真实云SQL语义已验证。保留真实SDK差异：headers-only服务error Java2.20.162原生丢code（None/status0），Cpp保留code；Cpp可在CRC失败回调前发Records，Java先拒绝；原样保留callback顺序且CRC/transport不变成可被原helper吞掉的服务EventStreamError。实际SDK输出到生产consumer字节突变捕获1failure/0errors并恢复。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_key_filter_s@L16280",
+      "source_sha256": "ebf09d2ffd15ecf17099da906a0a29a7d6bf30e6010da608f674ad4aec500410",
+      "implementation": "ceph_logging_remaining_key_filter_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_key_filter_j@L16288",
+      "source_sha256": "b277463747e41c421e6d187878eb87e3e7bfc8312d6f498d5ad2f48cb1052233",
+      "implementation": "ceph_logging_remaining_key_filter_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_flush_empty@L16392",
+      "source_sha256": "0578f97f58a7a72cb3d1e2064e38066982634a0aeb198b033d00991664d3cb00",
+      "implementation": "ceph_logging_remaining_flush_empty",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_flush_j@L16399",
+      "source_sha256": "0c70c4959b62ee8311ca4fd41ab57147c06eb690fccbd1520dd3a1129aa541f2",
+      "implementation": "ceph_logging_remaining_flush_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_flush_s@L16408",
+      "source_sha256": "a6b238643dc77a3a24fef063a5a414e34181ec3b803d76bf0f0be9ef3fb9b8c2",
+      "implementation": "ceph_logging_remaining_flush_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_flush_j_single@L16417",
+      "source_sha256": "20cd8825bdb9f784ae4e7bb8a151702e6f2221193292f2370cafb014226227d7",
+      "implementation": "ceph_logging_remaining_flush_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_flush_s_single@L16424",
+      "source_sha256": "97abadb8b6f71aea4c8dc9f10528f71c7b14174143ee89f4877318f3d1f7ecb8",
+      "implementation": "ceph_logging_remaining_flush_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_deletion_j@L18407",
+      "source_sha256": "9f47ffc797203988407b0082a05ff8888931af4284df7d0d2e05936b1d58ee17",
+      "implementation": "ceph_logging_remaining_cleanup_bucket_deletion_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_deletion_j_single@L18414",
+      "source_sha256": "6786ca1ab3bb0a20513f80f0355c6c3475abfd24e114e44ada782f2a01aab10e",
+      "implementation": "ceph_logging_remaining_cleanup_bucket_deletion_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_disabling_j@L18421",
+      "source_sha256": "825c55c5b3d8fef7c2b0eeda943c10fc6e1ecc22449c54ab571a97daa91db67e",
+      "implementation": "ceph_logging_remaining_cleanup_disabling_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_disabling_j_single@L18428",
+      "source_sha256": "2752406176cb196316e432f6bab991e1fc4120cdc58cd004cf31184ede8c9498",
+      "implementation": "ceph_logging_remaining_cleanup_disabling_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_updating_j@L18435",
+      "source_sha256": "80d82c644b3fa86c5f48e3af933f0007e53f079cd65889f52549f98970bc031e",
+      "implementation": "ceph_logging_remaining_cleanup_updating_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_updating_j_single@L18442",
+      "source_sha256": "6572313aa98ecf93c61b77c0394f459522dfd42007eb54a5f855e6b991766509",
+      "implementation": "ceph_logging_remaining_cleanup_updating_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_notupdating_j@L18449",
+      "source_sha256": "c8e6d89093a3167551c01f64d898937d75526a9daab36dbeb56bb7089ed0b8cb",
+      "implementation": "ceph_logging_remaining_notupdating_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_notupdating_j_single@L18456",
+      "source_sha256": "e75f54ea95daccd04616d3307eb0f31ee0cab6ead56da958b9563a99b3b94f52",
+      "implementation": "ceph_logging_remaining_notupdating_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_deletion_s@L18463",
+      "source_sha256": "2178b935332b04263b6a2dc7ab269237780966431b31f82226c658f8e2a2ff44",
+      "implementation": "ceph_logging_remaining_cleanup_bucket_deletion_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_deletion_s_single@L18470",
+      "source_sha256": "ea7aee1f634e825d3596c5c54c6a253b976133d1f66152b2696c263fae4e3b5e",
+      "implementation": "ceph_logging_remaining_cleanup_bucket_deletion_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_disabling_s@L18477",
+      "source_sha256": "0950645609c69c4571192bd73d6af989f69ffe9aa36bbe66cadc8a58aa3913b9",
+      "implementation": "ceph_logging_remaining_cleanup_disabling_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_disabling_s_single@L18484",
+      "source_sha256": "87d38709b135c8cb75a22b6e3256f8ce0b7f5d2db8f7bf761badc8edd7a3d512",
+      "implementation": "ceph_logging_remaining_cleanup_disabling_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_updating_s@L18491",
+      "source_sha256": "41079247321af389a9aa45cf03a50c185fb2c3c790e23fbe0a09dec1e26dc25c",
+      "implementation": "ceph_logging_remaining_cleanup_updating_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_updating_s_single@L18498",
+      "source_sha256": "97f5d584a5879004887696ab5a6615082834c507447439749c40454a37325d01",
+      "implementation": "ceph_logging_remaining_cleanup_updating_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_notupdating_s@L18505",
+      "source_sha256": "32f1dd44ad5dbce1daec2eb4e290ac709f5eda20819feae9503834bac7b8246a",
+      "implementation": "ceph_logging_remaining_notupdating_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_notupdating_s_single@L18512",
+      "source_sha256": "ef850b2baee89e616e084d9183377e1aafec2c603563b74ffbdddbfceac22381",
+      "implementation": "ceph_logging_remaining_notupdating_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_target_cleanup_j@L18519",
+      "source_sha256": "c337967eca2a00812df2afd9217302bf8d99d25320d3929d86359f783007d373",
+      "implementation": "ceph_logging_remaining_target_cleanup_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_target_cleanup_j_single@L18526",
+      "source_sha256": "85150856c4d1c4ed93c429ef797cf2600c76d502fff5f4ad4993da9f4fb86d3f",
+      "implementation": "ceph_logging_remaining_target_cleanup_j_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_target_cleanup_s@L18533",
+      "source_sha256": "58fc88c3c63e5226bbf15d3706502c4d527ce0f2860706a73afa524b41bc192f",
+      "implementation": "ceph_logging_remaining_target_cleanup_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_target_cleanup_s_single@L18540",
+      "source_sha256": "c2bcbd430e8bc1c197c457fd88a2eb9a345d2c2778c21123961701cf3aa18720",
+      "implementation": "ceph_logging_remaining_target_cleanup_s_single",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_updating_s@L18805",
+      "source_sha256": "8e095c4f42e52a00b9dfd188829285a9d3c8b64dddeb86c61fc33334e754b786",
+      "implementation": "ceph_logging_remaining_part_cleanup_updating_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_disabling_s@L18812",
+      "source_sha256": "312f06d89a1266947c4bab8912cce2ffa4378520a017831515e65723b72fcb64",
+      "implementation": "ceph_logging_remaining_part_cleanup_disabling_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_deletion_s@L18819",
+      "source_sha256": "093651f4a4649d668d44a90c1b2593930334af0d1199f360d23ecb9d8c1ea722",
+      "implementation": "ceph_logging_remaining_part_cleanup_deletion_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_updating_j@L18826",
+      "source_sha256": "c9d8f5f2aed3ed4e97d2e4145497ae98f73a0c238a82a0b4595c6d5ea42cb4f8",
+      "implementation": "ceph_logging_remaining_part_cleanup_updating_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_disabling_j@L18833",
+      "source_sha256": "d144bd3c6c69f3497d826eb2629eede524e2fe5eda69a344e9aee4ac05a694a0",
+      "implementation": "ceph_logging_remaining_part_cleanup_disabling_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_deletion_j@L18840",
+      "source_sha256": "9f58d420111c5955c36344e53f3bd1a734fd9d4871252fa82955a30d023c5a3f",
+      "implementation": "ceph_logging_remaining_part_cleanup_deletion_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。上游最后两类_verify_records返回值未assert，保留原缺陷；独立实际空日志仍被源接受的边界明确记录，不能当作验证了日志完整性。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_updating_roll_s@L18985",
+      "source_sha256": "605f2f550cd699df794b37d585abb8f52a30a250d5486d934aee88d4a01b411f",
+      "implementation": "ceph_logging_remaining_conf_updating_roll_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。原首次更新误检查前次response状态/PUT异常warning-only保留，独立201响应及两轮100PUT验证实际链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_updating_roll_j@L18992",
+      "source_sha256": "35499ab99af5a701ec83d0fedf475fae3eb0caa9b272610b309976b8a8429a4c",
+      "implementation": "ceph_logging_remaining_conf_updating_roll_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。原首次更新误检查前次response状态/PUT异常warning-only保留，独立201响应及两轮100PUT验证实际链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_updating_pfx_s@L18999",
+      "source_sha256": "2af5475a90cf7e347f0b88948e3eb6aed972ec0a5ff9b68c21fad8eb011adad9",
+      "implementation": "ceph_logging_remaining_conf_updating_pfx_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。原首次更新误检查前次response状态/PUT异常warning-only保留，独立201响应及两轮100PUT验证实际链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_updating_pfx_j@L19006",
+      "source_sha256": "944cf099041b9516567f0e79e0e1f617d11a35753dc37702384794ae97df3d2c",
+      "implementation": "ceph_logging_remaining_conf_updating_pfx_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。原首次更新误检查前次response状态/PUT异常warning-only保留，独立201响应及两轮100PUT验证实际链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_event_type_j@L17976",
+      "source_sha256": "f51e72ceff053ccc14c415007e4727e65a0e7807c160c986a0f33e77a233ceef",
+      "implementation": "ceph_logging_remaining_event_type_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。Journal原HEAD条件是count==5的结果为False，1条HEAD接受/5条HEAD失败均实测，不擅改为零HEAD。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_event_type_s@L17984",
+      "source_sha256": "5d089bc62e5baa50958758e5a6b550beaef093c0189c95325825c4978ab9eeca",
+      "implementation": "ceph_logging_remaining_event_type_s",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_roll_time@L17992",
+      "source_sha256": "e1ae77d0eaf29e6a9d6f71840ea07c03c5fa3c889aa16bbe438f8130dff4483c",
+      "implementation": "ceph_logging_remaining_roll_time",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。原5+5+11+25×1+10+5共61秒等待全部真实执行，未patch sleep。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_account_j@L17229",
+      "source_sha256": "c18c67322d900a7a1be5ef3560e656f68faf819a2829117dd8163c4a5f1c0940",
+      "implementation": "ceph_logging_remaining_account_j",
+      "review": "固定revision原函数及helper body逐AST保留，仅case新增具体目的docstring；MIT原许可完整随静态迁移。原全部次数、顺序、输入、断言/缺陷和等待保留。必须workload.ceph_logging_wire_extensions=True及实际worker cap，调用api.ceph.*官方SDK公共hook显式协议适配，不代表stock AWS SDK原生支持，evidence标protocol_adapter。所有实际响应字段来自capture_response_body真实XML而非请求/SDK模型默认值，保留整数0、空SimplePrefix、Filter/S3Key/FilterRule顺序及FlushedLoggingObject实际关联。两SDK独立rawHTTP完整源/负面路径均通过，每次实际PUT logging XML严格解析，另bridge验证真实MD5/SigV4/作用域；该fixture仅验证SDK链路和源oracle，不冒充真实Ceph服务日志交付。UUID+HEAD404+实际create绑定owned scope，先禁日志/删policy再清理所有真实已写键及实际列举log；源删除成功立即撤销旧scope再HEAD404，拒接管替代桶，目标同名重建须重新HEAD404。缺配置明确not_run。三个原main→root/root→root/root→main向量及真实IAM GetUser ARN→policy SourceAccount完整保留，实际POST key与5记录全部断言。"
+    },
+    {
+      "source_id": "s3tests/functional/test_utils.py::test_generate@L3",
+      "source_sha256": "a41856c9005f7695e8c800753d03e4122e27195036ac72e30f2031ad84588f4e",
+      "implementation": "ceph_utils_generate",
+      "review": "原固定revision utils.generate_random helper逐字迁移，保留test_generate原0/1/5MiB-1/5MiB/5MiB+1全部五个join长度断言；本源为纯本地数据生成器，不代表对象存储SDK请求通过。独立真实producer长度/分块ASCII边界测试通过；故意删除真实generator remainder拼接时测试失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_concurrent_flush_j@L16431",
+      "source_sha256": "12785ec3adb5eb795185384655831b19b301e4d8a21a628cd0af4aaeb3342089",
+      "implementation": "ceph_logging_parallel_concurrent_flush_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_concurrent_flush_s@L16439",
+      "source_sha256": "8e02fa8d038348334579e1d8c85405231c3ba2d6142f6692fd9c5d640dcf2127",
+      "implementation": "ceph_logging_parallel_concurrent_flush_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_concurrent_flush_j_single@L16446",
+      "source_sha256": "5831fefe0ba4d202ce2c8b36f534e33473d4aedfc08f600bc210105682e31ad5",
+      "implementation": "ceph_logging_parallel_concurrent_flush_j_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_concurrent_flush_s_single@L16454",
+      "source_sha256": "f4a3b782a2b2ad5f11b24d2377d68c4b5e6139e5c7c35611b5fad534fe6c89f0",
+      "implementation": "ceph_logging_parallel_concurrent_flush_s_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_put_and_flush@L16461",
+      "source_sha256": "fc8faf991600fa2b2e33d3a02d234f10d7cdfdf998306d3946e747188b4deaca",
+      "implementation": "ceph_logging_parallel_put_and_flush",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。完整原300 PUT线程+每第10次的30 POST线程+最后同步POST，真实SDK连接池至少100的info证明，不满足先not_run；独立31个排序日志文件及300随机body唯一性/真实PUT数量验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_concurrent_deletion_j@L18547",
+      "source_sha256": "0299170d645829f6d90f4facb1774eb3b25d6e87441d6822fae333d162e59422",
+      "implementation": "ceph_logging_parallel_cleanup_bucket_concurrent_deletion_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_concurrent_deletion_j_single@L18554",
+      "source_sha256": "d229588ea9390c66c64bd6e4ba87b9a449337f39a8e006d8f0b8cb6c201eb832",
+      "implementation": "ceph_logging_parallel_cleanup_bucket_concurrent_deletion_j_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_disabling_j@L18561",
+      "source_sha256": "8d7665eb01771433a46004c4f5d3aa58d93b772b2adb8fb3a867cd780765a8b2",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_disabling_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_disabling_j_single@L18568",
+      "source_sha256": "f276ec23eca1e4d89e637e888460ba84e926c13dc7d1aa4ac06c13135f0abfb5",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_disabling_j_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_updating_j@L18575",
+      "source_sha256": "d75d14ec601b8f2a03e7279b4a287c036e81feb8492fcde08fbb135a107e516c",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_updating_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_updating_j_single@L18582",
+      "source_sha256": "c724fb266cf6d6fc4ff1916efd16b7add40812dfddc247e4027ba158eb99bff3",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_updating_j_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_concurrent_deletion_s@L18589",
+      "source_sha256": "50a51befaaf0b47110617c0d5c3c01764df8ea606df6672940844011d2fcc0c1",
+      "implementation": "ceph_logging_parallel_cleanup_bucket_concurrent_deletion_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_bucket_concurrent_deletion_s_single@L18596",
+      "source_sha256": "a8a4cfd557f9649b0936ec2d6e5ca369ec0d5263d94caab6cb408c03f1209d25",
+      "implementation": "ceph_logging_parallel_cleanup_bucket_concurrent_deletion_s_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_disabling_s@L18603",
+      "source_sha256": "0cf4aaae4148a71cc88c6b3763d7e018cfc9a85c98db66089068410b1d5fb3b8",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_disabling_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_disabling_s_single@L18610",
+      "source_sha256": "b4f5aef8cd6b4bfbe91ee71247b723617cfd40665d8247355a49a6dc1a60b8e9",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_disabling_s_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_updating_s@L18617",
+      "source_sha256": "8e6c76a37f8eec072f9055bf8c280d5aab1c307fdd381051b74b49b1c992cfeb",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_updating_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_cleanup_concurrent_updating_s_single@L18624",
+      "source_sha256": "50a665ffb3a508aa505a97216fa33664e92e46b08cf040f2c6830b520be95c8d",
+      "implementation": "ceph_logging_parallel_cleanup_concurrent_updating_s_single",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_updating_s@L18763",
+      "source_sha256": "5f86f65e2b141ed2feb04e1ea99928195974912345df68e4503a4a8461507a03",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_updating_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_disabling_s@L18770",
+      "source_sha256": "59b28776999f4a500088d2686884b64a5b8360e900915d84e37c5f48835756b9",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_disabling_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_deletion_s@L18777",
+      "source_sha256": "60e45295e0ba6a525bc59ea0b8b50c0cc7e6836e8f3f23dfd370744226655686",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_deletion_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_updating_j@L18784",
+      "source_sha256": "aeb160cc6d8229ee5e0e2285d9f410de80a106a6effc8c7c15815cd8a434dc4a",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_updating_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_disabling_j@L18791",
+      "source_sha256": "1646687ec224062ddee050841c09469f5608a19fd086c9c73619e1792493f359",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_disabling_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_part_cleanup_concurrent_deletion_j@L18798",
+      "source_sha256": "1acdbadf823e736b47aec56c65eea7939b6fe864bb601998aa5e546f7714b58e",
+      "implementation": "ceph_logging_parallel_part_cleanup_concurrent_deletion_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留最后两类record布尔返回未assert的上游缺陷，不据此声称记录完整性已验证。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_concurrent_updating_roll_s@L19013",
+      "source_sha256": "7a3063e0ddfd7d418f37bef39abea9f3e7b5c28a48793e1187e81d434a00edd0",
+      "implementation": "ceph_logging_parallel_conf_concurrent_updating_roll_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留首次更新误检查旧response状态、PUT失败warning-only及Standard并发prefix分支故意不assert首批records；独立空首批日志路径已通过，第二批原100条仍assert。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_concurrent_updating_roll_j@L19020",
+      "source_sha256": "5681ec6998b2ad1d1e7d5eb2d2960e5a3de6df55778e84bf7f5f3a5f2cb12bf8",
+      "implementation": "ceph_logging_parallel_conf_concurrent_updating_roll_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留首次更新误检查旧response状态、PUT失败warning-only及Standard并发prefix分支故意不assert首批records；独立空首批日志路径已通过，第二批原100条仍assert。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_concurrent_updating_pfx_s@L19027",
+      "source_sha256": "2436c4ecef2412051eb8ec2e90010d41d633c7a5353143bc36c2e6f42a295e35",
+      "implementation": "ceph_logging_parallel_conf_concurrent_updating_pfx_s",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留首次更新误检查旧response状态、PUT失败warning-only及Standard并发prefix分支故意不assert首批records；独立空首批日志路径已通过，第二批原100条仍assert。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_conf_concurrent_updating_pfx_j@L19034",
+      "source_sha256": "c202dcde3f809e0f9b58008c36991f19ecc05eded8239594e626a966c5a3a2d2",
+      "implementation": "ceph_logging_parallel_conf_concurrent_updating_pfx_j",
+      "review": "固定源码body逐AST完整保留，仅补每函数具体目的docstring；MIT/固定revision沿用静态迁移。必须显式workload.ceph_logging_wire_extensions=True与实际async_requests；原Python线程经Worker.async_call在同一持久worker/同一SDK client启动实际官方调用，按真实job_id轮询结果，最多512在途，不fork或串行假并发；capture/elapsed保持实际任务局部。每写body独立临时文件持续至SDK完成，八个独立key/body实际SDK请求精确匹配；故意替换实际body被最终HTTP断言抓到并恢复。原5源/3源、10/100/0轮次、100+100 PUT、全部断言/未assert缺陷均保留。5路真实POST屏障及PUT持有期间main实际配置更新屏障证明并发；所有独立rawHTTP预期队列必须消费完，每次实际loggingXML严格解析；fixture不存储对象/不按观测写生成日志，不冒充Ceph实际日志交付。owned UUID+HEAD404+真实创建与完整先禁日志/删policy/键及实际列举log清理，删除成功立即解claim后HEAD404，不接管替代桶。两SDK全部27源路径及原oracle边界通过。保留首次更新误检查旧response状态、PUT失败warning-only及Standard并发prefix分支故意不assert首批records；独立空首批日志路径已通过，第二批原100条仍assert。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sns.py::test_account_topic@L61",
+      "source_sha256": "23ce62034bb1c8eca4bdc97e6a7831affaea5e2cca7242ee6cbc4b75cce2c4de",
+      "implementation": "ceph_sns_account_topic",
+      "review": "原ARN前后缀、List包含/删除后不包含、空Policy、Attributes存在性、真实NotFound和二次Delete全部保留。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sns.py::test_cross_account_topic@L88",
+      "source_sha256": "da344cafbaca712ad9c1dad6d0cb4452fdc23397be0a0f292fb3bb4fb8b251a3",
+      "implementation": "ceph_sns_cross_account_topic",
+      "review": "独立root/alt root凭据，三个原AuthorizationError及删除后alt List不包含断言全部保留。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sns.py::test_account_user_policy_list_topics@L108",
+      "source_sha256": "9a2d60b2d8e06147c81abfcaa2b1bd52ccb7f956c3a82aaa186fb85539f51887",
+      "implementation": "ceph_sns_account_user_policy_list_topics",
+      "review": "真实IAM CreateUser/CreateAccessKey输出直接用于新官方SNS客户端签名；原无策略ClientError（不把注释强化为某个代码）、原AmazonSNSReadOnlyAccess附加后成功均保留；真实ID清理用户/密钥/托管policy依赖。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sns.py::test_account_topic_publish@L129",
+      "source_sha256": "3aa61ef1facca2b4aa8f655a27c69225f23201fa90331da1200e1f764e58e007",
+      "implementation": "ceph_sns_account_topic_publish",
+      "review": "真实CreateTopic ARN直接进入官方S3 PutBucketNotificationConfiguration typed XML，保留id与s3:ObjectCreated:*；原函数没有真实Publish或通知送达断言，不新增或冒充验证。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_sns.py::test_cross_account_topic_publish@L149",
+      "source_sha256": "f99c06236cfb4d4f1f6034e318180c040991cd9140955e11aa3b1bd0cc50ac4d",
+      "implementation": "ceph_sns_cross_account_topic_publish",
+      "review": "原首次notification 403/AccessDenied、真实alt root GetUser ARN进入SNS Publish topic政策、原第二次notification成功全部保留；不虚构通知发送结果。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3control.py::test_account_public_access_block@L19",
+      "source_sha256": "b3b4922ecbc3853366688a6f6ef91e79197c8a71e1926df86b1c323210e64c95",
+      "implementation": "ceph_s3control_account_public_access_block",
+      "review": "原us-east-1及独立account_id，两个Delete204/Get404错误码、四布尔原断言、CreateBucket/PutBucketAcl public-read与bucket-level policy联动403全部保留；额外显式isolated_account_mutation_authorized及真实Get快照finally原样恢复，原无配置则Delete。 所有请求均为官方Java/C++ SNS/S3Control/S3/IAM SDK typed模型、签名、传输和真实XML解析；独立原始HTTP夹具让真实生产者输出直接进入后续消费者。SNS先实际分页证明UUID名不存在，unknown Create用实际分页结果仅清理本次UUID/account ARN，List失败也尝试已证明ARN清理；不复现上游nuke_topics删除无关topic的清理bug。缺独立身份/endpoint/授权时not_run，wire验证不代表实云通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_tenant_j@L17157",
+      "source_sha256": "d7384e8d426bdad56931bc113e377ddf30752f4aededa27420491e9ca0af3139",
+      "implementation": "ceph_logging_remaining_tenant_j",
+      "review": "固定revision原body及helper逐AST保留（仅每case加具体目的docstring），完整MIT许可；真实Java/C++官方SDK完整链/独立rawHTTP正反场景，所有实际loggingXML严格解析。显式ceph_logging_wire_extensions=True才走官方SDK公共hook适配，evidence明确protocol_adapter不冒充stockSDK支持；fixture只验证实际SDK调用/源oracle不替代真实Ceph服务日志交付。UUID+HEAD404+实际create scoped清理，先停全部日志/删policy，后清实际键/日志/version及桶；缺真实metadata/身份/显式授权not_run。原7namespace向量全部保留，真实tenant身份每次实际SDK签名；同bare桶名在不同身份分别HEAD404/create/cleanup，不用main回退；两次原NoSuchKey代码及5次原5PUT/List/POST/GET日志全部断言。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_object_meta@L18178",
+      "source_sha256": "576d131c37a123aaaed26d7e2d5e0065fcfe0ea84480eee5a7b181dde3822ea1",
+      "implementation": "ceph_logging_remaining_object_meta",
+      "review": "固定revision原body及helper逐AST保留（仅每case加具体目的docstring），完整MIT许可；真实Java/C++官方SDK完整链/独立rawHTTP正反场景，所有实际loggingXML严格解析。显式ceph_logging_wire_extensions=True才走官方SDK公共hook适配，evidence明确protocol_adapter不冒充stockSDK支持；fixture只验证实际SDK调用/源oracle不替代真实Ceph服务日志交付。UUID+HEAD404+实际create scoped清理，先停全部日志/删policy，后清实际键/日志/version及桶；缺真实metadata/身份/显式授权not_run。原实际VersionId→ACL/两TagSet/删Tag/hold ON/60天GOV→六Journal事件和版本匹配完整保留，原hold OFF及Bypass删除保留。已有typed tags API结合明确wire_query.versionId签名前扩展（不宣称已接typed版本字段）；actual version含+/=&经真实producer→所有消费者及URL解码单次语义验证。长锁前需object_lock_cleanup_authorized并实际同bucket同key=myobject两秒GOV+真实bypass删除证明；失败等待短期限、无bypass清理后not_run；LockScope按实际版本列表OFF及bypass清理断言失败残留。故意删除Tag versionId条件被独立最终HTTP断言捕获，恢复全过。"
     }
   ]
 }

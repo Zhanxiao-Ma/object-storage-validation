@@ -92,16 +92,22 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 
 #include "versioning_ops.h"
 #include "bucket_api_generated.h"
+#include "ceph_logging.h"
 #include "checksum_models.h"
 #include "copy_request.h"
 #include <future>
 
 #include "wire_headers.h"
 #include "s3_identities.h"
+#include "s3_select.h"
 #include "s3_presigning.h"
 #include "s3_atomic_streams.h"
+#include "s3_async_jobs.h"
 #ifdef OSV_WITH_CONTROL
 #include "control_api.h"
+#ifdef OSV_WITH_AUXILIARY
+#include "auxiliary_apis.h"
+#endif
 #endif
 
 /**
@@ -112,16 +118,18 @@ class S3Worker {
     std::string bucket = required("OSV_BUCKET");
     S3Identities identities;
     std::shared_ptr<Aws::S3::S3Client> client;
+    S3AsyncJobs async;
 public:
-    S3Worker():client(identities.get("main")) {}
+    S3Worker():client(identities.get("main")),async([this](const json& q){return execute(q);}) {}
     json execute(const json& q) {
+        if(S3AsyncJobs::handles(q.value("op",std::string())))return async.execute(q);
         if(q.value("op",std::string())=="concurrent_requests") {
             for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required","capture_response_body"})if(q.contains(name))throw std::runtime_error(std::string("concurrent batch requires the default client: ")+name);
             if(!q.contains("requests") || !q.at("requests").is_array() || q.at("requests").empty() || q.at("requests").size()>64)throw std::runtime_error("concurrent requests must be an array of 1..64 requests");
             for(const auto& request:q.at("requests")) {
                 if(!request.is_object() || !request.contains("op") || !request.at("op").is_string())throw std::runtime_error("concurrent request requires a textual op");
                 const auto& op=request.at("op").get_ref<const std::string&>();
-                if(op.empty() || op=="concurrent_requests" || op=="info")throw std::runtime_error("invalid concurrent operation: "+op);
+                if(op.empty() || op=="concurrent_requests" || S3AsyncJobs::handles(op) || op=="info")throw std::runtime_error("invalid concurrent operation: "+op);
                 for(const auto* name:{"identity","wire_headers","wire_query","checksum_when_required","capture_response_body"})if(request.contains(name))throw std::runtime_error(std::string("concurrent request requires the default client: ")+name);
             }
             std::promise<void> release;auto start=release.get_future().share();
@@ -136,6 +144,9 @@ public:
             release.set_value();json results=json::array();for(auto& future:pending)results.push_back(future.get());
             return {{"results",results}};
         }
+#ifdef OSV_WITH_AUXILIARY
+        if(osv_auxiliary::handles(q.value("op",std::string())))return osv_auxiliary::execute(q);
+#endif
 #ifdef OSV_WITH_CONTROL
         if(osv_control_api::handles(q.value("op",std::string())))return osv_control_api::execute(q);
 #endif
@@ -146,6 +157,7 @@ public:
         auto client=(q.contains("identity")||q.contains("wire_headers")||q.contains("wire_query")||q.contains("checksum_when_required"))?identities.select(q):this->client;
         std::string op = q.at("op"), key = q.value("key", "");
         if(op=="atomic_stream")return osv_atomic_streams::execute(*client,q);
+        if(op=="select")return osv_select::execute(*client,q);
         if(op=="presign")return osv_presigning::execute(*client,q);
         if(op=="put_encryption")op="put_sse_c";
         else if(op=="get_encryption")op="get_sse_c";
@@ -154,6 +166,7 @@ public:
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
         if(is_version_operation(op))return execute_version_operation(*client,q,bucket,key);
+        if(osv_ceph_logging::handles(op))return osv_ceph_logging::execute(*client,op,q);
         if(osv_bucket_api::handles(op))return osv_bucket_api::execute(*client,q);
         if(op=="delete_many" || op=="delete_many_versions") {
             Aws::S3::Model::DeleteObjectsRequest request;request.SetBucket(bucket);Aws::S3::Model::Delete deletion;
@@ -476,12 +489,16 @@ int main() {
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& capability:osv_atomic_streams::capabilities())response["capabilities"].push_back(capability);
                     response["capabilities"].push_back("response_body_capture");response["capabilities"].push_back("sdk_request_id");
+                    response["async_jobs_limit"]=512;response["capabilities"].push_back("async_requests");response["capabilities"].push_back("select");for(const auto& capability:osv_ceph_logging::capabilities())response["capabilities"].push_back(capability);
                     response["capabilities"].push_back("presign");response["capabilities"].push_back("presign_v4");
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& capability:osv_checksums::capabilities())response["capabilities"].push_back(capability);
                     response["capabilities"].push_back("put_storage_class");response["capabilities"].push_back("client_timeouts");response["capabilities"].push_back("versions_storage_class");response["capabilities"].push_back("list_buckets_pagination");response["capabilities"].push_back("mp_create_tagging");response["capabilities"].push_back("logging_target_key_format");response["capabilities"].push_back("concurrent_requests");response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
                     #ifdef OSV_WITH_CONTROL
                     for(const auto& capability:osv_control_api::capabilities())response["capabilities"].push_back(capability);
+#endif
+#ifdef OSV_WITH_AUXILIARY
+                    for(const auto& capability:osv_auxiliary::capabilities())response["capabilities"].push_back(capability);
 #endif
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
@@ -502,6 +519,9 @@ int main() {
     } catch (const std::exception& error) { std::cerr << error.what() << std::endl; code = 2; }
 #ifdef OSV_WITH_CONTROL
     osv_control_api::close();
+#endif
+#ifdef OSV_WITH_AUXILIARY
+    osv_auxiliary::close();
 #endif
     Aws::ShutdownAPI(options);
     return code;

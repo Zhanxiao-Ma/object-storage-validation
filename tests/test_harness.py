@@ -29,6 +29,28 @@ def config(directory):
 class HarnessTest(unittest.TestCase):
     """Validate orchestration with a real filesystem producer and consumer, not fake cloud results."""
 
+    def test_extension_and_account_mutation_flags_are_explicit_booleans(self):
+        """Purpose: load real extension/account manifests; expect opt-ins disabled by default and reject truthy strings/numbers or absent account identifiers before SDK IO."""
+        flags=('ceph_logging_wire_extensions','sns_mutation_authorized','isolated_account_mutation_authorized')
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp);manifest=directory/'extensions.json'
+            manifest.write_text(json.dumps(config(directory)))
+            loaded=load_config(manifest)['workload']
+            for key in flags:
+                self.assertIs(loaded[key],False)
+                for value in (True,False,'true',1,None):
+                    changed=config(directory);changed['workload'][key]=value
+                    manifest.write_text(json.dumps(changed))
+                    if type(value) is bool:self.assertIs(load_config(manifest)['workload'][key],value)
+                    else:
+                        with self.assertRaises(ValueError):load_config(manifest)
+            for value in ('isolated-account','',None,123):
+                changed=config(directory);changed['workload']['account_id']=value
+                manifest.write_text(json.dumps(changed))
+                if isinstance(value,str) and value:self.assertEqual(load_config(manifest)['workload']['account_id'],value)
+                else:
+                    with self.assertRaises(ValueError):load_config(manifest)
+
     def test_real_worker_to_report_and_cleanup(self):
         """Run actual worker IO and reporting; content gates pass and all run objects are removed."""
         with tempfile.TemporaryDirectory() as temp:

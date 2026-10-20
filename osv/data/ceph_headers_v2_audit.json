@@ -1,0 +1,553 @@
+{
+  "schema_version": 1,
+  "source_revision": "5b3987116eca0b4b8fa57d6b10f3db57bab196b6",
+  "source_file": "s3tests/functional/test_headers.py",
+  "state": "partial_static_source_only",
+  "register_executable_cases": false,
+  "active_case_count": 21,
+  "object_sources": 12,
+  "bucket_sources": 9,
+  "helpers": [
+    {
+      "name": "_add_header_create_object",
+      "source_line": 20,
+      "source_sha256": "8c8a237aeec7bd5a002d1a68a57d38015fb1f7bff6fb727ac947763d0bc8035f",
+      "source": "def _add_header_create_object(headers, client=None):\n    \"\"\" Create a new bucket, add an object w/header customizations\n    \"\"\"\n    bucket_name = get_new_bucket()\n    if client == None:\n        client = get_client()\n    key_name = 'foo'\n\n    # pass in custom headers before PutObject call\n    add_headers = (lambda **kwargs: kwargs['params']['headers'].update(headers))\n    client.meta.events.register('before-call.s3.PutObject', add_headers)\n    client.put_object(Bucket=bucket_name, Key=key_name)\n\n    return bucket_name, key_name"
+    },
+    {
+      "name": "_add_header_create_bad_object",
+      "source_line": 36,
+      "source_sha256": "1f0abd5cf9c7b4f22350fc94123829dc80a982eaf901ab891c721d686b5e12ac",
+      "source": "def _add_header_create_bad_object(headers, client=None):\n    \"\"\" Create a new bucket, add an object with a header. This should cause a failure \n    \"\"\"\n    bucket_name = get_new_bucket()\n    if client == None:\n        client = get_client()\n    key_name = 'foo'\n\n    # pass in custom headers before PutObject call\n    add_headers = (lambda **kwargs: kwargs['params']['headers'].update(headers))\n    client.meta.events.register('before-call.s3.PutObject', add_headers)\n    e = assert_raises(ClientError, client.put_object, Bucket=bucket_name, Key=key_name, Body='bar')\n\n    return e"
+    },
+    {
+      "name": "_remove_header_create_object",
+      "source_line": 52,
+      "source_sha256": "ace972a570e086fb0bd7e00b6288b46b1f215d8dac05087ef51d5be9a099eefa",
+      "source": "def _remove_header_create_object(remove, client=None):\n    \"\"\" Create a new bucket, add an object without a header\n    \"\"\"\n    bucket_name = get_new_bucket()\n    if client == None:\n        client = get_client()\n    key_name = 'foo'\n\n    # remove custom headers before PutObject call\n    def remove_header(**kwargs):\n        if (remove in kwargs['params']['headers']):\n            del kwargs['params']['headers'][remove]\n\n    client.meta.events.register('before-call.s3.PutObject', remove_header)\n    client.put_object(Bucket=bucket_name, Key=key_name)\n\n    return bucket_name, key_name"
+    },
+    {
+      "name": "_remove_header_create_bad_object",
+      "source_line": 70,
+      "source_sha256": "1a282fe6f46de014bbd386894482715db0fed8c4d3e7edf232193d5712731018",
+      "source": "def _remove_header_create_bad_object(remove, client=None):\n    \"\"\" Create a new bucket, add an object without a header. This should cause a failure\n    \"\"\"\n    bucket_name = get_new_bucket()\n    if client == None:\n        client = get_client()\n    key_name = 'foo'\n\n    # remove custom headers before PutObject call\n    def remove_header(**kwargs):\n        if (remove in kwargs['params']['headers']):\n            del kwargs['params']['headers'][remove]\n\n    client.meta.events.register('before-call.s3.PutObject', remove_header)\n    e = assert_raises(ClientError, client.put_object, Bucket=bucket_name, Key=key_name, Body='bar')\n\n    return e"
+    },
+    {
+      "name": "_add_header_create_bucket",
+      "source_line": 89,
+      "source_sha256": "f3cb738e738f407846f002a2eb816aa74dc27e7ce6ec2ba9f2405d75260d55f7",
+      "source": "def _add_header_create_bucket(headers, client=None):\n    \"\"\" Create a new bucket, w/header customizations\n    \"\"\"\n    bucket_name = get_new_bucket_name()\n    if client == None:\n        client = get_client()\n\n    # pass in custom headers before PutObject call\n    add_headers = (lambda **kwargs: kwargs['params']['headers'].update(headers))\n    client.meta.events.register('before-call.s3.CreateBucket', add_headers)\n    client.create_bucket(Bucket=bucket_name)\n\n    return bucket_name"
+    },
+    {
+      "name": "_add_header_create_bad_bucket",
+      "source_line": 104,
+      "source_sha256": "e65c0127a7b9680ec5cf64bb0127f212b55bfbec4f5456ef50d04b7a0b694541",
+      "source": "def _add_header_create_bad_bucket(headers=None, client=None):\n    \"\"\" Create a new bucket, w/header customizations that should cause a failure \n    \"\"\"\n    bucket_name = get_new_bucket_name()\n    if client == None:\n        client = get_client()\n\n    # pass in custom headers before PutObject call\n    add_headers = (lambda **kwargs: kwargs['params']['headers'].update(headers))\n    client.meta.events.register('before-call.s3.CreateBucket', add_headers)\n    e = assert_raises(ClientError, client.create_bucket, Bucket=bucket_name)\n\n    return e"
+    },
+    {
+      "name": "_remove_header_create_bucket",
+      "source_line": 119,
+      "source_sha256": "393cd059bb0e1e667f2ef9ce2c9eadc3922691e022c04ba7eb7ba66395b8400c",
+      "source": "def _remove_header_create_bucket(remove, client=None):\n    \"\"\" Create a new bucket, without a header\n    \"\"\"\n    bucket_name = get_new_bucket_name()\n    if client == None:\n        client = get_client()\n\n    # remove custom headers before PutObject call\n    def remove_header(**kwargs):\n        if (remove in kwargs['params']['headers']):\n            del kwargs['params']['headers'][remove]\n\n    client.meta.events.register('before-call.s3.CreateBucket', remove_header)\n    client.create_bucket(Bucket=bucket_name)\n\n    return bucket_name"
+    },
+    {
+      "name": "_remove_header_create_bad_bucket",
+      "source_line": 136,
+      "source_sha256": "a8974adedbfb6a8994974ce2d0a61483a1cef84f2c5bda86e19828fb1cd91a29",
+      "source": "def _remove_header_create_bad_bucket(remove, client=None):\n    \"\"\" Create a new bucket, without a header. This should cause a failure\n    \"\"\"\n    bucket_name = get_new_bucket_name()\n    if client == None:\n        client = get_client()\n\n    # remove custom headers before PutObject call\n    def remove_header(**kwargs):\n        if (remove in kwargs['params']['headers']):\n            del kwargs['params']['headers'][remove]\n\n    client.meta.events.register('before-call.s3.CreateBucket', remove_header)\n    e = assert_raises(ClientError, client.create_bucket, Bucket=bucket_name)\n\n    return e"
+    }
+  ],
+  "cases": [
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_md5_invalid_garbage_aws2@L386",
+      "source_sha256": "f2a540dc72c35a2b7af0e5fa172348893d263de68496250ce7b1ab11fe51f64b",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L386",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_md5_invalid_garbage_aws2():\n    v2_client = get_v2_client()\n    headers = {'Content-MD5': 'AWS HAHAHA'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 400\n    assert error_code == 'InvalidDigest'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "Content-MD5": "AWS HAHAHA"
+        }
+      },
+      "assertions": [
+        "assert status == 400",
+        "assert error_code == 'InvalidDigest'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_mismatch_below_aws2@L397",
+      "source_sha256": "b1218a5d66bd49de1097d99b6a6b66500470c6c491c26a6f3e2119eb19287653",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L397",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_contentlength_mismatch_below_aws2():\n    v2_client = get_v2_client()\n    content = 'bar'\n    length = len(content) - 1\n    headers = {'Content-Length': str(length)}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 400\n    assert error_code == 'BadDigest'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "content": "bar"
+      },
+      "assertions": [
+        "assert status == 400",
+        "assert error_code == 'BadDigest'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_incorrect_aws2@L410",
+      "source_sha256": "7fb371113dad10da61dbe4e29309f2b67e6e8e64eb530490ac4e07ebcfdea791",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L410",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_authorization_incorrect_aws2():\n    v2_client = get_v2_client()\n    headers = {'Authorization': 'AWS AKIAIGR7ZNNBHC5BKSUB:FWeDfwojDSdS2Ztmpfeubhd9isU='}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'InvalidDigest'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "Authorization": "AWS AKIAIGR7ZNNBHC5BKSUB:FWeDfwojDSdS2Ztmpfeubhd9isU="
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'InvalidDigest'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_invalid_aws2@L421",
+      "source_sha256": "cf4cc31602855d4f557b99a4c79810c784181b4f7b592bb748e7c7175fb29282",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L421",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_authorization_invalid_aws2():\n    v2_client = get_v2_client()\n    headers = {'Authorization': 'AWS HAHAHA'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 400\n    assert error_code == 'InvalidArgument'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "Authorization": "AWS HAHAHA"
+        }
+      },
+      "assertions": [
+        "assert status == 400",
+        "assert error_code == 'InvalidArgument'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_ua_empty_aws2@L430",
+      "source_sha256": "50a72785b433b677e2e3e21a716c77f0fd5d3414d61f26b35dd15f4b2e38e111",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L430",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_ua_empty_aws2():\n    v2_client = get_v2_client()\n    headers = {'User-Agent': ''}\n    bucket_name, key_name = _add_header_create_object(headers, v2_client)\n    v2_client.put_object(Bucket=bucket_name, Key=key_name, Body='bar')",
+      "helper_calls": [
+        "_add_header_create_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "User-Agent": ""
+        }
+      },
+      "assertions": []
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_ua_none_aws2@L437",
+      "source_sha256": "781ee60c4a20cc3c2a1af56338f03fafb19650e5955a2cf2564eb68f3fd9fb7f",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L437",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_ua_none_aws2():\n    v2_client = get_v2_client()\n    remove = 'User-Agent'\n    bucket_name, key_name = _remove_header_create_object(remove, v2_client)\n    v2_client.put_object(Bucket=bucket_name, Key=key_name, Body='bar')",
+      "helper_calls": [
+        "_remove_header_create_object"
+      ],
+      "literal_inputs": {
+        "remove": "User-Agent"
+      },
+      "assertions": []
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_invalid_aws2@L444",
+      "source_sha256": "c7cb690225d521a27298d3b56ca8650091a9a6121382202233c8e5a5a406136f",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L444",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_invalid_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Bad Date'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Bad Date"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_empty_aws2@L453",
+      "source_sha256": "f17b674c1d9eeb817d89a52a0e6ac47bcd652a8f445860e66a3f8ed2aa821c96",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L453",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_empty_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': ''}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": ""
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_none_aws2@L464",
+      "source_sha256": "962ed4f14b83201e972c963f45445a2e82ded1b1e16dbbe2be5c5529d31656b4",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L464",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_none_aws2():\n    v2_client = get_v2_client()\n    remove = 'x-amz-date'\n    e = _remove_header_create_bad_object(remove, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_remove_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "remove": "x-amz-date"
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_before_today_aws2@L473",
+      "source_sha256": "9680149fce2a4d8962217152da3cb42f58106745c4668b1d4647d25745114075",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L473",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_before_today_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 2010 21:53:04 GMT'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'RequestTimeTooSkewed'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 2010 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'RequestTimeTooSkewed'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_before_epoch_aws2@L482",
+      "source_sha256": "64937401094196c29705e3a2932ebd8428c3c60e8611b93a3244cedbd7e9d3b1",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L482",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_before_epoch_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 1950 21:53:04 GMT'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 1950 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_date_after_end_aws2@L491",
+      "source_sha256": "321a44da333d72ec37214ef69cf86b4cd84511d9a91b6c31ca56304844d1799a",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L491",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_object_create_bad_date_after_end_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 9999 21:53:04 GMT'}\n    e = _add_header_create_bad_object(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'RequestTimeTooSkewed'",
+      "helper_calls": [
+        "_add_header_create_bad_object"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 9999 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'RequestTimeTooSkewed'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_authorization_invalid_aws2@L502",
+      "source_sha256": "ee46bda466cf81638191eac86a8f60cf1347654e1bce583e42ceaab56216d232",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L502",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_authorization_invalid_aws2():\n    v2_client = get_v2_client()\n    headers = {'Authorization': 'AWS HAHAHA'}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 400\n    assert error_code == 'InvalidArgument'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "Authorization": "AWS HAHAHA"
+        }
+      },
+      "assertions": [
+        "assert status == 400",
+        "assert error_code == 'InvalidArgument'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_ua_empty_aws2@L512",
+      "source_sha256": "c9e438296501cfaa195790fadb735cbece7e03de1541760d4d444c4aee99e0f7",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L512",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_ua_empty_aws2():\n    v2_client = get_v2_client()\n    headers = {'User-Agent': ''}\n    _add_header_create_bucket(headers, v2_client)",
+      "helper_calls": [
+        "_add_header_create_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "User-Agent": ""
+        }
+      },
+      "assertions": []
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_ua_none_aws2@L519",
+      "source_sha256": "22655b528a491ff70269fa2a71faab57157ffbef5a9870b3a7347ca0f0877eb2",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L519",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_ua_none_aws2():\n    v2_client = get_v2_client()\n    remove = 'User-Agent'\n    _remove_header_create_bucket(remove, v2_client)",
+      "helper_calls": [
+        "_remove_header_create_bucket"
+      ],
+      "literal_inputs": {
+        "remove": "User-Agent"
+      },
+      "assertions": []
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_invalid_aws2@L525",
+      "source_sha256": "7310eb90140efda84dd55add72412fb1004ed18a41ad44ebcace1292906d9b3c",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L525",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_invalid_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Bad Date'}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Bad Date"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_empty_aws2@L534",
+      "source_sha256": "9b97b94cf2d894583ab8b6cf6e28a3e7ed9b7999682a69512e912b92d30a6f4f",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L534",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_empty_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': ''}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": ""
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_none_aws2@L545",
+      "source_sha256": "e6c576a831aeab989cbcd0bfc274d319898b20d08c6007eeb4122b4c68b38543",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L545",
+      "markers": [
+        "pytest.mark.auth_aws2",
+        "pytest.mark.fails_on_rgw"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_none_aws2():\n    v2_client = get_v2_client()\n    remove = 'x-amz-date'\n    e = _remove_header_create_bad_bucket(remove, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_remove_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "remove": "x-amz-date"
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_before_today_aws2@L554",
+      "source_sha256": "d3c27c381bc367e7ad0e78d7f1558e886475a679e845d8e21d3f5771553869bd",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L554",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_before_today_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 2010 21:53:04 GMT'}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'RequestTimeTooSkewed'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 2010 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'RequestTimeTooSkewed'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_after_today_aws2@L563",
+      "source_sha256": "5eb4fd751b6c3e5be2062e5e4a675fef6fe132b92d150bb57a324b933f509ed2",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L563",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_after_today_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 2030 21:53:04 GMT'}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'RequestTimeTooSkewed'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 2030 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'RequestTimeTooSkewed'"
+      ]
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_date_before_epoch_aws2@L572",
+      "source_sha256": "4b3f6cf289d494fc3ffd819a7ab4cf3f53bd82d1caca66e1981a8b1a8ea40afd",
+      "source_url": "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_headers.py#L572",
+      "markers": [
+        "pytest.mark.auth_aws2"
+      ],
+      "alignment_status": "partial",
+      "blocker": "No actual official Java/C++ SignatureV2 ordinary-request producer is implemented; SignatureV4 cannot substitute",
+      "source": "def test_bucket_create_bad_date_before_epoch_aws2():\n    v2_client = get_v2_client()\n    headers = {'x-amz-date': 'Tue, 07 Jul 1950 21:53:04 GMT'}\n    e = _add_header_create_bad_bucket(headers, v2_client)\n    status, error_code = _get_status_and_error_code(e.response)\n    assert status == 403\n    assert error_code == 'AccessDenied'",
+      "helper_calls": [
+        "_add_header_create_bad_bucket"
+      ],
+      "literal_inputs": {
+        "headers": {
+          "x-amz-date": "Tue, 07 Jul 1950 21:53:04 GMT"
+        }
+      },
+      "assertions": [
+        "assert status == 403",
+        "assert error_code == 'AccessDenied'"
+      ]
+    }
+  ],
+  "signing_evidence": {
+    "source_factory": "functional/__init__.py get_v2_client uses botocore Config(signature_version='s3')",
+    "source_header_event": "before-call.s3.PutObject/CreateBucket before actual SDK signing; no post-sign mutation substitution",
+    "java_actual_sdk": "aws-sdk-java-v2 auth2.20.162 exposes AwsS3V4Signer, Aws4Signer, Aws4UnsignedPayloadSigner; existing S3 target uses official V4 default, no implemented ordinary-request V2 producer",
+    "cpp_actual_sdk": "AWSAuthV4Signer/NullSigner/BearerSigner/EventStreamV4Signer public official headers; S3ClientConfiguration exposes PayloadSigningPolicy on V4; existing S3 identities construct V4 S3Client",
+    "current_bridge_gap": "ordinary put/create RPC has no strict signature_version selection; sending an ignored extra field could silently use V4 and is forbidden",
+    "presign_comparison": "Existing four presigned V2 source vectors have complete generic presign consumer logic and explicit missing presign_v2 gate; that capability does not implement ordinary authenticated V2 requests"
+  },
+  "requirements_before_execution": [
+    "actual official SDK V2 ordinary signer producer",
+    "strict signature-version RPC selection and signing_v2 capability only when actual producer exists",
+    "source before-call header update/removal timing",
+    "physical wire proof Authorization AWS access:signature for valid V2 source requests; invalid literal headers stay original",
+    "genuine native status/error metadata; no canned service error synthesis",
+    "owned isolated bucket cleanup using unmodified main identity and only actual created ownership"
+  ],
+  "expected_not_claims": [
+    "No aligned reviews or executable registry entries are added",
+    "No hand-written HMAC signer or V4 substitution",
+    "Zero HTTP preflight tests alone cannot establish V2 support"
+  ],
+  "license_notice": "Copyright (c) 2011 New Dream Network, LLC\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
+}

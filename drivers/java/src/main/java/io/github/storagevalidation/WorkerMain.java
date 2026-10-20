@@ -71,7 +71,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
-                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.add("response_body_capture");capabilities.add("sdk_request_id");capabilities.addAll(S3Presigning.capabilities());capabilities.addAll(S3AtomicStreams.capabilities());capabilities.addAll(ControlApiModels.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging","versions_storage_class"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LifecycleRule.builder(),"Prefix"))capabilities.add("lifecycle_legacy_prefix");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.ListBucketsResponse.builder(),"ContinuationToken"))capabilities.add("list_buckets_pagination"); }
+                        if("s3".equals(provider)) { result.put("async_jobs_limit",512);capabilities.add("async_requests");capabilities.addAll(AuxiliaryApis.capabilities());capabilities.addAll(CephLogging.capabilities());capabilities.add("select");capabilities.addAll(S3Identities.capabilities());capabilities.add("response_body_capture");capabilities.add("sdk_request_id");capabilities.addAll(S3Presigning.capabilities());capabilities.addAll(S3AtomicStreams.capabilities());capabilities.addAll(ControlApiModels.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging","versions_storage_class"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LifecycleRule.builder(),"Prefix"))capabilities.add("lifecycle_legacy_prefix");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.ListBucketsResponse.builder(),"ContinuationToken"))capabilities.add("list_buckets_pagination"); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
@@ -213,8 +213,11 @@ public final class WorkerMain {
         final software.amazon.awssdk.services.s3.S3Client client;
         final String bucket = required("BUCKET");
         final S3Identities identities=new S3Identities();
+        final AuxiliaryApis auxiliary=new AuxiliaryApis();
+        final S3AsyncJobs async=new S3AsyncJobs(this);
         AwsStore() { client=identities.get("main"); }
         public Map<String,Object> execute(JsonNode q) throws Exception {
+            if(S3AsyncJobs.handles(text(q,"op")))return async.execute(q);
             if("concurrent_requests".equals(text(q,"op")))return S3Concurrency.execute(this,q);
             if(q.has("wire_query")) {
                 try(WireQuery.Scope ignored=new WireQuery.Scope(q.get("wire_query"))) {
@@ -224,7 +227,9 @@ public final class WorkerMain {
             return executeWithHeaders(q);
         }
         private Map<String,Object> executeWithHeaders(JsonNode q) throws Exception {
+            if(AuxiliaryApis.handles(q.path("op").asText()))return auxiliary.execute(q.path("op").asText(),q);
             if(ControlApiModels.handles(q.path("op").asText()))return CONTROL.execute(q.path("op").asText(),q);
+            if("select".equals(q.path("op").asText()))return S3Select.execute(q);
             if("presign".equals(q.path("op").asText()))return S3Presigning.execute(q);
             if(q.has("wire_headers")) {
                 try(WireHeaders.Scope ignored=new WireHeaders.Scope(q.get("wire_headers"))) {
@@ -242,6 +247,7 @@ public final class WorkerMain {
             String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
             if(S3Versioning.handles(op)) return S3Versioning.execute(client,op,q,bucket,key);
             if("atomic_stream".equals(op))return S3AtomicStreams.execute(client,q);
+            if(CephLogging.handles(op))return CephLogging.execute(client,op,q);
             if(S3ApiModels.handles(op)) return S3ApiModels.execute(client,op,q);
             switch(op) {
             case "delete_many": case "delete_many_versions": {
@@ -496,7 +502,7 @@ public final class WorkerMain {
             default: throw new UnsupportedOperationException(op);
             }
         }
-        public void close() { CONTROL.close();identities.close(); }
+        public void close() { async.close();auxiliary.close();CONTROL.close();identities.close(); }
     }
 
     /**

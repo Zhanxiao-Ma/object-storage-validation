@@ -10,7 +10,10 @@
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>s3</artifactId><version>${aws.version}</version></dependency>
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>iam</artifactId><version>${aws.version}</version></dependency>
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sts</artifactId><version>${aws.version}</version></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>sns</artifactId><version>${aws.version}</version></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>s3control</artifactId><version>${aws.version}</version></dependency>
     <dependency><groupId>software.amazon.awssdk</groupId><artifactId>apache-client</artifactId><version>${aws.version}</version></dependency>
+    <dependency><groupId>software.amazon.awssdk</groupId><artifactId>netty-nio-client</artifactId><version>${aws.version}</version></dependency>
     <dependency><groupId>com.aliyun.oss</groupId><artifactId>aliyun-sdk-oss</artifactId><version>${oss.version}</version></dependency>
     <dependency><groupId>com.huaweicloud</groupId><artifactId>esdk-obs-java</artifactId><version>${obs.version}</version></dependency>
     <dependency><groupId>com.volcengine</groupId><artifactId>ve-tos-java-sdk</artifactId><version>${tos.version}</version></dependency>

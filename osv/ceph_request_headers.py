@@ -8,15 +8,15 @@ from .suites import case,run_cases,CEPH
 
 SOURCE=CEPH.rsplit("/",1)[0]+"/test_headers.py"
 
-def recover_creation(bucket):
-    """Clean an ambiguous fresh UUID only after its ACL owner matches a separately confirmed owned bucket; never use this cleanup evidence as a compatibility oracle."""
+def recover_creation(bucket,expected_owner=None):
+    """Clean an ambiguous candidate only after its real ACL owner matches a separately confirmed owned control bucket and an optional independent expected owner; never use cleanup proof as a compatibility oracle."""
     exists=bucket.raw("bucket_head")
     if (exists.get("error_kind"),exists.get("status_code"))==("not_found",404):return
     if not exists.get("ok"):raise RuntimeError("cannot verify ambiguous header-test bucket ownership: "+bucket.name)
     with BucketScope(bucket.probe) as control:
         owner=control.call("api.GetBucketAcl",input={}).get("data",{}).get("Owner",{}).get("ID")
         candidate=bucket.raw("api.GetBucketAcl",input={})
-        if not isinstance(owner,str) or not owner or not candidate.get("ok") or candidate.get("data",{}).get("Owner",{}).get("ID")!=owner:
+        if not isinstance(owner,str) or not owner or not candidate.get("ok") or candidate.get("data",{}).get("Owner",{}).get("ID")!=owner or (expected_owner is not None and owner!=expected_owner):
             raise RuntimeError("ambiguous header-test bucket owner is unconfirmed; manual inspection required: "+bucket.name)
         bucket.created=True
         bucket.__exit__(None,None,None)

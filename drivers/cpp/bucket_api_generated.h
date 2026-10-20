@@ -161,6 +161,17 @@
 #include <aws/s3/model/CompletedMultipartUpload.h>
 #include <aws/s3/model/CompletedPart.h>
 #include <aws/s3/model/AbortMultipartUploadRequest.h>
+#include <aws/s3/model/PutBucketNotificationConfigurationRequest.h>
+#include <aws/s3/model/NotificationConfiguration.h>
+#include <aws/s3/model/TopicConfiguration.h>
+#include <aws/s3/model/Event.h>
+#include <aws/s3/model/NotificationConfigurationFilter.h>
+#include <aws/s3/model/S3KeyFilter.h>
+#include <aws/s3/model/FilterRule.h>
+#include <aws/s3/model/FilterRuleName.h>
+#include <aws/s3/model/QueueConfiguration.h>
+#include <aws/s3/model/LambdaFunctionConfiguration.h>
+#include <aws/s3/model/EventBridgeConfiguration.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -824,6 +835,50 @@ inline Aws::S3::Model::AbortMultipartUploadRequest read_AbortMultipartUploadRequ
 inline J write_AbortMultipartUploadRequest(const Aws::S3::Model::AbortMultipartUploadRequest& value);
 inline Aws::Utils::DateTime read_IfMatchInitiatedTime(const J& value);
 inline J write_IfMatchInitiatedTime(const Aws::Utils::DateTime& value);
+inline Aws::S3::Model::PutBucketNotificationConfigurationRequest read_PutBucketNotificationConfigurationRequest(const J& value);
+inline J write_PutBucketNotificationConfigurationRequest(const Aws::S3::Model::PutBucketNotificationConfigurationRequest& value);
+inline Aws::S3::Model::NotificationConfiguration read_NotificationConfiguration(const J& value);
+inline J write_NotificationConfiguration(const Aws::S3::Model::NotificationConfiguration& value);
+inline Aws::Vector<Aws::S3::Model::TopicConfiguration> read_TopicConfigurationList(const J& value);
+inline J write_TopicConfigurationList(const Aws::Vector<Aws::S3::Model::TopicConfiguration>& value);
+inline Aws::S3::Model::TopicConfiguration read_TopicConfiguration(const J& value);
+inline J write_TopicConfiguration(const Aws::S3::Model::TopicConfiguration& value);
+inline Aws::String read_NotificationId(const J& value);
+inline J write_NotificationId(const Aws::String& value);
+inline Aws::String read_TopicArn(const J& value);
+inline J write_TopicArn(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::Event> read_EventList(const J& value);
+inline J write_EventList(const Aws::Vector<Aws::S3::Model::Event>& value);
+inline Aws::S3::Model::Event read_Event(const J& value);
+inline J write_Event(const Aws::S3::Model::Event& value);
+inline Aws::S3::Model::NotificationConfigurationFilter read_NotificationConfigurationFilter(const J& value);
+inline J write_NotificationConfigurationFilter(const Aws::S3::Model::NotificationConfigurationFilter& value);
+inline Aws::S3::Model::S3KeyFilter read_S3KeyFilter(const J& value);
+inline J write_S3KeyFilter(const Aws::S3::Model::S3KeyFilter& value);
+inline Aws::Vector<Aws::S3::Model::FilterRule> read_FilterRuleList(const J& value);
+inline J write_FilterRuleList(const Aws::Vector<Aws::S3::Model::FilterRule>& value);
+inline Aws::S3::Model::FilterRule read_FilterRule(const J& value);
+inline J write_FilterRule(const Aws::S3::Model::FilterRule& value);
+inline Aws::S3::Model::FilterRuleName read_FilterRuleName(const J& value);
+inline J write_FilterRuleName(const Aws::S3::Model::FilterRuleName& value);
+inline Aws::String read_FilterRuleValue(const J& value);
+inline J write_FilterRuleValue(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::QueueConfiguration> read_QueueConfigurationList(const J& value);
+inline J write_QueueConfigurationList(const Aws::Vector<Aws::S3::Model::QueueConfiguration>& value);
+inline Aws::S3::Model::QueueConfiguration read_QueueConfiguration(const J& value);
+inline J write_QueueConfiguration(const Aws::S3::Model::QueueConfiguration& value);
+inline Aws::String read_QueueArn(const J& value);
+inline J write_QueueArn(const Aws::String& value);
+inline Aws::Vector<Aws::S3::Model::LambdaFunctionConfiguration> read_LambdaFunctionConfigurationList(const J& value);
+inline J write_LambdaFunctionConfigurationList(const Aws::Vector<Aws::S3::Model::LambdaFunctionConfiguration>& value);
+inline Aws::S3::Model::LambdaFunctionConfiguration read_LambdaFunctionConfiguration(const J& value);
+inline J write_LambdaFunctionConfiguration(const Aws::S3::Model::LambdaFunctionConfiguration& value);
+inline Aws::String read_LambdaFunctionArn(const J& value);
+inline J write_LambdaFunctionArn(const Aws::String& value);
+inline Aws::S3::Model::EventBridgeConfiguration read_EventBridgeConfiguration(const J& value);
+inline J write_EventBridgeConfiguration(const Aws::S3::Model::EventBridgeConfiguration& value);
+inline bool read_SkipValidation(const J& value);
+inline J write_SkipValidation(const bool& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -4458,8 +4513,238 @@ inline Aws::Utils::DateTime read_IfMatchInitiatedTime(const J& value) {
 inline J write_IfMatchInitiatedTime(const Aws::Utils::DateTime& value) {
     return value.Millis();
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::PutBucketNotificationConfigurationRequest read_PutBucketNotificationConfigurationRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: PutBucketNotificationConfigurationRequest");
+    static const std::set<std::string> allowed={"Bucket","NotificationConfiguration","ExpectedBucketOwner","SkipDestinationValidation"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::PutBucketNotificationConfigurationRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("NotificationConfiguration") && !value.at("NotificationConfiguration").is_null())result.SetNotificationConfiguration(read_NotificationConfiguration(value.at("NotificationConfiguration")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("SkipDestinationValidation") && !value.at("SkipDestinationValidation").is_null())result.SetSkipDestinationValidation(read_SkipValidation(value.at("SkipDestinationValidation")));
+    return result;
+}
+inline J write_PutBucketNotificationConfigurationRequest(const Aws::S3::Model::PutBucketNotificationConfigurationRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.NotificationConfigurationHasBeenSet())result["NotificationConfiguration"]=write_NotificationConfiguration(value.GetNotificationConfiguration());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.SkipDestinationValidationHasBeenSet())result["SkipDestinationValidation"]=write_SkipValidation(value.GetSkipDestinationValidation());
+    return result;
+}
+inline Aws::S3::Model::NotificationConfiguration read_NotificationConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: NotificationConfiguration");
+    static const std::set<std::string> allowed={"TopicConfigurations","QueueConfigurations","LambdaFunctionConfigurations","EventBridgeConfiguration"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::NotificationConfiguration result;
+    if(value.contains("TopicConfigurations") && !value.at("TopicConfigurations").is_null())result.SetTopicConfigurations(read_TopicConfigurationList(value.at("TopicConfigurations")));
+    if(value.contains("QueueConfigurations") && !value.at("QueueConfigurations").is_null())result.SetQueueConfigurations(read_QueueConfigurationList(value.at("QueueConfigurations")));
+    if(value.contains("LambdaFunctionConfigurations") && !value.at("LambdaFunctionConfigurations").is_null())result.SetLambdaFunctionConfigurations(read_LambdaFunctionConfigurationList(value.at("LambdaFunctionConfigurations")));
+    if(value.contains("EventBridgeConfiguration") && !value.at("EventBridgeConfiguration").is_null())result.SetEventBridgeConfiguration(read_EventBridgeConfiguration(value.at("EventBridgeConfiguration")));
+    return result;
+}
+inline J write_NotificationConfiguration(const Aws::S3::Model::NotificationConfiguration& value) {
+    J result=J::object();
+    if(value.TopicConfigurationsHasBeenSet())result["TopicConfigurations"]=write_TopicConfigurationList(value.GetTopicConfigurations());
+    if(value.QueueConfigurationsHasBeenSet())result["QueueConfigurations"]=write_QueueConfigurationList(value.GetQueueConfigurations());
+    if(value.LambdaFunctionConfigurationsHasBeenSet())result["LambdaFunctionConfigurations"]=write_LambdaFunctionConfigurationList(value.GetLambdaFunctionConfigurations());
+    if(value.EventBridgeConfigurationHasBeenSet())result["EventBridgeConfiguration"]=write_EventBridgeConfiguration(value.GetEventBridgeConfiguration());
+    return result;
+}
+inline Aws::Vector<Aws::S3::Model::TopicConfiguration> read_TopicConfigurationList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: TopicConfigurationList");
+    Aws::Vector<Aws::S3::Model::TopicConfiguration> result;for(const auto& item:value)result.push_back(read_TopicConfiguration(item));return result;
+}
+inline J write_TopicConfigurationList(const Aws::Vector<Aws::S3::Model::TopicConfiguration>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_TopicConfiguration(item));return result;
+}
+inline Aws::S3::Model::TopicConfiguration read_TopicConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: TopicConfiguration");
+    static const std::set<std::string> allowed={"Id","TopicArn","Events","Filter"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::TopicConfiguration result;
+    if(value.contains("Id") && !value.at("Id").is_null())result.SetId(read_NotificationId(value.at("Id")));
+    if(value.contains("TopicArn") && !value.at("TopicArn").is_null())result.SetTopicArn(read_TopicArn(value.at("TopicArn")));
+    if(value.contains("Events") && !value.at("Events").is_null())result.SetEvents(read_EventList(value.at("Events")));
+    if(value.contains("Filter") && !value.at("Filter").is_null())result.SetFilter(read_NotificationConfigurationFilter(value.at("Filter")));
+    return result;
+}
+inline J write_TopicConfiguration(const Aws::S3::Model::TopicConfiguration& value) {
+    J result=J::object();
+    if(value.IdHasBeenSet())result["Id"]=write_NotificationId(value.GetId());
+    if(value.TopicArnHasBeenSet())result["TopicArn"]=write_TopicArn(value.GetTopicArn());
+    if(value.EventsHasBeenSet())result["Events"]=write_EventList(value.GetEvents());
+    if(value.FilterHasBeenSet())result["Filter"]=write_NotificationConfigurationFilter(value.GetFilter());
+    return result;
+}
+inline Aws::String read_NotificationId(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_NotificationId(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_TopicArn(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_TopicArn(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::Event> read_EventList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: EventList");
+    Aws::Vector<Aws::S3::Model::Event> result;for(const auto& item:value)result.push_back(read_Event(item));return result;
+}
+inline J write_EventList(const Aws::Vector<Aws::S3::Model::Event>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_Event(item));return result;
+}
+inline Aws::S3::Model::Event read_Event(const J& value) {
+    return Aws::S3::Model::EventMapper::GetEventForName(value.get<std::string>());
+}
+inline J write_Event(const Aws::S3::Model::Event& value) {
+    return std::string(Aws::S3::Model::EventMapper::GetNameForEvent(value).c_str());
+}
+inline Aws::S3::Model::NotificationConfigurationFilter read_NotificationConfigurationFilter(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: NotificationConfigurationFilter");
+    static const std::set<std::string> allowed={"Key"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::NotificationConfigurationFilter result;
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_S3KeyFilter(value.at("Key")));
+    return result;
+}
+inline J write_NotificationConfigurationFilter(const Aws::S3::Model::NotificationConfigurationFilter& value) {
+    J result=J::object();
+    if(value.KeyHasBeenSet())result["Key"]=write_S3KeyFilter(value.GetKey());
+    return result;
+}
+inline Aws::S3::Model::S3KeyFilter read_S3KeyFilter(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: S3KeyFilter");
+    static const std::set<std::string> allowed={"FilterRules"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::S3KeyFilter result;
+    if(value.contains("FilterRules") && !value.at("FilterRules").is_null())result.SetFilterRules(read_FilterRuleList(value.at("FilterRules")));
+    return result;
+}
+inline J write_S3KeyFilter(const Aws::S3::Model::S3KeyFilter& value) {
+    J result=J::object();
+    if(value.FilterRulesHasBeenSet())result["FilterRules"]=write_FilterRuleList(value.GetFilterRules());
+    return result;
+}
+inline Aws::Vector<Aws::S3::Model::FilterRule> read_FilterRuleList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: FilterRuleList");
+    Aws::Vector<Aws::S3::Model::FilterRule> result;for(const auto& item:value)result.push_back(read_FilterRule(item));return result;
+}
+inline J write_FilterRuleList(const Aws::Vector<Aws::S3::Model::FilterRule>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_FilterRule(item));return result;
+}
+inline Aws::S3::Model::FilterRule read_FilterRule(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: FilterRule");
+    static const std::set<std::string> allowed={"Name","Value"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::FilterRule result;
+    if(value.contains("Name") && !value.at("Name").is_null())result.SetName(read_FilterRuleName(value.at("Name")));
+    if(value.contains("Value") && !value.at("Value").is_null())result.SetValue(read_FilterRuleValue(value.at("Value")));
+    return result;
+}
+inline J write_FilterRule(const Aws::S3::Model::FilterRule& value) {
+    J result=J::object();
+    if(value.NameHasBeenSet())result["Name"]=write_FilterRuleName(value.GetName());
+    if(value.ValueHasBeenSet())result["Value"]=write_FilterRuleValue(value.GetValue());
+    return result;
+}
+inline Aws::S3::Model::FilterRuleName read_FilterRuleName(const J& value) {
+    return Aws::S3::Model::FilterRuleNameMapper::GetFilterRuleNameForName(value.get<std::string>());
+}
+inline J write_FilterRuleName(const Aws::S3::Model::FilterRuleName& value) {
+    return std::string(Aws::S3::Model::FilterRuleNameMapper::GetNameForFilterRuleName(value).c_str());
+}
+inline Aws::String read_FilterRuleValue(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_FilterRuleValue(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::QueueConfiguration> read_QueueConfigurationList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: QueueConfigurationList");
+    Aws::Vector<Aws::S3::Model::QueueConfiguration> result;for(const auto& item:value)result.push_back(read_QueueConfiguration(item));return result;
+}
+inline J write_QueueConfigurationList(const Aws::Vector<Aws::S3::Model::QueueConfiguration>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_QueueConfiguration(item));return result;
+}
+inline Aws::S3::Model::QueueConfiguration read_QueueConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: QueueConfiguration");
+    static const std::set<std::string> allowed={"Id","QueueArn","Events","Filter"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::QueueConfiguration result;
+    if(value.contains("Id") && !value.at("Id").is_null())result.SetId(read_NotificationId(value.at("Id")));
+    if(value.contains("QueueArn") && !value.at("QueueArn").is_null())result.SetQueueArn(read_QueueArn(value.at("QueueArn")));
+    if(value.contains("Events") && !value.at("Events").is_null())result.SetEvents(read_EventList(value.at("Events")));
+    if(value.contains("Filter") && !value.at("Filter").is_null())result.SetFilter(read_NotificationConfigurationFilter(value.at("Filter")));
+    return result;
+}
+inline J write_QueueConfiguration(const Aws::S3::Model::QueueConfiguration& value) {
+    J result=J::object();
+    if(value.IdHasBeenSet())result["Id"]=write_NotificationId(value.GetId());
+    if(value.QueueArnHasBeenSet())result["QueueArn"]=write_QueueArn(value.GetQueueArn());
+    if(value.EventsHasBeenSet())result["Events"]=write_EventList(value.GetEvents());
+    if(value.FilterHasBeenSet())result["Filter"]=write_NotificationConfigurationFilter(value.GetFilter());
+    return result;
+}
+inline Aws::String read_QueueArn(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_QueueArn(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Vector<Aws::S3::Model::LambdaFunctionConfiguration> read_LambdaFunctionConfigurationList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: LambdaFunctionConfigurationList");
+    Aws::Vector<Aws::S3::Model::LambdaFunctionConfiguration> result;for(const auto& item:value)result.push_back(read_LambdaFunctionConfiguration(item));return result;
+}
+inline J write_LambdaFunctionConfigurationList(const Aws::Vector<Aws::S3::Model::LambdaFunctionConfiguration>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_LambdaFunctionConfiguration(item));return result;
+}
+inline Aws::S3::Model::LambdaFunctionConfiguration read_LambdaFunctionConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: LambdaFunctionConfiguration");
+    static const std::set<std::string> allowed={"Id","LambdaFunctionArn","Events","Filter"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::LambdaFunctionConfiguration result;
+    if(value.contains("Id") && !value.at("Id").is_null())result.SetId(read_NotificationId(value.at("Id")));
+    if(value.contains("LambdaFunctionArn") && !value.at("LambdaFunctionArn").is_null())result.SetLambdaFunctionArn(read_LambdaFunctionArn(value.at("LambdaFunctionArn")));
+    if(value.contains("Events") && !value.at("Events").is_null())result.SetEvents(read_EventList(value.at("Events")));
+    if(value.contains("Filter") && !value.at("Filter").is_null())result.SetFilter(read_NotificationConfigurationFilter(value.at("Filter")));
+    return result;
+}
+inline J write_LambdaFunctionConfiguration(const Aws::S3::Model::LambdaFunctionConfiguration& value) {
+    J result=J::object();
+    if(value.IdHasBeenSet())result["Id"]=write_NotificationId(value.GetId());
+    if(value.LambdaFunctionArnHasBeenSet())result["LambdaFunctionArn"]=write_LambdaFunctionArn(value.GetLambdaFunctionArn());
+    if(value.EventsHasBeenSet())result["Events"]=write_EventList(value.GetEvents());
+    if(value.FilterHasBeenSet())result["Filter"]=write_NotificationConfigurationFilter(value.GetFilter());
+    return result;
+}
+inline Aws::String read_LambdaFunctionArn(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_LambdaFunctionArn(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::EventBridgeConfiguration read_EventBridgeConfiguration(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: EventBridgeConfiguration");
+    static const std::set<std::string> allowed={};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::EventBridgeConfiguration result;
+    return result;
+}
+inline J write_EventBridgeConfiguration(const Aws::S3::Model::EventBridgeConfiguration& value) {
+    J result=J::object();
+    return result;
+}
+inline bool read_SkipValidation(const J& value) {
+    return value.get<bool>();
+}
+inline J write_SkipValidation(const bool& value) {
+    return value;
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload","api.PutBucketNotificationConfiguration"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload","api.AbortMultipartUpload","api.PutBucketNotificationConfiguration"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -4990,6 +5275,13 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
         J data=J::object();
         const auto& result=outcome.GetResult();
         if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.PutBucketNotificationConfiguration"){
+        auto request=read_PutBucketNotificationConfigurationRequest(input);J observed;HttpObservationScope observation(&observed,false);
+        auto outcome=client.PutBucketNotificationConfiguration(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
         observed["data"]=data;return observed;
     }
     throw std::runtime_error("unsupported bucket API: "+op);

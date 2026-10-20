@@ -58,6 +58,8 @@ class Worker:
     """Run a real SDK process; protocol and startup costs stay outside SDK timing."""
 
     def __init__(self, target, timeout=60, secret_registry=None):
+        self._call_lock=threading.RLock()
+        self._async_slots=threading.BoundedSemaphore(64)
         self.timeout = timeout
         self.target = target.copy()
         environment={**os.environ, **target.get("env", {})}
@@ -84,6 +86,10 @@ class Worker:
             if not isinstance(capabilities, list) or not all(isinstance(op, str) and op for op in capabilities):
                 raise ValueError("worker capabilities must be an array of operation names")
             self.capabilities = frozenset(capabilities)
+            limit=self.info.get('async_jobs_limit',64)
+            if type(limit) is not int or not 1<=limit<=1024:
+                raise ValueError('invalid worker async_jobs_limit')
+            self._async_slots=threading.BoundedSemaphore(limit)
             for key in ("language", "api", "sdk_version"):
                 if key in target and self.info.get(key) != target[key]:
                     raise RuntimeError(f"worker {key} differs from the manifest: {self.info.get(key)!r} != {target[key]!r}")
@@ -125,6 +131,37 @@ class Worker:
             self.responses.put(error)
 
     def call(self, request):
+        """Serialize each JSONL exchange so polling threads cannot consume another RPC response."""
+        with self._call_lock:
+            return self._call_locked(request)
+
+    def async_call(self, request):
+        """Interleave source threads on the same real SDK client using bounded nonblocking RPCs."""
+        if 'async_requests' not in self.capabilities:
+            raise ValueError('worker does not support same-client async requests')
+        with self._async_slots:
+            started=self.call({'op':'async_start','request':request})
+            if not started['ok']:
+                return started
+            deadline=time.monotonic()+self.timeout
+            while time.monotonic()<deadline:
+                response=self.call({'op':'async_poll','job_id':started['job_id']})
+                if not response['ok']:
+                    return response
+                if response['done']:
+                    result=response.get('result')
+                    if not isinstance(result,dict) or type(result.get('ok')) is not bool:
+                        raise ValueError('invalid asynchronous SDK result')
+                    duration=result.get('elapsed_ns')
+                    if type(duration) is not int or duration<0:
+                        raise ValueError('missing or invalid async SDK elapsed_ns')
+                    normalize_control_result(request,result)
+                    return result
+                time.sleep(.005)
+            self.process.kill()
+            raise TimeoutError('asynchronous SDK worker exceeded request deadline')
+
+    def _call_locked(self, request):
         self.secret_registry.payload(request)
         self.process.stdin.write(json.dumps(request) + "\n")
         self.process.stdin.flush()

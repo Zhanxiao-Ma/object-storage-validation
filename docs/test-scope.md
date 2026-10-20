@@ -421,9 +421,9 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 
 ### 当前完整迁移缺口
 
-目录v24按固定上游有效源函数计数：Ceph 842/975（86.4%），尚余133；4个被同名后定义覆盖的函数单独N/A，不计入975。完善档实际执行目录共936个场景，场景数与上游源函数数分别统计。剩余按文件：`test_s3.py`71（均为日志源）、S3 Select34、SigV2请求头21、SNS5、S3Control1、数据生成工具1；IAM与STS固定有效源函数均已有逐项迁移记录。
+目录v25按固定上游有效源函数计数：Ceph 953/975（97.7%），尚余22；4个被同名后定义覆盖的函数单独N/A，不计入975。完善档实际执行目录共1047个场景（1043个门槛、4个观察），场景数与上游源函数数分别统计。剩余按文件：`test_s3.py`1（日志认证源）、SigV2请求头21；IAM、STS、S3 Select及本地数据生成工具的固定有效源函数已有逐项迁移记录。
 
-这些是工具未迁移的执行链路，不能当成任何厂商的兼容性失败。剩余日志71包含Ceph专用模型、POST扩展响应及同客户端动态并发交错，尚未验证的桥接或来源不计入aligned。已注册的IAM/STS迁移保留实际控制面SDK操作，OIDC仍要求真正可达的IdP/JWT及原始外部配置，过期测试保留原900秒等待；缺少这些前提必须not_run。
+这些是工具未迁移的执行链路，不能当成任何厂商的兼容性失败。剩余日志1包含必须完整执行的 SigV2 与 SigV4 签名路径，尚未验证的桥接或来源不计入aligned。已注册的IAM/STS迁移保留实际控制面SDK操作，OIDC仍要求真正可达的IdP/JWT及原始外部配置，过期测试保留原900秒等待；缺少这些前提必须not_run。
 
 预签名18项保留官方SDK生成URL后真实HTTP消费。V2四项需要真实V2签名能力，目前SDK未实现则not_run。原始过期值0/609901/-7/-1000不截断；Java对609901、C++对负值的本地拒绝如实记失败，不伪造服务端403。Java/C++缺省TTL分别3600/604800，不影响原缺省用例的200和对象内容断言。
 
@@ -438,3 +438,33 @@ IAM 使用 `OSV_IAM_ENDPOINT` / `OSV_IAM_REGION`，STS独立使用 `OSV_STS_ENDP
 本地完善档默认使用串行HTTP Moto以隔离其并发覆盖缓冲区问题。14个原子源中仅1MiB读取及版本重叠在该串行夹具通过，其余12项的HTTP重入会形成发送背压和嵌套请求等待，保留为本地夹具诊断。独立回归显式使用并发HTTP Moto，两种SDK均为12源通过、2源真实失败：If-Match:*被Moto直接比较ETag而返回412，以及重复PartNumber=1且保留原B/A ETag列表被Moto返回400 InvalidPart。原始请求和断言没有为Moto改写。这些结果不代表云厂商兼容性或性能差异。
 
 本批新增的真实响应体场景包括账户usage五个quota原文字段、错误XML RequestId与官方SDK异常metadata对照，以及root策略恢复/ConfirmRemoveSelf两源；不由typed默认值构造响应。chunked写入保留原唯一Transfer-Encoding头修改：Java实际本地传输拒绝如实失败，C++真实chunked发送结果独立观察。剩余日志中的两个标准SDK源新增后，未注册仍待迁移的日志从73降为71；专用日志wire扩展和S3 Select新桥接尚不计本版数量。
+
+
+### Ceph 日志扩展与标准 SDK 结论的边界
+
+`workload.ceph_logging_wire_extensions` 默认 `false`。显式设为 `true` 时，独立的 `api.ceph.*` 适配使用官方 SDK 的端点、签名和 HTTP 传输，在签名前补充 Ceph 的 LoggingType、ObjectRollTime、RecordsBatchSize、Filter 及 POST logging。报告以 `protocol_adapter=ceph_logging_wire_extensions` 标明此路径；这不代表未修改的 AWS SDK 原生支持这些 Ceph 字段，也不能用于推导标准 S3 API 的跨厂商性能结论。
+
+41个扩展源保留所有固定参数、真实 POST 返回对象名、原始日志条数/顺序断言和61秒rolltime等待。独立 HTTP 回归检查实际请求 XML、最终 MD5、Content-Length 与 SigV4 签名。C++ XML 重序列化曾产生重复声明，严格解析测试发现后已修复并通过双端复验。部分上游 helper 缺少 assert、config 分支检查旧 response 的弱断言均明确保留，没有把它们升级成服务正确性证明。
+
+### Select 与本地工具
+
+S3 Select 使用 Java 官方异步 SDK / C++ 官方事件流回调，记录真实 Records/Stats/Progress/End 和错误，Records 原始字节进入文件后再由共同消费者按真实事件边界读取。HTTP 失败、HTTP 200 后的服务事件错误以及 CRC/传输解码失败分开保留；不会补造 End。两端 SDK 对 CRC 错误前是否已交付 Records 的差异如实记录。
+
+34个原源函数完整迁移；CSV/JSON count 的完整源路径经过独立原始事件流回归，其余源通过静态 body/断言审查与共享真实 SDK 链路验证。这不代表已在真实云端逐一验证全部 SQL。上游 `s3select_assert_result` 不比较结果相等，原立即返回的 TODO 始终 `not_run`、前提为 `upstream_todo`，不算云端兼容通过。本地随机数据生成器独立标记 `execution_kind=local_utility`、`cloud_requests=0`，其五个大小边界通过不计为任何 SDK API 的性能证据。
+
+同客户端异步 RPC 使用最多512个在途任务及非阻塞轮询，Python 多线程共享每次 JSONL 交换锁。真实 SDK 子任务保留自身响应体、错误与耗时；任务完成后只能消费一次。它不会用多个进程/客户端替代原测试要求的同一客户端交错，连接池大小仍使用真实 `OSV_CONNECTIONS` 配置与 worker 握手记录。
+
+两个聚合 Select 源使用固定桶名 `testbuck2`，保留原名字且要求 `workload.ceph_literal_bucket_names_authorized=true`。源执行前真实 HEAD 证明不存在，实际 CreateBucket 前再次检查；未获授权或桶已存在时在任何源对象写入前停止，绝不清理不属于本次创建的固定桶。
+
+Java 资源保护构建使用 `clean package`，避免复制/生成源码保留旧时间戳时 Maven 将旧 class 打包。真实两次构建回归保留了修改前失败、修改后通过证据；编译依然限制并行、CPU/I/O 优先级和内存压力。
+
+
+### SNS 与账号级 S3Control
+
+Java 使用固定版本官方 SNS/S3Control SDK，C++ 需安装 `s3;iam;sts;sns;s3control` 并以 `python3 scripts/build.py cpp --with-auxiliary --prefix <SDK安装路径>` 编译。`--with-auxiliary` 同时启用控制面桥接；默认 S3 worker 构建不要求这两个新增服务库。SNS 使用独立 `OSV_SNS_ENDPOINT` / `OSV_SNS_REGION`，S3Control 使用 `OSV_S3CONTROL_ENDPOINT` / `OSV_S3CONTROL_REGION`，不将账号级公共阻断冒充为桶级 API。
+
+SNS 变更要求 `workload.sns_mutation_authorized=true`，IAM 变更保留其独立授权前提。账号级公共阻断要求 `workload.isolated_account_mutation_authorized=true`、独立 `workload.account_id`、真实 IAM root ARN 的账号对应关系及原 `us-east-1` 区域；先读取四个布尔值的真实快照，再执行原断言，finally 恢复原配置，原无配置则恢复为删除状态。清理只处理本次独立 UUID Topic 名字及已证明的真实 ARN，分页预检拒绝接管已存在的同名 Topic，未知 Create 结果也只在自有命名范围内找回。
+
+S3Control 官方 SDK 会按 AccountId 加 hostname 前缀，不能将 IP 字面自定义 endpoint 的本地路由失败解释成服务不兼容；实际 DNS/endpoint 设置保留在报告中。Java 固定 SDK 对 `<ErrorResponse><Error>…` 与根 `<Error>…` 的错误码解析存在真实差异，C++ 行为也独立记录；工具不重写 XML 或补造错误码来让源断言通过。
+
+并发日志27源保留原五路 flush、配置变化与尚未结束 PUT 的真实交错、300 PUT/30 flush、原日志字段/条数，以及完整清理分支。独立 HTTP 屏障证明请求确实重叠，同一 worker 中的真实100连接 SDK 客户端按原源使用。原源没有 assert 的分支继续作为弱断言说明，不当作更强的一致性证明。
