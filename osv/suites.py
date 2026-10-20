@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 11
+CATALOG_VERSION = 12
 
 
 @dataclass(frozen=True)
@@ -323,7 +323,9 @@ def register_suites(registry):
     register_acl(registry)
     from .ceph_bucket_inventory import register as register_bucket_inventory
     register_bucket_inventory(registry)
+    from .ceph_request_headers import register as register_request_headers
+    register_request_headers(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory"),
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

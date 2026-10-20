@@ -129,3 +129,10 @@ Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id
 Java 使用 SDK 公开 SdkField 描述及 builder/getter；C++ 根据 `drivers/schema/bucket-api.json` 生成真实 SDK setter/getter 调用。时间戳输入接受 UTC 毫秒或 ISO 时间，输出为实际 SDK 的毫秒值。未知成员、SDK 整数不可表示的输入在发送前明确报错，不生成 HTTP 状态。显式 null 可选成员按 SDK 的未设置值处理。响应中缺失集合保留 SDK 模型的缺失语义；C++ 顶层字段有无从实际响应 XML/头观察，值仍来自 SDK。策略字符串使用 SDK 的实际请求/响应流。
 
 模型描述来源是固定 SDK 接口元数据，不是 AWS 官方测试代码。更新模型后执行 `python3 scripts/generate_bucket_api.py`，并用 `--check` 验证生成物。常规 get/put 性能操作继续直接调用已有 SDK 方法，不经过配置模型转换。
+
+
+## 签名前请求头修改
+
+AWS S3 Java/C++ 声明 `wire_headers` 能力。兼容性 RPC 可附 `"wire_headers":{"Content-MD5":"bad-value","Expect":null}`：字符串覆盖、null 删除；名称按 HTTP token 校验，禁止 CR/LF、非字符串值和大小写重复名称。在序列化之后、官方签名之前修改；签名器和 HTTP 层仍可正规化/重写，报告保留实际结果。不接受事后伪造 HTTP 错误，也不实现替代签名器。未附该字段的普通性能请求不经过修改器。
+
+负 ContentLength 的源场景附 `checksum_when_required:true`，要求握手声明相应能力。`put_http.content_length` 是有符号长度，交给真实 SDK 模型而非仅修改文本头。`OSV_HEADER_REQUEST_TIMEOUT_MS` 指兼容性客户端总超时，默认 30000ms，握手记录 `header_request_timeout_ms`。请求总超时与 C++ 低速超时分别设置；JSONL 输入使用私有管道副本，SDK 默认 stdin 只读到 EOF，以免上传意外消费控制消息。以上均不修改普通客户端连接/重试设置。

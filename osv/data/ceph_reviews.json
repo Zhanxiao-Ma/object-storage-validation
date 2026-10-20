@@ -1632,6 +1632,168 @@
       "source_sha256": "840b77e51c3e40211f21ae5aa2c29920f820f6503021c4772e6e1014aa6275e2",
       "implementation": "ceph_policy_deny_acl_v2",
       "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留 authenticated-read ACL、Deny ListBucket 策略、独立另一身份 V1/V2 列举 403/AccessDenied 和 public-read 恢复；真实 SDK 解析/请求失败同样保留，finally 删除策略以清理独立桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_md5_invalid_short@L158",
+      "source_sha256": "aa4543002ae37c1ab9e4da4a8282ee52103d1ebd099c9041593b6695f57a68f0",
+      "implementation": "ceph_header_object_md5_invalid_short",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_md5_bad@L165",
+      "source_sha256": "2bec05dcf72e37d366e87c483a2510c02673cd760ed654978aa6a88b2ecf6136",
+      "implementation": "ceph_header_object_md5_bad",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_md5_empty@L172",
+      "source_sha256": "a8d19ceab29d91cf3d49b12876d97007dcead811cc055400e87c799362ca21a6",
+      "implementation": "ceph_header_object_md5_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_md5_none@L179",
+      "source_sha256": "5246f8a6798993147d79acd3235e1679d368afad34b1d66c3855825786f58d7b",
+      "implementation": "ceph_header_object_md5_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_expect_mismatch@L185",
+      "source_sha256": "faca820ae2e785b58656790d2d54bff192aef02086e03f4f4fa2d4176793a67d",
+      "implementation": "ceph_header_object_expect_mismatch",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_expect_empty@L191",
+      "source_sha256": "24bd5a57e6065ee23e09a541910b6696cbb8de291af97f3dd7a2561cecc98929",
+      "implementation": "ceph_header_object_expect_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_expect_none@L197",
+      "source_sha256": "dca09c1e409368a98a48950c2515467742e9cf9cce403d89b12799e5d2a52e5c",
+      "implementation": "ceph_header_object_expect_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_empty@L205",
+      "source_sha256": "6a338ae1a0f911d5319fdec242816b48d96901268c0e4e3178f0b8e87773ae2e",
+      "implementation": "ceph_header_object_length_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_negative@L212",
+      "source_sha256": "55040a6fa8fd3bd38e90b62daf2423843c7be5790fa771ce98e7ebf57f55050e",
+      "implementation": "ceph_header_object_length_negative",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_none@L226",
+      "source_sha256": "b9212267d3d050181cfe267cde71976d93b7e5f2764e29c243705036a3ce679e",
+      "implementation": "ceph_header_object_length_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contenttype_invalid@L234",
+      "source_sha256": "ea248863b789a2ae5a1d065d9b69f557aef37b82277ae9b8597238e04a6c1978",
+      "implementation": "ceph_header_object_type_text",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_empty@L258",
+      "source_sha256": "4cc26c6b6c91daf8e3a5307365ee37c8e21fb266f7e52137d1572514fe41213a",
+      "implementation": "ceph_header_object_authorization_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_none@L285",
+      "source_sha256": "3209a5a162e35e55d5c047ff9874a2dca1f74a3b8cfb36553237a7d797f556a5",
+      "implementation": "ceph_header_object_authorization_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_contentlength_none@L293",
+      "source_sha256": "9862627cf888430b4b0e551516c297459e83e4bb66f71cc8378a5f8e3e7e96af",
+      "implementation": "ceph_header_bucket_length_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_expect_mismatch@L327",
+      "source_sha256": "6072e3fe2df1a4bbb70b070e2ee0d027563bc51ad14126deacc13d069ca85d4f",
+      "implementation": "ceph_header_bucket_expect_mismatch",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_expect_empty@L337",
+      "source_sha256": "b528ced25d01e55b85d60cae9f7f5631aab8e92b3e66b10399d416f31ce10161",
+      "implementation": "ceph_header_bucket_expect_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_empty@L345",
+      "source_sha256": "8551fc5a8273a17aa60ddd5e4253fc81a68770d86acdc3dc1169469beee883e3",
+      "implementation": "ceph_header_bucket_length_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_negative@L353",
+      "source_sha256": "876c8fbf5a86a44737edd3d118b1f503a20864133c3adb7fc87f93f4ac03557d",
+      "implementation": "ceph_header_bucket_length_negative",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_none@L362",
+      "source_sha256": "0be8d2871af55dbb8b2f781ed000c72d7e810362ad080af1b3d87bc745ae2ec6",
+      "implementation": "ceph_header_bucket_bad_length_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_authorization_empty@L369",
+      "source_sha256": "d4e34c53a478bcdbd8515aea300c1ed05b850b3cfea3216a5508376af4484c80",
+      "implementation": "ceph_header_bucket_authorization_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_authorization_none@L379",
+      "source_sha256": "13400de683c316ce9a6ea1011ca2af9a5b42dfa4add53cab1052b3f10a64da71",
+      "implementation": "ceph_header_bucket_authorization_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contenttype_empty@L240",
+      "source_sha256": "85dc40350d60c173c9a15803bb127ff0f5cc137aec66e7e9cc477178d1ce23c2",
+      "implementation": "ceph_header_type_empty",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contenttype_none@L247",
+      "source_sha256": "6caffe8b18a7e9e4328bb3638b18cafa90528d0a86bfb1fe83a65456fa91f2dc",
+      "implementation": "ceph_header_type_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_date_and_amz_date@L266",
+      "source_sha256": "3c767bc2e1312266dabe6a15c4fa75c213d757d1dddd886ba97b66dbf7aff2d7",
+      "implementation": "ceph_header_dates_both",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_create_amz_date_and_no_date@L275",
+      "source_sha256": "609ea85365902993266f95cb50edffa7a984a2a7c71afdb16dfb655f5aedc364",
+      "implementation": "ceph_header_dates_empty_date",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_bucket_put_bad_canned_acl@L314",
+      "source_sha256": "93fcb4a15526b11bb2740e5ec20e861988806c7f19dfc7414084660bbbb481c8",
+      "implementation": "ceph_header_acl_bad_canned",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+    },
+    {
+      "source_id": "s3tests/functional/test_headers.py::test_object_acl_create_contentlength_none@L300",
+      "source_sha256": "6157296fad06fd58a2edac9a2367b79ee92bac21fecb39db7976f1749e42b67f",
+      "implementation": "ceph_header_acl_length_none",
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
     }
   ]
 }

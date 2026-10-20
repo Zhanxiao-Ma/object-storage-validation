@@ -260,3 +260,12 @@ AWS C++ Curl 的响应头回调只在收到响应体数据时触发，无法覆�
 版本 SDK 契约：`OSV_RUN_VERSION_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_versioning_sdk -v`。覆盖配置 XML、字段缺失、VersionId 查询参数、真实下载体、版本/标记列表顺序及错误头。完整 reference 自测现在应出现 45 项版本控制/配置 API not_run 并退出 1；单测检查此预期以及性能阻断，CI 另导出完整目录。真实版本用例在 SDK 集成测试中执行。
 
 配置模型 SDK 契约：`OSV_RUN_API_MODEL_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_api_models_sdk -v`。覆盖真实嵌套 XML、独立服务响应、策略流、默认加密、布尔 false、32/64 位整数端点、溢出/错误类型、null 及作用域冲突；期望客户端错误无 HTTP 请求/状态。生成完整性检查：`python3 scripts/generate_bucket_api.py --check`。
+
+
+签名前请求头合约（实际 AWS Java/C++ worker，回环 HTTP，无云凭据）：
+
+```bash
+OSV_RUN_WIRE_HEADER_TESTS=1 python3 -m unittest discover -s tests/integration -p test_wire_headers_sdk.py -v
+```
+
+覆盖官方签名后的实际头、无效输入零 HTTP、身份/请求上下文隔离、WHEN_REQUIRED 校验和、持续进展响应的总超时、非法长度下控制输入隔离，以及实际 ACL 所有者读回进入异常创建清理。只验证一种语言时设置 `OSV_S3_TEST_LANGUAGES=java` 或 `cpp`。这组定向测试通过后再运行批次末的完善档回归。

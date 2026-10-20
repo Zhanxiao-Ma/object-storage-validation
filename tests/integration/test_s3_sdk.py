@@ -15,6 +15,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 # Pinned Moto response/template discrepancies and actual typed SDK outputs are independent of the source case oracles.
 # Original Ceph expectations remain unchanged; these helpers only assert that the local regression report preserves known failures.
+def expected_request_header_diagnostics():
+    return {"ceph_header_object_"+name for name in ("md5_invalid_short","md5_bad","md5_empty","length_empty","length_negative","length_none","authorization_empty","authorization_none")}|{"ceph_header_bucket_"+name for name in ("length_empty","length_negative","authorization_empty","authorization_none")}|{"ceph_header_acl_bad_canned"}
+
+
 def expected_exact_list_diagnostics(language):
     common={"ceph_exact_list_"+name for name in (
         "v1_maxkeys_zero","v2_maxkeys_zero","v1_delimiter_prefix","v1_delimiter_prefix_underscore",
@@ -377,6 +381,24 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                 finally:worker.close()
 
+    def test_original_v4_request_headers_keep_sdk_and_service_diagnostics(self):
+        """Run original before-signing header changes through actual SDKs with bounded local timeouts; retain genuine normalizations/errors and confirm every header-test bucket is removed."""
+        from osv.ceph_request_headers import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        with patch.dict(os.environ,{"OSV_HEADER_REQUEST_TIMEOUT_MS":"1000"}):
+            for target in self.targets:
+                with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,10)
+                    try:
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                        rows=run_cases(ctx,CASES)
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected_request_header_diagnostics())
+                        self.assertTrue(all(row["status"] in ("pass","fail") for row in rows),rows)
+                        self.assertEqual(len(rows),27)
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+
     def test_configured_storage_classes_execute_original_transition_input(self):
         """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
         from osv.ceph_bucket_config import CASES
@@ -518,6 +540,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
+            expected.extend((target["id"],name) for target in self.targets for name in expected_request_header_diagnostics())
             expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
@@ -532,7 +555,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),366)
+            self.assertEqual(len(report["coverage"]["catalog"]),393)
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:

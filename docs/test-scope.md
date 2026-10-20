@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项，总计 366 项（362 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项，总计 393 项（389 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -324,3 +324,16 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 `ceph_bucket_inventory` 增加五桶创建后清单成员、创建时间下界、真正匿名列举共 3 项。独立桶清理不删除其他已存在的桶；匿名结果不筛选。策略组另补 Deny 覆盖 authenticated-read ACL 的 V1/V2 两项，仍要求 403/AccessDenied。
 
 本地 Moto 使用独立配置的固定账户元数据执行全部 ACL：private 幂等/撤销恢复通过，其余 24 项保留缺 DisplayName、权限/列表规则及非法授权接受等诊断。桶成员和创建时间通过，匿名桶数与策略 Deny 不符合原预期的结果保持失败。另有真正 SDK HTTP 合约核验模型、请求头和 Owner/Grants 生产者到消费者链路。以上均不代表云厂商认证。
+
+
+### 原始 V4 请求头
+
+`ceph_request_headers` 增加 `test_headers.py` 的 27 个通用 V4 场景：Content-MD5 三种非法值和删除，Expect 非标准值/空值/删除，Content-Length 空值/负数/删除，ContentType 文本/空值/未设置，Authorization 空值/删除，Date 与 X-Amz-Date 组合，以及 ACL 非法预置值/删除长度。保留原始空请求体、bar、Bucket-only 创建、后续普通写入和精确 HTTP/错误码断言。负长度通过真实 SDK 的 ContentLength 参数设置；C++ 使用官方 WHEN_REQUIRED 校验和配置，Java 固定版本尚无可选 trailer 默认行为，均有独立 HTTP 合约防止误入另一种编码。
+
+`wire_headers` 在官方 SDK 序列化后、签名前应用；Java 使用 ExecutionInterceptor，C++ 使用委托官方签名器的 provider。SDK/HTTP 客户端随后重写请求头的行为不隐藏：例如删除 Authorization 后官方签名器重新签名，原始 403 预期仍然失败。HTTP 头值为文本，源 Expect 整数 200 表达为文本 200。原生 SDK 未实现该入口时明确 not_run，不伪装成 S3 链路通过。21 个显式 SigV2 场景未迁移，不以 V4 替代。
+
+兼容性客户端单独设置总请求超时（`OSV_HEADER_REQUEST_TIMEOUT_MS`，默认 30000）；普通性能客户端不安装头修改器。C++ JSONL 控制管道与 C stdin 隔离，避免 libcurl 在空请求体/非法长度时默认从控制管道读取，保持官方传输与签名。真实超时/客户端拒绝不会冒充服务端 400。
+
+每个场景确认独立 UUID 桶原先不存在。创建失败但桶出现时，仅在实际 ACL Owner 与另一个创建成功的独立控制桶相同后清理；未知归属、拒绝或不确定 HEAD 保留诊断，不删除未确认桶。该读回值仅用于清理归属，不用于构造功能预期。
+
+本地 Moto 两种语言均保留 13 项原预期失败：MD5/长度未拒绝、SDK 本地拒绝或重写、非法 canned ACL 的本地服务错误；其余 14 项通过，所有已确认桶清理完毕。真实 HTTP 合约另外覆盖头值/删除、签名顺序、校验和、上下文隔离、总超时、RPC 输入隔离和清理归属边界。以上是本地 SDK 链路证据，不是云端兼容性认证。

@@ -71,6 +71,7 @@ public final class WorkerMain {
                         if("s3".equals(provider)) capabilities.addAll(S3Identities.capabilities());
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
+                        if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
                         result.put("connections_per_worker",env("CONNECTIONS","16"));
@@ -205,7 +206,14 @@ public final class WorkerMain {
         final S3Identities identities=new S3Identities();
         AwsStore() { client=identities.get("main"); }
         public Map<String,Object> execute(JsonNode q) throws Exception {
-            software.amazon.awssdk.services.s3.S3Client client=q.has("identity")?identities.select(q):this.client;
+            if(q.has("wire_headers")) {
+                try(WireHeaders.Scope ignored=new WireHeaders.Scope(q.get("wire_headers"))) {
+                    return executeSelected(q,identities.select(q));
+                }
+            }
+            return executeSelected(q,q.has("identity")?identities.select(q):this.client);
+        }
+        private Map<String,Object> executeSelected(JsonNode q,software.amazon.awssdk.services.s3.S3Client client) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             if("put_encryption".equals(op)) op="put_sse_c";
             else if("get_encryption".equals(op)) op="get_sse_c";
@@ -279,6 +287,7 @@ public final class WorkerMain {
                 software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
                 if("put_sse_c".equals(op)) request.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if("put_acl".equals(op)) request.acl(text(q,"acl"));
+                if(q.has("content_length")) request.contentLength(q.get("content_length").asLong());
                 if(q.has("cache_control")) request.cacheControl(text(q,"cache_control"));
                 if(q.has("expires_ms")) request.expires(java.time.Instant.ofEpochMilli(q.get("expires_ms").asLong()));
                 software.amazon.awssdk.services.s3.model.PutObjectResponse result=client.putObject(request.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path"))));

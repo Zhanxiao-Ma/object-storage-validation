@@ -17,7 +17,7 @@ final class S3Identities implements AutoCloseable {
     static final List<String> NAMED=Arrays.asList("alt","tenant","bad_auth");
 
     static List<String> capabilities() {
-        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous"));
+        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous","wire_headers","checksum_when_required"));
         for(String name:NAMED) {
             String prefix=name.toUpperCase(Locale.ROOT)+"_";
             if(!env(prefix+"ACCESS_KEY","").isEmpty() && !env(prefix+"SECRET_KEY","").isEmpty()) result.add("identity_"+name);
@@ -26,17 +26,24 @@ final class S3Identities implements AutoCloseable {
     }
 
     S3Client select(JsonNode request) {
-        if(!request.has("identity")) return get("main");
+        // Pinned Java SDK 2.20.162 predates default optional checksum trailers.
+        // Its normal request behavior already satisfies WHEN_REQUIRED; real wire tests
+        // guard this mapping so a future SDK upgrade cannot silently enable trailers.
+        if(request.has("checksum_when_required") && (!request.get("checksum_when_required").isBoolean() || !request.get("checksum_when_required").booleanValue()))
+            throw new IllegalArgumentException("checksum_when_required must be true");
+        if(!request.has("identity")) return get("main",request.has("wire_headers"));
         if(!request.get("identity").isTextual())throw new IllegalArgumentException("identity must be a string");
-        return get(request.get("identity").textValue());
+        return get(request.get("identity").textValue(),request.has("wire_headers"));
     }
 
-    S3Client get(String name) {
+    S3Client get(String name) { return get(name,false); }
+
+    S3Client get(String name,boolean headers) {
         if(!name.equals("main") && !name.equals("anonymous") && !NAMED.contains(name))throw new IllegalArgumentException("unsupported identity");
-        return clients.computeIfAbsent(name,S3Identities::create);
+        return clients.computeIfAbsent(name+(headers?":wire":""),ignored->create(name,headers));
     }
 
-    private static S3Client create(String name) {
+    private static S3Client create(String name,boolean headers) {
         AwsCredentialsProvider provider;
         if(name.equals("anonymous"))provider=AnonymousCredentialsProvider.create();
         else {
@@ -52,8 +59,11 @@ final class S3Identities implements AutoCloseable {
             .credentialsProvider(provider)
             .serviceConfiguration(software.amazon.awssdk.services.s3.S3Configuration.builder()
                 .pathStyleAccessEnabled(Boolean.parseBoolean(env("PATH_STYLE","false"))).build())
-            .overrideConfiguration(c->c.apiCallTimeout(java.time.Duration.ofSeconds(30))
-                .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build()))
+            .overrideConfiguration(c->{
+                c.apiCallTimeout(java.time.Duration.ofMillis(headers?Long.parseLong(env("HEADER_REQUEST_TIMEOUT_MS","30000")):30000))
+                    .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build());
+                if(headers)c.addExecutionInterceptor(new WireHeaders());
+            })
             .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))))
             .build();
     }

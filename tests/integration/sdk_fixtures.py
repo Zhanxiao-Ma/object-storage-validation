@@ -66,11 +66,11 @@ class FixtureHandler(BaseHTTPRequestHandler):
 
 
 @contextmanager
-def fixture_worker(language, fixtures, backend="cos", overrides=None):
+def fixture_worker(language, fixtures, backend="cos", overrides=None, handler=FixtureHandler):
     # Pinned TOS C++ SDK rejects every endpoint containing a port. A loopback HTTP proxy
     # routes its standard-port endpoint to our ephemeral fixture without privileges or SDK substitution.
     proxy_for_tos = backend=="tos" and language=="cpp"
-    server = ThreadingHTTPServer(("127.0.0.1", 0), FixtureHandler)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     server.fixtures = deque(fixtures)
     server.requests = []
     thread = threading.Thread(target=server.serve_forever, daemon=True)

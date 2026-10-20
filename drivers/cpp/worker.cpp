@@ -1,4 +1,5 @@
 #include "stream_io.h"
+#include "protocol_input.h"
 #include "object_metadata.h"
 #include "http_observer.h"
 #include "list_observation.h"
@@ -90,6 +91,7 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 #include "versioning_ops.h"
 #include "bucket_api_generated.h"
 
+#include "wire_headers.h"
 #include "s3_identities.h"
 
 /**
@@ -103,7 +105,9 @@ class S3Worker {
 public:
     S3Worker():client(identities.get("main")) {}
     json execute(const json& q) {
-        auto client=q.contains("identity")?identities.select(q):this->client;
+        std::unique_ptr<WireHeaderScope> header_scope;
+        if(q.contains("wire_headers"))header_scope=std::make_unique<WireHeaderScope>(q.at("wire_headers"));
+        auto client=(q.contains("identity")||q.contains("wire_headers"))?identities.select(q):this->client;
         std::string op = q.at("op"), key = q.value("key", "");
         if(op=="put_encryption")op="put_sse_c";
         else if(op=="get_encryption")op="get_sse_c";
@@ -247,6 +251,7 @@ public:
                 request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             }
+            if(q.contains("content_length")) request.SetContentLength(q.at("content_length").get<int64_t>());
             if(q.contains("cache_control")) request.SetCacheControl(q.at("cache_control").get<std::string>());
             if(q.contains("expires_ms")) request.SetExpires(Aws::Utils::DateTime(q.at("expires_ms").get<int64_t>()));
             json http;HttpObservationScope observation((op=="put_http"||op=="put_sse_c"||op=="put_acl")?&http:nullptr);
@@ -393,8 +398,9 @@ int main() {
     Aws::InitAPI(options);
     int code = 0;
     try {
+        ProtocolInput input;
         S3Worker worker;
-        for (std::string line; std::getline(std::cin, line);) {
+        for (std::string line; input.read(line);) {
             auto start = std::chrono::steady_clock::now();
             json response;
             try {
@@ -404,6 +410,7 @@ int main() {
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
+                    response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");
