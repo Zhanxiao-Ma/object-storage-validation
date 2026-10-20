@@ -21,7 +21,7 @@ def config(directory):
         "id": "local", "provider": "filesystem", "language": "python", "api": "local",
         "sdk": "reference", "sdk_version": "1", "command": [sys.executable, str(ROOT/"drivers/reference.py")],
         "env": {"OSV_REFERENCE_ROOT": str(directory/"objects"), "OSV_REFERENCE_MIN_PART_SIZE":"128"}}],
-        "workload": {"performance_model":"operations", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
+        "workload": {"mode":"all", "performance_model":"operations", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
                      "requests": 7, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
                      "operations": ["get", "range", "put", "head", "list"]}}
 
@@ -196,7 +196,7 @@ class HarnessTest(unittest.TestCase):
             self.assertEqual([p for p in (directory/"objects").rglob("*") if p.is_file()], [])
 
     def test_unsupported_extension_fails_before_measurement(self):
-        """A real worker lacking an extension capability must produce a failed setup, never a passing sample."""
+        """Purpose: request a missing performance capability; expect a performance setup error, no samples and independent functional results."""
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
             data = config(directory)
@@ -209,7 +209,7 @@ class HarnessTest(unittest.TestCase):
             with patch("osv.cli.build_registry", return_value=registry):
                 report = run(data, directory/"results")
             self.assertEqual(report["samples"], [])
-            self.assertTrue(any(c["case"] == "setup" and c["status"] == "fail" and "unimplemented_operation" in c["error"] for c in report["cases"]))
+            self.assertTrue(any(c["phase"] == "performance_setup" and "unimplemented_operation" in c["error"] for c in report["execution_errors"]))
 
     def test_extension_registration_and_configuration_boundaries(self):
         """Reject duplicate names, invalid metrics, unknown operations, and repeated plugins before worker startup."""
@@ -271,8 +271,8 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(percentile([7],.99),7)
         self.assertEqual(percentile(list(range(1,101)),.95),95)
 
-    def test_comparison_gates_budgets_and_language_boundaries(self):
-        """Apply independent ratio expectations; failures, missing samples and cross-language pairs remain inconclusive."""
+    def test_comparison_budgets_are_independent_of_functional_results(self):
+        """Purpose: compare supplied performance evidence independently of functional failures/skips; expect performance failures, missing samples or cross-language pairs to remain inconclusive."""
         targets=[{"id":"s3","provider":"oss","language":"cpp","api":"s3"},
                  {"id":"native","provider":"oss","language":"cpp","api":"native"}]
         cfg={"targets":targets,"comparisons":[{"s3":"s3","native":"native","min_samples":100,
@@ -287,9 +287,9 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(comparisons(cfg,[],failed)[0]["status"],"inconclusive")
         few=copy.deepcopy(summary); few[0]["successes"]=99
         self.assertEqual(comparisons(cfg,cases,few)[0]["reason"],"insufficient sample count")
-        self.assertEqual(comparisons(cfg,[{"target":"s3","status":"fail"}],summary)[0]["status"],"inconclusive")
+        self.assertEqual(comparisons(cfg,[{"target":"s3","status":"fail"}],summary)[0]["status"],"within_budget")
         self.assertEqual(comparisons(cfg,[],[])[0]["status"],"inconclusive")
-        self.assertEqual(comparisons(cfg,[],summary)[0]["status"],"inconclusive")
+        self.assertEqual(comparisons(cfg,[],summary)[0]["status"],"within_budget")
         cross=copy.deepcopy(cfg); cross["targets"][1]["language"]="java"
         self.assertEqual(comparisons(cross,[],summary)[0]["status"],"inconclusive")
         cfg["comparisons"][0]["same_storage_and_network_confirmed"]=False

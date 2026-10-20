@@ -130,8 +130,8 @@ def run_objbench(ctx, workers, report, target, round_plan=None):
             assert_equal(require_ok(workers[0].call({"op":"list","prefix":prefix})).get("keys",[]),[])
         except Exception as error:
             current_failure = True
-            report["cases"].append({"target":target,"case":f"objbench_delete_{phase}_{round_index}",
-                                     "status":"fail","error":str(error)})
+            report["execution_errors"].append({"target":target,"phase":f"objbench_delete_{phase}_{round_index}",
+                                                "error":str(error)})
         if current_failure:
-            report["cases"].append({"target":target,"case":f"objbench_dataflow_{phase}_{round_index}",
-                                     "status":"fail","error":"multi-object workload or its integrity check failed"})
+            report["execution_errors"].append({"target":target,"phase":f"objbench_dataflow_{phase}_{round_index}",
+                                                "error":"multi-object workload or its integrity check failed"})

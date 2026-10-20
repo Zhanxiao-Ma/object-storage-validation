@@ -122,7 +122,7 @@ class SdkIntegrationTest(unittest.TestCase):
             directory = Path(temporary)
             manifest = directory/"manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "targets": self.targets,
-                "workload": {"performance_model":"operations", "large_object_size":65536, "object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
+                "workload": {"mode":"all","performance_model":"operations", "large_object_size":65536, "object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
                              "profile": "normal", "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
@@ -137,10 +137,10 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
 
     def test_ceph_http_ranges_and_tags_run_through_actual_sdk_storage(self):
-        """Run the real migrated producers and consumers against Moto; expect only Moto excess-tag BadRequest mismatch, blocked measurements and complete cleanup."""
+        """Run the real migrated producers and consumers against Moto; expect only Moto excess-tag BadRequest mismatch, independent valid HEAD measurements and complete cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"all",
                 "compatibility_suites":["ceph_http_range","ceph_tags","ceph_headers"],"performance_model":"operations","object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
@@ -149,11 +149,11 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(failures,[(target["id"],"ceph_tags_excess") for target in self.targets])
             for row in report["cases"]:
                 if row["status"]=="fail":self.assertIn("BadRequest",row["error"])
-            self.assertEqual(report["samples"],[])
+            self.assertEqual(len(report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_exact_ceph_listing_keeps_original_failures_and_cleans_every_bucket(self):
-        """Execute all 74 exact LIST translations through actual SDK IO; expect known Moto/SDK discrepancies, blocked performance and no leaked buckets."""
+        """Execute all 74 exact LIST translations through actual SDK IO; expect known Moto/SDK discrepancies, no performance in functional mode and no leaked buckets."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
@@ -469,7 +469,7 @@ class SdkIntegrationTest(unittest.TestCase):
         """Run the seven real SDK bucket scenarios; expect exact source responses, a usable default bucket and no extra buckets afterward."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"all",
                 "compatibility_suites":["ceph_buckets"],"performance_model":"operations","object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
@@ -509,7 +509,7 @@ class SdkIntegrationTest(unittest.TestCase):
         """Run two real SDK lanes overwriting the same 2-MiB object through the production runner; expect all 32 measurements per SDK to succeed and actual object cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
                 "compatibility_suites":["core_objects"],"performance_model":"operations","operations":["put"],
                 "object_size":2*1024*1024,"range_size":17,"large_object_size":65536,"part_size":5*1024*1024,
                 "concurrency":2,"requests":16,"rounds":2,"warmup_requests":0}}))
@@ -524,7 +524,7 @@ class SdkIntegrationTest(unittest.TestCase):
         """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
                 "profile":"normal","performance_model":"objbench","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":2,"requests":1,"rounds":1,
                 "objbench":{"small_object_size":128,"small_objects":3,"block_size":1024,"big_object_size":3072,"list_requests_per_lane":2}}}))
@@ -536,7 +536,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_complete_profile_preserves_moto_zero_maxkeys_incompatibility(self):
-        """Run the complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and blocked performance."""
+        """Run the complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and no performance in functional mode."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
@@ -627,7 +627,7 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual(row["error"],body_diagnostics[row["case"]])
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
-                self.assertEqual(observed["status"],"observation")
+                self.assertEqual(observed["status"],"warning")
                 self.assertFalse(observed["evidence"]["source_matches"])
                 self.assertEqual(observed["evidence"]["observed"]["error_code"],"InvalidRange")
                 strict=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="ceph_range_invalid_start")

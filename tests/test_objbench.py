@@ -72,7 +72,7 @@ class ObjbenchTest(unittest.TestCase):
             data=json.loads(path.read_text());data["targets"][0]["command"]=[sys.executable,str(proxy)];path.write_text(json.dumps(data))
             report=run(load_config(path),directory/"results")
             self.assertTrue(any(not row["ok"] and row["op"] in ("get","smallget") for row in report["samples"]))
-            self.assertTrue(any(row["case"].startswith("objbench_dataflow") and row["status"]=="fail" for row in report["cases"]))
+            self.assertTrue(any(row["phase"].startswith("objbench_dataflow") for row in report["execution_errors"]))
 
     def test_upstream_defaults_and_parameter_boundaries(self):
         """Check pinned workload defaults and reject invalid/unbounded datasets before any worker or allocation starts."""

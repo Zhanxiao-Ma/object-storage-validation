@@ -12,7 +12,7 @@
 
 ## 正常档 normal（默认）
 
-`core_objects` 的 14 项，加 `objbench_objects` 的 10 项：共 24 项，其中 22 个门槛、2 个观察。
+`core_objects` 的 14 项，加 `objbench_objects` 的 10 项：共 24 项，不作必过项/观察项分类；结果保留来源级别。
 
 | 用例 ID | 断言 |
 |---|---|
@@ -25,7 +25,7 @@
 | special_key | 中文、空格、加号、百分号及 URL 保留字符读写和列举正确 |
 | multipart_complete | 两块不同数据完成后拼接内容及大小正确 |
 | multipart_abort | **先上传分块再取消**，HEAD/LIST 均无已提交对象 |
-| range_end_overflow | 记录拒绝或正确截断；observation，不作统一门槛 |
+| range_end_overflow | 记录拒绝或正确截断；warning，按 JuiceFS warning 预期判断 |
 
 新增 objbench 对应检查：
 
@@ -45,14 +45,14 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，及原始HTTP 41项、查询扩展7项、生命周期过期20项/迁移4项/删除标记过期1项、对象锁28项及交付日志6项，及桶命名/位置22项、云生命周期/恢复13项、交付日志负载18项/扩展3项、grant/URI边界2项及加密表单4项，及加密multipart/torrent5项、日志策略变化4项/多前缀2项，及完整加密复制/分块复制矩阵2项，及跨namespace七向量日志与两阶段50路日志并发2项，及预签名18项与完整流式原子性14项、全部固定IAM/STS控制面与权限源、真实响应体/root策略4项、原chunked写入1项及新增标准日志2项，总计 936 项（932 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，及原始HTTP 41项、查询扩展7项、生命周期过期20项/迁移4项/删除标记过期1项、对象锁28项及交付日志6项，及桶命名/位置22项、云生命周期/恢复13项、交付日志负载18项/扩展3项、grant/URI边界2项及加密表单4项，及加密multipart/torrent5项、日志策略变化4项/多前缀2项，及完整加密复制/分块复制矩阵2项，及跨namespace七向量日志与两阶段50路日志并发2项，及预签名18项与完整流式原子性14项、全部固定IAM/STS控制面与权限源、真实响应体/root策略4项、原chunked写入1项及新增标准日志2项，总计 1047 项（不再作必过项/观察项分类）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
 | overwrite_shorter / overwrite_longer / overwrite_empty | 覆盖后 GET/HEAD 完全反映新数据，不保留旧尾部 |
 | delete_recreate | 同一键删除后重建，读取新内容 |
 | range_full / range_exact_tail | 整对象 Range 与精确末端范围内容正确 |
-| range_start_overflow / range_empty_object | 记录起点越界及空对象 Range 的实际行为；observation |
+| range_start_overflow / range_empty_object | 记录起点越界及空对象 Range 的实际行为；warning |
 | key_xml / key_nested | XML 保留字符及嵌套形态键名可准确读写和列举 |
 | list_many | 默认 1001 个目标键，验证汇总键集合完整、无重复且前缀隔离 |
 | multipart_single | 单块完成后内容与大小正确 |
@@ -101,7 +101,7 @@ JSON 结果记录 `isolated_bucket` 与 `cleanup_confirmed`。原生驱动尚未
 
 运行完善档需要凭据允许在该测试命名空间内创建桶、列举、读写删除对象及删除桶。
 创建请求遭遇结果不确定的传输错误时，报告保留测试桶名供核查；不会自动处理所有权不确定的桶。
-清理失败保留原断言和具体桶名，阻止性能结论。版本控制测试仍未迁移，当前清理器只处理普通对象。
+清理失败保留原断言和具体桶名，单独报告执行错误，不阻断独立性能阶段。版本用例使用各自的版本清理逻辑。
 
 ### 独立桶中的精确 LIST
 
@@ -110,9 +110,9 @@ JSON 结果记录 `isolated_bucket` 与 `cleanup_confirmed`。原生驱动尚未
 V1 NextMarker、V2 token 回显和优先级、KeyCount、Owner 有无、URL 编码及四组 delimiter 分页遍历。
 包含原版 1000 个目录键加 4 个特殊后继键的边界；测试数据实际上传，完成后逐项清理。
 
-Java 使用 SDK 模型的字段有无；C++ 通过官方 Curl 客户端的实际响应观察 XML 字段有无，
+Java 使用 SDK 模型的字段有无；C++ 通过官方 Curl 客户端的实际响应记录 XML 字段有无，
 随后将同一响应流复位交给真正的 SDK 解码。返回值始终来自 SDK getter，不使用请求参数补回响应值。
-这使缺失字段、空字符串、SDK 自身的解码表现可以区分。XML 观察仅用于显式 LIST 兼容操作，不用于性能阶段。
+这使缺失字段、空字符串、SDK 自身的解码表现可以区分。XML 记录仅用于显式 LIST 兼容操作，不用于性能阶段。
 
 Ceph 原始编码/回显等预期保持不变；当前 Java SDK 的 URL 解码及固定 Moto 的响应差异原样记录为失败，
 留待后续预期规则阶段处理。固定响应合同检查适配器观测是否准确，不把这些结果解释为云厂商兼容性结论。
@@ -138,8 +138,8 @@ SDK 直接收到完整对象数组，桥接层不分批，也不在本地伪造 
 - LIST 全部 V1/V2 参数与返回字段组合；已实现一批单页参数、原始元数据与排序检查，尚未全量。
 - Range 以外的大部分 HTTP 状态/响应头逐字段检查、签名负面用例、故障注入、限流与恢复。
 
-这些功能可通过新增操作、Suite、Profile 扩展。已声明逐项能力的套件将缺失能力记为 `not_run`，其它用例继续；必测项未执行会阻止性能结论，不能算通过。
-Range 观察项也不证明标准 HTTP 状态正确；成功响应若字节错误仍记录 fail。
+这些功能可通过新增操作、Suite、Profile 扩展。已声明逐项能力的套件将缺失能力记为 `not_run`，其它用例继续；未执行项不计作通过，也不影响独立性能执行。
+Range 记录项也不证明标准 HTTP 状态正确；成功响应若字节错误仍记录 fail。
 所有检查立即验证写后读/列举，没有重试等待一致性；异常是失败证据。
 
 ### 策略条件、元数据和摘要边界
@@ -178,7 +178,7 @@ python3 -m osv run examples/selftest.json --profile complete --output results/co
 CLI 的 `--profile` 显式覆盖 manifest 选择。每个场景创建独立数据，不依赖前一个场景成功。
 `python3 -m osv alignment MANIFEST --profile complete` 可在不启动 SDK 的情况下输出完整上游映射。
 
-Suite 可以声明逐项 catalog，执行结果必须与目录逐项对应；重复、遗漏或将必测门槛降为 observation 都失败。
+Suite 可以声明逐项 catalog，执行结果必须与目录逐项对应；重复、遗漏或将来源 error 断言降为 warning 都失败。
 Profile 只组合 Suite，不含语言或厂商分支。插件扩展见 [扩展说明](extensions.md)。
 
 ## 性能范围
@@ -208,8 +208,8 @@ list_requests_per_lane、warmup_rounds。块数向上取整，最后一块保持
 
 1. 调用端语言、SDK 名称/语言、实际版本、重试配置和 worker_info。
 2. 档位、目录版本、所选 Suite、逐项来源与预期、明确未覆盖范围。
-3. 每个目标计划数与 pass/fail/observation/not run 数量；初始化失败不能冒充用例通过。
-4. 逐项兼容性结果、错误与观察行为；目录外的 setup/cleanup 失败另列。
+3. 每个目标计划数与 pass/fail/warning/not run 数量；初始化失败不能冒充用例通过。
+4. 逐项兼容性结果、错误与记录行为；目录外的 setup/cleanup 失败另列。
 5. 性能成功/总数、P50/P95/P99、有效 MiB/s 与 ops/s、预热计数。
 6. 同厂商同语言 S3/native 的吞吐比、P95 比、预算判定或证据不足原因。
 
@@ -236,7 +236,7 @@ within_budget 仅表示本次观测落在预定预算内，不是统计等价证
 - 这些是源码定义/阶段数，不是 pytest 参数展开后的执行数。不能以本工具 case 数量除以上游函数数声称覆盖率。
 - Ceph 行引用匹配默认只标 partial；只有逐项核对输入与全部断言、且源码指纹与 `ceph_reviews.json` 完全一致的记录才标 aligned。上游源码变化后回退 partial；实现映射不代表实云通过。
 - 本地 Moto 5.1.15 在 MaxKeys=0 时返回 IsTruncated=true，与锁定 Ceph 的 false 断言不符。
-  完善档会如实失败并阻止该目标的性能阶段；回归测试专门验证此差异没有被隐藏。这不是任何云厂商的实测结论。
+  完善档会如实保留失败，组合模式仍独立执行性能阶段；回归测试专门验证此差异没有被隐藏。这不是任何云厂商的实测结论。
 
 LIST 已迁移普通/下划线数据集的四组分页遍历、纯公共前缀页、斜线结尾对象、替代分隔符（字母、百分号、空格、点、换行）和不存在的前缀/分隔符组合。V1/V2 全部响应断言仍需继续核对，不按名称匹配认定完整对齐。
 
@@ -247,11 +247,11 @@ LIST 已迁移普通/下划线数据集的四组分页遍历、纯公共前缀�
 ## 两个来源的预期差异
 
 已确认的 Range 起点越界差异：JuiceFS `ObjectStorage.Get` 希望成功返回空内容，偏离时上游为 warning；Ceph 的原始 S3 Range 要求 416/InvalidRange。
-正常档的 `juicefs_range_start_overflow` 单独记录 `source_expected`、`source_matches`、`source_severity` 和实际错误；它是 observation，不计作符合来源预期的 pass。
+正常档的 `juicefs_range_start_overflow` 单独记录 `source_expected`、`source_matches`、`source_severity` 和实际错误；偏离来源预期时报告 warning，符合时为 pass。
 完善档的 `ceph_range_invalid_start` 独立检查严格的服务端错误。一次 416 可以同时造成前一项的来源偏好不匹配、后一项的严格语义通过。
 绝不使用“返回空或报错均通过”的合并断言。成功响应若返回错误字节，仍作为完整性失败。
 
-另需区分判定级别：JuiceFS 将 multipart 检查中的错误整体降为 warning；本工具把已选择负载所必需的分块内容正确性作为门槛。这是本工具的判定策略，不声称完全复制上游分级。
+JuiceFS 将 multipart 检查中的错误整体降为 warning；本工具保留该来源级别。Ceph 分块断言独立保留 error，不互相放宽。
 `bucket_create` 是“缺失则创建、已有则复用”的对象层操作；它会先检查已有桶，不能用该结果代替 Ceph 对原始重复 CreateBucket 返回值的检查。后者仍需独立迁移。
 
 新增条件读取覆盖实际 ETag 的匹配/不匹配、历史/未来修改时间，拒绝必须是可核对的服务端 304/412 或明确错误码。
@@ -261,8 +261,8 @@ LIST 已迁移普通/下划线数据集的四组分页遍历、纯公共前缀�
 ## SDK 未提供操作能力时
 
 内置套件逐项检查握手声明的能力。某项缺少操作会保存为 not_run，并列出缺失操作；不会把不支持当作通过，也不会阻止其他独立检查执行。
-必测项未执行会阻止该目标的性能测量和有效对比结论，CLI 以非零状态退出。
-可选观察项缺失仍计入 Not run，不计入 Pass；它不阻止已通过必测项所支持的性能阶段。
+未执行项记录原因，不计通过；它不阻断性能测量和 SDK 对比，也不单独导致 CLI 非零退出。
+来源 warning 用例缺少前提时同样计入 Not run，不计入 Pass；所有功能结果均不阻断独立性能阶段。
 启动失败、性能核心能力缺失或清理能力缺失仍作为 setup 失败，不能继续生成正常性能样本。
 
 ### 精确分块上传
@@ -285,7 +285,7 @@ AWS Java/C++ 使用官方 SDK 创建、上传、完成和取消请求；完成 E
 
 Java/C++ 都调用实际 AWS SDK 的 VersionId、ListObjectVersions、Put/GetBucketVersioning 等 API。SDK 的版本 ID、列表顺序、字段有无和错误响应头保持原样；已有版本和删除标记按实际 ID 清理，不能只删除当前对象。
 
-文件系统 reference 没有实现云端版本控制。这 21 项在本地 reference 上报告 not_run/unsupported_operations，并阻断性能输出及使 CLI 退出 1；不会为获取通过结果而模拟 SDK 版本行为。Java/C++ HTTP 契约与实际 SDK/Moto 测试独立执行；这些本地 HTTP 结果不是厂商云端认证。
+文件系统 reference 没有实现云端版本控制。这 21 项在本地 reference 上报告 not_run/unsupported_operations，不计作通过，也不影响独立性能执行或单独令 CLI 非零退出；不会为获取通过结果而模拟 SDK 版本行为。Java/C++ HTTP 契约与实际 SDK/Moto 测试独立执行；这些本地 HTTP 结果不是厂商云端认证。
 
 当前 Moto 5.1.15/固定 SDK 组合保留了暂停版本历史、批量创建标记字段、分块完成返回 ID 和部分删除标记错误头的失败；C++ 还保留纯空白版本键的 SDK 返回值差异。原始预期不因本地环境失败而改变。
 
@@ -293,7 +293,7 @@ Java/C++ 都调用实际 AWS SDK 的 VersionId、ListObjectVersions、Put/GetBuc
 
 `ceph_bucket_config` 新增 24 个锁定版本场景：桶标签完整生命周期、CORS 创建前/删除后 404 与数组读回、生命周期配置读写删除、生成 ID、原始错误状态/日期/重复或超长 ID、旧 Prefix/现代 Filter/删除标记/非当前版本/分块清理配置，以及 S3/KMS 默认加密的设置、读取、删除。KMS ID 使用 `workload.kms_key_id`；缺省时保留上游 `fool-me-again` 输入。
 
-非当前版本迁移场景要求 `workload.storage_classes` 至少包含三种配置值；缺少时保留源用例的跳过前提，报告 `not_run/missing_prerequisites` 和具体缺项，阻断完整档性能结论。不会臆造云厂商支持的存储类型。文件系统 reference 不实现这些云端配置，新增 24 项连同版本控制共 45 项报告缺能力。
+非当前版本迁移场景要求 `workload.storage_classes` 至少包含三种配置值；缺少时保留源用例的跳过前提，报告 `not_run/missing_prerequisites` 和具体缺项，不影响独立性能执行。不会臆造云厂商支持的存储类型。文件系统 reference 不实现这些云端配置，新增 24 项连同版本控制共 45 项报告缺能力。
 
 配置由 Java/C++ 官方 SDK 的真实请求模型序列化，响应值取实际 SDK getter。当前固定 C++ SDK 模型不再提供旧 LifecycleRule.Prefix，相关请求保留明确的客户端模型错误；不会删除该字段、改成 Filter 或伪造服务端拒绝。Java 对无效日期的客户端解析失败，以及 Moto 接受超长/重复 ID、小写状态的结果同样保留，不能据此直接判定云端 S3 不兼容。
 
@@ -325,7 +325,7 @@ Java/C++ 经实际 SDK 模型与传输执行；创建启用头、原始非法值
 
 `ceph_encryption_objects` 增加 22 项：AES256 默认/显式加密各 1B/1KiB/1MiB/8MiB、KMS 默认加密相同四个长度、KMS 显式传输 1B/1KiB/1MiB/13B、KMS HEAD/普通读取、SSE-S3 默认 HEAD，以及缺 KMS key、只给 key 未声明加密、普通对象 GET 附带 KMS 声明。保留原始 A 字节、testkey-1/testkey-2 和实际响应头/拒绝断言。
 
-`workload.kms_key_id` 提供有效 KMS 资源标识；缺失时 10 个依赖主 KMS key 的场景明确 not_run，保留缺失要求并阻止性能统计，不填造有效 key。其中 8 项源码显式 skip，HEAD/普通读取 2 项对应其主 KMS 环境前提。错误输入 3 项照原输入执行，不因为没有有效 key 跳过。
+`workload.kms_key_id` 提供有效 KMS 资源标识；缺失时 10 个依赖主 KMS key 的场景明确 not_run，保留缺失要求，不影响独立性能统计，不填造有效 key。其中 8 项源码显式 skip，HEAD/普通读取 2 项对应其主 KMS 环境前提。错误输入 3 项照原输入执行，不因为没有有效 key 跳过。
 
 Java/C++ 公共逐请求头入口由 `EncryptionHeaders`/同等 C++ helper 统一维护 SSE-C、SSE-S3、KMS 字段；保持原 SSE-C 操作兼容，普通性能操作不走头映射。真实 HTTP 检查签名、缺失/空值、请求隔离及独立响应字段。配置本地测试 key 时两种 SDK 的正向传输均完成；Moto 未拒绝的 5 项原预期失败保留。缺配置时每种语言额外 10 项未执行；均不是实际 KMS 云认证。
 
@@ -335,7 +335,7 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 
 `ceph_bucket_policy` 迁移 V1/V2 策略列举及跨桶复用策略 4 项，保留原始 asdf/abcd、Principal、Action、资源 ARN 和另一身份列举。跨桶场景直接消费真实 GetBucketPolicy 输出，不自行重建策略。真实 HTTP 检查不同签名凭据/会话令牌、匿名头缺失、回到主身份后的隔离以及策略字节从生产者进入消费者。
 
-缺另一个身份凭据时四项明确 not_run，阻止完善档性能统计。本地配置另一个测试身份时 Java 完成四项，C++ 保留本地服务返回导致的真实 SDK 策略解析错误。该本地检查不认证云端权限行为；ACL、跨租户授权与 IAM/STS/SNS 场景仍按清单显示迁移状态。
+缺另一个身份凭据时四项明确 not_run，不影响独立性能统计。本地配置另一个测试身份时 Java 完成四项，C++ 保留本地服务返回导致的真实 SDK 策略解析错误。该本地检查不认证云端权限行为；ACL、跨租户授权与 IAM/STS/SNS 场景仍按清单显示迁移状态。
 
 ### ACL 与桶清单批量迁移
 
@@ -421,7 +421,7 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 
 ### 当前完整迁移缺口
 
-目录v25按固定上游有效源函数计数：Ceph 953/975（97.7%），尚余22；4个被同名后定义覆盖的函数单独N/A，不计入975。完善档实际执行目录共1047个场景（1043个门槛、4个观察），场景数与上游源函数数分别统计。剩余按文件：`test_s3.py`1（日志认证源）、SigV2请求头21；IAM、STS、S3 Select及本地数据生成工具的固定有效源函数已有逐项迁移记录。
+目录v26按固定上游有效源函数计数：Ceph 953/975（97.7%），尚余22；4个被同名后定义覆盖的函数单独N/A，不计入975。完善档实际执行目录共1047个场景（保留来源断言和 warning，无必过项/观察项分类），场景数与上游源函数数分别统计。剩余按文件：`test_s3.py`1（日志认证源）、SigV2请求头21；IAM、STS、S3 Select及本地数据生成工具的固定有效源函数已有逐项迁移记录。
 
 这些是工具未迁移的执行链路，不能当成任何厂商的兼容性失败。剩余日志1包含必须完整执行的 SigV2 与 SigV4 签名路径，尚未验证的桥接或来源不计入aligned。已注册的IAM/STS迁移保留实际控制面SDK操作，OIDC仍要求真正可达的IdP/JWT及原始外部配置，过期测试保留原900秒等待；缺少这些前提必须not_run。
 
@@ -437,7 +437,7 @@ IAM 使用 `OSV_IAM_ENDPOINT` / `OSV_IAM_REGION`，STS独立使用 `OSV_STS_ENDP
 
 本地完善档默认使用串行HTTP Moto以隔离其并发覆盖缓冲区问题。14个原子源中仅1MiB读取及版本重叠在该串行夹具通过，其余12项的HTTP重入会形成发送背压和嵌套请求等待，保留为本地夹具诊断。独立回归显式使用并发HTTP Moto，两种SDK均为12源通过、2源真实失败：If-Match:*被Moto直接比较ETag而返回412，以及重复PartNumber=1且保留原B/A ETag列表被Moto返回400 InvalidPart。原始请求和断言没有为Moto改写。这些结果不代表云厂商兼容性或性能差异。
 
-本批新增的真实响应体场景包括账户usage五个quota原文字段、错误XML RequestId与官方SDK异常metadata对照，以及root策略恢复/ConfirmRemoveSelf两源；不由typed默认值构造响应。chunked写入保留原唯一Transfer-Encoding头修改：Java实际本地传输拒绝如实失败，C++真实chunked发送结果独立观察。剩余日志中的两个标准SDK源新增后，未注册仍待迁移的日志从73降为71；专用日志wire扩展和S3 Select新桥接尚不计本版数量。
+本批新增的真实响应体场景包括账户usage五个quota原文字段、错误XML RequestId与官方SDK异常metadata对照，以及root策略恢复/ConfirmRemoveSelf两源；不由typed默认值构造响应。chunked写入保留原唯一Transfer-Encoding头修改：Java实际本地传输拒绝如实失败，C++真实chunked发送结果独立记录。剩余日志中的两个标准SDK源新增后，未注册仍待迁移的日志从73降为71；专用日志wire扩展和S3 Select新桥接尚不计本版数量。
 
 
 ### Ceph 日志扩展与标准 SDK 结论的边界
@@ -468,3 +468,9 @@ SNS 变更要求 `workload.sns_mutation_authorized=true`，IAM 变更保留其�
 S3Control 官方 SDK 会按 AccountId 加 hostname 前缀，不能将 IP 字面自定义 endpoint 的本地路由失败解释成服务不兼容；实际 DNS/endpoint 设置保留在报告中。Java 固定 SDK 对 `<ErrorResponse><Error>…` 与根 `<Error>…` 的错误码解析存在真实差异，C++ 行为也独立记录；工具不重写 XML 或补造错误码来让源断言通过。
 
 并发日志27源保留原五路 flush、配置变化与尚未结束 PUT 的真实交错、300 PUT/30 flush、原日志字段/条数，以及完整清理分支。独立 HTTP 屏障证明请求确实重叠，同一 worker 中的真实100连接 SDK 客户端按原源使用。原源没有 assert 的分支继续作为弱断言说明，不当作更强的一致性证明。
+
+## 功能与性能独立执行
+
+`--mode functional`（默认）仅执行功能；`--mode performance` 仅测性能；`--mode all` 分别执行两者。
+功能失败、warning 或 not_run 不阻断性能。功能结果不参与 SDK 性能对比条件。
+不再有 gate 分类；性能请求自身的错误与数据校验失败仍单独记录，不计为成功吞吐。

@@ -16,7 +16,9 @@ jobs:
       - run: python -m osv check examples/java-cos.json
       - run: python -m osv check examples/cpp-cos.json
       - run: python -m osv check examples/cpp-obs.json
-      - run: python -m osv run examples/selftest.json --output results/selftest
+      - run: python -m osv run examples/selftest.json --mode functional --output results/selftest
+      - run: python -m osv run examples/selftest.json --mode performance --output results/selftest-performance
+      - run: python -m osv run examples/selftest.json --mode all --output results/selftest-all
       - run: python -m osv catalog examples/selftest.json --profile complete > results/complete-catalog.json
   java:
     runs-on: ubuntu-latest

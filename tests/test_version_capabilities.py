@@ -22,7 +22,7 @@ class VersionCapabilitiesTest(unittest.TestCase):
                 ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                 rows=run_cases(ctx,CASES)
                 self.assertEqual(len(rows),21);self.assertEqual(calls,[])
-                self.assertTrue(all(row["status"]=="not_run" and row["reason"]=="unsupported_operations" and row["gate"] for row in rows))
+                self.assertTrue(all(row["status"]=="not_run" and row["reason"]=="unsupported_operations" and "gate" not in row for row in rows))
                 self.assertTrue(all("versions_list" in row["missing_operations"] and "delete_version" in row["missing_operations"] for row in rows))
                 self.assertEqual(list((directory/"objects").iterdir()),[])
             finally:worker.close()

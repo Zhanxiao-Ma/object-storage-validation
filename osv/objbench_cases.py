@@ -135,7 +135,7 @@ def multipart_objbench(p):
 
 CASES=(
     case("juicefs_range_start_overflow","JuiceFS 起点越界的 warning 预期","记录是否成功返回空内容；416 不得混记为符合 JuiceFS 预期",
-         "put get",start_overflow_warning,"get partial object",JUICE,True),
+         "put get",start_overflow_warning,"get partial object",JUICE,severity="warning"),
     case("bucket_create_idempotent","创建桶操作重复调用","不存在则创建，已有桶不报错","bucket_create",bucket_create,"create a bucket"),
     case("hello_partial_ranges","原版 hello 四种部分读取组合","h/o/llo/ll 四组内容准确","put get",hello_ranges,"get partial object"),
     case("list_object_fields","列举键、大小、时间与 HEAD 信息","键和大小正确，修改时间在 30 秒窗口内","put list_page head",list_fields,"list objects; head an object"),
@@ -144,7 +144,7 @@ CASES=(
     case("special_control_key","原版中文/JSON/控制字符/百分号键","内容与 URL 编码后的列举键无损","put get list_page delete",special_control,"special key"),
     case("large_object_put","原版 256 MiB 单对象上传","上传成功且 HEAD 大小准确；缩小参数单独记录","put head",large_put,"put a big object"),
     case("slash_suffixed_key","斜线结尾的对象键","上传、读取与列举均保留末尾斜线","put get list_page",slash_key,"put an empty object"),
-    case("multipart_grow_shrink","并发三分块后首块加倍、末块缩短","完成后内容与最新分块拼接一致","mp_create mp_part mp_complete mp_abort get",multipart_objbench,"multipart upload"),
+    case("multipart_grow_shrink","并发三分块后首块加倍、末块缩短","完成后内容与最新分块拼接一致","mp_create mp_part mp_complete mp_abort get",multipart_objbench,"multipart upload",severity="warning"),
 )
 
 

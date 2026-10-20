@@ -1,4 +1,4 @@
-"""Verify unmet upstream configuration remains explicit, blocking, and free of cloud mutations."""
+"""Verify unmet upstream configuration remains explicit and free of cloud mutations."""
 import json
 from pathlib import Path
 import sys
@@ -30,8 +30,8 @@ class SourcePrerequisitesTest(unittest.TestCase):
                 self.assertEqual(requests,[])
             finally:worker.close()
 
-    def test_explicit_source_skip_reaches_real_report_and_blocks_measurement(self):
-        """Feed an unmet prerequisite into the production case runner with a real worker; expect not_run, retained requirements, no performance and no false pass."""
+    def test_explicit_source_skip_reaches_report_without_blocking_measurement(self):
+        """Feed an unmet prerequisite into the production case runner with a real worker; expect not_run with retained requirements alongside independent successful performance measurements."""
         def missing(probe):raise CaseNotRun("independent missing source input","provided-source-input")
         check=case("needs_source_input","source prerequisite","required evidence cannot be skipped silently","head",missing,"independent source prerequisite")
         registry=build_registry({});registry.add_suite(Suite("source_prerequisite",check.operations,lambda ctx:run_cases(ctx,(check,)),(check.metadata(),),case_capabilities=True))
@@ -40,13 +40,13 @@ class SourcePrerequisitesTest(unittest.TestCase):
             path=directory/"manifest.json";path.write_text(json.dumps(data))
             report=run(load_config(path),directory/"results")
             row=next(row for row in report["cases"] if row["case"]=="needs_source_input")
-            self.assertEqual(row["status"],"not_run");self.assertTrue(row["gate"])
+            self.assertEqual(row["status"],"not_run");self.assertNotIn("gate",row)
             self.assertEqual(row["reason"],"missing_prerequisites");self.assertEqual(row["missing_requirements"],["provided-source-input"])
-            self.assertEqual(report["samples"],[]);self.assertEqual(report["summary"],[])
+            self.assertTrue(report["samples"]);self.assertTrue(all(s["ok"] for s in report["samples"]));self.assertTrue(report["summary"])
             self.assertIn("independent missing source input",(directory/"results/report.md").read_text())
 
     def test_empty_prerequisite_reasons_cannot_silently_skip(self):
-        """Construct incomplete skip signals; expect rejection rather than an unexplained unexecuted gate."""
+        """Construct incomplete skip signals; expect rejection rather than an unexplained skipped case."""
         for message,requirements in (("",("input",)),("missing",()),("missing",("",)),(None,("input",))):
             with self.subTest(message=message,requirements=requirements),self.assertRaises(ValueError):CaseNotRun(message,*requirements)
 

@@ -93,10 +93,10 @@ class Registry:
         if suite.catalog:
             names = set()
             for case in suite.catalog:
-                if (not isinstance(case, dict) or not all(isinstance(case.get(key), str) and case[key]
+                if (not isinstance(case, dict) or "gate" in case or not all(isinstance(case.get(key), str) and case[key]
                         for key in ("case", "purpose", "expected", "source", "reference"))
-                        or type(case.get("gate")) is not bool):
-                    raise ValueError("suite catalog requires case, purpose, expected, source, reference and boolean gate")
+                        or case.get("severity", "error") not in ("error", "warning")):
+                    raise ValueError("suite catalog requires case, purpose, expected, source, reference and valid source severity")
                 if case["case"] in names:
                     raise ValueError("duplicate catalog case")
                 names.add(case["case"])
@@ -154,11 +154,6 @@ def verify_builtin(ctx, name, request, result):
     return len(ctx.payload) if name == "put" else 0
 
 
-def blocks_measurement(result):
-    """Missing required evidence blocks conclusions; an unexecuted optional observation is never a pass."""
-    return result["status"]=="fail" or (result["status"]=="not_run" and result.get("gate",True))
-
-
 def require_ok(response):
     if not response["ok"]:
         raise RuntimeError(str(response.get("error", "SDK operation failed")))
@@ -197,12 +192,12 @@ def validate_baseline(worker, prefix, directory, payload, part_size):
     case("range_first_byte", lambda: read_check(0, 1))
     case("range_last_byte", lambda: read_check(len(payload)-1, 1))
     case("range_middle", lambda: read_check(len(payload)//3, min(37, len(payload)-len(payload)//3)))
-    # End-out-of-range is observed rather than made a universal SDK compatibility gate.
+    # Preserve JuiceFS end-of-range clipping expectation and warning severity.
     try:
         read_check(len(payload)-1, 2)
-        outcomes.append({"case": "range_end_overflow", "status": "observation", "behavior": "clipped"})
+        outcomes.append({"case": "range_end_overflow", "status": "pass", "behavior": "clipped", "severity": "warning"})
     except Exception as error:
-        outcomes.append({"case": "range_end_overflow", "status": "observation", "behavior": str(error)})
+        outcomes.append({"case": "range_end_overflow", "status": "warning", "behavior": str(error), "severity": "warning"})
     def listed():
         assert_equal(key in call("list", prefix=prefix).get("keys", []), True)
     case("list_contains_written_object", listed)

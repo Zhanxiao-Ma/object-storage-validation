@@ -26,7 +26,7 @@
 当前单个性能样本对应一次 SDK 请求；多步功能可先实现为 Suite，不能把某一步延迟冒充完整流程耗时。
 
 `Suite.execute(ctx)` 返回非空检查列表，每项包含 `case` 和 `status`。
-状态为 `pass`、`fail` 或 `observation`；至少包含一个 pass/fail 语义检查。
+状态为 `pass`、`fail`、`warning` 或 `not_run`；warning 必须来自原始用例的警告语义。
 异常由调度器记录为失败，不是通过。Suite 应自行创建所需输入，不依赖其他 Suite 的执行顺序。
 
 可运行示例为 [inventory_plugin.py](../examples/inventory_plugin.py)。在已有 manifest 增加：
@@ -73,8 +73,8 @@ def register(registry):
 
 随后用 `--profile smoke` 选择。不需要修改 CLI 的档位枚举。
 Suite 可在第四个参数 `catalog` 声明元数据元组；每项包含 `case`、`purpose`、`expected`、
-`source`、`reference` 与布尔 `gate`，建议再声明 `operations`。
-有目录时，结果必须覆盖全部声明的 case 且无重复，必测 gate 不能返回 observation。
+`source`、`reference`，以及可选的来源级别 `severity`（`error` 或 `warning`，默认 `error`），建议再声明 `operations`。旧 `gate` 分类已移除，需更新插件元数据。
+有目录时，结果必须覆盖全部声明的 case 且无重复；来源明确的 error 断言不能改为 warning。
 目录会进入 JSON/Markdown，便于审核来源、预期与未执行项。
 旧的无 catalog 插件仍可运行，但报告明确标出未声明逐项目录的 Suite。
 
@@ -83,8 +83,14 @@ Suite 可在第四个参数 `catalog` 声明元数据元组；每项包含 `case
 使用 `run_cases(ctx, cases)` 执行并提供完整 catalog 的套件，可声明 `Suite(..., case_capabilities=True)`。
 每项 catalog 必须明确 operations；其并集必须等于 Suite.required_operations，避免遗漏前置操作。
 缺失能力时该项返回 `not_run`、`reason=unsupported_operations` 与 missing_operations，其他可执行项继续。
-必测项未执行会阻止性能阶段、使对比证据不足，并让 CLI 非零退出；可选 observation 的未执行仍显示在报告中，不计作通过。
+未执行项单独显示为 not_run，不计作通过；它不阻止性能阶段或 SDK 性能对比，也不单独令 CLI 非零退出。
 旧插件默认按整个 Suite 校验能力，兼容既有执行约定。性能阶段所需操作与清理操作仍必须在启动时可用。
-`not_run` 必须给出原因；执行结果不能把 catalog 声明的必测 gate 改成可选项。
+`not_run` 必须给出原因；结果不能修改 catalog 中声明的来源 severity。
 
-上游用例依赖尚未配置的数据时，使用 `CaseNotRun(message, *requirements)`，显式列出缺项；必须在可行时于创建测试资源前检查。结果为带原因的 not_run，必需用例仍阻断性能输出，不能返回一个通过结果。语言驱动缺少操作时继续使用原有逐用例能力检查，两类原因分别报告。
+上游用例依赖尚未配置的数据时，使用 `CaseNotRun(message, *requirements)`，显式列出缺项；必须在可行时于创建测试资源前检查。结果为带原因的 not_run，不能返回一个通过结果，也不阻断独立性能输出。语言驱动缺少操作时继续使用原有逐用例能力检查，两类原因分别报告。
+
+## 执行模式
+
+`workload.mode` / CLI `--mode` 选择 functional（默认）、performance 或 all。
+Suite 只在 functional/all 调用；Operation 只在 performance/all 调用。功能结果不参与性能准入或 SDK 比较。
+两部分使用不同的 ctx.prefix，不依赖先前执行结果。

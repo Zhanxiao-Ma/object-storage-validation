@@ -1,4 +1,4 @@
-"""Reports distinguish measured evidence, failed gates, and missing comparisons."""
+"""Report functional verdicts and performance measurements independently."""
 import math
 import statistics
 
@@ -34,6 +34,7 @@ def summarize(samples, batches):
 
 
 def comparisons(config, cases, summary, operation_metrics=None):
+    """Compare performance alone; the legacy cases argument is ignored for API compatibility."""
     result = []
     targets = {t["id"]: t for t in config.get("targets", [])}
     for pair in config.get("comparisons", []):
@@ -46,10 +47,6 @@ def comparisons(config, cases, summary, operation_metrics=None):
             reason = "comparison requires S3 and native SDKs"
         elif not pair.get("same_storage_and_network_confirmed", False):
             reason = "same storage, storage class, region and network not confirmed"
-        elif any(c["status"] != "pass" for c in cases if c["target"] in (left, right)):
-            reason = "compatibility gate did not pass"
-        elif any(not any(c["target"] == ident for c in cases) for ident in (left, right)):
-            reason = "compatibility evidence missing"
         ar = {r["op"]: r for r in summary if r["target"] == left}
         br = {r["op"]: r for r in summary if r["target"] == right}
         if not ar or ar.keys() != br.keys():
@@ -96,15 +93,15 @@ def markdown(report):
         configuration.append("| " + " | ".join(cell(value) for value in values) + " |")
     lines[9:9] = configuration + ["", "完整驱动配置与源码版本见 report.json 的 worker_info。", ""]
     coverage = report.get("coverage", {})
-    if coverage:
+    if coverage and report["workload"].get("mode", "all") != "performance":
         position = lines.index("## 兼容性")
         inventory = ["## 测试档位与覆盖", "", f"档位：**{cell(coverage['profile'])}**；目录版本：{coverage['catalog_version']}。",
-                     cell(coverage["description"]), "", "| Target | Planned | Pass | Fail | Observation | Not run |",
+                     cell(coverage["description"]), "", "| Target | Planned | Pass | Fail | Warning | Not run |",
                      "|---|---|---|---|---|---|"]
         planned = {(c["suite"], c["case"]) for c in coverage["catalog"]}
         for target in report["targets"]:
             rows = [r for r in report["cases"] if r["target"] == target["id"] and (r.get("suite"), r["case"]) in planned]
-            counts = [sum(r["status"] == status for r in rows) for status in ("pass", "fail", "observation")]
+            counts = [sum(r["status"] == status for r in rows) for status in ("pass", "fail", "warning")]
             inventory.append("| "+" | ".join(map(str, [target["id"], len(planned), *counts, len(planned)-len(rows)+sum(row["status"]=="not_run" for row in rows)]))+" |")
         inventory += ["", "### 用例来源与预期", "", "| Suite / Case | 预期 | 参考场景 |", "|---|---|---|"]
         for case in coverage["catalog"]:
@@ -125,11 +122,20 @@ def markdown(report):
         lines[position:position]=section
     for row in report["cases"]:
         lines.append(f'| {row["target"]} | {row["case"]} | {row["status"]} | {cell(row.get("error", row.get("behavior", "—")))} |')
-    lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", "",
-              "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s |",
-              "|---|---|---|---|---|---|---|---|---|"]
+    if not report["cases"]:
+        lines += ["", "本次未执行功能用例。"]
+    lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", ""]
+    if report["workload"].get("mode") == "functional":
+        lines.append("本次未执行性能测试。")
+    lines += ["", "执行模式：" + report["workload"].get("mode", "all") + "；功能结果不阻断性能执行或 SDK 性能对比。", ""]
+    if report.get("execution_errors"):
+        lines += ["### 执行错误", ""]
+        for error in report["execution_errors"]:
+            lines.append(f"- {cell(error['target'])} / {cell(error['phase'])}: {cell(error['error'])}")
     def fmt(value):
         return "N/A" if value is None else f"{value:.3f}"
+    lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s |",
+              "|---|---|---|---|---|---|---|---|---|"]
     for row in report["summary"]:
         lines.append(f'| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | '
                      + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + " |")
@@ -140,7 +146,9 @@ def markdown(report):
     warmup = [s for s in report["samples"] if s["phase"] == "warmup"]
     lines += ["", f"预热请求：{len(warmup)}；失败：{sum(not s['ok'] for s in warmup)}。预热不进入性能统计。"]
     lines += ["", "## 同厂商 SDK 对比", ""]
-    if not report["comparisons"]:
+    if report["workload"].get("mode") == "functional":
+        lines.append("本次仅执行功能测试，未执行 SDK 性能对比。")
+    elif not report["comparisons"]:
         lines.append("未配置成对的 S3/native SDK，本次没有 SDK 性能对比结论。")
     for row in report["comparisons"]:
         lines.append(f'- {row["s3"]} / {row["native"]}, {row["op"]}: **{row["status"]}**; '

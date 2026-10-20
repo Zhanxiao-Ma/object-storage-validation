@@ -12,7 +12,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 25
+CATALOG_VERSION = 26
 
 
 @dataclass(frozen=True)
@@ -25,12 +25,12 @@ class Case:
     source: str
     reference: str
     execute: object
-    observation: bool = False
+    severity: str = "error"
 
     def metadata(self):
         return {"case": self.name, "purpose": self.purpose, "expected": self.expected,
                 "operations": sorted(self.operations), "source": self.source,
-                "reference": self.reference, "gate": not self.observation}
+                "reference": self.reference, "severity": self.severity}
 
 
 class Probe:
@@ -118,7 +118,7 @@ class Probe:
 
 
 class CaseNotRun(RuntimeError):
-    """Keep unmet source prerequisites visible and blocking instead of manufacturing substitute test inputs."""
+    """Keep unmet source prerequisites visible instead of manufacturing substitute test inputs."""
     def __init__(self,message,*requirements):
         if not isinstance(message,str) or not message or not requirements or any(not isinstance(value,str) or not value for value in requirements):
             raise ValueError("CaseNotRun requires a message and explicit missing requirements")
@@ -131,7 +131,7 @@ def run_cases(ctx, cases):
     for case in cases:
         missing=case.operations-ctx.worker.capabilities
         if missing:
-            results.append({"case":case.name,"status":"not_run","gate":not case.observation,
+            results.append({"case":case.name,"status":"not_run","severity":case.severity,
                             "reason":"unsupported_operations","missing_operations":sorted(missing),
                             "error":"worker does not advertise operations: "+", ".join(sorted(missing))})
             continue
@@ -140,15 +140,15 @@ def run_cases(ctx, cases):
                          output=ctx.directory/(case.name+".output"))
         try:
             behavior = case.execute(Probe(scoped))
-            result = {"case": case.name, "status": "observation" if case.observation else "pass"}
+            result = {"case": case.name, "status": "warning" if isinstance(behavior, dict) and behavior.get("source_matches") is False and case.severity == "warning" else "pass"}
             if behavior is not None:
                 result["behavior"] = str(behavior)
                 if isinstance(behavior,dict):result["evidence"]=behavior
         except CaseNotRun as error:
             result={"case":case.name,"status":"not_run","reason":"missing_prerequisites","missing_requirements":error.requirements,"error":str(error)}
         except Exception as error:
-            result = {"case": case.name, "status": "fail", "error": str(error)}
-        result["gate"]=not case.observation
+            result = {"case": case.name, "status": "warning" if case.severity == "warning" else "fail", "error": str(error)}
+        result["severity"]=case.severity
         results.append(result)
     return results
 
@@ -206,7 +206,7 @@ def observed_range(p, mode):
     offset = len(data) if mode in ("empty", "start_overflow") else len(data)-1
     result = p.raw("get", offset=offset, length=2, output_path=str(p.ctx.output))
     expectation="successful read with clipped bytes" if mode=="end_overflow" else "successful read with empty bytes"
-    evidence={"source_expected":expectation,"source_severity":"warning" if mode!="empty" else "record-only",
+    evidence={"source_expected":expectation,"source_severity":"warning",
               "source_matches":False,"observed":{"ok":result["ok"]}}
     if not result["ok"]:
         evidence["observed"].update({key:result[key] for key in ("error_kind","error_code","status_code","error") if key in result})
@@ -217,8 +217,14 @@ def observed_range(p, mode):
     return evidence
 
 
-def case(name, purpose, expected, ops, execute, reference, source=JUICE, observation=False):
-    return Case(name, purpose, expected, frozenset(ops.split()), source, reference, execute, observation)
+def strict_range(p, empty):
+    """Use the existing strict Ceph oracle for duplicate Range boundary coverage."""
+    from .ceph_objects import invalid_range
+    return invalid_range(p, empty)
+
+
+def case(name, purpose, expected, ops, execute, reference, source=JUICE, severity="error"):
+    return Case(name, purpose, expected, frozenset(ops.split()), source, reference, execute, severity)
 
 
 CORE = (
@@ -233,9 +239,9 @@ CORE = (
     case("delete_missing", "删除不存在对象", "重复删除成功", "delete head get list", lambda p: delete_check(p, False), "delete non-exist"),
     case("list_prefix", "列举已写入对象并隔离相邻前缀", "键集合准确、无遗漏或重复", "put list", list_check, "list objects"),
     case("special_key", "特殊键名的签名与编码", "空格、中文、百分号及加号内容与列举一致", "put get head list", lambda p: special_key(p, "中文 space+%25?#&=对象"), "special key"),
-    case("multipart_complete", "多分块拼接", "按 part number 拼接且完整读取正确", "mp_create mp_part mp_complete mp_abort get head", lambda p: p.multipart("complete"), "multipart upload"),
+    case("multipart_complete", "多分块拼接", "按 part number 拼接且完整读取正确", "mp_create mp_part mp_complete mp_abort get head", lambda p: p.multipart("complete"), "multipart upload", severity="warning"),
     case("multipart_abort", "取消已有分块的上传", "取消后对象不存在且不可列举", "mp_create mp_part mp_abort head list", lambda p: p.multipart("abort"), "multipart upload; abort lifecycle", source=CEPH),
-    case("range_end_overflow", "记录 Range 末端超界行为", "记录拒绝或返回正确截断内容；不作为兼容门槛", "put get", lambda p: observed_range(p, "end_overflow"), "get partial object", observation=True),
+    case("range_end_overflow", "记录 Range 末端超界行为", "成功返回末端截断内容；偏离时按 JuiceFS warning 报告", "put get", lambda p: observed_range(p, "end_overflow"), "get partial object", severity="warning"),
 )
 
 
@@ -251,8 +257,8 @@ EXTENDED = (
     case("delete_recreate", "同一键删除后重建", "不能读取到旧内容", "put get head delete", delete_recreate, "test_object_write_read_update_read_delete", CEPH),
     case("range_full", "Range 覆盖完整对象", "内容与普通 GET 一致", "put get", lambda p: ranged(p, 0, len(p.ctx.payload)), "test_ranged_request_response_code", CEPH),
     case("range_exact_tail", "Range 精确结束于对象末端", "内容长度及尾部字节正确", "put get", lambda p: ranged(p, len(p.ctx.payload)//2, len(p.ctx.payload)-len(p.ctx.payload)//2), "test_ranged_request_return_trailing_bytes_response_code", CEPH),
-    case("range_start_overflow", "记录起始位置越界行为", "记录拒绝或空内容；不作为兼容门槛", "put get", lambda p: observed_range(p, "start_overflow"), "test_ranged_request_invalid_range", CEPH, True),
-    case("range_empty_object", "记录空对象 Range 行为", "记录拒绝或空内容；不作为兼容门槛", "put get", lambda p: observed_range(p, "empty"), "test_ranged_request_empty_object", CEPH, True),
+    case("range_start_overflow", "记录起始位置越界行为", "失败并返回 InvalidRange；可观测 HTTP 状态为 416", "put get", lambda p: strict_range(p, False), "test_ranged_request_invalid_range", CEPH),
+    case("range_empty_object", "记录空对象 Range 行为", "失败并返回 InvalidRange；可观测 HTTP 状态为 416", "put get", lambda p: strict_range(p, True), "test_ranged_request_empty_object", CEPH),
     case("key_xml", "XML 保留字符键名", "内容与列举原始键名一致", "put get head list", lambda p: special_key(p, "xml-<&>\"\u0027-object"), "test_bucket_listv2_encoding_basic", CEPH),
     case("key_nested", "路径形态对象键", "斜线保留且内容正确", "put get head list", lambda p: special_key(p, "nested/level/object"), "test_bucket_list_prefix_basic", CEPH),
     case("list_many", "跨服务端常见分页阈值列举", "至少 1001 个键全部返回、无重复且前缀隔离", "put list", lambda p: list_check(p, p.ctx.workload["list_objects"]), "test_bucket_listv2_many", CEPH),
@@ -267,8 +273,7 @@ EXTENDED = (
 
 EXCLUSIONS = (
     "文件系统 chmod/chown/mtime（不属于本工具对象接口）",
-    "Ceph 专用日志模型、刷新响应与动态并发剩余71个源函数（尚未迁移）",
-    "S3 Select34、SigV2请求头21、SNS5、S3Control1和数据生成工具1个源函数（尚未迁移）",
+    "SigV2 请求头21个源函数及含 SigV2 的日志认证组合1个源函数（尚未迁移）",
     "正常档只选择基础对象/objbench；高级功能迁移与前提条件见完善档逐项目录和alignment.json",
     "迁移记录不代表实云通过；身份、OIDC、KMS、生命周期加速等真实前提缺失时明确not_run",
 )

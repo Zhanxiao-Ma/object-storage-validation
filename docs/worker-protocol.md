@@ -63,7 +63,7 @@ SDK 的 stdout 日志重定向到 stderr，协议 stdout 只包含 JSONL，避�
 | head_metadata / get_metadata | key，GET 另需 output_path | 实际 content_type、metadata、size、etag、last_modified_ms；GET 读取完整字节 |
 | copy / copy_replace | key 为目的键，source_key；可选 source_bucket；replace 另需 metadata/content_type | 实际复制结果的 etag；跨桶适用性尚未完整验证 |
 
-JuiceFS warning 偏好结果作为 observation，并在 `report.json` 的 evidence 中保存 `source_matches` 等信息；不能当作来源断言通过。
+JuiceFS warning 偏好结果按来源报告 warning（符合原预期时为 pass），并在 `report.json` 的 evidence 中保存 `source_matches` 等信息；不能当作来源断言通过。
 COS Java 显式开启 SDK 的 throw304Directly/throw412Directly，避免默认返回 null 丢失真实服务端异常。
 TOS C++ SDK 2.6.30 的 CopyObject 虽有 Content-Type setter，却未将其写入请求；适配器通过 SDK 的公开 request-header API 设置该头，保留为已知适配行为。
 TOS Java CopySource 使用 form 风格的空格编码；复制源测试区分空格的 + 与原始加号的 %2B，并检查只解码一次。

@@ -24,11 +24,11 @@ class ProfileTest(unittest.TestCase):
         return path
 
     def test_both_profiles_run_real_producer_consumer_and_report(self):
-        """Run real local IO and complete CLI; expect 24/1047 rows, unsupported advanced APIs not_run, exact source URI diagnostic, blocked metrics/exit 1 and clean actual files."""
-        for profile, count, observations,not_run in (("normal", 24, 2,0), ("complete", 1047, 4,792)):
+        """Run real local IO and complete CLI; expect 24/1047 rows, unsupported advanced APIs not_run, exact source URI diagnostic, no metrics in functional mode and exit 1 and clean actual files."""
+        for profile, count, warnings,not_run in (("normal", 24, 1,0), ("complete", 1047, 1,792)):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
-                manifest=self.manifest(directory,{"profile":profile})
+                manifest=self.manifest(directory,{"profile":profile,"mode":"functional"})
                 if profile=="complete":
                     result=subprocess.run([sys.executable,"-m","osv","run",str(manifest),"--output",str(directory/"results")],capture_output=True,text=True,timeout=90)
                     self.assertEqual(result.returncode,1,result.stdout+result.stderr)
@@ -39,7 +39,7 @@ class ProfileTest(unittest.TestCase):
                 self.assertEqual(len(report["coverage"]["catalog"]), count)
                 rows = [c for c in report["cases"] if c.get("suite")]
                 self.assertEqual(len(rows), count)
-                self.assertEqual(sum(c["status"] == "observation" for c in rows), observations)
+                self.assertEqual(sum(c["status"] == "warning" for c in rows), warnings)
                 failures=[c for c in rows if c["status"]=="fail"]
                 self.assertEqual([c["case"] for c in failures],["ceph_tail_unreadable"] if profile=="complete" else [],failures)
                 unsupported=[c for c in rows if c["status"]=="not_run"]
@@ -50,7 +50,7 @@ class ProfileTest(unittest.TestCase):
                 self.assertTrue(report["coverage"]["exclusions"])
                 self.assertEqual(json.loads((directory/"results/report.json").read_text())["coverage"], report["coverage"])
                 markdown = (directory/"results/report.md").read_text()
-                self.assertIn(f"| local | {count} | {count-observations-not_run-len(failures)} | {len(failures)} | {observations} | {not_run} |", markdown)
+                self.assertIn(f"| local | {count} | {count-warnings-not_run-len(failures)} | {len(failures)} | {warnings} | {not_run} |", markdown)
                 self.assertIn("不在本档位覆盖范围", markdown)
                 if profile == "complete":
                     self.assertIn("multipart_resend", markdown)
@@ -101,10 +101,10 @@ class ProfileTest(unittest.TestCase):
             self.assertFalse([c for c in report["cases"] if c["status"] == "fail"])
 
     def test_catalog_cannot_silently_drop_duplicate_or_downgrade_cases(self):
-        """Feed malformed suite output to the real runner; missing, duplicate or downgraded gates must fail before measurement."""
+        """Feed malformed suite output to the real runner; missing, duplicate or downgraded source assertions must fail visibly without suppressing unrelated measurement."""
         for results in ([{"case":"other", "status":"pass"}],
                         [{"case":"required", "status":"pass"}]*2,
-                        [{"case":"required", "status":"observation"}],
+                        [{"case":"required", "status":"warning"}],
                         [{"case":"required", "status":"not_run", "gate":False,"reason":"unsupported_operations"}],
                         [{"case":"required", "status":"not_run"}]):
             registry = build_registry({})
@@ -113,7 +113,7 @@ class ProfileTest(unittest.TestCase):
             with self.subTest(results=results), tempfile.TemporaryDirectory() as temp, patch("osv.cli.build_registry", return_value=registry):
                 directory = Path(temp)
                 report = run(load_config(self.manifest(directory, {"compatibility_suites":["broken"]})), directory/"results")
-                self.assertEqual(report["samples"], [])
+                self.assertTrue(report["samples"])
                 self.assertTrue(any(c["status"] == "fail" and c["case"] == "setup" for c in report["cases"]))
 
     def test_catalog_cli_lists_selected_cases_without_worker_start(self):

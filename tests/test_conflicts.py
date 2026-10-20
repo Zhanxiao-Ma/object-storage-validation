@@ -26,9 +26,32 @@ class ConflictTest(unittest.TestCase):
                 selected=[next(c for c in JUICE_CASES if c.name=="juicefs_range_start_overflow"),
                           next(c for c in CEPH_CASES if c.name=="ceph_range_invalid_start")]
                 rows=run_cases(ctx,selected)
-                self.assertEqual([row["status"] for row in rows],["observation","pass"])
+                self.assertEqual([row["status"] for row in rows],["warning","pass"])
                 self.assertFalse(rows[0]["evidence"]["source_matches"])
                 self.assertEqual(rows[0]["evidence"]["source_severity"],"warning")
                 self.assertEqual(rows[0]["evidence"]["observed"]["error_code"],"InvalidRange")
                 self.assertIn("empty",rows[0]["evidence"]["source_expected"])
+            finally:worker.close()
+
+    def test_source_warning_and_strict_error_keep_distinct_verdicts(self):
+        """Purpose: corrupt an error code after actual Range IO; expect strict Ceph duplicates to fail while a matching JuiceFS clipped read passes with source warning severity retained."""
+        from osv.suites import CORE, EXTENDED
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary)
+            worker=Worker({"language":"python","api":"local","command":[sys.executable,str(ROOT/"drivers/reference.py")],
+                           "env":{"OSV_REFERENCE_ROOT":str(directory/"objects")}},10)
+            actual_call=worker.call
+            def corrupt(request):
+                result=actual_call(request)
+                if request["op"]=="get" and not result["ok"]:result["error_code"]="WrongRangeCode"
+                return result
+            try:
+                ctx=Context(worker,"source-levels/",directory,b"independent-data",directory/"body",directory/"output",{})
+                worker.call=corrupt
+                selected=[next(c for c in EXTENDED if c.name==name) for name in ("range_start_overflow","range_empty_object")]
+                rows=run_cases(ctx,selected)
+                self.assertEqual([row["status"] for row in rows],["fail","fail"])
+                row=run_cases(ctx,(next(c for c in CORE if c.name=="range_end_overflow"),))[0]
+                self.assertEqual(row["status"],"pass");self.assertEqual(row["severity"],"warning")
+                self.assertTrue(row["evidence"]["source_matches"])
             finally:worker.close()

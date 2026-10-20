@@ -43,7 +43,7 @@ cp examples/java-oss.json local-oss.json
 # 编辑 local-oss.json 的 endpoint、region、bucket、负载；确认同存储与网络后才设置
 # same_storage_and_network_confirmed=true。示例中的 0.90/1.10 是演示预算，需先按业务要求制定。
 python3 -m osv check local-oss.json
-python3 -m osv run local-oss.json --output results/oss-java-001
+python3 -m osv run local-oss.json --mode performance --output results/oss-java-001
 ```
 
 OBS/TOS 可沿用示例，把原生 worker 最后一个参数分别改成 `obs` / `tos`，同步 provider、SDK 版本和 endpoint。
@@ -58,7 +58,7 @@ Java 默认 AWS SDK 版本可通过 Maven `-Daws.version=...` 覆盖；报告版
 python3 scripts/build.py cpp --prefix /path/to/sdk/install
 # 可选原生驱动：增加 --oss-source /path/to/oss-sdk --tos-source /path/to/tos-sdk
 cp examples/cpp-s3.json local-cpp.json
-python3 -m osv run local-cpp.json --output results/cpp-s3-001
+python3 -m osv run local-cpp.json --mode performance --output results/cpp-s3-001
 ```
 
 同语言对比可选 `examples/cpp-oss.json` 或 `examples/cpp-tos.json`，修改 endpoint 与实际 SDK 版本。
@@ -101,27 +101,44 @@ S3 侧的重试次数仍按配置生效。比较报告需保留该差异，不�
 官方 C SDK 及其依赖独立构建，通过 `--obs-source` / `--obs-library` 接入，步骤见 [构建与验证](docs/build-and-test.md)。
 原生目标的 `LD_LIBRARY_PATH` 应单独配置为 OBS 运行库目录，避免替换 S3 侧的网络/加密依赖。
 
-## 测试档位
+## 独立执行功能与性能测试
 
 ```bash
-# 默认正常档，或显式指定
-python3 -m osv run examples/selftest.json --profile normal --output results/normal-001
-# 同一套驱动执行更广的对象边界用例
-# 本地 reference 缺少版本控制/配置 API，完整档会如实报告 201 项 not_run 并退出 1
-python3 -m osv run examples/selftest.json --profile complete --output results/complete-001
-# 换成 Java/C++ manifest 即执行对应真实 SDK；check 只校验配置
-python3 -m osv check examples/java-oss.json --profile complete
-# 输出逐项用例目录，不启动 SDK 或访问云
+# 默认仅执行功能测试；档位只控制功能用例范围
+python3 -m osv run examples/selftest.json --mode functional --profile normal --output results/functional-001
+python3 -m osv run examples/selftest.json --mode functional --profile complete --output results/complete-001
+# 仅性能：不执行功能用例，不要求已有功能报告
+python3 -m osv run examples/selftest.json --mode performance --output results/performance-001
+# 同一次运行分别执行两部分；功能失败或跳过不阻止性能测量与 SDK 对比
+python3 -m osv run examples/selftest.json --mode all --output results/all-001
+# 只查看目录，不访问 SDK 或存储
 python3 -m osv catalog examples/java-oss.json --profile complete
 ```
 
-| 档位 | 当前兼容性目录 | 参考范围 |
-|---|---|---|
-| `normal` 正常档（默认） | 22 个门槛 + 2 个行为观察 | 锁定 objbench 的对象检查：256 MiB PUT、实际列举字段/排序、控制字符、三块并发并变长/变短重传；保留额外基础检查 |
-| `complete` 完善档 | 821 个门槛 + 4 个行为观察，包含正常档 | Ceph 迁移进行中：增加原始分页参数、严格错误码与分块/Range 边界；完整差距另列 |
+`workload.mode` 可设置 `functional`、`performance` 或 `all`；默认 `functional`。
+CLI `--mode` 优先于 manifest。旧配置未指定 mode 时，现在只跑功能；原组合行为需显式指定 `all`。
+功能和性能使用独立对象前缀，分别创建输入和清理；性能准备只检查其自身所需的驱动能力。
 
-档位选择统一用例，Java/C++ 与每个厂商共享用例和预期；不运行 JuiceFS 或 Ceph 的测试程序，
-不依赖其二进制或 Python/Go SDK。完善档不等于 Ceph 全量覆盖，未实现范围在报告中明确列出。
+功能结果为 `pass`、`fail`、`warning`、`not_run`。保留来源断言、warning 和跳过原因，
+不再提供“必过项/观察项”或 `gate` 分类。`warning` 仅用于来源本身的警告，不能将明确断言降级。
+例如 JuiceFS 分块检查及部分 Range 偏好保留 warning；Ceph 对应严格错误码检查仍独立断言。
+
+性能请求记录 SDK 错误或内容校验失败；失败请求计入 attempts/failures，不计入有效字节和成功吞吐。
+是否接受功能覆盖、厂商差异和性能结果，由调用方决定。组合执行结束时，退出码汇总本次实际失败，
+不会提前阻止另一部分；`not_run` 和来源 warning 单独报告，不冒充通过，也不单独令 CLI 失败。
+启动、准备、清理等执行错误写入 `execution_errors`。退出码 1 表示实际失败、执行错误或调用方配置的性能预算未满足，
+退出码 2 表示配置/命令错误；功能模式不计算性能比较。外部命令仅在显式配置后执行，mode 不替外部程序选择其内部阶段。
+
+## 测试档位
+
+| 档位 | 当前功能用例数 | 参考范围 |
+|---|---:|---|
+| `normal` 正常档（默认） | 24 | JuiceFS objbench 对象检查与额外基础检查 |
+| `complete` 完善档 | 1047，包含正常档 | 已迁移 Ceph 场景，包括高级能力及其显式前置条件 |
+
+档位只选择功能用例，Java/C++ 与每个厂商共享用例和预期；不执行上游测试程序。
+完善档不等于 Ceph 全量覆盖；当前 953/975 个适用源函数已对齐，22 个 SigV2 相关源函数仍未完成。
+用例数量与源函数数并非一一对应。真实云兼容性以实际执行报告为准。
 逐项目录、来源、性能口径与未覆盖项见 [测试范围](docs/test-scope.md)。
 
 manifest 可设置 `workload.profile`；原有 `workload.compatibility_suites` 保留为自选模式，不能同时设置。
@@ -132,7 +149,7 @@ CLI `--profile` 显式覆盖 manifest 中的两种选择。默认性能模型为
 
 ## 结果与限制
 
-- `report.json`：每条测量、轮次、成功/失败、SDK worker 信息、兼容性断言、对比结论。另生成 `alignment.json`，逐项列出锁定上游的实现映射和缺口。
+- `report.json`：每条测量、轮次、成功/失败、SDK worker 信息、兼容性断言、对比结论。执行功能时另生成 `alignment.json`，逐项列出锁定上游的实现映射和缺口。
 - `report.md`：兼容性矩阵、p50/p95/p99、已校验吞吐、S3/native 比值。
 - warmup 不进入统计；每轮打乱 target 顺序；Range 偏移由 seed 固定，可重复执行。
 - SDK 延迟包含响应体完整消费；有效吞吐包含进程协议与内容校验开销，不能冒充纯 SDK 峰值吞吐。

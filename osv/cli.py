@@ -16,11 +16,11 @@ import uuid
 from urllib.parse import urlsplit
 
 from .worker import Worker, invoke_external
-from .scenarios import Context, build_registry, require_ok, blocks_measurement
+from .scenarios import Context, build_registry, require_ok
 from .report import summarize, comparisons, markdown
 
 
-def load_config(path, profile_override=None):
+def load_config(path, profile_override=None, mode_override=None):
     config = json.loads(Path(path).read_text())
     if config.get("schema_version") != 1:
         raise ValueError("schema_version must be 1")
@@ -57,11 +57,15 @@ def load_config(path, profile_override=None):
         workload.pop("compatibility_suites", None)
     if "profile" in workload and "compatibility_suites" in workload:
         raise ValueError("choose profile or compatibility_suites, not both")
-    defaults = {"object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
+    if mode_override is not None:
+        workload = {**workload, "mode": mode_override}
+    defaults = {"mode": "functional", "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
                 "requests": 100, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 3, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
                 "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "performance_model": "objbench", "operations": ["get", "range", "put", "head"]}
     workload = {**defaults, **workload}
+    if workload["mode"] not in ("functional", "performance", "all"):
+        raise ValueError("mode must be functional, performance or all")
     for key in ("object_size", "range_size", "requests", "concurrency", "rounds", "part_size", "timeout_seconds", "large_object_size"):
         if type(workload[key]) is not int or workload[key] <= 0:
             raise ValueError(f"{key} must be a positive integer")
@@ -182,10 +186,10 @@ def coverage(config, registry):
     """Publish the selected case inventory before execution, including explicit scope gaps."""
     from .suites import CATALOG_VERSION
     workload = config["workload"]
-    selected = workload["compatibility_suites"]
+    selected = [] if workload["mode"] == "performance" else workload["compatibility_suites"]
     profile = registry.profiles.get(workload.get("profile"))
     return {"catalog_version": CATALOG_VERSION, "profile": profile.name if profile else "custom",
-            "description": profile.description if profile else "自选 Suite；不对应内置档位",
+            "description": "本次仅执行性能测试，未选择功能用例" if workload["mode"] == "performance" else profile.description if profile else "自选 Suite；不对应内置档位",
             "suites": selected,
             "catalog": [{**case, "suite": name} for name in selected for case in registry.suites[name].catalog],
             "uncatalogued_suites": [name for name in selected if not registry.suites[name].catalog],
@@ -237,7 +241,11 @@ def _run(config, output_dir):
         report["operation_metrics"] = METRICS.copy()
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
     prefix = "osv/" + report["run_id"] + "/"
+    functional = workload["mode"] in ("functional", "all")
+    performance = workload["mode"] in ("performance", "all")
+    report["execution_errors"] = []
     pools = {}
+    ready = set()
     with tempfile.TemporaryDirectory(prefix="osv-payload-") as temporary:
         root = Path(temporary)
         body = root / "payload.bin"
@@ -249,62 +257,73 @@ def _run(config, output_dir):
                 try:
                     workers = []
                     pools[ident] = workers
-                    for _ in range(workload["concurrency"]):
+                    for _ in range(workload["concurrency"] if performance else 1):
                         workers.append(Worker(target, workload["timeout_seconds"]))
                     report["targets"][-1]["worker_info"] = workers[0].info
                     directory = root / ident
                     directory.mkdir()
-                    required = {"put", "list", "delete"}  # seed and cleanup
-                    if workload["performance_model"]=="objbench":
-                        required.update({"put","get","head","list","delete"})
-                    else:
-                        for name in workload["operations"]:
-                            required.update(registry.operations[name].required_operations)
-                    for name in workload["compatibility_suites"]:
-                        if not registry.suites[name].case_capabilities:
-                            required.update(registry.suites[name].required_operations)
-                    for worker in workers:
-                        missing = required - worker.capabilities
-                        if missing:
-                            raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
-                    ctx = Context(workers[0], prefix+ident+"/", directory, payload, body,
+                except Exception as error:
+                    report["execution_errors"].append({"target": ident, "phase": "worker_setup", "error": str(error)})
+                    if functional:
+                        report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
+                    continue
+                if functional:
+                    ctx = Context(workers[0], prefix+ident+"/functional/", directory, payload, body,
                                   directory/"read.bin", workload)
-                    for name in workload["compatibility_suites"]:
-                        cases = registry.suites[name].execute(ctx)
-                        if not isinstance(cases, list) or not cases or any(
-                            not isinstance(case, dict) or not isinstance(case.get("case"), str)
-                            or case.get("status") not in ("pass", "fail", "observation", "not_run") for case in cases):
-                            raise ValueError("suite must return nonempty valid case results")
-                        catalog = registry.suites[name].catalog
-                        actual_names = [case["case"] for case in cases]
-                        if len(set(actual_names)) != len(actual_names):
-                            raise ValueError("suite returned duplicate case names")
-                        if catalog and set(actual_names) != {case["case"] for case in catalog}:
-                            raise ValueError("suite results differ from declared case catalog")
-                        if catalog:
+                    try:
+                        for name in workload["compatibility_suites"]:
+                            suite = registry.suites[name]
+                            if not suite.case_capabilities:
+                                missing = suite.required_operations - workers[0].capabilities
+                                if missing:
+                                    raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
+                            cases = registry.suites[name].execute(ctx)
+                            if not isinstance(cases, list) or not cases or any(
+                                not isinstance(case, dict) or not isinstance(case.get("case"), str)
+                                or case.get("status") not in ("pass", "fail", "warning", "not_run") for case in cases):
+                                raise ValueError("suite must return nonempty valid case results")
+                            catalog = registry.suites[name].catalog
+                            actual_names = [case["case"] for case in cases]
+                            if len(set(actual_names)) != len(actual_names):
+                                raise ValueError("suite returned duplicate case names")
+                            if catalog and set(actual_names) != {case["case"] for case in catalog}:
+                                raise ValueError("suite results differ from declared case catalog")
                             metadata = {case["case"]: case for case in catalog}
                             for result in cases:
-                                expected_gate=metadata[result["case"]]["gate"]
-                                if result["status"] == "observation" and expected_gate:
-                                    raise ValueError("required gate cannot be downgraded to observation")
-                                if "gate" in result and result["gate"]!=expected_gate:
-                                    raise ValueError("result gate differs from declared catalog")
-                                result["gate"]=expected_gate
+                                if "gate" in result:
+                                    raise ValueError("gate classification is no longer supported")
+                                severity = metadata.get(result["case"], {}).get("severity", "error")
+                                if catalog and result["status"] == "warning" and severity != "warning":
+                                    raise ValueError("source assertion cannot be downgraded to warning")
+                                if catalog and result.get("severity", severity) != severity:
+                                    raise ValueError("result severity differs from source catalog")
+                            if any(case["status"]=="not_run" and not case.get("reason") for case in cases):
+                                raise ValueError("not_run requires an explicit reason")
+                            report["cases"].extend({**case, "target": ident, "suite": name} for case in cases)
+                    except Exception as error:
+                        report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
+                    try:
+                        cleanup_objects(workers[0], ctx.prefix)
+                    except Exception as error:
+                        report["execution_errors"].append({"target": ident, "phase": "functional_cleanup", "error": str(error)})
+                if performance:
+                    try:
+                        required = {"put", "list", "delete"}  # performance data and cleanup
+                        if workload["performance_model"] == "objbench":
+                            required.update({"put", "get", "head", "list", "delete"})
                         else:
-                            for result in cases:result["gate"]=True
-                        if any(case["status"]=="not_run" and not case.get("reason") for case in cases):
-                            raise ValueError("not_run requires an explicit reason")
-                        if not any(case["status"] in ("pass", "fail", "not_run") for case in cases):
-                            raise ValueError("suite must return at least one semantic gate")
-                        report["cases"].extend({**case, "target": ident, "suite": name} for case in cases)
-                    # Compatibility data must not change the performance dataset between profiles.
-                    cleanup_objects(workers[0], prefix+ident+"/")
-                    if workload["performance_model"] == "operations":
-                        require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/perf", "body_path": str(body)}))
-                except Exception as error:
-                    report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
-            active = [t for t in config.get("targets", []) if pools.get(t["id"])
-                      and not any(blocks_measurement(c) for c in report["cases"] if c["target"] == t["id"])]
+                            for name in workload["operations"]:
+                                required.update(registry.operations[name].required_operations)
+                        for worker in workers:
+                            missing = required - worker.capabilities
+                            if missing:
+                                raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
+                        if workload["performance_model"] == "operations":
+                            require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(body)}))
+                        ready.add(ident)
+                    except Exception as error:
+                        report["execution_errors"].append({"target": ident, "phase": "performance_setup", "error": str(error)})
+            active = [t for t in config.get("targets", []) if t["id"] in ready]
             for phase in ("warmup", "measure"):
                 rounds = (workload["objbench"]["warmup_rounds"] if workload["performance_model"] == "objbench" else 1) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
@@ -315,7 +334,7 @@ def _run(config, output_dir):
                         ident = target["id"]
                         if workload["performance_model"] == "objbench":
                             from .objbench import run_objbench
-                            ctx = Context(pools[ident][0], prefix+ident+"/", root/ident, payload, body,
+                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
                                           root/ident/"read.bin", workload)
                             run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
                             continue
@@ -327,7 +346,7 @@ def _run(config, output_dir):
                                 output = root / ident / f"slot-{slot}.bin"
                                 for index in range(slot, count, len(workers)):
                                     operation = registry.operations[op]
-                                    ctx = Context(worker, prefix+ident+"/", root/ident, payload, body,
+                                    ctx = Context(worker, prefix+ident+"/performance/", root/ident, payload, body,
                                                   output, workload, round_index, index)
                                     row = {"target": ident, "op": op, "phase": phase,
                                            "round": round_index, "index": index, "ok": False,
@@ -360,7 +379,7 @@ def _run(config, output_dir):
                     try:
                         cleanup_objects(workers[0], prefix+ident+"/")
                     except Exception as error:
-                        report["cases"].append({"target": ident, "case": "cleanup", "status": "fail", "error": str(error)})
+                        report["execution_errors"].append({"target": ident, "phase": "cleanup", "error": str(error)})
                 for worker in workers:
                     worker.close()
     for spec in config.get("external", []):
@@ -369,14 +388,13 @@ def _run(config, output_dir):
         except Exception as error:
             report["external"].append({"id": spec["id"], "tool": spec["tool"], "exit_code": -1,
                                       "error": redact(str(error)), "stdout": "unavailable"})
-    from .alignment import audit
-    alignment=audit(config,registry)
-    report["upstream_alignment"]={"summary":alignment["summary"],"details":"alignment.json"}
-    (output_dir/"alignment.json").write_text(json.dumps(alignment,indent=2,ensure_ascii=False)+"\n")
+    if functional:
+        from .alignment import audit
+        alignment=audit(config,registry)
+        report["upstream_alignment"]={"summary":alignment["summary"],"details":"alignment.json"}
+        (output_dir/"alignment.json").write_text(json.dumps(alignment,indent=2,ensure_ascii=False)+"\n")
     report["summary"] = summarize(report["samples"], report["batches"])
-    # Observations are not required semantic gates.
-    gates = [c for c in report["cases"] if c["status"] != "observation" and not (c["status"]=="not_run" and not c.get("gate",True))]
-    report["comparisons"] = comparisons(config, gates, report["summary"], report["operation_metrics"])
+    report["comparisons"] = comparisons(config, report["cases"], report["summary"], report["operation_metrics"]) if performance else []
     report["finished_at"] = datetime.now(timezone.utc).isoformat()
     report = json.loads(redact(json.dumps(report)))
     (output_dir / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False)+"\n")
@@ -393,9 +411,11 @@ def main():
         command.add_argument("--profile", help="select registered test profile; overrides manifest suite selection")
         if name == "run":
             command.add_argument("--output", required=True)
+            command.add_argument("--mode", choices=("functional", "performance", "all"),
+                                 help="run functional checks, performance measurements, or both independently; default: functional")
     args = parser.parse_args()
     try:
-        config = load_config(args.manifest, args.profile)
+        config = load_config(args.manifest, args.profile, getattr(args, "mode", None))
         if args.command == "alignment":
             from .alignment import audit
             print(json.dumps(audit(config,build_registry(config)),indent=2,ensure_ascii=False))
@@ -411,7 +431,8 @@ def main():
             return
         report = run(config, Path(args.output))
         print(Path(args.output) / "report.md")
-        failed = any(blocks_measurement(c) for c in report["cases"])
+        failed = any(c["status"] == "fail" for c in report["cases"])
+        failed |= bool(report["execution_errors"])
         failed |= any(not s["ok"] for s in report["samples"])
         failed |= any(e["exit_code"] != 0 or e.get("timed_out") for e in report["external"])
         failed |= any(c["status"] != "within_budget" for c in report["comparisons"])
