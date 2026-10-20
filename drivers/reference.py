@@ -35,6 +35,13 @@ def path(key):
     return candidate
 
 
+def copy_source(q):
+    """Resolve explicit cross-bucket sources independently of the destination; preserve missing-bucket versus missing-key errors in local self-tests."""
+    source_root=root if q.get("source_bucket",q.get("bucket"))==q.get("bucket") else base_root/".buckets"/hashlib.sha256(q["source_bucket"].encode()).hexdigest()
+    if not source_root.exists():raise OperationError("NoSuchBucket",404)
+    return source_root/".objects"/hashlib.sha256(q["source_key"].encode()).hexdigest()
+
+
 def remember(key,metadata=None,content_type="application/octet-stream"):
     file=path(key)
     file.with_suffix(".json").write_text(json.dumps({"key":key,"metadata":metadata or {},"content_type":content_type}))
@@ -195,9 +202,9 @@ def execute(q):
         key.with_suffix(".json").write_text(json.dumps(info))
         return {"status_code":200 if op=="tags_put" else 204}
     elif op in ("copy","copy_replace"):
-        source=path(q["source_key"])
+        source=copy_source(q)
         data=source.read_bytes()
-        if q["source_key"]==q["key"] and op=="copy":raise OperationError("InvalidRequest")
+        if source==key and op=="copy":raise OperationError("InvalidRequest")
         info=json.loads(source.with_suffix(".json").read_text())
         key.parent.mkdir(parents=True,exist_ok=True);key.write_bytes(data)
         remember(q["key"],q["metadata"] if op=="copy_replace" else info["metadata"],
@@ -222,8 +229,7 @@ def execute(q):
         return {"uploads":page,"truncated":truncated,"next_key_marker":page[-1]["key"] if truncated and page else None,"next_upload_id_marker":page[-1]["upload_id"] if truncated and page else None,"status_code":200}
     elif op == "mp_copy":
         if "version_id" in q:raise ValueError("local reference does not implement object versions")
-        source_root=root if q.get("source_bucket",q.get("bucket"))==q.get("bucket") else base_root/".buckets"/hashlib.sha256(q["source_bucket"].encode()).hexdigest()
-        source=source_root/".objects"/hashlib.sha256(q["source_key"].encode()).hexdigest()
+        source=copy_source(q)
         data=source.read_bytes()
         if "range_header" in q:
             match=re.fullmatch(r"bytes=(\d+)-(\d+)",q["range_header"])

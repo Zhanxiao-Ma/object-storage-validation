@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项，总计 405 项（401 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，总计 435 项（431 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -344,3 +344,14 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 `ceph_conditional_writes` 增加 8 项条件 PUT 和 4 项条件 CopyObject：If-Match/If-None-Match 的实际 ETag、错误 ETag、星号、对象存在/不存在，以及复制源匹配/不匹配。保留源码 GET 返回的 ETag 去引号与 PUT 返回 ETag 原样传递两种路径，保留 bar/zar、ABCORZ 的引号区别、412/PreconditionFailed、缺对象 404/NoSuchKey 和后续读取全部断言。源 fails_on_aws/rgw 等标记继续显示，不以当前 AWS 语义改写源码。
 
 复用签名前请求头能力，官方 Java/C++ SDK 实际执行 PUT/GET/CopyObject；源响应直接进入条件请求。独立 HTTP 合约验证头值、引号、签名与完整读回，并故意破坏生产 ETag 传递确认测试失败。本地 Moto 两种语言均保留 3 项原预期失败：已存在对象 If-Match 星号、去引号 If-None-Match ETag、复制源 If-Match 不匹配；其余 9 项通过，独立桶全部清理。缺少请求头能力的 SDK 明确 not_run；没有实云结论。
+
+
+### ACL 访问与对象互操作
+
+`ceph_access` 增加 16 项：公开/私有空桶的匿名 ListObjects V1/V2 四项，以及 private/public-read/public-read-write 桶与同三种对象 ACL 的九种组合、private 桶的三种 ListObjectsV2 变体。保留 foo/bar/new、原始读写内容、执行顺序、全部 403 断言和成功时的完整有序清单。另一身份的客户端真实独立，源码在拒写后使用 alt2/alt3 的位置创建新 SDK 会话；不是把 V2 签名替换成 V4，此处 V2 仅指列举 API。
+
+`ceph_object_interop` 增加 14 项：匿名私有/公开写入与认证写入三项；SSE-C/SSE-S3/KMS 冲突四项；上传时标签一项；公开标签 Get/Put/Delete 策略三项；策略精确往返一项；跨桶复制与缺源桶预检两项。保留原始加密测试密钥/MD5、空对象、fool-me-once 回退、foo=bar&bar 及标签原顺序、七 MiB 重复 ASCII 对象和十个数字标签。策略删除后仅在产生异常时检查错误码的上游规则保持原样，暂不加强预期。
+
+托管复制保留源 HeadObject 预检：存在时再经实际 SDK CopyObject 并完整读回，缺源时预检返回原始 404。文件系统 reference 修正了忽略 source_bucket 的问题；同名键、元数据替换、缺桶/缺键、默认源桶和同桶自复制有真实生产者到消费者回归及故意破坏验证。reference 仍不是 S3 或云厂商结论。
+
+原始参数与预期由同一语言无关场景驱动。缺少 alternate 身份时 12 个 ACL 矩阵与三个标签授权场景明确 not_run，不回退主身份。独立 HTTP 合约验证允许/拒绝完整路径、真实签名、原始请求内容、拒写后新连接、加密冲突及上传标签的完整生产链路；Moto 的宽松权限、算法冲突接受、标签顺序及 C++ 策略解析诊断原样保留。全部桶由测试独立创建并清理；没有实云认证结果。

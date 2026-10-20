@@ -542,6 +542,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in ("ceph_put_condition_match_existing","ceph_put_condition_none_etag","ceph_copy_condition_match_bad"))
             expected.extend((target["id"],name) for target in self.targets for name in expected_request_header_diagnostics())
+            expected.extend((target["id"],name) for target in self.targets for name in ({"ceph_access_anonymous_v1_private","ceph_access_anonymous_v2_private","ceph_interop_put_anonymous_private","ceph_interop_upload_tags"}|{"ceph_interop_conflict_"+mode for mode in ("c_s3","c_kms","s3_kms","bad_enc_kms")}|({"ceph_interop_policy_roundtrip"} if target["language"]=="cpp" else set())))
             expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
@@ -556,11 +557,13 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),405)
+            self.assertEqual(len(report["coverage"]["catalog"]),435)
+            from osv.ceph_access import CASES as access_cases
+            access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in ({"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
-                if row["case"].startswith(("ceph_policy_","ceph_acl_user_")):
+                if row["case"].startswith(("ceph_policy_","ceph_acl_user_","ceph_access_matrix_","ceph_interop_tag_policy_")):
                     self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
                 else:
                     self.assertEqual(row["reason"],"missing_prerequisites")

@@ -74,6 +74,11 @@ jobs:
         env:
           OSV_RUN_SDK_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java alternate identity ACL and object interoperability diagnostics
+        run: python3 -m unittest discover -s tests/integration -p test_ceph_access_sdk.py -v
+        env:
+          OSV_RUN_SDK_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:

@@ -1866,6 +1866,186 @@
       "source_sha256": "e559588d7596c9bf4d6625ba51a24b1f97d123a77ef02c712fa4a58ded12dae8",
       "implementation": "ceph_copy_condition_none_bad",
       "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_objects_anonymous@L1468",
+      "source_sha256": "7ab7a22e73cab26adc30723508ec4e7b5adad4aa95d1b24b626aca67d6681e37",
+      "implementation": "ceph_access_anonymous_v1_public",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_objects_anonymous@L1477",
+      "source_sha256": "561393ef38a7b635773d113dafa96cc311a3bc11e8a4d7e383bde1b4a873affd",
+      "implementation": "ceph_access_anonymous_v2_public",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_objects_anonymous_fail@L1485",
+      "source_sha256": "ad6686ca6bcaff99c5bd57f55c0764ad7d83c6747000805a977d596e3c4f33cc",
+      "implementation": "ceph_access_anonymous_v1_private",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_objects_anonymous_fail@L1496",
+      "source_sha256": "6e0dadf1262f376baec9e8f1d967b39b9f5a50cdc788bf7a5bf1ad3c99fb113c",
+      "implementation": "ceph_access_anonymous_v2_private",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_object_private@L5087",
+      "source_sha256": "cedfb7c8a5e4b3c9221ca710e4e11320d5bc8e63838f695edc56d6a228a4841b",
+      "implementation": "ceph_access_matrix_private_private_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_object_publicread@L5142",
+      "source_sha256": "860913ae04ba6a094450be27bd2fa788a9f86466556c630fcf8987d9fd5065c0",
+      "implementation": "ceph_access_matrix_private_public_read_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_object_publicreadwrite@L5183",
+      "source_sha256": "ce2ae94fb7251e0753589ad264a1311bf4743f1284277ccb16b153e09106e30c",
+      "implementation": "ceph_access_matrix_private_public_read_write_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicread_object_private@L5224",
+      "source_sha256": "4a63a01acb671b315a4c8cb29e9321b37e7ee74f4133c3329c17a91eb51eebe3",
+      "implementation": "ceph_access_matrix_public_read_private_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicread_object_publicread@L5243",
+      "source_sha256": "19eee7e18ff3a718fea12d1dfc90cd9b5438a63e8c5de99bed27cf223ae93a86",
+      "implementation": "ceph_access_matrix_public_read_public_read_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicread_object_publicreadwrite@L5267",
+      "source_sha256": "6d98b38dfd5af3b3b1efa9e1ee4ebc3f4d4a55b8095f85ba22f4a31fe70e9865",
+      "implementation": "ceph_access_matrix_public_read_public_read_write_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicreadwrite_object_private@L5293",
+      "source_sha256": "ed21fa7848ed40d9a14793b71e05f13c8d55f8b7abcf6db07d9491b734e077b2",
+      "implementation": "ceph_access_matrix_public_read_write_private_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicreadwrite_object_publicread@L5308",
+      "source_sha256": "0619549f1a427d42e08dca5cba25ea9c8803cca521c96fb0c235042bb337cfdc",
+      "implementation": "ceph_access_matrix_public_read_write_public_read_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_publicreadwrite_object_publicreadwrite@L5326",
+      "source_sha256": "af7a65ae6841706ec5f40dd1ce59d1f74f53ce499b103f9f0fe2358cfdf99224",
+      "implementation": "ceph_access_matrix_public_read_write_public_read_write_v1",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_objectv2_private@L5115",
+      "source_sha256": "0424346e248cb8d664a633d4c03d509e762d1347fe476537907161c2e10c3523",
+      "implementation": "ceph_access_matrix_private_private_v2",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_objectv2_publicread@L5163",
+      "source_sha256": "266937ea7251a3bb10d23bd9f204a185f3133f5b3e1f19d953739dba45278b6a",
+      "implementation": "ceph_access_matrix_private_public_read_v2",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_access_bucket_private_objectv2_publicreadwrite@L5204",
+      "source_sha256": "c345505ad5ff4fcc84b3d37a7858a6913f34919834c150e9b8f08fc1834e0fd9",
+      "implementation": "ceph_access_matrix_private_public_read_write_v2",
+      "review": "逐项核对固定源码全部输入与断言。保留空桶匿名 V1/V2 列举或完整 ACL 许可矩阵、foo/bar/new、foocontent/barcontent 与三种覆盖内容、原始执行顺序、所有 403 断言及成功列表原顺序；被拒写后 alt2/alt3 使用新真实 SDK 进程/客户端，凭据仍为独立 alt，不回退主身份。V2 仅指 ListObjectsV2，不是签名版本。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_anon_put@L3572",
+      "source_sha256": "ba204605aa8147189b0bb9748f4cb3ccf2c3e389080f41b8eecb66a5df23fabf",
+      "implementation": "ceph_interop_put_anonymous_private",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_anon_put_write_access@L3585",
+      "source_sha256": "be5e2abc63678a6800c99adf3737e826840503491a8c1ae24ff280e4e2baf8f1",
+      "implementation": "ceph_interop_put_anonymous_public",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_put_authenticated@L3595",
+      "source_sha256": "b917ff7055a5b676f94c2775c0a90c26d4d048fe0f1d9e412c51ab40ebe046bf",
+      "implementation": "ceph_interop_put_authenticated",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_obj_enc_conflict_c_s3@L12900",
+      "source_sha256": "d8ac1158e437c6ee863df26c1c24fd2d87b055135d75c2fdce5f750d718b40be",
+      "implementation": "ceph_interop_conflict_c_s3",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_obj_enc_conflict_c_kms@L12923",
+      "source_sha256": "78c78f5e4794fb3c3a0261c606a02a6cf24286e18b57155b52fa45e302935cf0",
+      "implementation": "ceph_interop_conflict_c_kms",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_obj_enc_conflict_s3_kms@L12950",
+      "source_sha256": "b06e61de17feb2d53c65b1f8d49df373cab3bd061225c554a5223294a9040c3f",
+      "implementation": "ceph_interop_conflict_s3_kms",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_obj_enc_conflict_bad_enc_kms@L12974",
+      "source_sha256": "604b2e1f1872985b7c1bfee153ad61b6148866a286f452498c41f2e76aa0bc74",
+      "implementation": "ceph_interop_conflict_bad_enc_kms",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_obj_with_tags@L12281",
+      "source_sha256": "5357f49641c388f0b29b1e6437f31b7e3ce89c031331680e38593f5e8df2df32",
+      "implementation": "ceph_interop_upload_tags",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_tags_acl_public@L12314",
+      "source_sha256": "8e3e80bed258161009c341e88ff18def7441516da583bc384d40099dcb872eb7",
+      "implementation": "ceph_interop_tag_policy_get",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_tags_acl_public@L12337",
+      "source_sha256": "efcd3a4c0afac6be7b41e9dbb26d90e4e3e2f708254346d88833dd3063ce4272",
+      "implementation": "ceph_interop_tag_policy_put",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_tags_obj_public@L12359",
+      "source_sha256": "0736ef17a4cdedc8ca93958d17f8dbb30e7c04cdc11786380a1e2dc4bd982b0a",
+      "implementation": "ceph_interop_tag_policy_delete",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_set_get_del_bucket_policy@L11956",
+      "source_sha256": "d7a28ed24d6f92ea524307465e62f19922fa8b26f5eff1141aab1367090f6e25",
+      "implementation": "ceph_interop_policy_roundtrip",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_diff_bucket@L5603",
+      "source_sha256": "1ab40b3f8df2a6a73a386b9c3ba2f8beab1dd55fb6ddee7a24016d68152dd084",
+      "implementation": "ceph_interop_copy_cross_bucket",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_copy_bucket_not_found@L5721",
+      "source_sha256": "9436441dccd8b53cb1a4c26fab191f8decb88ad9b24442fac3548e50eb8084c2",
+      "implementation": "ceph_interop_copy_missing_bucket",
+      "review": "逐项核对固定源码全部输入与断言。保留匿名/认证原始 foo 字节与创建时 public-read-write，原始空对象/SSE-C 密钥/MD5/算法和 KMS fool-me-once 回退，上传标签原文和严格原始顺序，七 MiB 的重复 1KiB ASCII 数据及十个数字标签、单操作公开标签策略，策略精确字节比较与删除后仅异常时断言的原始规则。跨桶复制保留源 HEAD 预检与真实 CopyObject，缺源托管复制在 HEAD 预检返回 404。独立 UUID 桶和真实 SDK/文件输出；清理恢复策略，不协调源码预期或将本地服务结果改成通过。"
     }
   ]
 }
