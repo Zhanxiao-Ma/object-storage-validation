@@ -59,9 +59,9 @@ class SdkIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         """Start an isolated loopback service; use dummy credentials and require both real worker binaries."""
         import boto3
-        from moto.server import ThreadedMotoServer
+        from local_moto import LocalMotoServer
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
-        cls.server = ThreadedMotoServer(ip_address="127.0.0.1", port=0, verbose=False)
+        cls.server = LocalMotoServer()
         cls.server.start()
         cls.addClassCleanup(cls.server.stop)
         host, port = cls.server.get_host_and_port()
@@ -404,6 +404,21 @@ class SdkIntegrationTest(unittest.TestCase):
                         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                     finally:worker.close()
         finally:self.client.delete_object(Bucket="osv-sdk-integration",Key="scope-sentinel")
+
+    def test_concurrent_overwrites_keep_genuine_requests_without_moto_buffer_race(self):
+        """Run two real SDK lanes overwriting the same 2-MiB object through the production runner; expect all 32 measurements per SDK to succeed and actual object cleanup."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["core_objects"],"performance_model":"operations","operations":["put"],
+                "object_size":2*1024*1024,"range_size":17,"large_object_size":65536,"part_size":5*1024*1024,
+                "concurrency":2,"requests":16,"rounds":2,"warmup_requests":0}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
+            self.assertEqual(len(report["samples"]),32*len(self.targets))
+            self.assertTrue(all(sample["ok"] for sample in report["samples"]),[row for row in report["samples"] if not row["ok"]])
+            self.assertEqual({row["op"] for row in report["samples"]},{"put"})
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_real_sdk_multikey_objbench_model(self):
         """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
