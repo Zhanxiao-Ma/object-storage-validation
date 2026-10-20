@@ -9,10 +9,15 @@ from urllib.parse import unquote,urlsplit,parse_qs
 from xml.etree import ElementTree as ET
 from sdk_fixtures import fixture_worker,FixtureHandler
 from test_lifecycle_expiration_sdk import XML,scope_begin,scope_end
-from osv.ceph_encrypted_copy_matrix import CASES,MIB,matrix,SOURCE_CUSTOMER,DEST_CUSTOMER
+from osv.ceph_encrypted_copy_matrix import CASES,matrix
 from osv.scenarios import Context
 from osv.suites import Probe,run_cases
 
+# Independent source literals from fixed Ceph _copy_enc_*_modes; never derive
+# expected protocol values or sizes from the implementation under test.
+MIB=1024*1024
+EXPECTED_SOURCE_CUSTOMER={"SSECustomerAlgorithm":"AES256","SSECustomerKey":"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=","SSECustomerKeyMD5":"DWygnHRtgiJ77HCm+1rvHw=="}
+EXPECTED_DEST_CUSTOMER={"SSECustomerAlgorithm":"AES256","SSECustomerKey":"6b+WOZ1T3cqZMxgThRcXAQBrS5mXKdDUphvpxptl9/4=","SSECustomerKeyMD5":"arxBvwY2V4SiOne6yppVPQ=="}
 SOURCE_KEY="configured-main-kms"
 DEST_KEY="configured-secondary-kms"
 MODES=("unencrypted","sse-s3","sse-c","sse-kms")
@@ -63,6 +68,12 @@ def vector_documents(values,multipart,index):
 
 def headers(request):return {key.lower():value for key,value in request[2].items()}
 
+def assert_customer_headers(test,actual,expected,prefix="x-amz-server-side-encryption-customer-"):
+    # Raw independent expected values cover algorithm, key and MD5 separately;
+    # reproducing a production key mutation cannot change these source literals.
+    for field,suffix in (("SSECustomerAlgorithm","algorithm"),("SSECustomerKey","key"),("SSECustomerKeyMD5","key-md5")):
+        test.assertEqual(actual.get(prefix+suffix),None if expected is None else expected[field])
+
 def body_digest(body):return body if isinstance(body,dict) else {"size":len(body),"sha256":hashlib.sha256(body).hexdigest()}
 
 def assert_vector_wire(test,requests,values,multipart,index):
@@ -73,35 +84,42 @@ def assert_vector_wire(test,requests,values,multipart,index):
     test.assertEqual(body_digest(original[3]),{"size":size,"sha256":hashlib.sha256(data("A",size)).hexdigest()})
     test.assertEqual(headers(original).get("x-amz-storage-class"),source_class)
     test.assertEqual(headers(original).get("x-amz-server-side-encryption"),{"sse-s3":"AES256","sse-kms":"aws:kms"}.get(source))
-    if source=="sse-c":test.assertEqual(headers(original)["x-amz-server-side-encryption-customer-key"],SOURCE_CUSTOMER["SSECustomerKey"])
+    assert_customer_headers(test,headers(original),EXPECTED_SOURCE_CUSTOMER if source=="sse-c" else None)
     if source=="sse-kms":test.assertEqual(headers(original)["x-amz-server-side-encryption-aws-kms-key-id"],SOURCE_KEY)
     copied=[row for row in requests if row[0]=="PUT" and "x-amz-copy-source" in headers(row)]
     test.assertEqual(len(copied),3 if multipart and dest=="sse-c" else 1)
     for offset,request in enumerate(copied):
         test.assertEqual(unquote(headers(request)["x-amz-copy-source"]),original_path)
-        expected_source_customer=SOURCE_CUSTOMER["SSECustomerKey"] if source=="sse-c" or (multipart and dest=="sse-c" and offset==1) else None
+        expected_source_customer=EXPECTED_SOURCE_CUSTOMER["SSECustomerKey"] if source=="sse-c" or (multipart and dest=="sse-c" and offset==1) else None
         test.assertEqual(headers(request).get("x-amz-copy-source-server-side-encryption-customer-key"),expected_source_customer)
-        expected_dest_customer=DEST_CUSTOMER["SSECustomerKey"] if dest=="sse-c" and offset==len(copied)-1 else None
+        assert_customer_headers(test,headers(request),EXPECTED_SOURCE_CUSTOMER if expected_source_customer is not None else None,"x-amz-copy-source-server-side-encryption-customer-")
+        expected_dest_customer=EXPECTED_DEST_CUSTOMER["SSECustomerKey"] if dest=="sse-c" and offset==len(copied)-1 else None
         test.assertEqual(headers(request).get("x-amz-server-side-encryption-customer-key"),expected_dest_customer)
+        assert_customer_headers(test,headers(request),EXPECTED_DEST_CUSTOMER if expected_dest_customer is not None else None)
         test.assertEqual(headers(request).get("x-amz-storage-class"),None if multipart else dest_class)
     if multipart:
         create=[row for row in requests if row[0]=="POST" and "uploads" in row[1]]
         test.assertEqual(len(create),1);test.assertEqual(headers(create[0]).get("x-amz-storage-class"),dest_class)
+        assert_customer_headers(test,headers(create[0]),EXPECTED_DEST_CUSTOMER if dest=="sse-c" else None)
         parts=[row for row in requests if row[0]=="PUT" and "partNumber=2" in row[1]]
         test.assertEqual(len(parts),3 if dest=="sse-c" else 1)
-        for request in parts:test.assertEqual(body_digest(request[3]),{"size":size,"sha256":hashlib.sha256(data("B",size)).hexdigest()})
-        test.assertEqual([headers(row).get("x-amz-server-side-encryption-customer-key") for row in parts],[None,SOURCE_CUSTOMER["SSECustomerKey"],DEST_CUSTOMER["SSECustomerKey"]] if dest=="sse-c" else [None])
+        for offset,request in enumerate(parts):
+            test.assertEqual(body_digest(request[3]),{"size":size,"sha256":hashlib.sha256(data("B",size)).hexdigest()})
+            assert_customer_headers(test,headers(request),[None,EXPECTED_SOURCE_CUSTOMER,EXPECTED_DEST_CUSTOMER][offset] if dest=="sse-c" else None)
+        test.assertEqual([headers(row).get("x-amz-server-side-encryption-customer-key") for row in parts],[None,EXPECTED_SOURCE_CUSTOMER["SSECustomerKey"],EXPECTED_DEST_CUSTOMER["SSECustomerKey"]] if dest=="sse-c" else [None])
         complete=[row for row in requests if row[0]=="POST" and "uploadId" in row[1]]
         test.assertEqual(len(complete),3 if dest=="sse-c" else 1)
         for request in copied+parts+complete:
             test.assertEqual(parse_qs(urlsplit(request[1]).query)["uploadId"],["server-upload-opaque-"+str(index)])
-        for request in complete:
+        for offset,request in enumerate(complete):
+            assert_customer_headers(test,headers(request),[None,EXPECTED_SOURCE_CUSTOMER,EXPECTED_DEST_CUSTOMER][offset] if dest=="sse-c" else None)
             root=ET.fromstring(request[3]);test.assertEqual([node.text for node in root.findall(".//{*}Part/{*}ETag")],['"server-copy-part-'+str(index)+'"','"server-temp-part-'+str(index)+'"'])
             test.assertEqual([node.text for node in root.findall(".//{*}Part/{*}PartNumber")],["1","2"])
             test.assertNotIn("x-amz-storage-class",headers(request))
-        test.assertEqual([headers(row).get("x-amz-server-side-encryption-customer-key") for row in complete],[None,SOURCE_CUSTOMER["SSECustomerKey"],DEST_CUSTOMER["SSECustomerKey"]] if dest=="sse-c" else [None])
+        test.assertEqual([headers(row).get("x-amz-server-side-encryption-customer-key") for row in complete],[None,EXPECTED_SOURCE_CUSTOMER["SSECustomerKey"],EXPECTED_DEST_CUSTOMER["SSECustomerKey"]] if dest=="sse-c" else [None])
     reads=[row for row in requests if row[0]=="GET" and unquote(urlsplit(row[1]).path).endswith("/testobj2")]
-    test.assertEqual(len(reads),1);test.assertEqual(headers(reads[0]).get("x-amz-server-side-encryption-customer-key"),DEST_CUSTOMER["SSECustomerKey"] if dest=="sse-c" else None)
+    test.assertEqual(len(reads),1);test.assertEqual(headers(reads[0]).get("x-amz-server-side-encryption-customer-key"),EXPECTED_DEST_CUSTOMER["SSECustomerKey"] if dest=="sse-c" else None)
+    assert_customer_headers(test,headers(reads[0]),EXPECTED_DEST_CUSTOMER if dest=="sse-c" else None)
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_ENCRYPTED_COPY_MATRIX_TESTS")=="1","enable actual SDK workers")
 class EncryptedCopyMatrixSdkTest(unittest.TestCase):
@@ -217,3 +235,17 @@ class EncryptedCopyMatrixSdkTest(unittest.TestCase):
                 part_vector(Probe(context),*values)
                 assert_vector_wire(self,server.requests,values,True,91)
                 self.assertEqual(len(server.requests),len(documents))
+
+    def test_sse_customer_copy_keys_and_md5_use_independent_source_literals(self):
+        """Run real SSE-C-to-SSE-C copy and multipart-copy vectors; expect independently pinned source/destination algorithm/key/MD5 at every SDK wire stage, unaffected by production constants."""
+        from osv.ceph_encrypted_copy_matrix import copy_vector,part_vector
+        for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
+            for multipart,size in ((False,1024),(True,8*1024*1024)):
+                values=("sse-c","sse-c","STANDARD","STANDARD_IA",size)
+                documents=vector_documents(values,multipart,123)
+                with self.subTest(language=language,multipart=multipart),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,documents,"s3") as (worker,server):
+                    server.requests=DigestRequests()
+                    path=Path(temporary);context=Context(worker,"unused/",path,b"independent",path/"body",path/"output",{"kms_key_id":SOURCE_KEY,"secondary_kms_key_id":DEST_KEY})
+                    (part_vector if multipart else copy_vector)(Probe(context),*values)
+                    assert_vector_wire(self,server.requests,values,multipart,123)
+                    self.assertEqual(len(server.requests),len(documents))
