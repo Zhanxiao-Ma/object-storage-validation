@@ -1,0 +1,2692 @@
+{
+  "iam": {
+    "provenance": {
+      "source": "https://github.com/aws/aws-sdk-cpp/blob/1.11.675/tools/code-generation/api-descriptions/iam-2010-05-08.normal.json",
+      "source_sha256": "bda90ea63a6d871678842bc8220f0e6ae6a094ce234f1f02d88f1a99a8297fcb",
+      "sdk_version": "1.11.675",
+      "license": "Apache-2.0",
+      "qualification": "Official SDK model subset, not AWS compatibility tests",
+      "binding_overrides": {
+        "GetAccountSummary": "Official public SDK empty request class; service normal model omits input"
+      }
+    },
+    "operations": {
+      "PutUserPolicy": {
+        "name": "PutUserPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "PutUserPolicyRequest"
+        }
+      },
+      "GetUserPolicy": {
+        "name": "GetUserPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetUserPolicyRequest"
+        },
+        "output": {
+          "shape": "GetUserPolicyResponse",
+          "resultWrapper": "GetUserPolicyResult"
+        }
+      },
+      "ListUserPolicies": {
+        "name": "ListUserPolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListUserPoliciesRequest"
+        },
+        "output": {
+          "shape": "ListUserPoliciesResponse",
+          "resultWrapper": "ListUserPoliciesResult"
+        }
+      },
+      "DeleteUserPolicy": {
+        "name": "DeleteUserPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteUserPolicyRequest"
+        }
+      },
+      "CreateUser": {
+        "name": "CreateUser",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "CreateUserRequest"
+        },
+        "output": {
+          "shape": "CreateUserResponse",
+          "resultWrapper": "CreateUserResult"
+        }
+      },
+      "GetUser": {
+        "name": "GetUser",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetUserRequest"
+        },
+        "output": {
+          "shape": "GetUserResponse",
+          "resultWrapper": "GetUserResult"
+        }
+      },
+      "UpdateUser": {
+        "name": "UpdateUser",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "UpdateUserRequest"
+        }
+      },
+      "DeleteUser": {
+        "name": "DeleteUser",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteUserRequest"
+        }
+      },
+      "ListUsers": {
+        "name": "ListUsers",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListUsersRequest"
+        },
+        "output": {
+          "shape": "ListUsersResponse",
+          "resultWrapper": "ListUsersResult"
+        }
+      },
+      "CreateAccessKey": {
+        "name": "CreateAccessKey",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "CreateAccessKeyRequest"
+        },
+        "output": {
+          "shape": "CreateAccessKeyResponse",
+          "resultWrapper": "CreateAccessKeyResult"
+        }
+      },
+      "UpdateAccessKey": {
+        "name": "UpdateAccessKey",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "UpdateAccessKeyRequest"
+        }
+      },
+      "DeleteAccessKey": {
+        "name": "DeleteAccessKey",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteAccessKeyRequest"
+        }
+      },
+      "ListAccessKeys": {
+        "name": "ListAccessKeys",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListAccessKeysRequest"
+        },
+        "output": {
+          "shape": "ListAccessKeysResponse",
+          "resultWrapper": "ListAccessKeysResult"
+        }
+      },
+      "AttachUserPolicy": {
+        "name": "AttachUserPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AttachUserPolicyRequest"
+        }
+      },
+      "DetachUserPolicy": {
+        "name": "DetachUserPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DetachUserPolicyRequest"
+        }
+      },
+      "ListAttachedUserPolicies": {
+        "name": "ListAttachedUserPolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListAttachedUserPoliciesRequest"
+        },
+        "output": {
+          "shape": "ListAttachedUserPoliciesResponse",
+          "resultWrapper": "ListAttachedUserPoliciesResult"
+        }
+      },
+      "CreateGroup": {
+        "name": "CreateGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "CreateGroupRequest"
+        },
+        "output": {
+          "shape": "CreateGroupResponse",
+          "resultWrapper": "CreateGroupResult"
+        }
+      },
+      "GetGroup": {
+        "name": "GetGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetGroupRequest"
+        },
+        "output": {
+          "shape": "GetGroupResponse",
+          "resultWrapper": "GetGroupResult"
+        }
+      },
+      "UpdateGroup": {
+        "name": "UpdateGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "UpdateGroupRequest"
+        }
+      },
+      "DeleteGroup": {
+        "name": "DeleteGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteGroupRequest"
+        }
+      },
+      "ListGroups": {
+        "name": "ListGroups",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListGroupsRequest"
+        },
+        "output": {
+          "shape": "ListGroupsResponse",
+          "resultWrapper": "ListGroupsResult"
+        }
+      },
+      "AddUserToGroup": {
+        "name": "AddUserToGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AddUserToGroupRequest"
+        }
+      },
+      "RemoveUserFromGroup": {
+        "name": "RemoveUserFromGroup",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "RemoveUserFromGroupRequest"
+        }
+      },
+      "ListGroupsForUser": {
+        "name": "ListGroupsForUser",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListGroupsForUserRequest"
+        },
+        "output": {
+          "shape": "ListGroupsForUserResponse",
+          "resultWrapper": "ListGroupsForUserResult"
+        }
+      },
+      "PutGroupPolicy": {
+        "name": "PutGroupPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "PutGroupPolicyRequest"
+        }
+      },
+      "GetGroupPolicy": {
+        "name": "GetGroupPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetGroupPolicyRequest"
+        },
+        "output": {
+          "shape": "GetGroupPolicyResponse",
+          "resultWrapper": "GetGroupPolicyResult"
+        }
+      },
+      "ListGroupPolicies": {
+        "name": "ListGroupPolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListGroupPoliciesRequest"
+        },
+        "output": {
+          "shape": "ListGroupPoliciesResponse",
+          "resultWrapper": "ListGroupPoliciesResult"
+        }
+      },
+      "DeleteGroupPolicy": {
+        "name": "DeleteGroupPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteGroupPolicyRequest"
+        }
+      },
+      "AttachGroupPolicy": {
+        "name": "AttachGroupPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AttachGroupPolicyRequest"
+        }
+      },
+      "DetachGroupPolicy": {
+        "name": "DetachGroupPolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DetachGroupPolicyRequest"
+        }
+      },
+      "ListAttachedGroupPolicies": {
+        "name": "ListAttachedGroupPolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListAttachedGroupPoliciesRequest"
+        },
+        "output": {
+          "shape": "ListAttachedGroupPoliciesResponse",
+          "resultWrapper": "ListAttachedGroupPoliciesResult"
+        }
+      },
+      "CreateRole": {
+        "name": "CreateRole",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "CreateRoleRequest"
+        },
+        "output": {
+          "shape": "CreateRoleResponse",
+          "resultWrapper": "CreateRoleResult"
+        }
+      },
+      "GetRole": {
+        "name": "GetRole",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetRoleRequest"
+        },
+        "output": {
+          "shape": "GetRoleResponse",
+          "resultWrapper": "GetRoleResult"
+        }
+      },
+      "UpdateRole": {
+        "name": "UpdateRole",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "UpdateRoleRequest"
+        },
+        "output": {
+          "shape": "UpdateRoleResponse",
+          "resultWrapper": "UpdateRoleResult"
+        }
+      },
+      "DeleteRole": {
+        "name": "DeleteRole",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteRoleRequest"
+        }
+      },
+      "ListRoles": {
+        "name": "ListRoles",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListRolesRequest"
+        },
+        "output": {
+          "shape": "ListRolesResponse",
+          "resultWrapper": "ListRolesResult"
+        }
+      },
+      "PutRolePolicy": {
+        "name": "PutRolePolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "PutRolePolicyRequest"
+        }
+      },
+      "GetRolePolicy": {
+        "name": "GetRolePolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetRolePolicyRequest"
+        },
+        "output": {
+          "shape": "GetRolePolicyResponse",
+          "resultWrapper": "GetRolePolicyResult"
+        }
+      },
+      "ListRolePolicies": {
+        "name": "ListRolePolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListRolePoliciesRequest"
+        },
+        "output": {
+          "shape": "ListRolePoliciesResponse",
+          "resultWrapper": "ListRolePoliciesResult"
+        }
+      },
+      "DeleteRolePolicy": {
+        "name": "DeleteRolePolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteRolePolicyRequest"
+        }
+      },
+      "AttachRolePolicy": {
+        "name": "AttachRolePolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AttachRolePolicyRequest"
+        }
+      },
+      "DetachRolePolicy": {
+        "name": "DetachRolePolicy",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DetachRolePolicyRequest"
+        }
+      },
+      "ListAttachedRolePolicies": {
+        "name": "ListAttachedRolePolicies",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListAttachedRolePoliciesRequest"
+        },
+        "output": {
+          "shape": "ListAttachedRolePoliciesResponse",
+          "resultWrapper": "ListAttachedRolePoliciesResult"
+        }
+      },
+      "CreateOpenIDConnectProvider": {
+        "name": "CreateOpenIDConnectProvider",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "CreateOpenIDConnectProviderRequest"
+        },
+        "output": {
+          "shape": "CreateOpenIDConnectProviderResponse",
+          "resultWrapper": "CreateOpenIDConnectProviderResult"
+        }
+      },
+      "GetOpenIDConnectProvider": {
+        "name": "GetOpenIDConnectProvider",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetOpenIDConnectProviderRequest"
+        },
+        "output": {
+          "shape": "GetOpenIDConnectProviderResponse",
+          "resultWrapper": "GetOpenIDConnectProviderResult"
+        }
+      },
+      "ListOpenIDConnectProviders": {
+        "name": "ListOpenIDConnectProviders",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "ListOpenIDConnectProvidersRequest"
+        },
+        "output": {
+          "shape": "ListOpenIDConnectProvidersResponse",
+          "resultWrapper": "ListOpenIDConnectProvidersResult"
+        }
+      },
+      "DeleteOpenIDConnectProvider": {
+        "name": "DeleteOpenIDConnectProvider",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "DeleteOpenIDConnectProviderRequest"
+        }
+      },
+      "AddClientIDToOpenIDConnectProvider": {
+        "name": "AddClientIDToOpenIDConnectProvider",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AddClientIDToOpenIDConnectProviderRequest"
+        }
+      },
+      "RemoveClientIDFromOpenIDConnectProvider": {
+        "name": "RemoveClientIDFromOpenIDConnectProvider",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "RemoveClientIDFromOpenIDConnectProviderRequest"
+        }
+      },
+      "UpdateOpenIDConnectProviderThumbprint": {
+        "name": "UpdateOpenIDConnectProviderThumbprint",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "UpdateOpenIDConnectProviderThumbprintRequest"
+        }
+      },
+      "GetAccountSummary": {
+        "name": "GetAccountSummary",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "output": {
+          "shape": "GetAccountSummaryResponse",
+          "resultWrapper": "GetAccountSummaryResult"
+        },
+        "input": {
+          "shape": "GetAccountSummaryRequest"
+        }
+      }
+    },
+    "shapes": {
+      "AccessKey": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "AccessKeyId",
+          "Status",
+          "SecretAccessKey"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "AccessKeyId": {
+            "shape": "accessKeyIdType"
+          },
+          "Status": {
+            "shape": "statusType"
+          },
+          "SecretAccessKey": {
+            "shape": "accessKeySecretType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          }
+        }
+      },
+      "AccessKeyMetadata": {
+        "type": "structure",
+        "members": {
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "AccessKeyId": {
+            "shape": "accessKeyIdType"
+          },
+          "Status": {
+            "shape": "statusType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          }
+        }
+      },
+      "AddClientIDToOpenIDConnectProviderRequest": {
+        "type": "structure",
+        "required": [
+          "OpenIDConnectProviderArn",
+          "ClientID"
+        ],
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          },
+          "ClientID": {
+            "shape": "clientIDType"
+          }
+        }
+      },
+      "AddUserToGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "UserName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "UserName": {
+            "shape": "existingUserNameType"
+          }
+        }
+      },
+      "AttachGroupPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyArn"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "AttachRolePolicyRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyArn"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "AttachUserPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyArn"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "AttachedPermissionsBoundary": {
+        "type": "structure",
+        "members": {
+          "PermissionsBoundaryType": {
+            "shape": "PermissionsBoundaryAttachmentType"
+          },
+          "PermissionsBoundaryArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "AttachedPolicy": {
+        "type": "structure",
+        "members": {
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "CreateAccessKeyRequest": {
+        "type": "structure",
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          }
+        }
+      },
+      "CreateAccessKeyResponse": {
+        "type": "structure",
+        "required": [
+          "AccessKey"
+        ],
+        "members": {
+          "AccessKey": {
+            "shape": "AccessKey"
+          }
+        }
+      },
+      "CreateGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "GroupName": {
+            "shape": "groupNameType"
+          }
+        }
+      },
+      "CreateGroupResponse": {
+        "type": "structure",
+        "required": [
+          "Group"
+        ],
+        "members": {
+          "Group": {
+            "shape": "Group"
+          }
+        }
+      },
+      "CreateOpenIDConnectProviderRequest": {
+        "type": "structure",
+        "required": [
+          "Url"
+        ],
+        "members": {
+          "Url": {
+            "shape": "OpenIDConnectProviderUrlType"
+          },
+          "ClientIDList": {
+            "shape": "clientIDListType"
+          },
+          "ThumbprintList": {
+            "shape": "thumbprintListType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "CreateOpenIDConnectProviderResponse": {
+        "type": "structure",
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "CreateRoleRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "AssumeRolePolicyDocument"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "AssumeRolePolicyDocument": {
+            "shape": "policyDocumentType"
+          },
+          "Description": {
+            "shape": "roleDescriptionType"
+          },
+          "MaxSessionDuration": {
+            "shape": "roleMaxSessionDurationType"
+          },
+          "PermissionsBoundary": {
+            "shape": "arnType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "CreateRoleResponse": {
+        "type": "structure",
+        "required": [
+          "Role"
+        ],
+        "members": {
+          "Role": {
+            "shape": "Role"
+          }
+        }
+      },
+      "CreateUserRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "PermissionsBoundary": {
+            "shape": "arnType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "CreateUserResponse": {
+        "type": "structure",
+        "members": {
+          "User": {
+            "shape": "User"
+          }
+        }
+      },
+      "DeleteAccessKeyRequest": {
+        "type": "structure",
+        "required": [
+          "AccessKeyId"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "AccessKeyId": {
+            "shape": "accessKeyIdType"
+          }
+        }
+      },
+      "DeleteGroupPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "DeleteGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          }
+        }
+      },
+      "DeleteOpenIDConnectProviderRequest": {
+        "type": "structure",
+        "required": [
+          "OpenIDConnectProviderArn"
+        ],
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "DeleteRolePolicyRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "DeleteRoleRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          }
+        }
+      },
+      "DeleteUserPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "DeleteUserRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          }
+        }
+      },
+      "DetachGroupPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyArn"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "DetachRolePolicyRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyArn"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "DetachUserPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyArn"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "PolicyArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "GetAccountSummaryResponse": {
+        "type": "structure",
+        "members": {
+          "SummaryMap": {
+            "shape": "summaryMapType"
+          }
+        }
+      },
+      "GetGroupPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "GetGroupPolicyResponse": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "GetGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "GetGroupResponse": {
+        "type": "structure",
+        "required": [
+          "Group",
+          "Users"
+        ],
+        "members": {
+          "Group": {
+            "shape": "Group"
+          },
+          "Users": {
+            "shape": "userListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "GetOpenIDConnectProviderRequest": {
+        "type": "structure",
+        "required": [
+          "OpenIDConnectProviderArn"
+        ],
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "GetOpenIDConnectProviderResponse": {
+        "type": "structure",
+        "members": {
+          "Url": {
+            "shape": "OpenIDConnectProviderUrlType"
+          },
+          "ClientIDList": {
+            "shape": "clientIDListType"
+          },
+          "ThumbprintList": {
+            "shape": "thumbprintListType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "GetRolePolicyRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "GetRolePolicyResponse": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "GetRoleRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          }
+        }
+      },
+      "GetRoleResponse": {
+        "type": "structure",
+        "required": [
+          "Role"
+        ],
+        "members": {
+          "Role": {
+            "shape": "Role"
+          }
+        }
+      },
+      "GetUserPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          }
+        }
+      },
+      "GetUserPolicyResponse": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "GetUserRequest": {
+        "type": "structure",
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          }
+        }
+      },
+      "GetUserResponse": {
+        "type": "structure",
+        "required": [
+          "User"
+        ],
+        "members": {
+          "User": {
+            "shape": "User"
+          }
+        }
+      },
+      "Group": {
+        "type": "structure",
+        "required": [
+          "Path",
+          "GroupName",
+          "GroupId",
+          "Arn",
+          "CreateDate"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "GroupId": {
+            "shape": "idType"
+          },
+          "Arn": {
+            "shape": "arnType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          }
+        }
+      },
+      "ListAccessKeysRequest": {
+        "type": "structure",
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListAccessKeysResponse": {
+        "type": "structure",
+        "required": [
+          "AccessKeyMetadata"
+        ],
+        "members": {
+          "AccessKeyMetadata": {
+            "shape": "accessKeyMetadataListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListAttachedGroupPoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PathPrefix": {
+            "shape": "policyPathType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListAttachedGroupPoliciesResponse": {
+        "type": "structure",
+        "members": {
+          "AttachedPolicies": {
+            "shape": "attachedPoliciesListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListAttachedRolePoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PathPrefix": {
+            "shape": "policyPathType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListAttachedRolePoliciesResponse": {
+        "type": "structure",
+        "members": {
+          "AttachedPolicies": {
+            "shape": "attachedPoliciesListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListAttachedUserPoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "PathPrefix": {
+            "shape": "policyPathType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListAttachedUserPoliciesResponse": {
+        "type": "structure",
+        "members": {
+          "AttachedPolicies": {
+            "shape": "attachedPoliciesListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListGroupPoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListGroupPoliciesResponse": {
+        "type": "structure",
+        "required": [
+          "PolicyNames"
+        ],
+        "members": {
+          "PolicyNames": {
+            "shape": "policyNameListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListGroupsForUserRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListGroupsForUserResponse": {
+        "type": "structure",
+        "required": [
+          "Groups"
+        ],
+        "members": {
+          "Groups": {
+            "shape": "groupListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListGroupsRequest": {
+        "type": "structure",
+        "members": {
+          "PathPrefix": {
+            "shape": "pathPrefixType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListGroupsResponse": {
+        "type": "structure",
+        "required": [
+          "Groups"
+        ],
+        "members": {
+          "Groups": {
+            "shape": "groupListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListOpenIDConnectProvidersRequest": {
+        "type": "structure",
+        "members": {}
+      },
+      "ListOpenIDConnectProvidersResponse": {
+        "type": "structure",
+        "members": {
+          "OpenIDConnectProviderList": {
+            "shape": "OpenIDConnectProviderListType"
+          }
+        }
+      },
+      "ListRolePoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListRolePoliciesResponse": {
+        "type": "structure",
+        "required": [
+          "PolicyNames"
+        ],
+        "members": {
+          "PolicyNames": {
+            "shape": "policyNameListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListRolesRequest": {
+        "type": "structure",
+        "members": {
+          "PathPrefix": {
+            "shape": "pathPrefixType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListRolesResponse": {
+        "type": "structure",
+        "required": [
+          "Roles"
+        ],
+        "members": {
+          "Roles": {
+            "shape": "roleListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListUserPoliciesRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListUserPoliciesResponse": {
+        "type": "structure",
+        "required": [
+          "PolicyNames"
+        ],
+        "members": {
+          "PolicyNames": {
+            "shape": "policyNameListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "ListUsersRequest": {
+        "type": "structure",
+        "members": {
+          "PathPrefix": {
+            "shape": "pathPrefixType"
+          },
+          "Marker": {
+            "shape": "markerType"
+          },
+          "MaxItems": {
+            "shape": "maxItemsType"
+          }
+        }
+      },
+      "ListUsersResponse": {
+        "type": "structure",
+        "required": [
+          "Users"
+        ],
+        "members": {
+          "Users": {
+            "shape": "userListType"
+          },
+          "IsTruncated": {
+            "shape": "booleanType"
+          },
+          "Marker": {
+            "shape": "responseMarkerType"
+          }
+        }
+      },
+      "OpenIDConnectProviderListEntry": {
+        "type": "structure",
+        "members": {
+          "Arn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "OpenIDConnectProviderListType": {
+        "type": "list",
+        "member": {
+          "shape": "OpenIDConnectProviderListEntry"
+        }
+      },
+      "OpenIDConnectProviderUrlType": {
+        "type": "string",
+        "max": 255,
+        "min": 1
+      },
+      "PermissionsBoundaryAttachmentType": {
+        "type": "string",
+        "enum": [
+          "PermissionsBoundaryPolicy"
+        ]
+      },
+      "PutGroupPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "PutRolePolicyRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "PutUserPolicyRequest": {
+        "type": "structure",
+        "required": [
+          "UserName",
+          "PolicyName",
+          "PolicyDocument"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "PolicyName": {
+            "shape": "policyNameType"
+          },
+          "PolicyDocument": {
+            "shape": "policyDocumentType"
+          }
+        }
+      },
+      "RemoveClientIDFromOpenIDConnectProviderRequest": {
+        "type": "structure",
+        "required": [
+          "OpenIDConnectProviderArn",
+          "ClientID"
+        ],
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          },
+          "ClientID": {
+            "shape": "clientIDType"
+          }
+        }
+      },
+      "RemoveUserFromGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName",
+          "UserName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "UserName": {
+            "shape": "existingUserNameType"
+          }
+        }
+      },
+      "Role": {
+        "type": "structure",
+        "required": [
+          "Path",
+          "RoleName",
+          "RoleId",
+          "Arn",
+          "CreateDate"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "RoleId": {
+            "shape": "idType"
+          },
+          "Arn": {
+            "shape": "arnType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          },
+          "AssumeRolePolicyDocument": {
+            "shape": "policyDocumentType"
+          },
+          "Description": {
+            "shape": "roleDescriptionType"
+          },
+          "MaxSessionDuration": {
+            "shape": "roleMaxSessionDurationType"
+          },
+          "PermissionsBoundary": {
+            "shape": "AttachedPermissionsBoundary"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          },
+          "RoleLastUsed": {
+            "shape": "RoleLastUsed"
+          }
+        }
+      },
+      "RoleLastUsed": {
+        "type": "structure",
+        "members": {
+          "LastUsedDate": {
+            "shape": "dateType"
+          },
+          "Region": {
+            "shape": "stringType"
+          }
+        }
+      },
+      "Tag": {
+        "type": "structure",
+        "required": [
+          "Key",
+          "Value"
+        ],
+        "members": {
+          "Key": {
+            "shape": "tagKeyType"
+          },
+          "Value": {
+            "shape": "tagValueType"
+          }
+        }
+      },
+      "UpdateAccessKeyRequest": {
+        "type": "structure",
+        "required": [
+          "AccessKeyId",
+          "Status"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "AccessKeyId": {
+            "shape": "accessKeyIdType"
+          },
+          "Status": {
+            "shape": "statusType"
+          }
+        }
+      },
+      "UpdateGroupRequest": {
+        "type": "structure",
+        "required": [
+          "GroupName"
+        ],
+        "members": {
+          "GroupName": {
+            "shape": "groupNameType"
+          },
+          "NewPath": {
+            "shape": "pathType"
+          },
+          "NewGroupName": {
+            "shape": "groupNameType"
+          }
+        }
+      },
+      "UpdateOpenIDConnectProviderThumbprintRequest": {
+        "type": "structure",
+        "required": [
+          "OpenIDConnectProviderArn",
+          "ThumbprintList"
+        ],
+        "members": {
+          "OpenIDConnectProviderArn": {
+            "shape": "arnType"
+          },
+          "ThumbprintList": {
+            "shape": "thumbprintListType"
+          }
+        }
+      },
+      "UpdateRoleRequest": {
+        "type": "structure",
+        "required": [
+          "RoleName"
+        ],
+        "members": {
+          "RoleName": {
+            "shape": "roleNameType"
+          },
+          "Description": {
+            "shape": "roleDescriptionType"
+          },
+          "MaxSessionDuration": {
+            "shape": "roleMaxSessionDurationType"
+          }
+        }
+      },
+      "UpdateRoleResponse": {
+        "type": "structure",
+        "members": {}
+      },
+      "UpdateUserRequest": {
+        "type": "structure",
+        "required": [
+          "UserName"
+        ],
+        "members": {
+          "UserName": {
+            "shape": "existingUserNameType"
+          },
+          "NewPath": {
+            "shape": "pathType"
+          },
+          "NewUserName": {
+            "shape": "userNameType"
+          }
+        }
+      },
+      "User": {
+        "type": "structure",
+        "required": [
+          "Path",
+          "UserName",
+          "UserId",
+          "Arn",
+          "CreateDate"
+        ],
+        "members": {
+          "Path": {
+            "shape": "pathType"
+          },
+          "UserName": {
+            "shape": "userNameType"
+          },
+          "UserId": {
+            "shape": "idType"
+          },
+          "Arn": {
+            "shape": "arnType"
+          },
+          "CreateDate": {
+            "shape": "dateType"
+          },
+          "PasswordLastUsed": {
+            "shape": "dateType"
+          },
+          "PermissionsBoundary": {
+            "shape": "AttachedPermissionsBoundary"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          }
+        }
+      },
+      "accessKeyIdType": {
+        "type": "string",
+        "max": 128,
+        "min": 16,
+        "pattern": "[\\w]+"
+      },
+      "accessKeyMetadataListType": {
+        "type": "list",
+        "member": {
+          "shape": "AccessKeyMetadata"
+        }
+      },
+      "accessKeySecretType": {
+        "type": "string",
+        "sensitive": true
+      },
+      "arnType": {
+        "type": "string",
+        "max": 2048,
+        "min": 20
+      },
+      "attachedPoliciesListType": {
+        "type": "list",
+        "member": {
+          "shape": "AttachedPolicy"
+        }
+      },
+      "booleanType": {
+        "type": "boolean"
+      },
+      "clientIDListType": {
+        "type": "list",
+        "member": {
+          "shape": "clientIDType"
+        }
+      },
+      "clientIDType": {
+        "type": "string",
+        "max": 255,
+        "min": 1
+      },
+      "dateType": {
+        "type": "timestamp"
+      },
+      "existingUserNameType": {
+        "type": "string",
+        "max": 128,
+        "min": 1,
+        "pattern": "[\\w+=,.@-]+"
+      },
+      "groupListType": {
+        "type": "list",
+        "member": {
+          "shape": "Group"
+        }
+      },
+      "groupNameType": {
+        "type": "string",
+        "max": 128,
+        "min": 1,
+        "pattern": "[\\w+=,.@-]+"
+      },
+      "idType": {
+        "type": "string",
+        "max": 128,
+        "min": 16,
+        "pattern": "[\\w]+"
+      },
+      "markerType": {
+        "type": "string",
+        "max": 320,
+        "min": 1,
+        "pattern": "[\\u0020-\\u00FF]+"
+      },
+      "maxItemsType": {
+        "type": "integer",
+        "max": 1000,
+        "min": 1
+      },
+      "pathPrefixType": {
+        "type": "string",
+        "max": 512,
+        "min": 1,
+        "pattern": "\\u002F[\\u0021-\\u007F]*"
+      },
+      "pathType": {
+        "type": "string",
+        "max": 512,
+        "min": 1,
+        "pattern": "(\\u002F)|(\\u002F[\\u0021-\\u007E]+\\u002F)"
+      },
+      "policyDocumentType": {
+        "type": "string",
+        "max": 131072,
+        "min": 1,
+        "pattern": "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+"
+      },
+      "policyNameListType": {
+        "type": "list",
+        "member": {
+          "shape": "policyNameType"
+        }
+      },
+      "policyNameType": {
+        "type": "string",
+        "max": 128,
+        "min": 1,
+        "pattern": "[\\w+=,.@-]+"
+      },
+      "policyPathType": {
+        "type": "string",
+        "max": 512,
+        "min": 1,
+        "pattern": "((/[A-Za-z0-9\\.,\\+@=_-]+)*)/"
+      },
+      "responseMarkerType": {
+        "type": "string"
+      },
+      "roleDescriptionType": {
+        "type": "string",
+        "max": 1000,
+        "pattern": "[\\u0009\\u000A\\u000D\\u0020-\\u007E\\u00A1-\\u00FF]*"
+      },
+      "roleListType": {
+        "type": "list",
+        "member": {
+          "shape": "Role"
+        }
+      },
+      "roleMaxSessionDurationType": {
+        "type": "integer",
+        "max": 43200,
+        "min": 3600
+      },
+      "roleNameType": {
+        "type": "string",
+        "max": 64,
+        "min": 1,
+        "pattern": "[\\w+=,.@-]+"
+      },
+      "statusType": {
+        "type": "string",
+        "enum": [
+          "Active",
+          "Inactive",
+          "Expired"
+        ]
+      },
+      "stringType": {
+        "type": "string"
+      },
+      "summaryKeyType": {
+        "type": "string",
+        "enum": [
+          "Users",
+          "UsersQuota",
+          "Groups",
+          "GroupsQuota",
+          "ServerCertificates",
+          "ServerCertificatesQuota",
+          "UserPolicySizeQuota",
+          "GroupPolicySizeQuota",
+          "GroupsPerUserQuota",
+          "SigningCertificatesPerUserQuota",
+          "AccessKeysPerUserQuota",
+          "MFADevices",
+          "MFADevicesInUse",
+          "AccountMFAEnabled",
+          "AccountAccessKeysPresent",
+          "AccountPasswordPresent",
+          "AccountSigningCertificatesPresent",
+          "AttachedPoliciesPerGroupQuota",
+          "AttachedPoliciesPerRoleQuota",
+          "AttachedPoliciesPerUserQuota",
+          "Policies",
+          "PoliciesQuota",
+          "PolicySizeQuota",
+          "PolicyVersionsInUse",
+          "PolicyVersionsInUseQuota",
+          "VersionsPerPolicyQuota",
+          "GlobalEndpointTokenVersion"
+        ]
+      },
+      "summaryMapType": {
+        "type": "map",
+        "key": {
+          "shape": "summaryKeyType"
+        },
+        "value": {
+          "shape": "summaryValueType"
+        }
+      },
+      "summaryValueType": {
+        "type": "integer"
+      },
+      "tagKeyType": {
+        "type": "string",
+        "max": 128,
+        "min": 1,
+        "pattern": "[\\p{L}\\p{Z}\\p{N}_.:/=+\\-@]+"
+      },
+      "tagListType": {
+        "type": "list",
+        "member": {
+          "shape": "Tag"
+        },
+        "max": 50
+      },
+      "tagValueType": {
+        "type": "string",
+        "max": 256,
+        "min": 0,
+        "pattern": "[\\p{L}\\p{Z}\\p{N}_.:/=+\\-@]*"
+      },
+      "thumbprintListType": {
+        "type": "list",
+        "member": {
+          "shape": "thumbprintType"
+        }
+      },
+      "thumbprintType": {
+        "type": "string",
+        "max": 40,
+        "min": 40
+      },
+      "userListType": {
+        "type": "list",
+        "member": {
+          "shape": "User"
+        }
+      },
+      "userNameType": {
+        "type": "string",
+        "max": 64,
+        "min": 1,
+        "pattern": "[\\w+=,.@-]+"
+      },
+      "GetAccountSummaryRequest": {
+        "type": "structure",
+        "members": {}
+      }
+    }
+  },
+  "sts": {
+    "provenance": {
+      "source": "https://github.com/aws/aws-sdk-cpp/blob/1.11.675/tools/code-generation/api-descriptions/sts-2011-06-15.normal.json",
+      "source_sha256": "5bec182c6a1f8a96993c78b95ba10087b2eaf5c617484ba755f38b03e2104901",
+      "sdk_version": "1.11.675",
+      "license": "Apache-2.0",
+      "qualification": "Official SDK model subset, not AWS compatibility tests"
+    },
+    "operations": {
+      "GetSessionToken": {
+        "name": "GetSessionToken",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetSessionTokenRequest"
+        },
+        "output": {
+          "shape": "GetSessionTokenResponse",
+          "resultWrapper": "GetSessionTokenResult"
+        }
+      },
+      "AssumeRole": {
+        "name": "AssumeRole",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AssumeRoleRequest"
+        },
+        "output": {
+          "shape": "AssumeRoleResponse",
+          "resultWrapper": "AssumeRoleResult"
+        }
+      },
+      "AssumeRoleWithWebIdentity": {
+        "name": "AssumeRoleWithWebIdentity",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "AssumeRoleWithWebIdentityRequest"
+        },
+        "output": {
+          "shape": "AssumeRoleWithWebIdentityResponse",
+          "resultWrapper": "AssumeRoleWithWebIdentityResult"
+        },
+        "authtype": "none",
+        "auth": [
+          "smithy.api#noAuth"
+        ]
+      },
+      "GetCallerIdentity": {
+        "name": "GetCallerIdentity",
+        "http": {
+          "method": "POST",
+          "requestUri": "/"
+        },
+        "input": {
+          "shape": "GetCallerIdentityRequest"
+        },
+        "output": {
+          "shape": "GetCallerIdentityResponse",
+          "resultWrapper": "GetCallerIdentityResult"
+        }
+      }
+    },
+    "shapes": {
+      "AssumeRoleRequest": {
+        "type": "structure",
+        "required": [
+          "RoleArn",
+          "RoleSessionName"
+        ],
+        "members": {
+          "RoleArn": {
+            "shape": "arnType"
+          },
+          "RoleSessionName": {
+            "shape": "roleSessionNameType"
+          },
+          "PolicyArns": {
+            "shape": "policyDescriptorListType"
+          },
+          "Policy": {
+            "shape": "unrestrictedSessionPolicyDocumentType"
+          },
+          "DurationSeconds": {
+            "shape": "roleDurationSecondsType"
+          },
+          "Tags": {
+            "shape": "tagListType"
+          },
+          "TransitiveTagKeys": {
+            "shape": "tagKeyListType"
+          },
+          "ExternalId": {
+            "shape": "externalIdType"
+          },
+          "SerialNumber": {
+            "shape": "serialNumberType"
+          },
+          "TokenCode": {
+            "shape": "tokenCodeType"
+          },
+          "SourceIdentity": {
+            "shape": "sourceIdentityType"
+          },
+          "ProvidedContexts": {
+            "shape": "ProvidedContextsListType"
+          }
+        }
+      },
+      "AssumeRoleResponse": {
+        "type": "structure",
+        "members": {
+          "Credentials": {
+            "shape": "Credentials"
+          },
+          "AssumedRoleUser": {
+            "shape": "AssumedRoleUser"
+          },
+          "PackedPolicySize": {
+            "shape": "nonNegativeIntegerType"
+          },
+          "SourceIdentity": {
+            "shape": "sourceIdentityType"
+          }
+        }
+      },
+      "AssumeRoleWithWebIdentityRequest": {
+        "type": "structure",
+        "required": [
+          "RoleArn",
+          "RoleSessionName",
+          "WebIdentityToken"
+        ],
+        "members": {
+          "RoleArn": {
+            "shape": "arnType"
+          },
+          "RoleSessionName": {
+            "shape": "roleSessionNameType"
+          },
+          "WebIdentityToken": {
+            "shape": "clientTokenType"
+          },
+          "ProviderId": {
+            "shape": "urlType"
+          },
+          "PolicyArns": {
+            "shape": "policyDescriptorListType"
+          },
+          "Policy": {
+            "shape": "sessionPolicyDocumentType"
+          },
+          "DurationSeconds": {
+            "shape": "roleDurationSecondsType"
+          }
+        }
+      },
+      "AssumeRoleWithWebIdentityResponse": {
+        "type": "structure",
+        "members": {
+          "Credentials": {
+            "shape": "Credentials"
+          },
+          "SubjectFromWebIdentityToken": {
+            "shape": "webIdentitySubjectType"
+          },
+          "AssumedRoleUser": {
+            "shape": "AssumedRoleUser"
+          },
+          "PackedPolicySize": {
+            "shape": "nonNegativeIntegerType"
+          },
+          "Provider": {
+            "shape": "Issuer"
+          },
+          "Audience": {
+            "shape": "Audience"
+          },
+          "SourceIdentity": {
+            "shape": "sourceIdentityType"
+          }
+        }
+      },
+      "AssumedRoleUser": {
+        "type": "structure",
+        "required": [
+          "AssumedRoleId",
+          "Arn"
+        ],
+        "members": {
+          "AssumedRoleId": {
+            "shape": "assumedRoleIdType"
+          },
+          "Arn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "Audience": {
+        "type": "string"
+      },
+      "Credentials": {
+        "type": "structure",
+        "required": [
+          "AccessKeyId",
+          "SecretAccessKey",
+          "SessionToken",
+          "Expiration"
+        ],
+        "members": {
+          "AccessKeyId": {
+            "shape": "accessKeyIdType"
+          },
+          "SecretAccessKey": {
+            "shape": "accessKeySecretType"
+          },
+          "SessionToken": {
+            "shape": "tokenType"
+          },
+          "Expiration": {
+            "shape": "dateType"
+          }
+        }
+      },
+      "GetCallerIdentityRequest": {
+        "type": "structure",
+        "members": {}
+      },
+      "GetCallerIdentityResponse": {
+        "type": "structure",
+        "members": {
+          "UserId": {
+            "shape": "userIdType"
+          },
+          "Account": {
+            "shape": "accountType"
+          },
+          "Arn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "GetSessionTokenRequest": {
+        "type": "structure",
+        "members": {
+          "DurationSeconds": {
+            "shape": "durationSecondsType"
+          },
+          "SerialNumber": {
+            "shape": "serialNumberType"
+          },
+          "TokenCode": {
+            "shape": "tokenCodeType"
+          }
+        }
+      },
+      "GetSessionTokenResponse": {
+        "type": "structure",
+        "members": {
+          "Credentials": {
+            "shape": "Credentials"
+          }
+        }
+      },
+      "Issuer": {
+        "type": "string"
+      },
+      "PolicyDescriptorType": {
+        "type": "structure",
+        "members": {
+          "arn": {
+            "shape": "arnType"
+          }
+        }
+      },
+      "ProvidedContext": {
+        "type": "structure",
+        "members": {
+          "ProviderArn": {
+            "shape": "arnType"
+          },
+          "ContextAssertion": {
+            "shape": "contextAssertionType"
+          }
+        }
+      },
+      "ProvidedContextsListType": {
+        "type": "list",
+        "member": {
+          "shape": "ProvidedContext"
+        },
+        "max": 5
+      },
+      "Tag": {
+        "type": "structure",
+        "required": [
+          "Key",
+          "Value"
+        ],
+        "members": {
+          "Key": {
+            "shape": "tagKeyType"
+          },
+          "Value": {
+            "shape": "tagValueType"
+          }
+        }
+      },
+      "accessKeyIdType": {
+        "type": "string",
+        "max": 128,
+        "min": 16,
+        "pattern": "[\\w]*"
+      },
+      "accessKeySecretType": {
+        "type": "string",
+        "sensitive": true
+      },
+      "accountType": {
+        "type": "string"
+      },
+      "arnType": {
+        "type": "string",
+        "max": 2048,
+        "min": 20,
+        "pattern": "[\\u0009\\u000A\\u000D\\u0020-\\u007E\\u0085\\u00A0-\\uD7FF\\uE000-\\uFFFD\\u10000-\\u10FFFF]+"
+      },
+      "assumedRoleIdType": {
+        "type": "string",
+        "max": 193,
+        "min": 2,
+        "pattern": "[\\w+=,.@:-]*"
+      },
+      "clientTokenType": {
+        "type": "string",
+        "max": 20000,
+        "min": 4,
+        "sensitive": true
+      },
+      "contextAssertionType": {
+        "type": "string",
+        "max": 2048,
+        "min": 4
+      },
+      "dateType": {
+        "type": "timestamp"
+      },
+      "durationSecondsType": {
+        "type": "integer",
+        "max": 129600,
+        "min": 900
+      },
+      "externalIdType": {
+        "type": "string",
+        "max": 1224,
+        "min": 2,
+        "pattern": "[\\w+=,.@:\\/-]*"
+      },
+      "nonNegativeIntegerType": {
+        "type": "integer",
+        "min": 0
+      },
+      "policyDescriptorListType": {
+        "type": "list",
+        "member": {
+          "shape": "PolicyDescriptorType"
+        }
+      },
+      "roleDurationSecondsType": {
+        "type": "integer",
+        "max": 43200,
+        "min": 900
+      },
+      "roleSessionNameType": {
+        "type": "string",
+        "max": 64,
+        "min": 2,
+        "pattern": "[\\w+=,.@-]*"
+      },
+      "serialNumberType": {
+        "type": "string",
+        "max": 256,
+        "min": 9,
+        "pattern": "[\\w+=/:,.@-]*"
+      },
+      "sessionPolicyDocumentType": {
+        "type": "string",
+        "max": 2048,
+        "min": 1,
+        "pattern": "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+"
+      },
+      "sourceIdentityType": {
+        "type": "string",
+        "max": 64,
+        "min": 2,
+        "pattern": "[\\w+=,.@-]*"
+      },
+      "tagKeyListType": {
+        "type": "list",
+        "member": {
+          "shape": "tagKeyType"
+        },
+        "max": 50
+      },
+      "tagKeyType": {
+        "type": "string",
+        "max": 128,
+        "min": 1,
+        "pattern": "[\\p{L}\\p{Z}\\p{N}_.:/=+\\-@]+"
+      },
+      "tagListType": {
+        "type": "list",
+        "member": {
+          "shape": "Tag"
+        },
+        "max": 50
+      },
+      "tagValueType": {
+        "type": "string",
+        "max": 256,
+        "min": 0,
+        "pattern": "[\\p{L}\\p{Z}\\p{N}_.:/=+\\-@]*"
+      },
+      "tokenCodeType": {
+        "type": "string",
+        "max": 6,
+        "min": 6,
+        "pattern": "[\\d]*"
+      },
+      "tokenType": {
+        "type": "string"
+      },
+      "unrestrictedSessionPolicyDocumentType": {
+        "type": "string",
+        "min": 1,
+        "pattern": "[\\u0009\\u000A\\u000D\\u0020-\\u00FF]+"
+      },
+      "urlType": {
+        "type": "string",
+        "max": 2048,
+        "min": 4
+      },
+      "userIdType": {
+        "type": "string"
+      },
+      "webIdentitySubjectType": {
+        "type": "string",
+        "max": 255,
+        "min": 6
+      }
+    }
+  }
+}

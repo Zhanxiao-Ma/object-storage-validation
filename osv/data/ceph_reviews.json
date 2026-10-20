@@ -4062,6 +4062,330 @@
       "source_sha256": "c3a23ec8fcac6881ec685559b15fa13f6ecf17321c045c5f7b6ea39e0be6e59b",
       "implementation": "ceph_logging_parallel_put",
       "review": "完整核对17358：原max_pool_connections50映射为专用真实SDK worker OSV_CONNECTIONS=50，全部源操作使用同一client；第一阶段50线程对应50独立随机body真实PUT，第二阶段50真实dummy/POST线程，使用原生concurrent_requests一次50无串行分批；保留原List源keys、标准5.5秒等待、多目标日志拼接/每key log/前缀、完整50条PUT记录与Journal条件分支。原thread异常不会由join重抛，未添加逐线程成功oracle，只保留实际逐请求结果/50数量并按原最终日志断言。两个HTTP barrier逐阶段必须50同时到达，真实Java/C++验证pool50、100请求和50独立body，50→49事件数量突变检出。所有真实/模糊写key预登记，finally停日志后清理全部对象/日志，专用worker关闭后清理payload文件。保留fails_on_aws/fails_without_logging_rollover标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_x_amz_expires_not_expired@L3507",
+      "source_sha256": "abca81f12b1993ad9db041775daa4357c52c439b75d352c9aa5adfa7199c57b2",
+      "implementation": "ceph_presigned_not_expired_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_x_amz_expires_not_expired_tenant@L3510",
+      "source_sha256": "6282048e5faf5e9806d8ce1f05a01a4aa471351b54d58f9b0097ae2cca63713a",
+      "implementation": "ceph_presigned_not_expired_tenant_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_x_amz_expires_out_range_zero@L3513",
+      "source_sha256": "e2f071edf76d703c470a46c27e7722596e15e1e8bd7e166f5d3bdf2f9e92547b",
+      "implementation": "ceph_presigned_zero_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_x_amz_expires_out_max_range@L3523",
+      "source_sha256": "eb728b6cd1ba480c61c126e56fcbeec27c26609c565f6682d0a646d4ab3e69f8",
+      "implementation": "ceph_presigned_above_max_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_x_amz_expires_out_positive_range@L3533",
+      "source_sha256": "73cf1d8e9c0a7ba0140d3f89fcb913135b70633f6bd14b58f32533d54ca1714b",
+      "implementation": "ceph_presigned_negative_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_presigned_put_object_with_acl@L3624",
+      "source_sha256": "ef3a0c62602104bceb6b815698342c5b786b4e00e6f679d49763da635193f374",
+      "implementation": "ceph_presigned_put_acl_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_presigned_put_object_with_acl_tenant@L3628",
+      "source_sha256": "d57d927a85fe43b39178d254a146a56eb43d74666f9231de59a7c9b1731ad3ff",
+      "implementation": "ceph_presigned_put_acl_tenant_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_put_authenticated_expired@L3632",
+      "source_sha256": "37cf01797c76889898d064ce757a5c576c2afcd5b740fd0c20fa97bf195fbd45",
+      "implementation": "ceph_presigned_expired_put_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_get_object@L7081",
+      "source_sha256": "9ffe31dc497f756fadae24b632965e5a6a5787d5cff4e00d1c2eeb7128f01fa8",
+      "implementation": "ceph_presigned_cors_get_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_get_object_tenant@L7087",
+      "source_sha256": "e593b1e5258966209589b5bba19c534a3eb2adf7444469285882eef766abeaa1",
+      "implementation": "ceph_presigned_cors_get_tenant_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_get_object_v2@L7094",
+      "source_sha256": "cd84fdb410ce28743d717a087c6dc5bfe1841870f78def436b4c3c2062bdf18d",
+      "implementation": "ceph_presigned_cors_get_main_v2",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_get_object_tenant_v2@L7101",
+      "source_sha256": "2d6455ab326c908f5e45f16c39d532cd62002be69229538a7f3fd0f794d8eba3",
+      "implementation": "ceph_presigned_cors_get_tenant_v2",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object@L7107",
+      "source_sha256": "266f34f378f959c8c634b8ed9254c6328ad49a3a3040cb47dbf31ef199af20b3",
+      "implementation": "ceph_presigned_cors_put_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object_with_acl@L7113",
+      "source_sha256": "ad43dfe9528d02a5488390dfdec75c3cb08a6e8c427836176e199c9b1d4e9518",
+      "implementation": "ceph_presigned_cors_put_acl_main_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object_v2@L7121",
+      "source_sha256": "35dccf38430fca6ab292aae3ff7832c0edcd852e97c71d218e4e7742b35b531d",
+      "implementation": "ceph_presigned_cors_put_main_v2",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant_v2@L7128",
+      "source_sha256": "730ef924936ffaf81833a60be751da5f9bea8145c5b0829ec00307c08b10805a",
+      "implementation": "ceph_presigned_cors_put_tenant_v2",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant@L7134",
+      "source_sha256": "9bbd238333d978a0274bffb072aff2f6a3223bf6e5419a9be85b4e26a3a4bef1",
+      "implementation": "ceph_presigned_cors_put_tenant_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_presigned_put_object_tenant_with_acl@L7140",
+      "source_sha256": "91856f2a5830db252217c2369af890a604ea3956ab72680c4262f88308c6174a",
+      "implementation": "ceph_presigned_cors_put_acl_tenant_v4",
+      "review": "逐行保留原main/tenant身份和官方SDK签名→原URL真实requests消费者；ExpiresIn缺省与100000/0/609901/-7/-1000分开，原PUT private ACL、hello world回读、OPTIONS400以及CORS200/origin/method全部断言。四V2仅真实presign_v2能力方能执行，不以V4替代；SDK本地拒绝明确失败不伪造服务端403，缺配置not_run。独立UUID桶全路径原身份清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_read_1mb@L7296",
+      "source_sha256": "bd80835a48802ab0f859ea50ba735f9111e65b314533e3c0b91ca88a706ec0ec",
+      "implementation": "ceph_atomic_stream_read_1mb",
+      "review": "保留1/4/8MiB原始A/B对象、原PUT client与独立read client、实际下载sink首次正write同步写B、余下每次write全A及close总size、fresh verifier最终全B；Java真实ResponseTransformer OutputStream和Cpp真实ResponseStreamFactory在HTTP传输中回调，不用普通并发/完整下载后补写。独立UUID桶全部写前登记并清理；SDK测试以实际HTTP首1024字节屏障及独立字面内容审核，执行结果另报。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_read_4mb@L7299",
+      "source_sha256": "073df7f19cb6e421b7916bc57a979ab5094b6eba6b1a650aefcaa03298095101",
+      "implementation": "ceph_atomic_stream_read_4mb",
+      "review": "保留1/4/8MiB原始A/B对象、原PUT client与独立read client、实际下载sink首次正write同步写B、余下每次write全A及close总size、fresh verifier最终全B；Java真实ResponseTransformer OutputStream和Cpp真实ResponseStreamFactory在HTTP传输中回调，不用普通并发/完整下载后补写。独立UUID桶全部写前登记并清理；SDK测试以实际HTTP首1024字节屏障及独立字面内容审核，执行结果另报。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_atomic_read_8mb@L7302",
+      "source_sha256": "c02969ea1d4ea8d16c87ca1e5b2586c89c582b1351632f3e6066029a69938c63",
+      "implementation": "ceph_atomic_stream_read_8mb",
+      "review": "保留1/4/8MiB原始A/B对象、原PUT client与独立read client、实际下载sink首次正write同步写B、余下每次write全A及close总size、fresh verifier最终全B；Java真实ResponseTransformer OutputStream和Cpp真实ResponseStreamFactory在HTTP传输中回调，不用普通并发/完整下载后补写。独立UUID桶全部写前登记并清理；SDK测试以实际HTTP首1024字节屏障及独立字面内容审核，执行结果另报。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_create@L883",
+      "source_sha256": "f75784de9797fddc4faeaf32999739b4ca40a89cb902b49704fe3f9727079392",
+      "implementation": "ceph_iam_account_user_create",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_case_insensitive_name@L907",
+      "source_sha256": "2bb662b75fc7a293ea02af09f7f6f85851a9e23450e72f997b4989f157a650b9",
+      "implementation": "ceph_iam_account_user_case_insensitive_name",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_delete@L930",
+      "source_sha256": "ecea83dcdb4aa971d6a3eb4081eae4cfbd1000700efcd479ed70b5aefca068b5",
+      "implementation": "ceph_iam_account_user_delete",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_list@L955",
+      "source_sha256": "449ffa5b03364ef6a458c7f0407caebc7f1113f0c2abeffc3f207a4b0a23a447",
+      "implementation": "ceph_iam_account_user_list",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_list_path_prefix@L979",
+      "source_sha256": "4a79b0f7616fc7026cc1b4fcc9d07fcf07317e75965399a488bdf5d25df2bebc",
+      "implementation": "ceph_iam_account_user_list_path_prefix",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_create@L1791",
+      "source_sha256": "f9b12e1db89179a59c396ed7fd657ba2aef0e7de868e342a8488958bd8387210",
+      "implementation": "ceph_iam_account_role_create",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_case_insensitive_name@L1828",
+      "source_sha256": "e8b93c17b1d0ac188f7f682d547cd0c52801ae95acc688a54a0888ac6ab80033",
+      "implementation": "ceph_iam_account_role_case_insensitive_name",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_delete@L1851",
+      "source_sha256": "e124554d4d4f52ea7ada9b6c270f2bc88096ccca10890f2692f70014a4a83ca2",
+      "implementation": "ceph_iam_account_role_delete",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_list@L1876",
+      "source_sha256": "40c12d9db1df7ebc0f7b1f8584e12acc9561ca2c92d7de880197f79b211c699d",
+      "implementation": "ceph_iam_account_role_list",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_list_path_prefix@L1900",
+      "source_sha256": "c31e891a0b6a16ad58ea1ae83e092c7d823a27e877600395e443bfdf4ca96ce5",
+      "implementation": "ceph_iam_account_role_list_path_prefix",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_update_name@L1014",
+      "source_sha256": "93341a4ae818e5b8598c964a2cc5ffa3449cae5257fb7d7c576dfe56ec35eed7",
+      "implementation": "ceph_iam_account_user_update_name",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_update_path@L1044",
+      "source_sha256": "598bbe3edd330855b1b7dec8a247e9bb6073c21726449be48961415250cd8820",
+      "implementation": "ceph_iam_account_user_update_path",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_role_update@L1935",
+      "source_sha256": "95adf6140ae2266e7682ae8559aad9bedb6e8c28a5e4ad7ec7ef6a49230bf517",
+      "implementation": "ceph_iam_account_role_update",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_role。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_access_key_create@L1071",
+      "source_sha256": "fae82c4214ceae1b396d9d94f455da94f5a1dc857348a884dd4929adddda69c2",
+      "implementation": "ceph_iam_account_user_access_key_create",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_access_key_update@L1108",
+      "source_sha256": "bfc9faa34979dc36d12fd4b81c1e4a33f1974b337eda9c2443a8bb818d5245a4",
+      "implementation": "ceph_iam_account_user_access_key_update",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_access_key_delete@L1170",
+      "source_sha256": "2da57e3a7b5ac5e7a85af476177bea49e1979b8d98bba1141783ffa8aea6fa06",
+      "implementation": "ceph_iam_account_user_access_key_delete",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_account_user_access_key_list@L1225",
+      "source_sha256": "01342c6feebe49604c113dcc601fea5397ab9560bf84c369923995707e211511",
+      "implementation": "ceph_iam_account_user_access_key_list",
+      "review": "保留源输入、大小写、分页顺序、真实日期和全部断言；显式隔离授权、真实root证明及实际ID归属清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.iam_account, pytest.mark.iam_user。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_put_user_policy@L36",
+      "source_sha256": "dbe87706fbf20ba2537d21c6e63e1bfc6fc57863870839a016937de8ba6a7c3b",
+      "implementation": "ceph_iam_put_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_put_user_policy_invalid_user@L56",
+      "source_sha256": "cbdb0465025478dd053dc62bd74e90f5cd0242d01aaf93149a5c2baf99df2416",
+      "implementation": "ceph_iam_put_user_policy_invalid_user",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_put_user_policy_parameter_limit@L74",
+      "source_sha256": "5571e2e9a3f58f394380825bd14cfe6436c26da349935f12a94b9ad827f6e82e",
+      "implementation": "ceph_iam_put_user_policy_parameter_limit",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_put_user_policy_invalid_element@L94",
+      "source_sha256": "5c66603951f06246d6edcb28a8b57ba8282f1b15442c3b1f3444735832f849b1",
+      "implementation": "ceph_iam_put_user_policy_invalid_element",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_rgw。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_put_existing_user_policy@L159",
+      "source_sha256": "8d15c960a2a961c9fb8502a9b7423ea0d15c8c326c084e2b842c7824f8904109",
+      "implementation": "ceph_iam_put_existing_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_list_user_policy@L180",
+      "source_sha256": "2944aaa8a7b2b2687fddd5d44f3df537f72a88b13d5d37fb9efcc7f7025615b8",
+      "implementation": "ceph_iam_list_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_list_user_policy_invalid_user@L201",
+      "source_sha256": "0ca66865e2e61f911ada28ea53c6a78c45aaad7ba8848834d445b2350a501ddc",
+      "implementation": "ceph_iam_list_user_policy_invalid_user",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_user_policy@L210",
+      "source_sha256": "908a77a195ccc3c36073b48d654244a5cb2287270df75775e2d1b18da7c671af",
+      "implementation": "ceph_iam_get_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_user_policy_invalid_user@L233",
+      "source_sha256": "0490aae7549a31cea60fd9efc7f3c83e431fdddce5725339eca5b03b62df50a7",
+      "implementation": "ceph_iam_get_user_policy_invalid_user",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_user_policy_invalid_policy_name@L256",
+      "source_sha256": "c4f8e51df1a7d86ccbd305cb6f6b9057b6c89a84cbfec031cc9347a18145a8cf",
+      "implementation": "ceph_iam_get_user_policy_invalid_policy_name",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_rgw。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_deleted_user_policy@L278",
+      "source_sha256": "c44e8c1f4bee461f594e9ecd4fec5cfa6c25290f873d309bdff5e0fa53847fe8",
+      "implementation": "ceph_iam_get_deleted_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant, pytest.mark.fails_on_rgw。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_get_user_policy_from_multiple_policies@L299",
+      "source_sha256": "0b3471f8cf01cdde0bcb1b514f2ab6c7e5f33a5dc1d0094774fd71cf57655917",
+      "implementation": "ceph_iam_get_user_policy_from_multiple_policies",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_delete_user_policy@L332",
+      "source_sha256": "5b5f8aa61b242ede1f8aa975260a45496bcd11171e7c7da35d8c3578bc97156a",
+      "implementation": "ceph_iam_delete_user_policy",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_delete_user_policy_invalid_user@L354",
+      "source_sha256": "a2a772f2e472114cb50ce522b399810cdd57748755c3e298f855ec633c63e065",
+      "implementation": "ceph_iam_delete_user_policy_invalid_user",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_delete_user_policy_invalid_policy_name@L380",
+      "source_sha256": "935a0370e018ac3d0f8786a34f0731714a98680b1f04d69097aa27b173e588dd",
+      "implementation": "ceph_iam_delete_user_policy_invalid_policy_name",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_iam.py::test_delete_user_policy_from_multiple_policies@L406",
+      "source_sha256": "4fd29c75b97c69ae84765e9424e08cb2e64ff2ae2c62bcce828d9e483f41a30b",
+      "implementation": "ceph_iam_delete_user_policy_from_multiple_policies",
+      "review": "保留源固定名字、全部原始PolicyDocument和HTTP断言；仅专用alt用户namespace且先证明固定policy不存在，finally按实际UserId清理。已按固定revision逐函数核对全部参数/断言；来源标记保留：pytest.mark.user_policy, pytest.mark.iam_tenant。真实Java/C++ Query XML回归覆盖完整源函数与实际身份签名；测试输入由独立原始XML提供，SDK实际结果直接进入场景和cleanup。授权缺失/配置缺失均not_run，不计服务通过。"
     }
   ]
 }

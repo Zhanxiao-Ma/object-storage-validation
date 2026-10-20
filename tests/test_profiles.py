@@ -24,8 +24,8 @@ class ProfileTest(unittest.TestCase):
         return path
 
     def test_both_profiles_run_real_producer_consumer_and_report(self):
-        """Run real local IO and complete CLI; expect 24/771 rows, unsupported advanced APIs not_run, exact source URI diagnostic, blocked metrics/exit 1 and clean actual files."""
-        for profile, count, observations,not_run in (("normal", 24, 2,0), ("complete", 771, 4,517)):
+        """Run real local IO and complete CLI; expect 24/825 rows, unsupported advanced APIs not_run, exact source URI diagnostic, blocked metrics/exit 1 and clean actual files."""
+        for profile, count, observations,not_run in (("normal", 24, 2,0), ("complete", 825, 4,571)):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
                 manifest=self.manifest(directory,{"profile":profile})
@@ -44,7 +44,7 @@ class ProfileTest(unittest.TestCase):
                 self.assertEqual([c["case"] for c in failures],["ceph_tail_unreadable"] if profile=="complete" else [],failures)
                 unsupported=[c for c in rows if c["status"]=="not_run"]
                 self.assertEqual(len(unsupported),not_run)
-                self.assertTrue(all(c["case"].startswith(("ceph_version_","ceph_config_","ceph_sse_c_","ceph_public_block_","ceph_ownership_","ceph_lock_config_","ceph_sse_multipart_","ceph_encryption_","ceph_policy_","ceph_acl_","ceph_inventory_","ceph_header_","ceph_put_condition_","ceph_copy_condition_","ceph_access_","ceph_interop_","ceph_metadata_edges_","ceph_attributes_","ceph_checksum_","ceph_conditional_versions_","ceph_public_","ceph_copy_contract_","ceph_state_","ceph_basic_","ceph_remaining_policy_","ceph_logging_","ceph_raw_","ceph_query_","ceph_lc_","ceph_object_lock_","ceph_names_","ceph_cloud_lc_","ceph_tail_","ceph_encrypted_form_","ceph_encrypted_copy_","ceph_encrypted_part_copy_")) and ((c["reason"]=="unsupported_operations" and c["missing_operations"]) or (c["case"].startswith("ceph_raw_") and c["reason"]=="missing_prerequisites" and c["missing_requirements"]==["workload.ceph_http"])) for c in unsupported))
+                self.assertTrue(all(c["case"].startswith(("ceph_version_","ceph_config_","ceph_sse_c_","ceph_public_block_","ceph_ownership_","ceph_lock_config_","ceph_sse_multipart_","ceph_encryption_","ceph_policy_","ceph_acl_","ceph_inventory_","ceph_header_","ceph_put_condition_","ceph_copy_condition_","ceph_access_","ceph_interop_","ceph_metadata_edges_","ceph_attributes_","ceph_checksum_","ceph_conditional_versions_","ceph_public_","ceph_copy_contract_","ceph_state_","ceph_basic_","ceph_remaining_policy_","ceph_logging_","ceph_raw_","ceph_query_","ceph_lc_","ceph_object_lock_","ceph_names_","ceph_cloud_lc_","ceph_tail_","ceph_encrypted_form_","ceph_encrypted_copy_","ceph_encrypted_part_copy_","ceph_presigned_","ceph_atomic_","ceph_iam_")) and ((c["reason"]=="unsupported_operations" and c["missing_operations"]) or (c["case"].startswith("ceph_raw_") and c["reason"]=="missing_prerequisites" and c["missing_requirements"]==["workload.ceph_http"])) for c in unsupported))
                 self.assertTrue(all(s["ok"] for s in report["samples"]))
                 self.assertEqual([p for p in (directory/"objects").rglob("*") if p.is_file()], [])
                 self.assertTrue(report["coverage"]["exclusions"])
@@ -63,7 +63,7 @@ class ProfileTest(unittest.TestCase):
             self.assertEqual(load_config(self.manifest(directory))["workload"]["profile"], "normal")
             custom = self.manifest(directory, {"compatibility_suites": ["baseline"]})
             self.assertNotIn("profile", load_config(custom)["workload"])
-            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part","ceph_versioning","ceph_bucket_config","ceph_sse_customer","ceph_bucket_controls","ceph_sse_multipart","ceph_encryption_objects","ceph_bucket_policy","ceph_acl","ceph_bucket_inventory","ceph_request_headers","ceph_conditional_writes","ceph_access","ceph_object_interop","ceph_policy_conditions","ceph_metadata_edges","ceph_checksum_attributes","ceph_conditional_versions","ceph_public_controls","ceph_copy_contracts","ceph_state_boundaries","ceph_basic_boundaries","ceph_policy_remaining","ceph_logging_controls","ceph_raw_http","ceph_query_edges","ceph_lifecycle_expiration","ceph_lifecycle_transition","ceph_lifecycle_marker_expiration","ceph_object_locks","ceph_logging_records","ceph_bucket_names","ceph_cloud_lifecycle","ceph_logging_workloads","ceph_logging_extensions","ceph_metadata_tail","ceph_encrypted_forms","ceph_encryption_tail","ceph_logging_policy_transitions","ceph_logging_prefixes","ceph_encrypted_copy_matrix","ceph_logging_tenants","ceph_logging_parallel"])
+            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part","ceph_versioning","ceph_bucket_config","ceph_sse_customer","ceph_bucket_controls","ceph_sse_multipart","ceph_encryption_objects","ceph_bucket_policy","ceph_acl","ceph_bucket_inventory","ceph_request_headers","ceph_conditional_writes","ceph_access","ceph_object_interop","ceph_policy_conditions","ceph_metadata_edges","ceph_checksum_attributes","ceph_conditional_versions","ceph_public_controls","ceph_copy_contracts","ceph_state_boundaries","ceph_basic_boundaries","ceph_policy_remaining","ceph_logging_controls","ceph_raw_http","ceph_query_edges","ceph_lifecycle_expiration","ceph_lifecycle_transition","ceph_lifecycle_marker_expiration","ceph_object_locks","ceph_logging_records","ceph_bucket_names","ceph_cloud_lifecycle","ceph_logging_workloads","ceph_logging_extensions","ceph_metadata_tail","ceph_encrypted_forms","ceph_encryption_tail","ceph_logging_policy_transitions","ceph_logging_prefixes","ceph_encrypted_copy_matrix","ceph_logging_tenants","ceph_logging_parallel","ceph_presigned_urls","ceph_atomic_streams","ceph_iam_accounts","ceph_iam_inline"])
             for overrides in ({"profile":"unknown"}, {"profile":[]},
                               {"profile":"normal", "compatibility_suites":["baseline"]},
                               {"list_objects":1000}, {"list_objects":10001}, {"list_objects":True},
@@ -72,7 +72,7 @@ class ProfileTest(unittest.TestCase):
                     load_config(self.manifest(directory, overrides))
 
     def test_missing_worker_reports_planned_cases_as_not_run(self):
-        """Fail actual process startup; expect all 771 planned cases reported as not run rather than compatibility passes."""
+        """Fail actual process startup; expect all 825 planned cases reported as not run rather than compatibility passes."""
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
             path = self.manifest(directory, {"profile":"complete"})
@@ -82,7 +82,7 @@ class ProfileTest(unittest.TestCase):
             report = run(load_config(path), directory/"results")
             self.assertEqual(report["samples"], [])
             self.assertEqual(report["cases"][0]["status"], "fail")
-            self.assertIn("| local | 771 | 0 | 0 | 0 | 771 |", (directory/"results/report.md").read_text())
+            self.assertIn("| local | 825 | 0 | 0 | 0 | 825 |", (directory/"results/report.md").read_text())
 
     def test_plugin_profile_reuses_suite_without_language_changes(self):
         """Register another profile reusing a real suite; expect execution and reporting without a scheduler language branch."""
@@ -128,5 +128,5 @@ class ProfileTest(unittest.TestCase):
                                     capture_output=True, text=True, timeout=10, check=True)
             inventory = json.loads(result.stdout)
             self.assertEqual(inventory["profile"], "complete")
-            self.assertEqual(len(inventory["catalog"]), 771)
+            self.assertEqual(len(inventory["catalog"]), 825)
             self.assertFalse((directory/"objects").exists())

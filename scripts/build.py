@@ -62,6 +62,7 @@ def main():
     parser.add_argument("--cos-source", help="optional official COS C++ SDK source checkout")
     parser.add_argument("--cos-library", help="libcossdk.a built from --cos-source")
     parser.add_argument("--with-tests", action="store_true", help="build C++ response IO regression checks")
+    parser.add_argument("--with-control", action="store_true", help="include official IAM and STS SDK bridges (requires installed iam/sts libraries)")
     parser.add_argument("--without-s3", action="store_true", help="build native workers without an installed AWS SDK")
     parser.add_argument("--obs-source", help="optional official Huawei OBS C SDK source checkout")
     parser.add_argument("--obs-library", help="libeSDKOBS.so built from --obs-source")
@@ -72,6 +73,8 @@ def main():
         parser.error("--cos-source and --cos-library must be supplied together")
     if args.target != "command" and remainder:
         parser.error("unrecognized arguments: " + " ".join(remainder))
+    if args.with_control and args.without_s3:
+        parser.error("--with-control requires the S3 worker")
     memory = available()
     jobs = min(max(1, (os.cpu_count() or 1)-2), 8, (memory-12*GIB)//(2*GIB))
     if memory < 12*GIB or jobs < 1:
@@ -85,6 +88,7 @@ def main():
     elif args.target == "cpp":
         configure = ["cmake", "-S", str(root/"drivers/cpp"), "-B", str(root/"drivers/cpp/build"), "-DCMAKE_BUILD_TYPE=Release"]
         configure.append("-DOSV_BUILD_TESTS="+("ON" if args.with_tests else "OFF"))
+        configure.append("-DOSV_BUILD_CONTROL="+("ON" if args.with_control else "OFF"))
         configure.append("-DOSV_BUILD_S3="+("OFF" if args.without_s3 else "ON"))
         if args.prefix:
             configure.append("-DCMAKE_PREFIX_PATH="+args.prefix)

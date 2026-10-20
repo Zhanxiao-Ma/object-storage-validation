@@ -10,6 +10,7 @@ jobs:
           python-version: '3.12'
       - run: python -m unittest discover -s tests -v
       - run: python scripts/generate_bucket_api.py --check
+      - run: python scripts/generate_control_api.py --check
       - run: python -m osv check examples/java-oss.json
       - run: python -m osv check examples/cpp-s3.json
       - run: python -m osv check examples/java-cos.json
@@ -133,6 +134,26 @@ jobs:
           OSV_RUN_LOGGING_PREFIX_TESTS: '1'
           OSV_RUN_ENCRYPTED_COPY_MATRIX_TESTS: '1'
           OSV_RUN_LOGGING_TENANT_PARALLEL_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java original presigned URL HTTP contracts
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_presigned_urls_sdk -v
+        env:
+          OSV_RUN_PRESIGNED_URL_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java official IAM and STS model and credential contracts
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_control_api_sdk -v
+        env:
+          OSV_RUN_CONTROL_API_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java actual streaming atomic read callbacks
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_atomic_streams_sdk -v
+        env:
+          OSV_RUN_ATOMIC_STREAM_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
+      - name: Java IAM account and inline policy source vectors
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_iam_accounts_sdk test_iam_inline_sdk -v
+        env:
+          OSV_RUN_IAM_ACCOUNT_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest

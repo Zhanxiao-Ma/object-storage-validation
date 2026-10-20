@@ -34,7 +34,17 @@ public:
                 auto root=document.GetRootElement();
                 if(document.WasParseSuccessful() && !root.IsNull()) {
                     (*osv_http_destination)["xml_root"]=std::string(root.GetName().c_str());
-                    for(auto node=root.FirstChild();!node.IsNull();node=node.NextNode()) names.emplace(node.GetName().c_str());
+                    for(auto node=root.FirstChild();!node.IsNull();node=node.NextNode()) {
+                        names.emplace(node.GetName().c_str());
+                        // Query services wrap modeled output in OperationResult. Observe
+                        // genuine child presence before the official SDK consumes the body.
+                        std::string name=node.GetName().c_str();
+                        if(name.size()>=6 && name.compare(name.size()-6,6,"Result")==0) {
+                            std::set<std::string> members;
+                            for(auto member=node.FirstChild();!member.IsNull();member=member.NextNode())members.emplace(member.GetName().c_str());
+                            (*osv_http_destination)["result_fields"][name]=members;
+                        }
+                    }
                 } else (*osv_http_destination)["xml_root"]=nullptr;
                 (*osv_http_destination)["fields"]=names;
             }

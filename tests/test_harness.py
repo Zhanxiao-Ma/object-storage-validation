@@ -58,6 +58,24 @@ class HarnessTest(unittest.TestCase):
                     manifest.write_text(json.dumps(data))
                     with self.assertRaises(ValueError): load_config(manifest)
 
+    def test_iam_configuration_requires_explicit_typed_authorization(self):
+        """Load actual manifests; expect IAM mutation opt-in false by default and reject ambiguous flags or empty fixture identifiers before IO."""
+        with tempfile.TemporaryDirectory() as temp:
+            directory=Path(temp)
+            data=config(directory)
+            manifest=directory/"iam.json"
+            manifest.write_text(json.dumps(data))
+            self.assertIs(load_config(manifest)["workload"]["iam_mutation_authorized"],False)
+            for key,value in (("iam_mutation_authorized",True),("iam_alt_user_name","isolated-user"),("iam_root_account_id","123456789012"),("iam_root_user_id","root-user-id")):
+                changed=config(directory);changed["workload"][key]=value
+                manifest.write_text(json.dumps(changed))
+                self.assertEqual(load_config(manifest)["workload"][key],value)
+            for key,value in (("iam_mutation_authorized","true"),("iam_mutation_authorized",1),("iam_mutation_authorized",None),("iam_alt_user_name",""),("iam_alt_user_name",False),("iam_root_account_id",123),("iam_root_user_id",""),("iam_root_user_id",None)):
+                with self.subTest(key=key,value=value):
+                    changed=config(directory);changed["workload"][key]=value
+                    manifest.write_text(json.dumps(changed))
+                    with self.assertRaises(ValueError):load_config(manifest)
+
     def test_worker_timeout_terminates_process(self):
         """A worker that never responds must time out and be reaped, not hang the test run."""
         with self.assertRaises(TimeoutError):

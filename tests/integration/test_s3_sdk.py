@@ -580,6 +580,11 @@ class SdkIntegrationTest(unittest.TestCase):
             for target in self.targets:
                 extra={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"} if target["language"]=="java" else set()
                 expected.extend((target["id"],name) for name in new_failure_common|extra)
+            # This full-profile reference intentionally uses a serialized Moto
+            # handler. Larger atomic reads backpressure that handler while the
+            # callback waits for a nested PUT; independent threaded-service
+            # regressions prove genuine SDK/source behavior separately.
+            expected.extend((target["id"],"ceph_atomic_stream_read_"+size) for target in self.targets for size in ("4mb","8mb"))
             self.assertEqual(sorted(failures),sorted(expected))
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
@@ -591,7 +596,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),771)
+            self.assertEqual(len(report["coverage"]["catalog"]),825)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -619,6 +624,10 @@ class SdkIntegrationTest(unittest.TestCase):
             from osv.ceph_logging_prefixes import CASES as logging_prefix_cases
             new_missing|={c.name for c in encryption_tail_cases if c.name not in {"ceph_encryption_tail_torrent","ceph_encryption_tail_s3_default"}}|{c.name for c in logging_transition_cases}|{c.name for c in logging_prefix_cases}
             new_missing|={"ceph_encrypted_copy_matrix","ceph_encrypted_part_copy_matrix","ceph_logging_tenant_standard","ceph_logging_parallel_put"}
+            from osv.ceph_presigned_urls import CASES as presigned_cases
+            from osv.ceph_iam_accounts import CASES as iam_account_cases
+            from osv.ceph_iam_inline import CASES as iam_inline_cases
+            new_missing|={c.name for c in presigned_cases}|{c.name for c in iam_account_cases}|{c.name for c in iam_inline_cases}
             cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}

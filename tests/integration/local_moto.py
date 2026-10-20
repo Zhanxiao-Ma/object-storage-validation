@@ -4,14 +4,14 @@ import multiprocessing
 from threading import Thread
 
 
-def _serve(ready,stopped):
+def _serve(ready,stopped,threaded):
     """Own a fresh Moto backend in a spawned process and report its actual ephemeral HTTP endpoint."""
     server=None;thread=None
     try:
         from moto.server import DomainDispatcherApplication,create_backend_app
         from werkzeug.serving import make_server
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
-        server=make_server("127.0.0.1",0,DomainDispatcherApplication(create_backend_app),threaded=False)
+        server=make_server("127.0.0.1",0,DomainDispatcherApplication(create_backend_app),threaded=threaded)
         thread=Thread(target=server.serve_forever,daemon=True);thread.start()
         ready.send(("ready",server.server_address[:2]));ready.close()
         stopped.wait()
@@ -34,15 +34,19 @@ class LocalMotoServer:
     cannot inherit another test's objects. Its serialized HTTP handler still receives
     genuine SDK and production-runner requests; client concurrency is preserved and
     local timings never provide evidence of cloud performance.
+    Atomic stream callbacks require the explicit threaded=True variant: a serial
+    handler cannot receive a nested PUT while its GET response is backpressured.
     """
-    def __init__(self):
+    def __init__(self,threaded=False):
+        if type(threaded) is not bool:raise ValueError("threaded must be boolean")
+        self.threaded=threaded
         self.process=None;self.address=None;self.stopped=None
 
     def start(self):
         if self.process is not None:raise RuntimeError("local Moto service already started")
         context=multiprocessing.get_context("spawn")
         receive,send=context.Pipe(duplex=False);self.stopped=context.Event()
-        self.process=context.Process(target=_serve,args=(send,self.stopped),daemon=True)
+        self.process=context.Process(target=_serve,args=(send,self.stopped,self.threaded),daemon=True)
         self.process.start();send.close()
         try:
             if not receive.poll(30):raise RuntimeError("local Moto service startup timed out")

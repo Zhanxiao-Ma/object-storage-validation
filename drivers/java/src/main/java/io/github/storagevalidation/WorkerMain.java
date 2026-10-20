@@ -14,6 +14,7 @@ import java.util.*;
  */
 public final class WorkerMain {
     static final ObjectMapper JSON = new ObjectMapper();
+    static final ControlApiModels CONTROL = new ControlApiModels();
     static String env(String key, String fallback) { return System.getenv().getOrDefault("OSV_"+key, fallback); }
     static String required(String key) {
         String value = env(key, "");
@@ -68,7 +69,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
-                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging","versions_storage_class"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LifecycleRule.builder(),"Prefix"))capabilities.add("lifecycle_legacy_prefix");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.ListBucketsResponse.builder(),"ContinuationToken"))capabilities.add("list_buckets_pagination"); }
+                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(S3Presigning.capabilities());capabilities.addAll(S3AtomicStreams.capabilities());capabilities.addAll(ControlApiModels.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging","versions_storage_class"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LifecycleRule.builder(),"Prefix"))capabilities.add("lifecycle_legacy_prefix");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.ListBucketsResponse.builder(),"ContinuationToken"))capabilities.add("list_buckets_pagination"); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
@@ -94,8 +95,8 @@ public final class WorkerMain {
                     result.put("ok", false);
                     result.put("error_kind", notFound(error) ? "not_found" : "sdk_error");
                     result.put("error", error.getClass().getSimpleName()+": "+error.getMessage());
-                    if(error instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
-                        software.amazon.awssdk.services.s3.model.S3Exception e=(software.amazon.awssdk.services.s3.model.S3Exception)error;
+                    if(error instanceof software.amazon.awssdk.awscore.exception.AwsServiceException) {
+                        software.amazon.awssdk.awscore.exception.AwsServiceException e=(software.amazon.awssdk.awscore.exception.AwsServiceException)error;
                         result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null && e.awsErrorDetails().sdkHttpResponse()!=null) result.put("http_headers",e.awsErrorDetails().sdkHttpResponse().headers()); if(e.awsErrorDetails()!=null) {result.put("error_code",e.awsErrorDetails().errorCode());result.put("error_message",e.awsErrorDetails().errorMessage());}
                     } else if(error instanceof com.aliyun.oss.OSSException) result.put("error_code",((com.aliyun.oss.OSSException)error).getErrorCode());
                     else if(error instanceof com.obs.services.exception.ObsException) { result.put("status_code",((com.obs.services.exception.ObsException)error).getResponseCode()); result.put("error_code",((com.obs.services.exception.ObsException)error).getErrorCode()); }
@@ -104,8 +105,8 @@ public final class WorkerMain {
         return result;
     }
     static boolean notFound(Exception error) {
-        if (error instanceof software.amazon.awssdk.services.s3.model.S3Exception)
-            return ((software.amazon.awssdk.services.s3.model.S3Exception)error).statusCode()==404;
+        if (error instanceof software.amazon.awssdk.awscore.exception.AwsServiceException)
+            return ((software.amazon.awssdk.awscore.exception.AwsServiceException)error).statusCode()==404;
         if (error instanceof com.aliyun.oss.OSSException)
             return "NoSuchKey".equals(((com.aliyun.oss.OSSException)error).getErrorCode());
         if (error instanceof com.obs.services.exception.ObsException)
@@ -220,6 +221,8 @@ public final class WorkerMain {
             return executeWithHeaders(q);
         }
         private Map<String,Object> executeWithHeaders(JsonNode q) throws Exception {
+            if(ControlApiModels.handles(q.path("op").asText()))return CONTROL.execute(q.path("op").asText(),q);
+            if("presign".equals(q.path("op").asText()))return S3Presigning.execute(q);
             if(q.has("wire_headers")) {
                 try(WireHeaders.Scope ignored=new WireHeaders.Scope(q.get("wire_headers"))) {
                     return executeSelected(q,identities.select(q));
@@ -235,6 +238,7 @@ public final class WorkerMain {
             if(q.has("storage_class") && (!q.get("storage_class").isTextual() || q.get("storage_class").textValue().isEmpty()))throw new IllegalArgumentException("storage_class must be a nonempty string");
             String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
             if(S3Versioning.handles(op)) return S3Versioning.execute(client,op,q,bucket,key);
+            if("atomic_stream".equals(op))return S3AtomicStreams.execute(client,q);
             if(S3ApiModels.handles(op)) return S3ApiModels.execute(client,op,q);
             switch(op) {
             case "delete_many": case "delete_many_versions": {
@@ -358,7 +362,7 @@ public final class WorkerMain {
             }
             case "bucket_create": {
                 try { client.headBucket(b->b.bucket(bucket)); }
-                catch(software.amazon.awssdk.services.s3.model.S3Exception error) {
+                catch(software.amazon.awssdk.awscore.exception.AwsServiceException error) {
                     if(error.statusCode()!=404) throw error;
                     client.createBucket(b->{ b.bucket(bucket); if(!"us-east-1".equals(required("REGION"))) b.createBucketConfiguration(c->c.locationConstraint(required("REGION"))); });
                 } return empty();
@@ -489,7 +493,7 @@ public final class WorkerMain {
             default: throw new UnsupportedOperationException(op);
             }
         }
-        public void close() { identities.close(); }
+        public void close() { CONTROL.close();identities.close(); }
     }
 
     /**

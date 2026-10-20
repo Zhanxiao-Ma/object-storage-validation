@@ -6,18 +6,63 @@ import queue
 import subprocess
 import threading
 import time
+from urllib.parse import unquote
 
 from .scenarios import BASE_OPERATIONS
+from .secrets import SecretRegistry, current_registry
+
+
+def normalize_control_documents(value):
+    """Decode actual SDK policy strings once in the common consumer, preserving JSON key order.
+
+    C++ SDK models expose policy text. Parsing it through nlohmann's default
+    map would sort object keys before Python could evaluate source assertions.
+    Decode the genuine text here for both languages instead of reconstructing
+    the source's expected order or changing order-sensitive assertions.
+    """
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if key in ("PolicyDocument", "AssumeRolePolicyDocument") and isinstance(child,str):
+                try:
+                    document=json.loads(child)
+                except json.JSONDecodeError:
+                    document=json.loads(unquote(child,encoding="utf-8",errors="strict"))
+                if not isinstance(document,dict):
+                    raise ValueError("IAM policy document must decode to a JSON object")
+                value[key]=document
+            else:
+                normalize_control_documents(child)
+    elif isinstance(value,list):
+        for child in value:
+            normalize_control_documents(child)
+
+
+def normalize_control_result(request,result):
+    """Decode only actual control results, including corresponding concurrent child requests."""
+    operation=request.get("op","")
+    if operation.startswith(("api.iam.","api.sts.")):
+        normalize_control_documents(result.get("data",{}))
+    elif operation=="concurrent_requests":
+        requests=request.get("requests",[])
+        results=result.get("results",[])
+        if not isinstance(requests,list) or not isinstance(results,list) or len(requests)!=len(results):
+            if result.get("ok"):
+                raise ValueError("concurrent SDK response count differs from requested operations")
+            return
+        for child,response in zip(requests,results):
+            if isinstance(child,dict) and isinstance(response,dict):
+                normalize_control_result(child,response)
 
 
 class Worker:
     """Run a real SDK process; protocol and startup costs stay outside SDK timing."""
 
-    def __init__(self, target, timeout=60):
+    def __init__(self, target, timeout=60, secret_registry=None):
         self.timeout = timeout
         self.target = target.copy()
         environment={**os.environ, **target.get("env", {})}
-        self.secrets=[value for name,value in environment.items() if len(value)>=4 and any(word in name.upper() for word in ("SECRET","TOKEN","PASSWORD","ACCESS_KEY"))]
+        self.secret_registry=secret_registry or current_registry() or SecretRegistry()
+        self.secret_registry.environment(environment)
         self.stderr_lines=deque(maxlen=12)
         self.process = subprocess.Popen(
             target["command"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
@@ -48,7 +93,7 @@ class Worker:
 
     def fork(self):
         """Open an independent real SDK session for parallel compatibility operations."""
-        return Worker(self.target,self.timeout)
+        return Worker(self.target,self.timeout,self.secret_registry)
 
     def _read_stderr(self):
         try:
@@ -62,8 +107,7 @@ class Worker:
     def _diagnostic(self):
         self.stderr_reader.join(timeout=.2)
         value="".join(self.stderr_lines)[-8192:].strip()
-        for secret in sorted(self.secrets,key=len,reverse=True):value=value.replace(secret,"[REDACTED]")
-        return value
+        return self.secret_registry.redact(value)
 
     def _read(self):
         try:
@@ -74,11 +118,14 @@ class Worker:
                     raise RuntimeError("worker exited before sending a response"+(": "+detail if detail else ""))
                 if len(line) > 1024 * 1024:
                     raise RuntimeError("worker response exceeds 1 MiB")
-                self.responses.put(json.loads(line))
+                result=json.loads(line)
+                self.secret_registry.payload(result)
+                self.responses.put(result)
         except Exception as error:
             self.responses.put(error)
 
     def call(self, request):
+        self.secret_registry.payload(request)
         self.process.stdin.write(json.dumps(request) + "\n")
         self.process.stdin.flush()
         try:
@@ -94,6 +141,7 @@ class Worker:
             duration = result.get("elapsed_ns")
             if type(duration) is not int or duration < 0:
                 raise ValueError("missing or invalid SDK elapsed_ns")
+        normalize_control_result(request,result)
         return result
 
     def close(self):

@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 22
+CATALOG_VERSION = 23
 
 
 @dataclass(frozen=True)
@@ -391,5 +391,13 @@ def register_suites(registry):
     register_ceph_logging_parallel(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls", "ceph_raw_http", "ceph_query_edges", "ceph_lifecycle_expiration", "ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_object_locks", "ceph_logging_records", "ceph_bucket_names", "ceph_cloud_lifecycle", "ceph_logging_workloads", "ceph_logging_extensions", "ceph_metadata_tail", "ceph_encrypted_forms", "ceph_encryption_tail", "ceph_logging_policy_transitions", "ceph_logging_prefixes", "ceph_encrypted_copy_matrix", "ceph_logging_tenants", "ceph_logging_parallel"),
+    from .ceph_presigned_urls import register as register_ceph_presigned_urls
+    register_ceph_presigned_urls(registry)
+    from .ceph_atomic_streams import register as register_ceph_atomic_streams
+    register_ceph_atomic_streams(registry)
+    from .ceph_iam_accounts import register as register_ceph_iam_accounts
+    register_ceph_iam_accounts(registry)
+    from .ceph_iam_inline import register as register_ceph_iam_inline
+    register_ceph_iam_inline(registry)
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls", "ceph_raw_http", "ceph_query_edges", "ceph_lifecycle_expiration", "ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_object_locks", "ceph_logging_records", "ceph_bucket_names", "ceph_cloud_lifecycle", "ceph_logging_workloads", "ceph_logging_extensions", "ceph_metadata_tail", "ceph_encrypted_forms", "ceph_encryption_tail", "ceph_logging_policy_transitions", "ceph_logging_prefixes", "ceph_encrypted_copy_matrix", "ceph_logging_tenants", "ceph_logging_parallel", "ceph_presigned_urls", "ceph_atomic_streams", "ceph_iam_accounts", "ceph_iam_inline"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

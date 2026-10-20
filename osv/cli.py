@@ -88,6 +88,12 @@ def load_config(path, profile_override=None):
         try:valid_interval=type(value) in (int,float) and math.isfinite(value) and value>0
         except OverflowError:valid_interval=False
         if not valid_interval:raise ValueError(interval_field+" must be finite and positive")
+    workload.setdefault("iam_mutation_authorized",False)
+    if type(workload["iam_mutation_authorized"]) is not bool:
+        raise ValueError("iam_mutation_authorized must be boolean")
+    for field in ("iam_alt_user_name","iam_root_account_id","iam_root_user_id"):
+        if field in workload and (not isinstance(workload[field],str) or not workload[field]):
+            raise ValueError(field+" must be a nonempty string")
     if "object_lock_cleanup_authorized" in workload and type(workload["object_lock_cleanup_authorized"]) is not bool:
         raise ValueError("object_lock_cleanup_authorized must be boolean")
     if "ceph_literal_bucket_names_authorized" in workload and type(workload["ceph_literal_bucket_names_authorized"]) is not bool:
@@ -171,15 +177,12 @@ def coverage(config, registry):
 
 
 def redactor(config):
-    secrets = set()
-    for name, value in os.environ.items():
-        if len(value) >= 4 and any(w in name.upper() for w in ("SECRET", "TOKEN", "PASSWORD", "ACCESS_KEY")):
-            secrets.add(value)
-    def redact(text):
-        for value in sorted(secrets, key=len, reverse=True):
-            text = text.replace(value, "[REDACTED]")
-        return text
-    return redact
+    from .secrets import SecretRegistry, current_registry
+    registry=current_registry() or SecretRegistry()
+    registry.environment(os.environ)
+    for target in config.get("targets",[]):
+        registry.environment(target.get("env",{}))
+    return registry.redact
 
 
 
@@ -193,6 +196,12 @@ def cleanup_objects(worker, prefix):
 
 
 def run(config, output_dir):
+    from .secrets import secret_scope
+    with secret_scope():
+        return _run(config, output_dir)
+
+
+def _run(config, output_dir):
     registry = build_registry(config)
     output_dir.mkdir(parents=True, exist_ok=False)
     redact = redactor(config)
