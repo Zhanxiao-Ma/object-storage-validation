@@ -92,6 +92,22 @@ class PageSdkTest(unittest.TestCase):
                     self.assertEqual(parse_qs(urlsplit(server.requests[0][1]).query)["delimiter"],[delimiter])
                     self.assertEqual(len(server.fixtures),0)
 
+    def test_first_last_and_single_byte_ranges_have_exact_request_headers(self):
+        """Request first/last/interior single bytes through real SDKs; expect explicit Range including bytes=0-0 and exact response bytes."""
+        payload=b"edge";etag='"'+hashlib.md5(payload).hexdigest()+'"'
+        vectors=[(0,1),(3,1),(1,1)]
+        fixtures=[(206,{"Content-Type":"application/octet-stream","ETag":etag,"Content-Range":f"bytes {offset}-{offset}/{len(payload)}"},payload[offset:offset+1]) for offset,length in vectors]
+        for language,backend in self.targets():
+            with self.subTest(language=language,backend=backend),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,backend) as (worker,server):
+                output=Path(temporary)/"output"
+                for index,(offset,length) in enumerate(vectors):
+                    result=worker.call({"op":"get","key":"object","offset":offset,"length":length,"output_path":str(output)})
+                    self.assertTrue(result["ok"],result)
+                    self.assertEqual(output.read_bytes(),payload[offset:offset+1])
+                    headers={key.lower():value for key,value in server.requests[index][2].items()}
+                    self.assertEqual(headers.get("range"),f"bytes={offset}-{offset}")
+                self.assertEqual(len(server.requests),3)
+
     def test_actual_streams_range_metadata_and_delete(self):
         """Send and consume independent bytes through every real SDK; expect exact body/range, genuine HEAD metadata and DELETE requests."""
         payload=b"independent-real-sdk-stream";etag='"'+hashlib.md5(payload).hexdigest()+'"'

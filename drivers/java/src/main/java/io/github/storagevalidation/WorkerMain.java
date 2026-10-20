@@ -65,7 +65,10 @@ public final class WorkerMain {
                         result.put("api", "s3".equals(provider)?"s3":"native");
                         result.put("sdk_version", sdkVersion(provider));
                         result.put("protocol_version", 1);
-                        result.put("capabilities", Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
+                        List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
+                        if(!"cos".equals(provider)) capabilities.add("get_http");
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http"));
+                        result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
                         result.put("connections_per_worker",env("CONNECTIONS","16"));
@@ -138,6 +141,17 @@ public final class WorkerMain {
         result.put("metadata",metadata==null?Collections.emptyMap():metadata);
         return result;
     }
+    static Map<String,Object> withHttp(Map<String,Object> object,int status,Map<?,?> headers) {
+        if(status<=0) throw new IllegalStateException("SDK did not expose an HTTP response status");
+        Map<String,String> observed=new LinkedHashMap<>();
+        if(headers!=null) headers.forEach((key,value)->{
+            String text=value instanceof List?String.join(",",((List<?>)value).stream().map(String::valueOf).toArray(String[]::new)):String.valueOf(value);
+            observed.put(String.valueOf(key).toLowerCase(Locale.ROOT),text);
+        });
+        Map<String,Object> result=new LinkedHashMap<>(object);
+        result.put("status_code",status); result.put("http_headers",observed);
+        return result;
+    }
     static Long millis(java.util.Date value) { return value==null?null:value.getTime(); }
     static Long millis(java.time.Instant value) { return value==null?null:value.toEpochMilli(); }
     static Map<String,Object> object(String key,long size,Long modified,String etag) {
@@ -175,6 +189,34 @@ public final class WorkerMain {
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             switch(op) {
+            case "put_http": {
+                software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
+                if(q.has("cache_control")) request.cacheControl(text(q,"cache_control"));
+                if(q.has("expires_ms")) request.expires(java.time.Instant.ofEpochMilli(q.get("expires_ms").asLong()));
+                software.amazon.awssdk.services.s3.model.PutObjectResponse result=client.putObject(request.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path"))));
+                return withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "head_http": {
+                software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(b->b.bucket(bucket).key(key));
+                Map<String,Object> observed=object(key,result.contentLength(),millis(result.lastModified()),result.eTag());
+                return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "tags_put": {
+                List<software.amazon.awssdk.services.s3.model.Tag> tags=new ArrayList<>();
+                for(JsonNode tag:q.get("tags")) tags.add(software.amazon.awssdk.services.s3.model.Tag.builder().key(text(tag,"key")).value(text(tag,"value")).build());
+                software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse result=client.putObjectTagging(b->b.bucket(bucket).key(key).tagging(t->t.tagSet(tags)));
+                return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "tags_get": {
+                software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse result=client.getObjectTagging(b->b.bucket(bucket).key(key));
+                List<Map<String,Object>> tags=new ArrayList<>();
+                for(software.amazon.awssdk.services.s3.model.Tag tag:result.tagSet()) {Map<String,Object> pair=new LinkedHashMap<>();pair.put("key",tag.key());pair.put("value",tag.value());tags.add(pair);}
+                return withHttp(one("tags",tags),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
+            case "tags_delete": {
+                software.amazon.awssdk.services.s3.model.DeleteObjectTaggingResponse result=client.deleteObjectTagging(b->b.bucket(bucket).key(key));
+                return withHttp(empty(),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+            }
             case "copy": case "copy_replace": {
                 String sourceBucket=q.path("source_bucket").asText(bucket),sourceKey=text(q,"source_key");
                 software.amazon.awssdk.services.s3.model.CopyObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.CopyObjectRequest.builder()
@@ -209,17 +251,19 @@ public final class WorkerMain {
             case "put":
                 client.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
-            case "get": case "get_conditional": case "get_metadata": {
+            case "get": case "get_conditional": case "get_metadata": case "get_http": {
                 software.amazon.awssdk.services.s3.model.GetObjectRequest.Builder b=software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(key);
                 if(q.has("if_match")) b.ifMatch(text(q,"if_match"));
                 if(q.has("if_none_match")) b.ifNoneMatch(text(q,"if_none_match"));
                 if(q.has("if_modified_since_ms")) b.ifModifiedSince(java.time.Instant.ofEpochMilli(q.get("if_modified_since_ms").asLong()));
                 if(q.has("if_unmodified_since_ms")) b.ifUnmodifiedSince(java.time.Instant.ofEpochMilli(q.get("if_unmodified_since_ms").asLong()));
+                if(q.has("range_header")) b.range(text(q,"range_header"));
                 if(q.has("offset")) b.range("bytes="+q.get("offset").asLong()+"-"+(q.get("offset").asLong()+q.get("length").asLong()-1));
                 try(software.amazon.awssdk.core.ResponseInputStream<software.amazon.awssdk.services.s3.model.GetObjectResponse> in=client.getObject(b.build())) {
                     Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING);
                     software.amazon.awssdk.services.s3.model.GetObjectResponse result=in.response();
-                    return withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
+                    Map<String,Object> observed=withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata());
+                    return "get_http".equals(op)?withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()):observed;
                 }
             }
             case "head": case "head_metadata": { software.amazon.awssdk.services.s3.model.HeadObjectResponse result=client.headObject(b->b.bucket(bucket).key(key)); return withMetadata(object(key,result.contentLength(),millis(result.lastModified()),result.eTag()),result.contentType(),result.metadata()); }
@@ -295,8 +339,9 @@ public final class WorkerMain {
                 request.setMetadata(metadata); client.putObject(request); return empty();
             }
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
-            case "get": case "get_conditional": case "get_metadata": {
+            case "get": case "get_conditional": case "get_metadata": case "get_http": {
                 com.aliyun.oss.model.GetObjectRequest request=new com.aliyun.oss.model.GetObjectRequest(bucket,key);
+                if(q.has("range_header")) request.addHeader("Range",text(q,"range_header"));
                 if(q.has("if_match")) request.setMatchingETagConstraints(Collections.singletonList(text(q,"if_match")));
                 if(q.has("if_none_match")) request.setNonmatchingETagConstraints(Collections.singletonList(text(q,"if_none_match")));
                 if(q.has("if_modified_since_ms")) request.setModifiedSinceConstraint(new java.util.Date(q.get("if_modified_since_ms").asLong()));
@@ -306,7 +351,8 @@ public final class WorkerMain {
                     if(object==null) throw new IllegalStateException("SDK returned no object without exposing condition status");
                     Files.copy(object.getObjectContent(),Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING);
                     com.aliyun.oss.model.ObjectMetadata result=object.getObjectMetadata();
-                    return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata());
+                    Map<String,Object> observed=withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata());
+                    return "get_http".equals(op)?withHttp(observed,object.getResponse().getStatusCode(),object.getResponse().getHeaders()):observed;
                 }
             }
             case "head": case "head_metadata": { com.aliyun.oss.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata()); }
@@ -399,8 +445,9 @@ public final class WorkerMain {
                     client.putObject(new com.volcengine.tos.model.object.PutObjectInput().setBucket(bucket).setKey(key).setContent(in).setContentLength(Files.size(file)));
                 } return empty();
             }
-            case "get": case "get_conditional": case "get_metadata": {
+            case "get": case "get_conditional": case "get_metadata": case "get_http": {
                 com.volcengine.tos.model.object.GetObjectV2Input request=new com.volcengine.tos.model.object.GetObjectV2Input().setBucket(bucket).setKey(key);
+                if(q.has("range_header")) request.setRange(text(q,"range_header"));
                 com.volcengine.tos.model.object.ObjectMetaRequestOptions conditions=new com.volcengine.tos.model.object.ObjectMetaRequestOptions();
                 if(q.has("if_match")) conditions.setIfMatch(text(q,"if_match"));
                 if(q.has("if_none_match")) conditions.setIfNoneMatch(text(q,"if_none_match"));
@@ -410,7 +457,8 @@ public final class WorkerMain {
                 if(q.has("offset")) request.setRange("bytes="+q.get("offset").asLong()+"-"+(q.get("offset").asLong()+q.get("length").asLong()-1));
                 com.volcengine.tos.model.object.GetObjectV2Output result=client.getObject(request);
                 try(InputStream in=result.getContent()) { Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); }
-                return withMetadata(object(key,result.getContentLength(),millis(result.getLastModifiedInDate()),result.getEtag()),result.getContentType(),result.getCustomMetadata());
+                Map<String,Object> observed=withMetadata(object(key,result.getContentLength(),millis(result.getLastModifiedInDate()),result.getEtag()),result.getContentType(),result.getCustomMetadata());
+                return "get_http".equals(op)?withHttp(observed,result.getRequestInfo().getStatusCode(),result.getRequestInfo().getHeader()):observed;
             }
             case "head": case "head_metadata": { com.volcengine.tos.model.object.HeadObjectV2Output result=client.headObject(new com.volcengine.tos.model.object.HeadObjectV2Input().setBucket(bucket).setKey(key)); return withMetadata(object(key,result.getContentLength(),millis(result.getLastModifiedInDate()),result.getEtag()),result.getContentType(),result.getCustomMetadata()); }
             case "delete": client.deleteObject(new com.volcengine.tos.model.object.DeleteObjectInput().setBucket(bucket).setKey(key)); return empty();
@@ -497,8 +545,9 @@ public final class WorkerMain {
                 request.setMetadata(metadata); client.putObject(request); return empty();
             }
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
-            case "get": case "get_conditional": case "get_metadata": {
+            case "get": case "get_conditional": case "get_metadata": case "get_http": {
                 com.obs.services.model.GetObjectRequest request=new com.obs.services.model.GetObjectRequest(bucket,key);
+                if(q.has("range_header")) request.addUserHeaders("Range",text(q,"range_header"));
                 if(q.has("if_match")) request.setIfMatchTag(text(q,"if_match"));
                 if(q.has("if_none_match")) request.setIfNoneMatchTag(text(q,"if_none_match"));
                 if(q.has("if_modified_since_ms")) request.setIfModifiedSince(new java.util.Date(q.get("if_modified_since_ms").asLong()));
@@ -507,7 +556,8 @@ public final class WorkerMain {
                 com.obs.services.model.ObsObject object=client.getObject(request);
                 try(InputStream in=object.getObjectContent()) { Files.copy(in,Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING); }
                 com.obs.services.model.ObjectMetadata result=object.getMetadata();
-                return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getEtag()),result.getContentType(),result.getAllMetadata());
+                Map<String,Object> observed=withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getEtag()),result.getContentType(),result.getAllMetadata());
+                return "get_http".equals(op)?withHttp(observed,result.getStatusCode(),result.getOriginalHeaders()):observed;
             }
             case "head": case "head_metadata": { com.obs.services.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getEtag()),result.getContentType(),result.getAllMetadata()); }
             case "delete": client.deleteObject(bucket,key); return empty();
@@ -595,6 +645,7 @@ public final class WorkerMain {
             case "put": client.putObject(bucket,key,new File(text(q,"body_path"))); return empty();
             case "get": case "get_conditional": case "get_metadata": {
                 com.qcloud.cos.model.GetObjectRequest request=new com.qcloud.cos.model.GetObjectRequest(bucket,key);
+                if(q.has("range_header")) request.putCustomRequestHeader("Range",text(q,"range_header"));
                 if(q.has("if_match")) request.setMatchingETagConstraints(Collections.singletonList(text(q,"if_match")));
                 if(q.has("if_none_match")) request.setNonmatchingETagConstraints(Collections.singletonList(text(q,"if_none_match")));
                 if(q.has("if_modified_since_ms")) request.setModifiedSinceConstraint(new java.util.Date(q.get("if_modified_since_ms").asLong()));
@@ -604,7 +655,8 @@ public final class WorkerMain {
                     if(object==null) throw new IllegalStateException("SDK returned no object without exposing condition status");
                     Files.copy(object.getObjectContent(),Paths.get(text(q,"output_path")),StandardCopyOption.REPLACE_EXISTING);
                     com.qcloud.cos.model.ObjectMetadata result=object.getObjectMetadata();
-                    return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata());
+                    Map<String,Object> observed=withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata());
+                    return observed;
                 }
             }
             case "head": case "head_metadata": { com.qcloud.cos.model.ObjectMetadata result=client.getObjectMetadata(bucket,key); return withMetadata(object(key,result.getContentLength(),millis(result.getLastModified()),result.getETag()),result.getContentType(),result.getUserMetadata()); }

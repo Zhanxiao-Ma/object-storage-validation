@@ -77,3 +77,12 @@ Suite 可在第四个参数 `catalog` 声明元数据元组；每项包含 `case
 有目录时，结果必须覆盖全部声明的 case 且无重复，必测 gate 不能返回 observation。
 目录会进入 JSON/Markdown，便于审核来源、预期与未执行项。
 旧的无 catalog 插件仍可运行，但报告明确标出未声明逐项目录的 Suite。
+
+## 按用例处理能力缺失
+
+使用 `run_cases(ctx, cases)` 执行并提供完整 catalog 的套件，可声明 `Suite(..., case_capabilities=True)`。
+每项 catalog 必须明确 operations；其并集必须等于 Suite.required_operations，避免遗漏前置操作。
+缺失能力时该项返回 `not_run`、`reason=unsupported_operations` 与 missing_operations，其他可执行项继续。
+必测项未执行会阻止性能阶段、使对比证据不足，并让 CLI 非零退出；可选 observation 的未执行仍显示在报告中，不计作通过。
+旧插件默认按整个 Suite 校验能力，兼容既有执行约定。性能阶段所需操作与清理操作仍必须在启动时可用。
+`not_run` 必须给出原因；执行结果不能把 catalog 声明的必测 gate 改成可选项。

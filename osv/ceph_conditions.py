@@ -45,4 +45,4 @@ CASES=tuple(case("ceph_get_"+name,"条件读取 "+name,
 
 def register(registry):
     registry.add_suite(Suite("ceph_conditions",frozenset().union(*(c.operations for c in CASES)),
-        lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES)))
+        lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES),case_capabilities=True))

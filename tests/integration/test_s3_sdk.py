@@ -73,6 +73,22 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
 
+    def test_ceph_http_ranges_and_tags_run_through_actual_sdk_storage(self):
+        """Run the real migrated producers and consumers against Moto; expect only Moto excess-tag BadRequest mismatch, blocked measurements and complete cleanup."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "compatibility_suites":["ceph_http_range","ceph_tags","ceph_headers"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual(len(report["coverage"]["catalog"]),19)
+            failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]!="pass"]
+            self.assertEqual(failures,[(target["id"],"ceph_tags_excess") for target in self.targets])
+            for row in report["cases"]:
+                if row["status"]=="fail":self.assertIn("BadRequest",row["error"])
+            self.assertEqual(report["samples"],[])
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
+
     def test_real_sdk_multikey_objbench_model(self):
         """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -98,6 +114,7 @@ class SdkIntegrationTest(unittest.TestCase):
             report=run(load_config(path),directory/"results")
             failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"]
             expected=[(target["id"],"ceph_list_maxkeys_zero") for target in self.targets]
+            expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -111,6 +128,31 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
+
+    def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):
+        """Mask copy in actual Java/C++ SDK handshakes; expect seven unexecuted rows per target, successful genuine copy_replace checks and no performance evidence."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);targets=[]
+            for target in self.targets:
+                proxy=directory/(target["id"]+"-limited.py")
+                proxy.write_text("import subprocess,json,sys\n"
+                    +f"child=subprocess.Popen({target['command']!r},stdin=subprocess.PIPE,stdout=subprocess.PIPE,text=True)\n"
+                    +"try:\n for line in sys.stdin:\n  q=json.loads(line);child.stdin.write(line);child.stdin.flush();reply=json.loads(child.stdout.readline())\n"
+                    +"  if q['op']=='info': reply['capabilities'].remove('copy')\n"
+                    +"  print(json.dumps(reply),flush=True)\nfinally: child.stdin.close();child.wait()\n")
+                targets.append({**target,"command":[sys.executable,str(proxy)]})
+            path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":targets,"workload":{
+                "compatibility_suites":["ceph_copy"],"performance_model":"operations","operations":["head"],
+                "object_size":1024,"range_size":17,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
+            report=run(load_config(path),directory/"results")
+            for target in targets:
+                rows=[row for row in report["cases"] if row["target"]==target["id"]]
+                self.assertEqual(sum(row["status"]=="not_run" for row in rows),7)
+                self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{"ceph_copy_self_metadata","ceph_copy_replace_metadata"})
+                self.assertFalse([row for row in rows if row["status"]=="fail"],rows)
+            self.assertEqual(report["samples"],[])
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_cross_sdk_real_producer_and_consumer(self):
         """Feed Java-produced bytes to C++ GET and reverse the direction; expect exact independent bytes and Range output."""

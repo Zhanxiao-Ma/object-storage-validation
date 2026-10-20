@@ -233,3 +233,16 @@ OSV_RUN_CONDITION_TESTS=1 OSV_RUN_METADATA_TESTS=1 OSV_RUN_COPY_TESTS=1 OSV_OBS_
 固定响应只验证 SDK 请求及解析；实际复制的生产者→消费者数据流另由 Moto 和本地 reference 场景验证，不据此声称云端复制成功。
 OBS C SDK 发出的条件日期使用 UTC 字样，其余当前链路使用 GMT；测试保留实际拼写，不能把 SDK 请求格式与云端接受该请求混为一谈。
 已通过故意移除 TOS C++ 复制 Content-Type 请求头的适配，确认真实 SDK 契约测试会失败，恢复后通过；来源预期区分也有故意破坏后的失败验证。
+
+
+### Ceph 精确响应断言回归
+
+构建所选真实 SDK 后，可设置 `OSV_RUN_HTTP_TESTS=1`、`OSV_RUN_TAG_TESTS=1`、`OSV_RUN_HEADER_TESTS=1`
+运行 `tests/integration/test_http_sdk.py`、`test_tag_sdk.py`、`test_header_sdk.py`。
+HTTP 测试用 `OSV_PAGE_TEST_TARGETS` 选择链路，标签/写入和 HEAD 字段测试用 `OSV_S3_TEST_LANGUAGES=java,cpp` 选择 AWS SDK。
+这些固定响应合同检查真实 SDK 的线缆请求及响应保留；Moto 端到端用例检查真实写入、读取和报告，不是云认证。
+
+当前 TOS C++ 2.6.30 使用数值 `0,0` 设置 Range 会省略请求头；worker 改用公开的字符串 Range API。
+它把零字节成功 GET 表示为空指针流；worker 只在实际 HTTP 200、显式 Content-Length=0 且对象长度为零时写出空文件，仍检查文件 IO 错误。
+AWS C++ Curl 的响应头回调只在收到响应体数据时触发，无法覆盖空 PUT/HEAD/DELETE；worker 通过公开 HTTP factory 委托官方 Curl 客户端并检查实际响应。
+无 HTTP 响应的连接错误保留 SDK 原错误，不构造成功状态。

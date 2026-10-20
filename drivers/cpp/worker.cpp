@@ -1,9 +1,14 @@
 #include "stream_io.h"
 #include "object_metadata.h"
+#include "http_observer.h"
 #include <aws/s3/model/CreateBucketRequest.h>
 #include <aws/s3/model/CopyObjectRequest.h>
+#include <aws/s3/model/PutObjectTaggingRequest.h>
+#include <aws/s3/model/GetObjectTaggingRequest.h>
+#include <aws/s3/model/DeleteObjectTaggingRequest.h>
 #include <aws/s3/model/HeadBucketRequest.h>
 #include <aws/core/Aws.h>
+#include <aws/core/http/HttpResponse.h>
 #include <aws/core/VersionConfig.h>
 #include <aws/core/auth/AWSCredentials.h>
 #include <aws/core/client/DefaultRetryStrategy.h>
@@ -95,6 +100,24 @@ public:
             auto outcome=client->CopyObject(request); checked(outcome);
             return {{"etag",std::string(outcome.GetResult().GetCopyObjectResultDetails().GetETag().c_str())}};
         }
+        if(op=="tags_put" || op=="tags_get" || op=="tags_delete") {
+            json observed; HttpObservationScope observation(&observed);
+            if(op=="tags_put") {
+                Aws::S3::Model::PutObjectTaggingRequest request;request.SetBucket(bucket);request.SetKey(q.at("key").get<std::string>());
+                Aws::S3::Model::Tagging tagging;
+                for(const auto& pair:q.at("tags")) {Aws::S3::Model::Tag tag;tag.SetKey(pair.at("key").get<std::string>());tag.SetValue(pair.at("value").get<std::string>());tagging.AddTagSet(tag);}
+                request.SetTagging(tagging);checked(client->PutObjectTagging(request));
+            } else if(op=="tags_get") {
+                Aws::S3::Model::GetObjectTaggingRequest request;request.SetBucket(bucket);request.SetKey(q.at("key").get<std::string>());
+                auto outcome=client->GetObjectTagging(request);checked(outcome);json tags=json::array();
+                for(const auto& tag:outcome.GetResult().GetTagSet()) tags.push_back({{"key",std::string(tag.GetKey().c_str())},{"value",std::string(tag.GetValue().c_str())}});
+                observed["tags"]=tags;
+            } else {
+                Aws::S3::Model::DeleteObjectTaggingRequest request;request.SetBucket(bucket);request.SetKey(q.at("key").get<std::string>());checked(client->DeleteObjectTagging(request));
+            }
+            if(!observed.contains("status_code")) throw std::runtime_error("SDK did not expose tag response HTTP status");
+            return observed;
+        }
         if (op == "bucket_create") {
             Aws::S3::Model::HeadBucketRequest head; head.SetBucket(bucket);
             auto exists=client->HeadBucket(head);
@@ -123,7 +146,7 @@ public:
             }
             for(const auto& prefix:page.GetCommonPrefixes()) prefixes.push_back(std::string(prefix.GetPrefix().c_str()));
             return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.GetIsTruncated()},{"next_token",std::string(page.GetNextContinuationToken().c_str())},{"prefix",std::string(page.GetPrefix().c_str())},{"delimiter",std::string(page.GetDelimiter().c_str())},{"max_keys",page.GetMaxKeys()}};
-        } else if ((op == "put" || op == "put_metadata")) {
+        } else if ((op == "put" || op == "put_metadata" || op == "put_http")) {
             Aws::S3::Model::PutObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
@@ -133,10 +156,17 @@ public:
                 request.SetContentType(q.at("content_type").get<std::string>());
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
             }
-            checked(client->PutObject(request));
-        } else if ((op == "get" || op == "get_conditional" || op == "get_metadata")) {
+            if(q.contains("cache_control")) request.SetCacheControl(q.at("cache_control").get<std::string>());
+            if(q.contains("expires_ms")) request.SetExpires(Aws::Utils::DateTime(q.at("expires_ms").get<int64_t>()));
+            json http;HttpObservationScope observation(op=="put_http"?&http:nullptr);
+            auto outcome=client->PutObject(request);checked(outcome);
+            if(op=="put_http") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;}
+
+        } else if ((op == "get" || op == "get_conditional" || op == "get_metadata" || op == "get_http")) {
             Aws::S3::Model::GetObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            json http=json::object();
+            HttpObservationScope observation(op=="get_http"?&http:nullptr);
             if(q.contains("if_match")) request.SetIfMatch(q.at("if_match").get<std::string>());
             if(q.contains("if_none_match")) request.SetIfNoneMatch(q.at("if_none_match").get<std::string>());
             if(q.contains("if_modified_since_ms")) request.SetIfModifiedSince(Aws::Utils::DateTime(q.at("if_modified_since_ms").get<int64_t>()));
@@ -145,17 +175,26 @@ public:
                 auto offset = q.at("offset").get<int64_t>();
                 request.SetRange("bytes="+std::to_string(offset)+"-"+std::to_string(offset+q.at("length").get<int64_t>()-1));
             }
+            if(q.contains("range_header")) request.SetRange(q.at("range_header").get<std::string>());
             auto outcome = client->GetObject(request);
             checked(outcome);
             save_response_body(outcome.GetResult().GetBody(), q.at("output_path").get<std::string>());
             const auto& object=outcome.GetResult();
-            return {{"key",key},{"size",object.GetContentLength()},{"last_modified_ms",object.GetLastModified().Millis()},
+            json observed={{"key",key},{"size",object.GetContentLength()},{"last_modified_ms",object.GetLastModified().Millis()},
                 {"etag",std::string(object.GetETag().c_str())},{"content_type",std::string(object.GetContentType().c_str())},{"metadata",object.GetMetadata()}};
-        } else if ((op == "head" || op == "head_metadata")) {
+            if(op=="get_http") {
+                if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
+                observed.update(http);
+            }
+            return observed;
+        } else if ((op == "head" || op == "head_metadata" || op == "head_http")) {
             Aws::S3::Model::HeadObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            json http;HttpObservationScope observation(op=="head_http"?&http:nullptr);
             auto outcome = client->HeadObject(request); checked(outcome);
-            return {{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())},{"content_type",std::string(outcome.GetResult().GetContentType().c_str())},{"metadata",outcome.GetResult().GetMetadata()}};
+            json observed={{"key",key},{"size", outcome.GetResult().GetContentLength()},{"last_modified_ms",outcome.GetResult().GetLastModified().Millis()},{"etag",std::string(outcome.GetResult().GetETag().c_str())},{"content_type",std::string(outcome.GetResult().GetContentType().c_str())},{"metadata",outcome.GetResult().GetMetadata()}};
+            if(op=="head_http") {if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");observed.update(http);}
+            return observed;
         } else if (op == "delete") {
             Aws::S3::Model::DeleteObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key); checked(client->DeleteObject(request));
@@ -210,6 +249,7 @@ public:
 
 int main() {
     Aws::SDKOptions options;
+    options.httpOptions.httpClientFactory_create_fn=[](){return Aws::MakeShared<ObservedHttpFactory>("osv");};
     Aws::InitAPI(options);
     int code = 0;
     try {
@@ -221,7 +261,7 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

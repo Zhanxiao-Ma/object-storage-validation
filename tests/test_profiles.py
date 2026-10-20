@@ -24,8 +24,8 @@ class ProfileTest(unittest.TestCase):
         return path
 
     def test_both_profiles_run_real_producer_consumer_and_report(self):
-        """Run normal and complete through real IO; expect 24/102 catalogued results, clean objects and truthful reports."""
-        for profile, count, observations in (("normal", 24, 2), ("complete", 102, 4)):
+        """Run normal and complete through real IO; expect 24/121 catalogued results, clean objects and truthful reports."""
+        for profile, count, observations in (("normal", 24, 2), ("complete", 121, 4)):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
                 report = run(load_config(self.manifest(directory, {"profile": profile})), directory/"results")
@@ -53,7 +53,7 @@ class ProfileTest(unittest.TestCase):
             self.assertEqual(load_config(self.manifest(directory))["workload"]["profile"], "normal")
             custom = self.manifest(directory, {"compatibility_suites": ["baseline"]})
             self.assertNotIn("profile", load_config(custom)["workload"])
-            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy"])
+            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers"])
             for overrides in ({"profile":"unknown"}, {"profile":[]},
                               {"profile":"normal", "compatibility_suites":["baseline"]},
                               {"list_objects":1000}, {"list_objects":10001}, {"list_objects":True}):
@@ -61,7 +61,7 @@ class ProfileTest(unittest.TestCase):
                     load_config(self.manifest(directory, overrides))
 
     def test_missing_worker_reports_planned_cases_as_not_run(self):
-        """Fail actual process startup; expect all 102 planned cases reported as not run rather than compatibility passes."""
+        """Fail actual process startup; expect all 121 planned cases reported as not run rather than compatibility passes."""
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
             path = self.manifest(directory, {"profile":"complete"})
@@ -71,7 +71,7 @@ class ProfileTest(unittest.TestCase):
             report = run(load_config(path), directory/"results")
             self.assertEqual(report["samples"], [])
             self.assertEqual(report["cases"][0]["status"], "fail")
-            self.assertIn("| local | 102 | 0 | 0 | 0 | 102 |", (directory/"results/report.md").read_text())
+            self.assertIn("| local | 121 | 0 | 0 | 0 | 121 |", (directory/"results/report.md").read_text())
 
     def test_plugin_profile_reuses_suite_without_language_changes(self):
         """Register another profile reusing a real suite; expect execution and reporting without a scheduler language branch."""
@@ -93,7 +93,9 @@ class ProfileTest(unittest.TestCase):
         """Feed malformed suite output to the real runner; missing, duplicate or downgraded gates must fail before measurement."""
         for results in ([{"case":"other", "status":"pass"}],
                         [{"case":"required", "status":"pass"}]*2,
-                        [{"case":"required", "status":"observation"}]):
+                        [{"case":"required", "status":"observation"}],
+                        [{"case":"required", "status":"not_run", "gate":False,"reason":"unsupported_operations"}],
+                        [{"case":"required", "status":"not_run"}]):
             registry = build_registry({})
             registry.add_suite(Suite("broken", frozenset({"head"}), lambda ctx, results=results: results,
                                      ({**registry.suites["core_objects"].catalog[0], "case":"required"},)))
@@ -115,5 +117,5 @@ class ProfileTest(unittest.TestCase):
                                     capture_output=True, text=True, timeout=10, check=True)
             inventory = json.loads(result.stdout)
             self.assertEqual(inventory["profile"], "complete")
-            self.assertEqual(len(inventory["catalog"]), 102)
+            self.assertEqual(len(inventory["catalog"]), 121)
             self.assertFalse((directory/"objects").exists())

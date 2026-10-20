@@ -39,6 +39,7 @@ class Suite:
     required_operations: frozenset
     execute: object
     catalog: tuple = ()
+    case_capabilities: bool = False
 
 
 @dataclass(frozen=True)
@@ -82,6 +83,10 @@ class Registry:
         self.profiles[profile.name] = profile
 
     def add_suite(self, suite):
+        if type(suite.case_capabilities) is not bool:
+            raise ValueError("case_capabilities must be boolean")
+        if suite.case_capabilities and not suite.catalog:
+            raise ValueError("case capability checks require a declared catalog")
         if not callable(suite.execute):
             raise ValueError("suite requires callable execute")
         if suite.catalog:
@@ -94,6 +99,15 @@ class Registry:
                 if case["case"] in names:
                     raise ValueError("duplicate catalog case")
                 names.add(case["case"])
+        if suite.case_capabilities:
+            operations=set()
+            for case in suite.catalog:
+                values=case.get("operations")
+                if not isinstance(values,list) or not values or not all(isinstance(op,str) and op for op in values):
+                    raise ValueError("case capability checks require explicit operation lists")
+                operations.update(values)
+            if operations!=set(suite.required_operations):
+                raise ValueError("suite operations must equal its case operation union")
         self._add(self.suites, suite)
 
 
@@ -137,6 +151,11 @@ def verify_builtin(ctx, name, request, result):
     if name == "list":
         assert_equal(ctx.prefix+"perf" in result.get("keys", []), True)
     return len(ctx.payload) if name == "put" else 0
+
+
+def blocks_measurement(result):
+    """Missing required evidence blocks conclusions; an unexecuted optional observation is never a pass."""
+    return result["status"]=="fail" or (result["status"]=="not_run" and result.get("gate",True))
 
 
 def require_ok(response):

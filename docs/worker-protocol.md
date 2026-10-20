@@ -67,3 +67,16 @@ JuiceFS warning 偏好结果作为 observation，并在 `report.json` 的 eviden
 COS Java 显式开启 SDK 的 throw304Directly/throw412Directly，避免默认返回 null 丢失真实服务端异常。
 TOS C++ SDK 2.6.30 的 CopyObject 虽有 Content-Type setter，却未将其写入请求；适配器通过 SDK 的公开 request-header API 设置该头，保留为已知适配行为。
 TOS Java CopySource 使用 form 风格的空格编码；复制源测试区分空格的 + 与原始加号的 %2B，并检查只解码一次。
+
+## HTTP Range 与对象标签扩展
+
+`get_http` 接受可选的 `range_header`，原样交给实际 SDK；成功结果包含实际 `status_code` 和键名小写的 `http_headers`。
+不得根据是否请求 Range 推断状态。未获取到实际状态则不能宣称该能力。
+当前支持 Java S3/OSS/OBS/TOS、C++ S3/TOS/COS，其余链路明确缺失。
+
+`tags_put` 接受 `tags: [{"key":"...","value":"..."}]`；`tags_get` 返回同形数组；`tags_delete` 删除标签。
+成功结果保留真实 HTTP 状态和响应头，失败保留 SDK 错误码与状态；驱动不预先模拟服务端数量或长度限制。
+目前接入 Java/C++ AWS SDK，原生驱动仍待接入。
+
+`put_http` 接受 `body_path` 及可选 `cache_control`/`expires_ms`，返回实际 ETag、HTTP 状态和响应头。
+`head_http` 返回实际大小、HTTP 状态和响应头。两项当前接入 Java/C++ AWS SDK；不能由本地计算出的 MD5 替代服务端 ETag。

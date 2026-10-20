@@ -48,6 +48,120 @@
       "source_sha256": "12c80d301467a162fb5ff27ea3e4aec5d69761082878b60fc89dc63bef2688d2",
       "implementation": "ceph_get_ifunmodifiedsince_failed",
       "review": "核对固定源码中的输入值和全部断言；对象键放入独立前缀，不检查创建新桶本身。实际 SDK 成败另见执行报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_request_response_code@L7564",
+      "source_sha256": "ef1213c6ca4908d3cf3b96a5c59d1aec30572a63fb355851a6604b2ba19fbd24",
+      "implementation": "ceph_http_range_closed",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_request_skip_leading_bytes_response_code@L7597",
+      "source_sha256": "d3ccf6f939646cf9f1730ad5a6edb1bda95bee192707350cbcdaa55f2cf5aced",
+      "implementation": "ceph_http_range_open",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_request_return_trailing_bytes_response_code@L7612",
+      "source_sha256": "92a494a5c1ca47abb71b4062c8a162a1111d8734035776d6ecc9e6735169192b",
+      "implementation": "ceph_http_range_suffix",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_big_request_response_code@L7582",
+      "source_sha256": "de5fccfe5bbcb7a0e7120ac8a1b430f2d7c433b02a49d4a42e1d4d8c4bc464b4",
+      "implementation": "ceph_http_range_big",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_obj_tagging@L12029",
+      "source_sha256": "001c7c4b1e6391a17b042b84f013ac7a4acebb6320dc7750d755f65b19b40c8e",
+      "implementation": "ceph_tags_get",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_max_tags@L12059",
+      "source_sha256": "d2cf6c65d3df7812cee98d1b183deb3310677a1f989e8c48c3b5cf5bd02a680a",
+      "implementation": "ceph_tags_max",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_excess_tags@L12072",
+      "source_sha256": "ac378a8cee9cc8b5d9f47fbb28448edc308b79219ead656f982ae7b457469bc0",
+      "implementation": "ceph_tags_excess",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_max_kvsize_tags@L12087",
+      "source_sha256": "2b295a87a8d60e6b198118f609a81063ae5551ca4fb06b1c222d5241f6808751",
+      "implementation": "ceph_tags_max_size",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_excess_key_tags@L12108",
+      "source_sha256": "d84c454a43298d53c95f24671cae90e74c4d35261093dd2b3d98e08eec33286f",
+      "implementation": "ceph_tags_key_overflow",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_excess_val_tags@L12130",
+      "source_sha256": "310df5cf96634640f5cd4d666ba7fcc0a93d3cb132db11278ec1db764343b95e",
+      "implementation": "ceph_tags_value_overflow",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_modify_tags@L12153",
+      "source_sha256": "7284cc0851ffd1bcc7d42b06d2e91d1dccd6e2e1e237a641b06b4ccb24ff439a",
+      "implementation": "ceph_tags_modify",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_delete_tags@L12183",
+      "source_sha256": "d617670e64b35562047b20cb2d1b1df8223c81bf8f1506c7afc0261e4bdcd483",
+      "implementation": "ceph_tags_delete",
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_request_invalid_range@L7626",
+      "source_sha256": "e8b9254322ae37ee3b3fac837410b6578c7a94828ff490308e8b7309a1681556",
+      "implementation": "ceph_http_range_invalid",
+      "review": "按固定源码使用 testcontent/空对象与原始 bytes=40-50，请求经过真实 SDK，要求失败、416 与 InvalidRange；本地 reference 仅验证语义代码，不宣称 HTTP 证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_ranged_request_empty_object@L7640",
+      "source_sha256": "87081819a9f6bd9c4b5e1fd4c2345a33349659686c08aecb52cefc44f88e9b39",
+      "implementation": "ceph_http_range_empty",
+      "review": "按固定源码使用 testcontent/空对象与原始 bytes=40-50，请求经过真实 SDK，要求失败、416 与 InvalidRange；本地 reference 仅验证语义代码，不宣称 HTTP 证据。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_check_etag@L1803",
+      "source_sha256": "9a00b02c397b012b385b95b34e5694a01df33820902f1912de9fc3322de06c3f",
+      "implementation": "ceph_write_etag",
+      "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_cache_control@L1810",
+      "source_sha256": "7dfcbc3129031e32750bfbff139fa4a6d66a9f295edc1f1e4178f439b3494651",
+      "implementation": "ceph_write_cache",
+      "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_expires@L1819",
+      "source_sha256": "acafe1f705cf9a7bbd6fcf66a7555917ef2a035e0906f303b4e42764be1e23c3",
+      "implementation": "ceph_write_expires",
+      "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_head_zero_bytes@L1795",
+      "source_sha256": "e3112c15bc7db081e1fafb3134dbe1e75ee4e230d003e3e522c6fb4e18d39a5b",
+      "implementation": "ceph_zero_head",
+      "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_read_update_read_delete@L1837",
+      "source_sha256": "db3e5f669c473cc45c33869eab8d82450e2f4519601ab77e2fb241bf59e9b983",
+      "implementation": "ceph_literal_update",
+      "review": "核对固定源码全部断言：bar 的 HTTP 200 与带引号 MD5 ETag；Cache-Control 原值；当前时间加6000秒的 Expires 按秒比较；零字节 HEAD；bar/soup 写读更新删除。隔离对象前缀替代新桶；原生驱动 HTTP 写/HEAD 尚未接入，明确 not_run。"
     }
   ]
 }

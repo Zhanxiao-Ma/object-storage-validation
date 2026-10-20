@@ -105,7 +105,7 @@ def markdown(report):
         for target in report["targets"]:
             rows = [r for r in report["cases"] if r["target"] == target["id"] and (r.get("suite"), r["case"]) in planned]
             counts = [sum(r["status"] == status for r in rows) for status in ("pass", "fail", "observation")]
-            inventory.append("| "+" | ".join(map(str, [target["id"], len(planned), *counts, len(planned)-len(rows)]))+" |")
+            inventory.append("| "+" | ".join(map(str, [target["id"], len(planned), *counts, len(planned)-len(rows)+sum(row["status"]=="not_run" for row in rows)]))+" |")
         inventory += ["", "### 用例来源与预期", "", "| Suite / Case | 预期 | 参考场景 |", "|---|---|---|"]
         for case in coverage["catalog"]:
             inventory.append(f"| {cell(case['suite'])} / {cell(case['case'])} | {cell(case['expected'])} | [{cell(case['reference'])}]({case['source']}) |")

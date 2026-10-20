@@ -155,4 +155,4 @@ CASES+=tuple(case("ceph_list_delimiter_walk"+("_underscore" if underscore else "
 
 def register(registry):
     registry.add_suite(Suite("ceph_object_boundaries",frozenset().union(*(c.operations for c in CASES)),
-        lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES)))
+        lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES),case_capabilities=True))

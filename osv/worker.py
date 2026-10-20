@@ -106,7 +106,11 @@ class Worker:
                 self.process.wait()
         for stream in (self.process.stdin, self.process.stdout, self.process.stderr):
             if stream:
-                stream.close()
+                try:
+                    stream.close()
+                except OSError:
+                    # A dead SDK may leave buffered stdin; closing must not mask its diagnostic or leak the other pipes.
+                    pass
         self.reader.join(timeout=1)
         self.stderr_reader.join(timeout=1)
 

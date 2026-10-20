@@ -5,8 +5,10 @@ This is not an S3 emulator or cloud compatibility result. Data is actually writt
 and read; multipart state lives separately until the completion operation commits it.
 """
 import hashlib
+from email.utils import formatdate
 import json
 import os
+import re
 from pathlib import Path
 import sys
 import time
@@ -50,7 +52,7 @@ def execute(q):
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"]}
+                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http"]}
     key = path(q.get("key", "unused"))
     if op == "bucket_create":
         root.mkdir(exist_ok=True,parents=True)
@@ -73,11 +75,17 @@ def execute(q):
                 "common_prefixes":[name for name in selected if entries[name] is None],
                 "truncated":truncated,"next_token":selected[-1] if truncated else "",
                 "prefix":q.get("prefix",""),"delimiter":q.get("delimiter",""),"max_keys":limit}
-    elif op in ("put","put_metadata"):
+    elif op in ("put","put_metadata","put_http"):
         key.parent.mkdir(parents=True, exist_ok=True)
         key.write_bytes(Path(q["body_path"]).read_bytes())
         remember(q["key"],q.get("metadata",{}),q.get("content_type","application/octet-stream"))
-    elif op in ("get", "get_conditional", "get_metadata"):
+        if op=="put_http":
+            info=json.loads(key.with_suffix(".json").read_text())
+            info.update({field:q[field] for field in ("cache_control","expires_ms") if field in q})
+            key.with_suffix(".json").write_text(json.dumps(info))
+            return {"status_code":200,"etag":chr(34)+hashlib.md5(key.read_bytes()).hexdigest()+chr(34),"http_headers":{}}
+
+    elif op in ("get", "get_conditional", "get_metadata", "get_http"):
         content = key.read_bytes()
         etag='"'+hashlib.md5(content).hexdigest()+'"'
         modified=int(key.stat().st_mtime)*1000
@@ -85,17 +93,42 @@ def execute(q):
         if "if_unmodified_since_ms" in q and modified>q["if_unmodified_since_ms"] and "if_match" not in q:raise OperationError("PreconditionFailed")
         if "if_none_match" in q and q["if_none_match"] in (etag,"*"):raise OperationError("NotModified")
         if "if_modified_since_ms" in q and modified<=q["if_modified_since_ms"] and "if_none_match" not in q:raise OperationError("NotModified")
+        total=len(content); response_headers={}; status=200
+        if "range_header" in q:
+            match=re.fullmatch(r"bytes=(\d*)-(\d*)",q["range_header"])
+            if not match or not any(match.groups()):raise OperationError("InvalidRange")
+            left,right=match.groups()
+            start=int(left) if left else max(0,total-int(right))
+            end=min(total-1,int(right)) if left and right else total-1
+            if start>=total or start>end:raise OperationError("InvalidRange")
+            content=content[start:end+1];status=206
+            response_headers["content-range"]=f"bytes {start}-{end}/{total}"
         if "offset" in q:
             if q["offset"]>=len(content):raise OperationError("InvalidRange")
             content = content[q["offset"]:q["offset"]+q["length"]]
         Path(q["output_path"]).write_bytes(content)
+        if op=="get_http":
+            return {"status_code":status,"http_headers":response_headers}
         if op=="get_metadata":
             info=json.loads(key.with_suffix(".json").read_text())
             return {"key":q["key"],"size":len(content),"last_modified_ms":int(key.stat().st_mtime*1000),
                     "etag":etag.strip('"'),"metadata":info["metadata"],"content_type":info["content_type"]}
+    elif op=="head_http":
+        info=json.loads(key.with_suffix(".json").read_text());headers={}
+        if "cache_control" in info:headers["cache-control"]=info["cache_control"]
+        if "expires_ms" in info:headers["expires"]=formatdate(info["expires_ms"]/1000,usegmt=True)
+        return {"size":key.stat().st_size,"status_code":200,"http_headers":headers}
     elif op in ("head","head_metadata"):
         return {"key":q["key"],"size": key.stat().st_size,"last_modified_ms":int(key.stat().st_mtime*1000),
                 "etag":hashlib.md5(key.read_bytes()).hexdigest(),**{k:v for k,v in json.loads(key.with_suffix(".json").read_text()).items() if k in ("metadata","content_type")}}
+    elif op in ("tags_put","tags_get","tags_delete"):
+        info=json.loads(key.with_suffix(".json").read_text())
+        if op=="tags_get":return {"tags":info.get("tags",[]),"status_code":200}
+        tags=q["tags"] if op=="tags_put" else []
+        if len(tags)>10 or any(len(tag["key"])>128 or len(tag["value"])>256 for tag in tags):raise OperationError("InvalidTag")
+        info["tags"]=tags
+        key.with_suffix(".json").write_text(json.dumps(info))
+        return {"status_code":200 if op=="tags_put" else 204}
     elif op in ("copy","copy_replace"):
         source=path(q["source_key"])
         data=source.read_bytes()

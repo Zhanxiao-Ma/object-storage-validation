@@ -70,7 +70,7 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","cos"},{"api","native"},{"language","cpp"},
             {"sdk_version",COS_CPP_SDK_VERSON},{"protocol_version",1},
-            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"}},
+            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http"}},
             {"endpoint",env("OSV_ENDPOINT")},{"region",env("OSV_REGION")},{"bucket",bucket},
             {"retries",env("OSV_RETRIES","0")},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
             {"range_integrity","whole-object ETag MD5 check disabled for ranges; harness verifies returned bytes"},
@@ -107,10 +107,11 @@ public:
                 for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.SetXCosMeta(it.key(),it.value().get<std::string>());
             }
             vendor::PutObjectByStreamResp response; check(client->PutObject(request,&response));
-        } else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
+        } else if((op=="get" || op=="get_conditional" || op=="get_metadata" || op=="get_http")) {
             std::ofstream output(q.at("output_path").get<std::string>(),std::ios::binary|std::ios::trunc);
             if(!output) throw std::runtime_error("cannot open output_path");
             vendor::GetObjectByStreamReq request(bucket,key,output); configure(request);
+            if(q.contains("range_header")) { request.AddHeader("Range",q.at("range_header").get<std::string>()); request.SetCheckMD5(false); }
             if(q.contains("if_match")) request.AddHeader("If-Match",q.at("if_match").get<std::string>());
             if(q.contains("if_none_match")) request.AddHeader("If-None-Match",q.at("if_none_match").get<std::string>());
             if(q.contains("if_modified_since_ms")) request.AddHeader("If-Modified-Since",http_date(q.at("if_modified_since_ms").get<int64_t>()));
@@ -122,9 +123,11 @@ public:
                 // The harness independently verifies the returned range against its original bytes.
                 request.SetCheckMD5(false);
             }
-            vendor::GetObjectByStreamResp response; check(client->GetObject(request,&response));
+            vendor::GetObjectByStreamResp response; auto outcome=client->GetObject(request,&response); check(outcome);
             output.close(); if(!output) throw std::runtime_error("response write failed");
-            return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()},{"content_type",response.GetContentType()},{"metadata",response.GetXCosMetas()}};
+            json observed={{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()},{"content_type",response.GetContentType()},{"metadata",response.GetXCosMetas()}};
+            if(op=="get_http") observed.update(http_observation(outcome.GetHttpStatus(),response.GetHeaders()));
+            return observed;
         } else if((op=="head" || op=="head_metadata")) {
             vendor::HeadObjectReq request(bucket,key); configure(request);
             vendor::HeadObjectResp response; check(client->HeadObject(request,&response)); return {{"key",key},{"size",response.GetContentLength()},{"last_modified_ms",timestamp_ms(response.GetLastModified())},{"etag",response.GetEtag()},{"content_type",response.GetContentType()},{"metadata",response.GetXCosMetas()}};

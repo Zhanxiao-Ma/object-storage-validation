@@ -150,4 +150,4 @@ CASES=(
 
 def register(registry):
     registry.add_suite(Suite("objbench_objects",frozenset().union(*(case.operations for case in CASES)),
-        lambda ctx:run_cases(ctx,CASES),tuple(case.metadata() for case in CASES)))
+        lambda ctx:run_cases(ctx,CASES),tuple(case.metadata() for case in CASES),case_capabilities=True))

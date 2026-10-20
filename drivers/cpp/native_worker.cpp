@@ -196,15 +196,31 @@ public:
             return {{"keys",keys},{"objects",objects},{"common_prefixes",prefixes},{"truncated",page.isTruncated()},{"next_token",page.getNextContinuationToken()},{"prefix",page.getPrefix()},{"delimiter",page.getDelimiter()},{"max_keys",page.getMaxKeys()}};
         }
         else if((op=="put" || op=="put_metadata")) { auto stream=body(q); vendor::PutObjectV2Input request(bucket,key,stream); request.setContentLength(length(stream)); if(op=="put_metadata") { request.setContentType(q.at("content_type").get<std::string>()); request.setMeta(q.at("metadata").get<std::map<std::string,std::string>>()); } result(client->putObject(request)); }
-        else if((op=="get" || op=="get_conditional" || op=="get_metadata")) {
+        else if((op=="get" || op=="get_conditional" || op=="get_metadata" || op=="get_http")) {
             vendor::GetObjectV2Input request(bucket,key);
+            if(q.contains("range_header")) request.setRange(q.at("range_header").get<std::string>());
             if(q.contains("if_match")) request.setIfMatch(q.at("if_match").get<std::string>());
             if(q.contains("if_none_match")) request.setIfNoneMatch(q.at("if_none_match").get<std::string>());
             if(q.contains("if_modified_since_ms")) request.setIfModifiedSince(q.at("if_modified_since_ms").get<int64_t>()/1000);
             if(q.contains("if_unmodified_since_ms")) request.setIfUnmodifiedSince(q.at("if_unmodified_since_ms").get<int64_t>()/1000);
-            if(q.contains("offset")) { request.setRangeStart(q.at("offset")); request.setRangeEnd(q.at("offset").get<int64_t>()+q.at("length").get<int64_t>()-1); }
-            auto object=result(client->getObject(request)); save(q,object.getContent());
-            return {{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETags()},{"content_type",object.getContentType()},{"metadata",object.getMeta()}};
+            // SDK 2.6.30 treats start=end=0 as unset, so use its explicit string API for all byte ranges.
+            if(q.contains("offset")) request.setRange("bytes="+std::to_string(q.at("offset").get<int64_t>())+"-"+std::to_string(q.at("offset").get<int64_t>()+q.at("length").get<int64_t>()-1));
+            auto object=result(client->getObject(request));
+            if(object.getContent()) save(q,object.getContent());
+            else {
+                // TOS 2.6.30 represents a successful zero-byte response with a null stream.
+                // Accept only an actual HTTP 200 with explicit zero Content-Length, and still validate output IO.
+                auto response=http_observation(object.getRequestInfo().getStatusCode(),object.getRequestInfo().getHeaders());
+                if(object.getContentLength()!=0 || response["status_code"]!=200 || response["http_headers"].value("content-length","")!="0")
+                    throw std::runtime_error("missing response stream without a verified empty response");
+                std::ofstream output(q.at("output_path").get<std::string>(),std::ios::binary|std::ios::trunc);
+                if(!output) throw std::runtime_error("cannot open output_path");
+                output.close();if(!output) throw std::runtime_error("failed writing response body");
+            }
+
+            json observed={{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETags()},{"content_type",object.getContentType()},{"metadata",object.getMeta()}};
+            if(op=="get_http") observed.update(http_observation(object.getRequestInfo().getStatusCode(),object.getRequestInfo().getHeaders()));
+            return observed;
         } else if((op=="head" || op=="head_metadata")) { auto object=result(client->headObject(vendor::HeadObjectV2Input(bucket,key))); return {{"key",key},{"size",object.getContentLength()},{"last_modified_ms",int64_t(object.getLastModified())*1000},{"etag",object.getETag()},{"content_type",object.getContentType()},{"metadata",object.getMeta()}}; }
         else if(op=="delete") { result(client->deleteObject(vendor::DeleteObjectInput(bucket,key))); }
         else if(op=="list") {
@@ -247,6 +263,9 @@ int main() {
                 if(request.at("op")=="info") {
                     response["protocol_version"]=1;
                     response["capabilities"]={"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"};
+#ifndef OSV_OSS
+                    response["capabilities"].push_back("get_http");
+#endif
                     response["endpoint"]=env("OSV_ENDPOINT"); response["bucket"]=env("OSV_BUCKET");
                     response["region"]=env("OSV_REGION"); response["retries"]=env("OSV_RETRIES","0");
                     response["connections_per_worker"]=env("OSV_CONNECTIONS","16");

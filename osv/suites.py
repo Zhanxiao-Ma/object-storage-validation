@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 4
+CATALOG_VERSION = 5
 
 
 @dataclass(frozen=True)
@@ -118,6 +118,12 @@ class Probe:
 def run_cases(ctx, cases):
     results = []
     for case in cases:
+        missing=case.operations-ctx.worker.capabilities
+        if missing:
+            results.append({"case":case.name,"status":"not_run","gate":not case.observation,
+                            "reason":"unsupported_operations","missing_operations":sorted(missing),
+                            "error":"worker does not advertise operations: "+", ".join(sorted(missing))})
+            continue
         prefix = ctx.prefix+case.name+"/"
         scoped = replace(ctx, prefix=prefix, body=ctx.directory/(case.name+".body"),
                          output=ctx.directory/(case.name+".output"))
@@ -129,6 +135,7 @@ def run_cases(ctx, cases):
                 if isinstance(behavior,dict):result["evidence"]=behavior
         except Exception as error:
             result = {"case": case.name, "status": "fail", "error": str(error)}
+        result["gate"]=not case.observation
         results.append(result)
     return results
 
@@ -251,14 +258,14 @@ EXCLUSIONS = (
     "跨桶复制、UploadPartCopy、批量删除及条件写入（尚未迁移；同桶复制、元数据和条件 GET 已实现）",
     "版本控制、ACL/Policy、加密、生命周期、对象锁与归档恢复（尚未实现）",
     "LIST 的全部协议版本、参数组合和响应字段（已增加单页参数与元数据；尚未全量迁移）",
-    "HTTP 状态/响应头逐字段一致性、签名负面用例、故障注入（尚未实现）",
+    "Range 以外大部分 HTTP 状态/响应头一致性、签名负面用例、故障注入（尚未实现）",
 )
 
 
 def register_suites(registry):
     for name, cases in (("core_objects", CORE), ("extended_objects", EXTENDED)):
         registry.add_suite(Suite(name, frozenset().union(*(c.operations for c in cases)),
-            lambda ctx, cases=cases: run_cases(ctx, cases), tuple(c.metadata() for c in cases)))
+            lambda ctx, cases=cases: run_cases(ctx, cases), tuple(c.metadata() for c in cases),case_capabilities=True))
     from .objbench_cases import register
     register(registry)
     from .ceph_objects import register as register_ceph
@@ -269,7 +276,13 @@ def register_suites(registry):
     register_metadata(registry)
     from .ceph_copy import register as register_copy
     register_copy(registry)
+    from .ceph_range import register as register_range
+    register_range(registry)
+    from .ceph_tags import register as register_tags
+    register_tags(registry)
+    from .ceph_headers import register as register_headers
+    register_headers(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy"),
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

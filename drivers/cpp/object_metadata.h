@@ -43,3 +43,15 @@ inline std::string http_date(int64_t milliseconds) {
     output << std::put_time(&utc,"%a, %d %b %Y %H:%M:%S GMT");
     return output.str();
 }
+
+/** Preserve an observed SDK HTTP status and headers; never derive them from requested ranges or payload length. */
+template<class Headers> inline nlohmann::json http_observation(int status,const Headers& headers) {
+    if(status<=0) throw std::runtime_error("SDK did not expose an HTTP response status");
+    nlohmann::json values=nlohmann::json::object();
+    for(const auto& entry:headers) {
+        std::string name=entry.first.c_str();
+        for(char& ch:name) ch=static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        values[name]=std::string(entry.second.c_str());
+    }
+    return {{"status_code",status},{"http_headers",values}};
+}

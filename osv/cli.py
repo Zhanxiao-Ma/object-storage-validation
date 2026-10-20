@@ -15,7 +15,7 @@ import time
 import uuid
 
 from .worker import Worker, invoke_external
-from .scenarios import Context, build_registry, require_ok
+from .scenarios import Context, build_registry, require_ok, blocks_measurement
 from .report import summarize, comparisons, markdown
 
 
@@ -179,10 +179,14 @@ def run(config, output_dir):
                     directory = root / ident
                     directory.mkdir()
                     required = {"put", "list", "delete"}  # seed and cleanup
-                    for name in workload["operations"]:
-                        required.update(registry.operations[name].required_operations)
+                    if workload["performance_model"]=="objbench":
+                        required.update({"put","get","head","list","delete"})
+                    else:
+                        for name in workload["operations"]:
+                            required.update(registry.operations[name].required_operations)
                     for name in workload["compatibility_suites"]:
-                        required.update(registry.suites[name].required_operations)
+                        if not registry.suites[name].case_capabilities:
+                            required.update(registry.suites[name].required_operations)
                     for worker in workers:
                         missing = required - worker.capabilities
                         if missing:
@@ -193,7 +197,7 @@ def run(config, output_dir):
                         cases = registry.suites[name].execute(ctx)
                         if not isinstance(cases, list) or not cases or any(
                             not isinstance(case, dict) or not isinstance(case.get("case"), str)
-                            or case.get("status") not in ("pass", "fail", "observation") for case in cases):
+                            or case.get("status") not in ("pass", "fail", "observation", "not_run") for case in cases):
                             raise ValueError("suite must return nonempty valid case results")
                         catalog = registry.suites[name].catalog
                         actual_names = [case["case"] for case in cases]
@@ -204,9 +208,17 @@ def run(config, output_dir):
                         if catalog:
                             metadata = {case["case"]: case for case in catalog}
                             for result in cases:
-                                if result["status"] == "observation" and metadata[result["case"]]["gate"]:
+                                expected_gate=metadata[result["case"]]["gate"]
+                                if result["status"] == "observation" and expected_gate:
                                     raise ValueError("required gate cannot be downgraded to observation")
-                        if not any(case["status"] in ("pass", "fail") for case in cases):
+                                if "gate" in result and result["gate"]!=expected_gate:
+                                    raise ValueError("result gate differs from declared catalog")
+                                result["gate"]=expected_gate
+                        else:
+                            for result in cases:result["gate"]=True
+                        if any(case["status"]=="not_run" and not case.get("reason") for case in cases):
+                            raise ValueError("not_run requires an explicit reason")
+                        if not any(case["status"] in ("pass", "fail", "not_run") for case in cases):
                             raise ValueError("suite must return at least one semantic gate")
                         report["cases"].extend({**case, "target": ident, "suite": name} for case in cases)
                     # Compatibility data must not change the performance dataset between profiles.
@@ -216,7 +228,7 @@ def run(config, output_dir):
                 except Exception as error:
                     report["cases"].append({"target": ident, "case": "setup", "status": "fail", "error": str(error)})
             active = [t for t in config.get("targets", []) if pools.get(t["id"])
-                      and not any(c["status"] == "fail" for c in report["cases"] if c["target"] == t["id"])]
+                      and not any(blocks_measurement(c) for c in report["cases"] if c["target"] == t["id"])]
             for phase in ("warmup", "measure"):
                 rounds = (workload["objbench"]["warmup_rounds"] if workload["performance_model"] == "objbench" else 1) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
@@ -287,7 +299,7 @@ def run(config, output_dir):
     (output_dir/"alignment.json").write_text(json.dumps(alignment,indent=2,ensure_ascii=False)+"\n")
     report["summary"] = summarize(report["samples"], report["batches"])
     # Observations are not required semantic gates.
-    gates = [c for c in report["cases"] if c["status"] != "observation"]
+    gates = [c for c in report["cases"] if c["status"] != "observation" and not (c["status"]=="not_run" and not c.get("gate",True))]
     report["comparisons"] = comparisons(config, gates, report["summary"], report["operation_metrics"])
     report["finished_at"] = datetime.now(timezone.utc).isoformat()
     report = json.loads(redact(json.dumps(report)))
@@ -323,7 +335,7 @@ def main():
             return
         report = run(config, Path(args.output))
         print(Path(args.output) / "report.md")
-        failed = any(c["status"] == "fail" for c in report["cases"])
+        failed = any(blocks_measurement(c) for c in report["cases"])
         failed |= any(not s["ok"] for s in report["samples"])
         failed |= any(e["exit_code"] != 0 or e.get("timed_out") for e in report["external"])
         failed |= any(c["status"] != "within_budget" for c in report["comparisons"])
