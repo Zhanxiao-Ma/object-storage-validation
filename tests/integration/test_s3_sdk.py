@@ -602,6 +602,10 @@ class SdkIntegrationTest(unittest.TestCase):
             for target in self.targets:
                 extra={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"} if target["language"]=="java" else set()
                 expected.extend((target["id"],name) for name in new_failure_common|extra)
+            # The pinned Java Apache transport rejects the source's explicit
+            # chunked header before sending PUT; the raw SDK fixture preserves
+            # this failure and proves cleanup. C++ transports the source request.
+            expected.extend((target["id"],"ceph_s3_tail_chunked_write") for target in self.targets if target["language"]=="java")
             # Moto's ordinary ListBuckets response has no Ceph Summary quota
             # extension, and its missing-object XML has no source RequestId.
             # The real response capture must expose those original oracle
