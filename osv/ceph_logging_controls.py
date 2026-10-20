@@ -11,8 +11,8 @@ from .suites import case,run_cases,CaseNotRun,CEPH
 PREFIX="log/"
 
 def identity(p):
-    value=p.ctx.workload.get("identities",{}).get("main",{}).get("canonical_id")
-    if not isinstance(value,str) or not value:raise CaseNotRun("Ceph logging policies require configured main user ID","workload.identities.main.canonical_id")
+    value=p.ctx.workload.get("identities",{}).get("main",{}).get("user_id")
+    if not isinstance(value,str) or not value:raise CaseNotRun("Ceph logging policies require configured main user ID","workload.identities.main.user_id")
     return value
 
 def logging_status(bucket,target=None,**extra):
@@ -62,7 +62,8 @@ def roundtrip(p):
         set_policy(target,document(p,source,target))
         configurations=[({"TargetBucket":target.name,"TargetPrefix":PREFIX},True),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"SimplePrefix":{}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"PartitionedPrefix":{"PartitionDateSource":"DeliveryTime"}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetGrants":[{"Grantee":{"DisplayName":metadata["display_name"],"ID":metadata["canonical_id"],"Type":"CanonicalUser"},"Permission":"FULL_CONTROL"}]},True)]
         # Pinned _has_target_object_key_format() returns True in finally even when
-        # validation fails. Do not turn this into a client-version capability skip.
+        # validation fails. Preserve that source branch; suite capability gating rejects
+        # SDKs unable to represent the required model before executing the source.
         for configuration,default_format in configurations:
             request=enabled(p,configuration)
             assert_equal(api(source,"PutBucketLogging",BucketLoggingStatus={"LoggingEnabled":request})["status_code"],200)

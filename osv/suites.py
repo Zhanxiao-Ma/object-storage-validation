@@ -10,7 +10,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 17
+CATALOG_VERSION = 18
 
 
 @dataclass(frozen=True)
@@ -351,7 +351,21 @@ def register_suites(registry):
     register_policy_remaining(registry)
     from .ceph_logging_controls import register as register_logging_controls
     register_logging_controls(registry)
+    from .ceph_raw_http import register as register_ceph_raw_http
+    register_ceph_raw_http(registry)
+    from .ceph_query_edges import register as register_ceph_query_edges
+    register_ceph_query_edges(registry)
+    from .ceph_lifecycle_expiration import register as register_ceph_lifecycle_expiration
+    register_ceph_lifecycle_expiration(registry)
+    from .ceph_lifecycle_transition import register as register_ceph_lifecycle_transition
+    register_ceph_lifecycle_transition(registry)
+    from .ceph_lifecycle_marker_expiration import register as register_ceph_lifecycle_marker_expiration
+    register_ceph_lifecycle_marker_expiration(registry)
+    from .ceph_object_locks import register as register_ceph_object_locks
+    register_ceph_object_locks(registry)
+    from .ceph_logging_records import register as register_ceph_logging_records
+    register_ceph_logging_records(registry)
     registry.add_profile(Profile("normal", ("core_objects", "objbench_objects"),
         "正常档：对齐锁定 objbench 的对象语义与多对象负载；POSIX 文件系统可选项不适用", EXCLUSIONS))
-    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls"),
+    registry.add_profile(Profile("complete", ("core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part", "ceph_versioning", "ceph_bucket_config", "ceph_sse_customer", "ceph_bucket_controls", "ceph_sse_multipart", "ceph_encryption_objects", "ceph_bucket_policy", "ceph_acl", "ceph_bucket_inventory", "ceph_request_headers", "ceph_conditional_writes", "ceph_access", "ceph_object_interop", "ceph_policy_conditions", "ceph_metadata_edges", "ceph_checksum_attributes", "ceph_conditional_versions", "ceph_public_controls", "ceph_copy_contracts", "ceph_state_boundaries", "ceph_basic_boundaries", "ceph_policy_remaining", "ceph_logging_controls", "ceph_raw_http", "ceph_query_edges", "ceph_lifecycle_expiration", "ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_object_locks", "ceph_logging_records"),
         "完善档：Ceph 场景迁移中；完整对齐状态与未迁移清单见 alignment.json", EXCLUSIONS))

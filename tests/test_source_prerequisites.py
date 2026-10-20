@@ -82,3 +82,23 @@ class SourcePrerequisitesTest(unittest.TestCase):
                     self.assertEqual(raised.exception.requirements,["workload.identities.main.canonical_id","workload.identities.main.display_name"])
                 self.assertEqual(requests,[])
             finally:worker.close()
+
+    def test_explicit_http_lifecycle_and_lock_configuration_is_validated_before_io(self):
+        """Load actual manifests with valid source prerequisites and malformed alternatives; expect preserved values or validation failure before starting any worker."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            valid={"ceph_http":{"endpoint":"https://storage.example:443/prefix/","addressing_style":"path","access_key_env":"AK_NAME","secret_key_env":"SK_NAME"},"lifecycle_debug_interval_seconds":1.25,"object_lock_cleanup_authorized":False,"ceph_literal_bucket_names_authorized":False,"ceph_api_name":"s3","restore_debug_interval_seconds":1,"restore_processor_period_seconds":2,"cloud_lifecycle":{"storage_class":"CLOUD","retain_head_object":"False","target_by_bucket":False,"read_through_days":0}}
+            data=config(directory);data["workload"].update(valid);path.write_text(json.dumps(data));loaded=load_config(path)
+            for field,value in valid.items():self.assertEqual(loaded["workload"][field],value)
+            invalid=[{"lifecycle_debug_interval_seconds":value} for value in (None,False,0,-1,float("inf"),float("nan"),1<<4096,"1")]
+            invalid += [{field:value} for field in ("restore_debug_interval_seconds","restore_processor_period_seconds") for value in (None,False,0,-1,float("inf"),1<<4096,"1")]
+            invalid += [{"ceph_literal_bucket_names_authorized":value} for value in (None,0,"true")]
+            invalid += [{"ceph_api_name":value} for value in (None,"",3)]
+            invalid += [{"cloud_lifecycle":value} for value in (None,[],{"unknown":"x"},{"storage_class":0},{"target_by_bucket":"false"},{"read_through_days":False},{"read_through_days":-1})]
+            invalid += [{"object_lock_cleanup_authorized":value} for value in (None,0,1,"true")]
+            invalid += [{"ceph_http":value} for value in (None,[],{}, {"endpoint":"https://storage.example","addressing_style":"guess"}, {"endpoint":"https://storage.example","addressing_style":"path","secret":"inline"})]
+            invalid += [{"ceph_http":{"endpoint":value,"addressing_style":"path"}} for value in (None,"","file:///tmp/a","https://user:secret@storage.example","https://user@storage.example","https://storage.example?x=1","https://storage.example#fragment","https://storage.example:0","https://storage.example:70000","https://storage.example:bad")]
+            invalid += [{"ceph_http":{"endpoint":"https://storage.example","addressing_style":"path","access_key_env":value}} for value in (None,"",2,"AK-NAME","A B","${KEY}")]
+            for fields in invalid:
+                data=config(directory);data["workload"].update(fields);path.write_text(json.dumps(data))
+                with self.subTest(fields=fields),self.assertRaises(ValueError):load_config(path)

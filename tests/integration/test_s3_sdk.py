@@ -71,7 +71,7 @@ def expected_sse_diagnostics():
     return {"ceph_sse_c_"+name for name in ("head","present","other","invalid_md5","no_md5","no_key","no_algorithm")}
 
 def expected_config_diagnostics(language):
-    modes=("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart") if language=="cpp" else ("id_long","same_id","invalid_status","invalid_date","transition_invalid_date")
+    modes=() if language=="cpp" else ("id_long","same_id","invalid_status","invalid_date","transition_invalid_date")
     return {"ceph_config_lifecycle_"+mode for mode in modes}
 
 
@@ -413,7 +413,7 @@ class SdkIntegrationTest(unittest.TestCase):
                     finally:worker.close()
 
     def test_configured_storage_classes_execute_original_transition_input(self):
-        """Provide the actual source's three-class prerequisite; expect Java to send the full original transition rule, C++ to retain its legacy-Prefix model error, and no leaked buckets."""
+        """Provide the actual source's three-class prerequisite; expect Java to send the full original rule, C++ to report its missing legacy-Prefix model before HTTP, and no leaked buckets."""
         from osv.ceph_bucket_config import CASES
         from osv.scenarios import Context
         from osv.suites import run_cases
@@ -427,11 +427,14 @@ class SdkIntegrationTest(unittest.TestCase):
                 try:
                     ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"storage_classes":["STANDARD","GLACIER","DEEP_ARCHIVE"]})
                     rows=run_cases(ctx,(next(c for c in CASES if c.name=="ceph_config_lifecycle_noncurrent_transition"),))
-                    self.assertEqual(len(requests),1)
-                    rule=requests[0]["input"]["LifecycleConfiguration"]["Rules"][0]
-                    self.assertEqual(rule["NoncurrentVersionTransitions"],[{"NoncurrentDays":2,"StorageClass":"GLACIER"},{"NoncurrentDays":4,"StorageClass":"DEEP_ARCHIVE"}])
-                    self.assertEqual(rows[0]["status"],"fail" if target["language"]=="cpp" else "pass",rows)
-                    if target["language"]=="cpp":self.assertIn("SDK model has no member: Prefix",rows[0]["error"])
+                    if target["language"]=="cpp":
+                        self.assertEqual(requests,[]);self.assertEqual(rows[0]["status"],"not_run",rows)
+                        self.assertEqual(rows[0]["missing_operations"],["lifecycle_legacy_prefix"])
+                    else:
+                        self.assertEqual(len(requests),1)
+                        rule=requests[0]["input"]["LifecycleConfiguration"]["Rules"][0]
+                        self.assertEqual(rule["NoncurrentVersionTransitions"],[{"NoncurrentDays":2,"StorageClass":"GLACIER"},{"NoncurrentDays":4,"StorageClass":"DEEP_ARCHIVE"}])
+                        self.assertEqual(rows[0]["status"],"pass",rows)
                     self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                 finally:worker.close()
 
@@ -573,6 +576,10 @@ class SdkIntegrationTest(unittest.TestCase):
             state_fail={"ceph_state_"+name for name in ("condition_not_match","condition_not_modified","access_raw_get_object_acl","recreate_acl_overwrite","recreate_acl_new")}
             policy_tail_fail={"ceph_remaining_policy_bad_access_key","ceph_remaining_policy_bad_signature"}
             expected.extend((target["id"],name) for target in self.targets for name in state_fail|policy_tail_fail|({"ceph_remaining_policy_multipart_50mib"} if target["language"]=="cpp" else set()))
+            new_failure_common={"ceph_query_"+mode for mode in ("head_usage","unordered_v1","unordered_v2","invalid_maxkeys","head_extended","response_headers")}|{"ceph_object_lock_invalid_get_retention","ceph_object_lock_invalid_get_legal_hold","ceph_lc_expiration_header_tag"}
+            for target in self.targets:
+                extra={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"} if target["language"]=="java" else set()
+                expected.extend((target["id"],name) for name in new_failure_common|extra)
             self.assertEqual(sorted(failures),sorted(expected))
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
@@ -584,7 +591,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),587)
+            self.assertEqual(len(report["coverage"]["catalog"]),694)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -596,9 +603,24 @@ class SdkIntegrationTest(unittest.TestCase):
             basic_missing={"ceph_basic_expected_owner"}
             policy_tail_missing={"ceph_remaining_policy_tenant_global","ceph_remaining_policy_tenant_owned","ceph_remaining_policy_copy_parts"}
             logging_missing={"ceph_logging_controls_"+mode for mode in ("roundtrip","errors","owner","permissions","remove")}
+            from osv.ceph_raw_http import CASES as raw_cases
+            from osv.ceph_lifecycle_expiration import CASES as expiration_cases
+            from osv.ceph_lifecycle_transition import CASES as transition_cases
+            from osv.ceph_object_locks import CASES as lock_cases
+            from osv.ceph_logging_records import CASES as record_cases
+            new_missing={c.name for c in raw_cases if c.name!="ceph_raw_continue_retry"}|{"ceph_query_list_buckets_paginated"}|{c.name for c in lock_cases if c.name not in {"ceph_object_lock_invalid_get_retention","ceph_object_lock_invalid_get_legal_hold"}}|{c.name for c in record_cases}|{c.name for c in transition_cases}|{"ceph_lc_delete_marker_expiration"}|{c.name for c in expiration_cases if c.name not in {"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head","ceph_lc_expiration_header_tag","ceph_lc_expiration_header_and_tags"}}
+            cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (new_missing|(legacy_missing|cpp_expiration_missing if target["language"]=="cpp" else set())|access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in new_missing|cpp_expiration_missing:
+                    self.assertIn(row["reason"],("missing_prerequisites","unsupported_operations"))
+                    self.assertTrue(row.get("missing_requirements") or row.get("missing_operations"))
+                    continue
+                if row["target"]=="cpp" and row["case"] in legacy_missing:
+                    self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["lifecycle_legacy_prefix"])
+                    continue
                 if row["case"] in state_missing|basic_missing|policy_tail_missing|logging_missing:
                     if row["case"] in policy_tail_missing|{"ceph_logging_controls_owner"}:
                         self.assertEqual(row["reason"],"unsupported_operations")

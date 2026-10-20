@@ -3,6 +3,7 @@
 #include <aws/core/auth/signer-provider/AWSAuthSignerProviderBase.h>
 #include <mutex>
 #include <map>
+#include "wire_query.h"
 
 inline thread_local const json* osv_wire_headers=nullptr;
 
@@ -38,6 +39,7 @@ public:
 class HeaderPatchSigner final : public Aws::Client::AWSAuthSigner {
     std::shared_ptr<Aws::Client::AWSAuthSigner> signer;
     static void apply(Aws::Http::HttpRequest& request) {
+        apply_wire_query(request);
         if(!osv_wire_headers)return;
         for(auto it=osv_wire_headers->begin();it!=osv_wire_headers->end();++it) {
             if(it.value().is_null())request.DeleteHeader(it.key().c_str());

@@ -658,6 +658,137 @@
           "value": true
         }
       }
+    },
+    "GetObjectRetention": {
+      "name": "GetObjectRetention",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}/{Key+}?retention"
+      },
+      "input": {
+        "shape": "GetObjectRetentionRequest"
+      },
+      "output": {
+        "shape": "GetObjectRetentionOutput"
+      }
+    },
+    "PutObjectRetention": {
+      "name": "PutObjectRetention",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}/{Key+}?retention"
+      },
+      "input": {
+        "shape": "PutObjectRetentionRequest"
+      },
+      "output": {
+        "shape": "PutObjectRetentionOutput"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      }
+    },
+    "GetObjectLegalHold": {
+      "name": "GetObjectLegalHold",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}/{Key+}?legal-hold"
+      },
+      "input": {
+        "shape": "GetObjectLegalHoldRequest"
+      },
+      "output": {
+        "shape": "GetObjectLegalHoldOutput"
+      }
+    },
+    "PutObjectLegalHold": {
+      "name": "PutObjectLegalHold",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}/{Key+}?legal-hold"
+      },
+      "input": {
+        "shape": "PutObjectLegalHoldRequest"
+      },
+      "output": {
+        "shape": "PutObjectLegalHoldOutput"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      }
+    },
+    "RestoreObject": {
+      "name": "RestoreObject",
+      "http": {
+        "method": "POST",
+        "requestUri": "/{Bucket}/{Key+}?restore"
+      },
+      "input": {
+        "shape": "RestoreObjectRequest"
+      },
+      "output": {
+        "shape": "RestoreObjectOutput"
+      },
+      "errors": [
+        {
+          "shape": "ObjectAlreadyInActiveTierError"
+        }
+      ],
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": false
+      }
+    },
+    "ListObjects": {
+      "name": "ListObjects",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}"
+      },
+      "input": {
+        "shape": "ListObjectsRequest"
+      },
+      "output": {
+        "shape": "ListObjectsOutput"
+      },
+      "errors": [
+        {
+          "shape": "NoSuchBucket"
+        }
+      ]
+    },
+    "ListObjectsV2": {
+      "name": "ListObjectsV2",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?list-type=2"
+      },
+      "input": {
+        "shape": "ListObjectsV2Request"
+      },
+      "output": {
+        "shape": "ListObjectsV2Output"
+      },
+      "errors": [
+        {
+          "shape": "NoSuchBucket"
+        }
+      ]
+    },
+    "ListObjectVersions": {
+      "name": "ListObjectVersions",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?versions"
+      },
+      "input": {
+        "shape": "ListObjectVersionsRequest"
+      },
+      "output": {
+        "shape": "ListObjectVersionsOutput"
+      }
     }
   },
   "shapes": {
@@ -3449,6 +3580,1209 @@
         "Requester",
         "BucketOwner"
       ]
+    },
+    "GetObjectRetentionRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetObjectRetentionOutput": {
+      "type": "structure",
+      "members": {
+        "Retention": {
+          "shape": "ObjectLockRetention",
+          "locationName": "Retention"
+        }
+      },
+      "payload": "Retention"
+    },
+    "ObjectLockRetention": {
+      "type": "structure",
+      "members": {
+        "Mode": {
+          "shape": "ObjectLockRetentionMode"
+        },
+        "RetainUntilDate": {
+          "shape": "Date"
+        }
+      }
+    },
+    "PutObjectRetentionRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "Retention": {
+          "shape": "ObjectLockRetention",
+          "locationName": "Retention",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "BypassGovernanceRetention": {
+          "shape": "BypassGovernanceRetention",
+          "location": "header",
+          "locationName": "x-amz-bypass-governance-retention"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "Retention"
+    },
+    "BypassGovernanceRetention": {
+      "type": "boolean",
+      "box": true
+    },
+    "PutObjectRetentionOutput": {
+      "type": "structure",
+      "members": {
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "GetObjectLegalHoldRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetObjectLegalHoldOutput": {
+      "type": "structure",
+      "members": {
+        "LegalHold": {
+          "shape": "ObjectLockLegalHold",
+          "locationName": "LegalHold"
+        }
+      },
+      "payload": "LegalHold"
+    },
+    "ObjectLockLegalHold": {
+      "type": "structure",
+      "members": {
+        "Status": {
+          "shape": "ObjectLockLegalHoldStatus"
+        }
+      }
+    },
+    "ObjectLockLegalHoldStatus": {
+      "type": "string",
+      "enum": [
+        "ON",
+        "OFF"
+      ]
+    },
+    "PutObjectLegalHoldRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "LegalHold": {
+          "shape": "ObjectLockLegalHold",
+          "locationName": "LegalHold",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "LegalHold"
+    },
+    "PutObjectLegalHoldOutput": {
+      "type": "structure",
+      "members": {
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "RestoreObjectRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "location": "querystring",
+          "locationName": "versionId"
+        },
+        "RestoreRequest": {
+          "shape": "RestoreRequest",
+          "locationName": "RestoreRequest",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "RestoreRequest"
+    },
+    "RestoreRequest": {
+      "type": "structure",
+      "members": {
+        "Days": {
+          "shape": "Days"
+        },
+        "GlacierJobParameters": {
+          "shape": "GlacierJobParameters"
+        },
+        "Type": {
+          "shape": "RestoreRequestType"
+        },
+        "Tier": {
+          "shape": "Tier"
+        },
+        "Description": {
+          "shape": "Description"
+        },
+        "SelectParameters": {
+          "shape": "SelectParameters"
+        },
+        "OutputLocation": {
+          "shape": "OutputLocation"
+        }
+      }
+    },
+    "GlacierJobParameters": {
+      "type": "structure",
+      "required": [
+        "Tier"
+      ],
+      "members": {
+        "Tier": {
+          "shape": "Tier"
+        }
+      }
+    },
+    "Tier": {
+      "type": "string",
+      "enum": [
+        "Standard",
+        "Bulk",
+        "Expedited"
+      ]
+    },
+    "RestoreRequestType": {
+      "type": "string",
+      "enum": [
+        "SELECT"
+      ]
+    },
+    "Description": {
+      "type": "string"
+    },
+    "SelectParameters": {
+      "type": "structure",
+      "required": [
+        "InputSerialization",
+        "ExpressionType",
+        "Expression",
+        "OutputSerialization"
+      ],
+      "members": {
+        "InputSerialization": {
+          "shape": "InputSerialization"
+        },
+        "ExpressionType": {
+          "shape": "ExpressionType"
+        },
+        "Expression": {
+          "shape": "Expression"
+        },
+        "OutputSerialization": {
+          "shape": "OutputSerialization"
+        }
+      }
+    },
+    "InputSerialization": {
+      "type": "structure",
+      "members": {
+        "CSV": {
+          "shape": "CSVInput"
+        },
+        "CompressionType": {
+          "shape": "CompressionType"
+        },
+        "JSON": {
+          "shape": "JSONInput"
+        },
+        "Parquet": {
+          "shape": "ParquetInput"
+        }
+      }
+    },
+    "CSVInput": {
+      "type": "structure",
+      "members": {
+        "FileHeaderInfo": {
+          "shape": "FileHeaderInfo"
+        },
+        "Comments": {
+          "shape": "Comments"
+        },
+        "QuoteEscapeCharacter": {
+          "shape": "QuoteEscapeCharacter"
+        },
+        "RecordDelimiter": {
+          "shape": "RecordDelimiter"
+        },
+        "FieldDelimiter": {
+          "shape": "FieldDelimiter"
+        },
+        "QuoteCharacter": {
+          "shape": "QuoteCharacter"
+        },
+        "AllowQuotedRecordDelimiter": {
+          "shape": "AllowQuotedRecordDelimiter"
+        }
+      }
+    },
+    "FileHeaderInfo": {
+      "type": "string",
+      "enum": [
+        "USE",
+        "IGNORE",
+        "NONE"
+      ]
+    },
+    "Comments": {
+      "type": "string"
+    },
+    "QuoteEscapeCharacter": {
+      "type": "string"
+    },
+    "RecordDelimiter": {
+      "type": "string"
+    },
+    "FieldDelimiter": {
+      "type": "string"
+    },
+    "QuoteCharacter": {
+      "type": "string"
+    },
+    "AllowQuotedRecordDelimiter": {
+      "type": "boolean",
+      "box": true
+    },
+    "CompressionType": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "GZIP",
+        "BZIP2"
+      ]
+    },
+    "JSONInput": {
+      "type": "structure",
+      "members": {
+        "Type": {
+          "shape": "JSONType"
+        }
+      }
+    },
+    "JSONType": {
+      "type": "string",
+      "enum": [
+        "DOCUMENT",
+        "LINES"
+      ]
+    },
+    "ParquetInput": {
+      "type": "structure",
+      "members": {}
+    },
+    "ExpressionType": {
+      "type": "string",
+      "enum": [
+        "SQL"
+      ]
+    },
+    "Expression": {
+      "type": "string"
+    },
+    "OutputSerialization": {
+      "type": "structure",
+      "members": {
+        "CSV": {
+          "shape": "CSVOutput"
+        },
+        "JSON": {
+          "shape": "JSONOutput"
+        }
+      }
+    },
+    "CSVOutput": {
+      "type": "structure",
+      "members": {
+        "QuoteFields": {
+          "shape": "QuoteFields"
+        },
+        "QuoteEscapeCharacter": {
+          "shape": "QuoteEscapeCharacter"
+        },
+        "RecordDelimiter": {
+          "shape": "RecordDelimiter"
+        },
+        "FieldDelimiter": {
+          "shape": "FieldDelimiter"
+        },
+        "QuoteCharacter": {
+          "shape": "QuoteCharacter"
+        }
+      }
+    },
+    "QuoteFields": {
+      "type": "string",
+      "enum": [
+        "ALWAYS",
+        "ASNEEDED"
+      ]
+    },
+    "JSONOutput": {
+      "type": "structure",
+      "members": {
+        "RecordDelimiter": {
+          "shape": "RecordDelimiter"
+        }
+      }
+    },
+    "OutputLocation": {
+      "type": "structure",
+      "members": {
+        "S3": {
+          "shape": "S3Location"
+        }
+      }
+    },
+    "S3Location": {
+      "type": "structure",
+      "required": [
+        "BucketName",
+        "Prefix"
+      ],
+      "members": {
+        "BucketName": {
+          "shape": "BucketName"
+        },
+        "Prefix": {
+          "shape": "LocationPrefix"
+        },
+        "Encryption": {
+          "shape": "Encryption"
+        },
+        "CannedACL": {
+          "shape": "ObjectCannedACL"
+        },
+        "AccessControlList": {
+          "shape": "Grants"
+        },
+        "Tagging": {
+          "shape": "Tagging"
+        },
+        "UserMetadata": {
+          "shape": "UserMetadata"
+        },
+        "StorageClass": {
+          "shape": "StorageClass"
+        }
+      }
+    },
+    "LocationPrefix": {
+      "type": "string"
+    },
+    "Encryption": {
+      "type": "structure",
+      "required": [
+        "EncryptionType"
+      ],
+      "members": {
+        "EncryptionType": {
+          "shape": "ServerSideEncryption"
+        },
+        "KMSKeyId": {
+          "shape": "SSEKMSKeyId"
+        },
+        "KMSContext": {
+          "shape": "KMSContext"
+        }
+      }
+    },
+    "KMSContext": {
+      "type": "string"
+    },
+    "UserMetadata": {
+      "type": "list",
+      "member": {
+        "shape": "MetadataEntry",
+        "locationName": "MetadataEntry"
+      }
+    },
+    "MetadataEntry": {
+      "type": "structure",
+      "members": {
+        "Name": {
+          "shape": "MetadataKey"
+        },
+        "Value": {
+          "shape": "MetadataValue"
+        }
+      }
+    },
+    "MetadataKey": {
+      "type": "string"
+    },
+    "MetadataValue": {
+      "type": "string"
+    },
+    "RestoreObjectOutput": {
+      "type": "structure",
+      "members": {
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        },
+        "RestoreOutputPath": {
+          "shape": "RestoreOutputPath",
+          "location": "header",
+          "locationName": "x-amz-restore-output-path"
+        }
+      }
+    },
+    "RestoreOutputPath": {
+      "type": "string"
+    },
+    "ListObjectsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Delimiter": {
+          "shape": "Delimiter",
+          "location": "querystring",
+          "locationName": "delimiter"
+        },
+        "EncodingType": {
+          "shape": "EncodingType",
+          "location": "querystring",
+          "locationName": "encoding-type"
+        },
+        "Marker": {
+          "shape": "Marker",
+          "location": "querystring",
+          "locationName": "marker"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys",
+          "location": "querystring",
+          "locationName": "max-keys"
+        },
+        "Prefix": {
+          "shape": "Prefix",
+          "contextParam": {
+            "name": "Prefix"
+          },
+          "location": "querystring",
+          "locationName": "prefix"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "OptionalObjectAttributes": {
+          "shape": "OptionalObjectAttributesList",
+          "location": "header",
+          "locationName": "x-amz-optional-object-attributes"
+        }
+      }
+    },
+    "Delimiter": {
+      "type": "string"
+    },
+    "EncodingType": {
+      "type": "string",
+      "enum": [
+        "url"
+      ]
+    },
+    "Marker": {
+      "type": "string"
+    },
+    "MaxKeys": {
+      "type": "integer"
+    },
+    "OptionalObjectAttributesList": {
+      "type": "list",
+      "member": {
+        "shape": "OptionalObjectAttributes"
+      }
+    },
+    "OptionalObjectAttributes": {
+      "type": "string",
+      "enum": [
+        "RestoreStatus"
+      ]
+    },
+    "ListObjectsOutput": {
+      "type": "structure",
+      "members": {
+        "IsTruncated": {
+          "shape": "IsTruncated"
+        },
+        "Marker": {
+          "shape": "Marker"
+        },
+        "NextMarker": {
+          "shape": "NextMarker"
+        },
+        "Contents": {
+          "shape": "ObjectList"
+        },
+        "Name": {
+          "shape": "BucketName"
+        },
+        "Prefix": {
+          "shape": "Prefix"
+        },
+        "Delimiter": {
+          "shape": "Delimiter"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys"
+        },
+        "CommonPrefixes": {
+          "shape": "CommonPrefixList"
+        },
+        "EncodingType": {
+          "shape": "EncodingType"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "NextMarker": {
+      "type": "string"
+    },
+    "ObjectList": {
+      "type": "list",
+      "member": {
+        "shape": "Object"
+      },
+      "flattened": true
+    },
+    "Object": {
+      "type": "structure",
+      "members": {
+        "Key": {
+          "shape": "ObjectKey"
+        },
+        "LastModified": {
+          "shape": "LastModified"
+        },
+        "ETag": {
+          "shape": "ETag"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithmList"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType"
+        },
+        "Size": {
+          "shape": "Size"
+        },
+        "StorageClass": {
+          "shape": "ObjectStorageClass"
+        },
+        "Owner": {
+          "shape": "Owner"
+        },
+        "RestoreStatus": {
+          "shape": "RestoreStatus"
+        }
+      }
+    },
+    "ChecksumAlgorithmList": {
+      "type": "list",
+      "member": {
+        "shape": "ChecksumAlgorithm"
+      },
+      "flattened": true
+    },
+    "ObjectStorageClass": {
+      "type": "string",
+      "enum": [
+        "STANDARD",
+        "REDUCED_REDUNDANCY",
+        "GLACIER",
+        "STANDARD_IA",
+        "ONEZONE_IA",
+        "INTELLIGENT_TIERING",
+        "DEEP_ARCHIVE",
+        "OUTPOSTS",
+        "GLACIER_IR",
+        "SNOW",
+        "EXPRESS_ONEZONE",
+        "FSX_OPENZFS"
+      ]
+    },
+    "RestoreStatus": {
+      "type": "structure",
+      "members": {
+        "IsRestoreInProgress": {
+          "shape": "IsRestoreInProgress"
+        },
+        "RestoreExpiryDate": {
+          "shape": "RestoreExpiryDate"
+        }
+      }
+    },
+    "IsRestoreInProgress": {
+      "type": "boolean",
+      "box": true
+    },
+    "RestoreExpiryDate": {
+      "type": "timestamp"
+    },
+    "CommonPrefixList": {
+      "type": "list",
+      "member": {
+        "shape": "CommonPrefix"
+      },
+      "flattened": true
+    },
+    "CommonPrefix": {
+      "type": "structure",
+      "members": {
+        "Prefix": {
+          "shape": "Prefix"
+        }
+      }
+    },
+    "ListObjectsV2Request": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Delimiter": {
+          "shape": "Delimiter",
+          "location": "querystring",
+          "locationName": "delimiter"
+        },
+        "EncodingType": {
+          "shape": "EncodingType",
+          "location": "querystring",
+          "locationName": "encoding-type"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys",
+          "location": "querystring",
+          "locationName": "max-keys"
+        },
+        "Prefix": {
+          "shape": "Prefix",
+          "contextParam": {
+            "name": "Prefix"
+          },
+          "location": "querystring",
+          "locationName": "prefix"
+        },
+        "ContinuationToken": {
+          "shape": "Token",
+          "location": "querystring",
+          "locationName": "continuation-token"
+        },
+        "FetchOwner": {
+          "shape": "FetchOwner",
+          "location": "querystring",
+          "locationName": "fetch-owner"
+        },
+        "StartAfter": {
+          "shape": "StartAfter",
+          "location": "querystring",
+          "locationName": "start-after"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "OptionalObjectAttributes": {
+          "shape": "OptionalObjectAttributesList",
+          "location": "header",
+          "locationName": "x-amz-optional-object-attributes"
+        }
+      }
+    },
+    "FetchOwner": {
+      "type": "boolean",
+      "box": true
+    },
+    "StartAfter": {
+      "type": "string"
+    },
+    "ListObjectsV2Output": {
+      "type": "structure",
+      "members": {
+        "IsTruncated": {
+          "shape": "IsTruncated"
+        },
+        "Contents": {
+          "shape": "ObjectList"
+        },
+        "Name": {
+          "shape": "BucketName"
+        },
+        "Prefix": {
+          "shape": "Prefix"
+        },
+        "Delimiter": {
+          "shape": "Delimiter"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys"
+        },
+        "CommonPrefixes": {
+          "shape": "CommonPrefixList"
+        },
+        "EncodingType": {
+          "shape": "EncodingType"
+        },
+        "KeyCount": {
+          "shape": "KeyCount"
+        },
+        "ContinuationToken": {
+          "shape": "Token"
+        },
+        "NextContinuationToken": {
+          "shape": "NextToken"
+        },
+        "StartAfter": {
+          "shape": "StartAfter"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "KeyCount": {
+      "type": "integer"
+    },
+    "ListObjectVersionsRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Delimiter": {
+          "shape": "Delimiter",
+          "location": "querystring",
+          "locationName": "delimiter"
+        },
+        "EncodingType": {
+          "shape": "EncodingType",
+          "location": "querystring",
+          "locationName": "encoding-type"
+        },
+        "KeyMarker": {
+          "shape": "KeyMarker",
+          "location": "querystring",
+          "locationName": "key-marker"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys",
+          "location": "querystring",
+          "locationName": "max-keys"
+        },
+        "Prefix": {
+          "shape": "Prefix",
+          "contextParam": {
+            "name": "Prefix"
+          },
+          "location": "querystring",
+          "locationName": "prefix"
+        },
+        "VersionIdMarker": {
+          "shape": "VersionIdMarker",
+          "location": "querystring",
+          "locationName": "version-id-marker"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "OptionalObjectAttributes": {
+          "shape": "OptionalObjectAttributesList",
+          "location": "header",
+          "locationName": "x-amz-optional-object-attributes"
+        }
+      }
+    },
+    "KeyMarker": {
+      "type": "string"
+    },
+    "VersionIdMarker": {
+      "type": "string"
+    },
+    "ListObjectVersionsOutput": {
+      "type": "structure",
+      "members": {
+        "IsTruncated": {
+          "shape": "IsTruncated"
+        },
+        "KeyMarker": {
+          "shape": "KeyMarker"
+        },
+        "VersionIdMarker": {
+          "shape": "VersionIdMarker"
+        },
+        "NextKeyMarker": {
+          "shape": "NextKeyMarker"
+        },
+        "NextVersionIdMarker": {
+          "shape": "NextVersionIdMarker"
+        },
+        "Versions": {
+          "shape": "ObjectVersionList",
+          "locationName": "Version"
+        },
+        "DeleteMarkers": {
+          "shape": "DeleteMarkers",
+          "locationName": "DeleteMarker"
+        },
+        "Name": {
+          "shape": "BucketName"
+        },
+        "Prefix": {
+          "shape": "Prefix"
+        },
+        "Delimiter": {
+          "shape": "Delimiter"
+        },
+        "MaxKeys": {
+          "shape": "MaxKeys"
+        },
+        "CommonPrefixes": {
+          "shape": "CommonPrefixList"
+        },
+        "EncodingType": {
+          "shape": "EncodingType"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "NextKeyMarker": {
+      "type": "string"
+    },
+    "NextVersionIdMarker": {
+      "type": "string"
+    },
+    "ObjectVersionList": {
+      "type": "list",
+      "member": {
+        "shape": "ObjectVersion"
+      },
+      "flattened": true
+    },
+    "ObjectVersion": {
+      "type": "structure",
+      "members": {
+        "ETag": {
+          "shape": "ETag"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithmList"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType"
+        },
+        "Size": {
+          "shape": "Size"
+        },
+        "StorageClass": {
+          "shape": "ObjectVersionStorageClass"
+        },
+        "Key": {
+          "shape": "ObjectKey"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId"
+        },
+        "IsLatest": {
+          "shape": "IsLatest"
+        },
+        "LastModified": {
+          "shape": "LastModified"
+        },
+        "Owner": {
+          "shape": "Owner"
+        },
+        "RestoreStatus": {
+          "shape": "RestoreStatus"
+        }
+      }
+    },
+    "ObjectVersionStorageClass": {
+      "type": "string",
+      "enum": [
+        "STANDARD"
+      ]
+    },
+    "IsLatest": {
+      "type": "boolean",
+      "box": true
+    },
+    "DeleteMarkers": {
+      "type": "list",
+      "member": {
+        "shape": "DeleteMarkerEntry"
+      },
+      "flattened": true
+    },
+    "DeleteMarkerEntry": {
+      "type": "structure",
+      "members": {
+        "Owner": {
+          "shape": "Owner"
+        },
+        "Key": {
+          "shape": "ObjectKey"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId"
+        },
+        "IsLatest": {
+          "shape": "IsLatest"
+        },
+        "LastModified": {
+          "shape": "LastModified"
+        }
+      }
     }
   }
 }

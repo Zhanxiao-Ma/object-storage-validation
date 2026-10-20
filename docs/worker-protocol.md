@@ -152,8 +152,13 @@ AWS S3 Java/C++ 的 `copy`/`copy_replace` 支持可选 `acl` 和 `source_version
 `api.GetBucketPolicyStatus`、`api.ListParts` 复用 typed API 模型入口。`sdk_error_message` 表示响应 `error_message` 暴露真实 SDK 的错误消息（可能为空或缺失），与包含异常上下文的 `error` 分开。
 
 
-AWS S3 的 `concurrent_requests` 接收 `requests` 数组（1–64 项），在一个持久 worker 内共享同一默认 SDK client、同时释放线程执行各个普通 RPC。`results` 按输入顺序返回各项的真实 `ok`、SDK 响应或错误；某项失败不改写其它项的结果。结构校验先于全部 HTTP：禁止空数组、嵌套并发、info、缺少文本 op，以及批次/子项上的 identity、wire_headers、checksum_when_required。普通操作执行失败按项报告；接口不提供写入事务保证。它用于源并发语义验证，不增加性能阶段指标。50 路 ACL 无需 50 个 JVM；独立 HTTP barrier 验证同一 worker 的 50 条连接同时到达。
+AWS S3 的 `concurrent_requests` 接收 `requests` 数组（1–64 项），在一个持久 worker 内共享同一默认 SDK client、同时释放线程执行各个普通 RPC。`results` 按输入顺序返回各项的真实 `ok`、SDK 响应或错误；某项失败不改写其它项的结果。结构校验先于全部 HTTP：禁止空数组、嵌套并发、info、缺少文本 op，以及批次/子项上的 identity、wire_headers、wire_query、checksum_when_required。普通操作执行失败按项报告；接口不提供写入事务保证。它用于源并发语义验证，不增加性能阶段指标。50 路 ACL 无需 50 个 JVM；独立 HTTP barrier 验证同一 worker 的 50 条连接同时到达。
 
 `mp_create_tagging` 能力表示 `mp_create_metadata.tagging` 字符串进入官方 CreateMultipartUpload.Tagging，非字符串在 HTTP 前拒绝。
 
 `api.GetBucketLogging`、`api.PutBucketLogging`、`api.PutBucketRequestPayment` 使用真实 typed 模型。`logging_target_key_format` 按实际 LoggingEnabled 模型字段声明；旧 Java SDK 缺该字段时，涉及原始 SimplePrefix/PartitionedPrefix 全分支的源函数明确 not_run。Ceph 专用 LoggingType/POST flush 不借此冒充标准 SDK 能力。
+
+
+AWS S3 Java/C++ 的 `wire_query` 在 SDK 序列化后、官方签名前修改查询参数：文本替换、true 表示空值标志、null 删除。空名称、控制字符、false、数字和容器值在 HTTP 前拒绝。编码和签名仍由真实 SDK 执行，作用域在成功或异常后恢复；未附此字段的性能请求不做修改。C++空值采用 `name=` 避免所锁版本URI正规化把裸name错误解析为name自身。独立官方签名器核验实际出站签名。
+
+`versions` 的 `storage_class` 和 `bucket_name` 只在实际返回字段存在时发布。`api.RestoreObject`、`api.ListObjects`、`api.ListObjectsV2`、`api.ListObjectVersions`、对象Retention与LegalHold使用真实官方typed模型；不把模型缺失伪装成服务端拒绝。

@@ -34,10 +34,12 @@ inline json execute_version_operation(Aws::S3::S3Client& client,const json& q,co
         if(observed.value("xml_root","")!="ListVersionsResult")throw std::runtime_error("actual response is not a valid ListVersionsResult");
         auto present=[&](const std::string& name){return std::find(observed["fields"].begin(),observed["fields"].end(),json(name))!=observed["fields"].end();};
         const bool versions_present=present("Version"),markers_present=present("DeleteMarker");
+        if(present("Name"))observed["bucket_name"]=std::string(result.GetName().c_str());
         json versions=json::array(),markers=json::array();
         for(const auto& item:result.GetVersions()) {
             json row={{"key",std::string(item.GetKey().c_str())},{"version_id",std::string(item.GetVersionId().c_str())},{"is_latest",item.GetIsLatest()},{"size",item.GetSize()},{"etag",std::string(item.GetETag().c_str())},{"last_modified_ms",item.GetLastModified().Millis()}};
             if(item.OwnerHasBeenSet())row["owner"]={{"id",std::string(item.GetOwner().GetID().c_str())},{"display_name",std::string(item.GetOwner().GetDisplayName().c_str())}};
+            if(item.StorageClassHasBeenSet())row["storage_class"]=std::string(Aws::S3::Model::ObjectVersionStorageClassMapper::GetNameForObjectVersionStorageClass(item.GetStorageClass()).c_str());
             versions.push_back(row);
         }
         for(const auto& item:result.GetDeleteMarkers()) {

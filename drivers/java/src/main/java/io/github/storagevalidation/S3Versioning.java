@@ -104,6 +104,7 @@ final class S3Versioning {
             for(ObjectVersion item:result.versions()) {
                 Map<String,Object> row=fields("key",item.key(),"version_id",item.versionId(),"is_latest",item.isLatest(),"size",item.size(),"etag",item.eTag(),"last_modified_ms",millis(item.lastModified()));
                 if(item.owner()!=null) row.put("owner",fields("id",item.owner().id(),"display_name",item.owner().displayName()));
+                if(item.storageClassAsString()!=null)row.put("storage_class",item.storageClassAsString());
                 versions.add(row);
             }
             for(DeleteMarkerEntry item:result.deleteMarkers()) {
@@ -113,7 +114,9 @@ final class S3Versioning {
             }
             List<String> present=new ArrayList<>();
             if(result.hasVersions()) present.add("Versions");if(result.hasDeleteMarkers()) present.add("DeleteMarkers");
+            if(result.name()!=null)present.add("Name");
             Map<String,Object> observed=fields("versions",versions,"delete_markers",markers,"fields",present,"truncated",result.isTruncated(),"next_key_marker",result.nextKeyMarker(),"next_version_id_marker",result.nextVersionIdMarker(),"key_marker",result.keyMarker(),"version_id_marker",result.versionIdMarker());
+            if(result.name()!=null)observed.put("bucket_name",result.name());
             return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
         }
         default:throw new UnsupportedOperationException(op);

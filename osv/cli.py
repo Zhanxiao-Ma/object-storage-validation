@@ -13,6 +13,7 @@ import sys
 import tempfile
 import time
 import uuid
+from urllib.parse import urlsplit
 
 from .worker import Worker, invoke_external
 from .scenarios import Context, build_registry, require_ok, blocks_measurement
@@ -76,10 +77,44 @@ def load_config(path, profile_override=None):
         if not isinstance(workload["identities"],dict):raise ValueError("identities must be a metadata object")
         for name,metadata in workload["identities"].items():
             if not isinstance(name,str) or not name or not isinstance(metadata,dict):raise ValueError("identity metadata must be named objects")
-            for field in ("canonical_id","display_name","email"):
+            for field in ("canonical_id","display_name","email","user_id"):
                 if metadata.get(field) is not None and not isinstance(metadata[field],str):raise ValueError("identity metadata fields must be strings or null")
     if workload.get("kms_key_id") is not None and not isinstance(workload["kms_key_id"],str):raise ValueError("kms_key_id must be a string or null")
     if "storage_classes" in workload and (not isinstance(workload["storage_classes"],list) or not all(isinstance(value,str) and value for value in workload["storage_classes"])):raise ValueError("storage_classes must be a list of nonempty strings")
+    for interval_field in ("lifecycle_debug_interval_seconds","restore_debug_interval_seconds","restore_processor_period_seconds"):
+        if interval_field not in workload:continue
+        value=workload[interval_field]
+        try:valid_interval=type(value) in (int,float) and math.isfinite(value) and value>0
+        except OverflowError:valid_interval=False
+        if not valid_interval:raise ValueError(interval_field+" must be finite and positive")
+    if "object_lock_cleanup_authorized" in workload and type(workload["object_lock_cleanup_authorized"]) is not bool:
+        raise ValueError("object_lock_cleanup_authorized must be boolean")
+    if "ceph_literal_bucket_names_authorized" in workload and type(workload["ceph_literal_bucket_names_authorized"]) is not bool:
+        raise ValueError("ceph_literal_bucket_names_authorized must be boolean")
+    if "ceph_api_name" in workload and (not isinstance(workload["ceph_api_name"],str) or not workload["ceph_api_name"]):
+        raise ValueError("ceph_api_name must be a nonempty string")
+    if "cloud_lifecycle" in workload:
+        settings=workload["cloud_lifecycle"]
+        strings={"storage_class","regular_storage_class","retain_head_object","target_path","target_storage_class","target_by_bucket_prefix","allow_read_through"}
+        if not isinstance(settings,dict) or set(settings)-(strings|{"target_by_bucket","read_through_days"}):raise ValueError("cloud_lifecycle contains invalid settings")
+        for field in strings:
+            if field in settings and (not isinstance(settings[field],str) or not settings[field]):raise ValueError("cloud_lifecycle text settings must be nonempty strings")
+        if "target_by_bucket" in settings and type(settings["target_by_bucket"]) is not bool:raise ValueError("cloud_lifecycle.target_by_bucket must be boolean")
+        if "read_through_days" in settings and (type(settings["read_through_days"]) is not int or settings["read_through_days"]<0):raise ValueError("cloud_lifecycle.read_through_days must be a nonnegative integer")
+    if "ceph_http" in workload:
+        settings=workload["ceph_http"]
+        if not isinstance(settings,dict) or set(settings)-{"endpoint","addressing_style","access_key_env","secret_key_env"}:
+            raise ValueError("ceph_http must be an object with endpoint, addressing_style and optional credential environment names")
+        endpoint=settings.get("endpoint")
+        if not isinstance(endpoint,str):raise ValueError("ceph_http.endpoint must be an explicit HTTP endpoint")
+        parsed=urlsplit(endpoint)
+        if parsed.scheme not in ("http","https") or not parsed.hostname or parsed.username is not None or parsed.password is not None or parsed.query or parsed.fragment:
+            raise ValueError("ceph_http.endpoint must be HTTP(S), without credentials, query or fragment")
+        if parsed.port is not None and not 1<=parsed.port<=65535:raise ValueError("ceph_http.endpoint port must be between 1 and 65535")
+        if settings.get("addressing_style") not in ("path","virtual"):raise ValueError("ceph_http.addressing_style must be path or virtual")
+        for field in ("access_key_env","secret_key_env"):
+            if field in settings and (not isinstance(settings[field],str) or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*",settings[field])):
+                raise ValueError("ceph_http credential references must name environment variables")
     registry = build_registry(config)
     if "compatibility_suites" not in workload:
         profile = workload.setdefault("profile", "normal")

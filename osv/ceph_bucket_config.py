@@ -123,6 +123,7 @@ CASES=(case("ceph_config_tags","Ceph 桶标签完整生命周期","保留 NoSuch
        case("ceph_config_cors","Ceph CORS 配置读写删除","原始方法/来源数组一致，创建前和删除后实际 404",SCOPE_OPERATIONS+" api.GetBucketCors api.PutBucketCors api.DeleteBucketCors",cors,"test_set_cors",CEPH))
 for mode,reference in LIFECYCLE:
     extras=" api.GetBucketLifecycleConfiguration" if mode in ("get","no_id","delete") else ""
+    if mode not in ("filter","empty_filter"):extras+=" lifecycle_legacy_prefix"
     if mode=="delete":extras+=" api.DeleteBucketLifecycle"
     if mode=="noncurrent":extras+=" put"
     CASES+=(case("ceph_config_lifecycle_"+mode,"Ceph 生命周期配置 "+mode,"保持原始配置、错误码、生成 ID、过滤条件和存储类型前提；无法表达的输入明确报告客户端错误",SCOPE_OPERATIONS+" api.PutBucketLifecycleConfiguration"+extras,lambda p,mode=mode:lifecycle(p,mode),reference,CEPH),)

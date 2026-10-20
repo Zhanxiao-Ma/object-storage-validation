@@ -8,7 +8,7 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 17；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 18；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，总计 587 项（583 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，及原始HTTP 41项、查询扩展7项、生命周期过期20项/迁移4项/删除标记过期1项、对象锁28项及交付日志6项，总计 694 项（690 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -377,3 +377,18 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 托管复制保留源 HeadObject 预检：存在时再经实际 SDK CopyObject 并完整读回，缺源时预检返回原始 404。文件系统 reference 修正了忽略 source_bucket 的问题；同名键、元数据替换、缺桶/缺键、默认源桶和同桶自复制有真实生产者到消费者回归及故意破坏验证。reference 仍不是 S3 或云厂商结论。
 
 原始参数与预期由同一语言无关场景驱动。缺少 alternate 身份时 12 个 ACL 矩阵与三个标签授权场景明确 not_run，不回退主身份。独立 HTTP 合约验证允许/拒绝完整路径、真实签名、原始请求内容、拒写后新连接、加密冲突及上传标签的完整生产链路；Moto 的宽松权限、算法冲突接受、标签顺序及 C++ 策略解析诊断原样保留。全部桶由测试独立创建并清理；没有实云认证结果。
+
+
+### 原始 HTTP、查询扩展与后台状态
+
+`ceph_raw_http` 的 36 个表单 POST、3 个 CORS、原始 100 Continue 和 SDK 连接复用保留原始传输区别。表单与 socket 不冒充 Java/C++ SDK 性能证据；SDK仅负责配置、读取和清理。40个原始HTTP场景需要 `workload.ceph_http`：`endpoint` 必须等于 worker 的实际 endpoint，`addressing_style` 明确为 `path` 或 `virtual`；凭据由环境变量读取，可选配置 `access_key_env`/`secret_key_env`。可安装 `pip install '.[ceph]'` 提供 requests/dateutil，缺依赖明确 not_run。
+
+查询扩展保留 `read-stats`、`allow-unordered`、原始非法 MaxKeys、响应覆盖字段与账户分页。V2 源 callback 错绑在 V1、源 sort() 返回值比较等缺陷会在证据中保留。Java 2.20.162 不支持账户分页响应令牌；不由请求虚构令牌。账户分页要求初始空账户，不删除已有桶来制造该条件。
+
+后台生命周期场景要求 `workload.lifecycle_debug_interval_seconds` 为服务端已配置的有限正数加速间隔；客户端等待不会开启服务端功能。原始阶段、等待倍数、实际版本/标签/存储类别均保留。旧 Prefix 结构需要 `lifecycle_legacy_prefix`：当前 Java 模型支持，当前 C++ 模型不支持时明确 not_run，不转换为 Filter 或判服务端不兼容。版本 StorageClass 来自真实 SDK 字段。
+
+对象锁26个写入场景默认要求 `workload.object_lock_cleanup_authorized: true`，未提供即 not_run。长 GOVERNANCE 先对自有对象验证真实 bypass 清理能力；短 COMPLIANCE 保留原10秒期限且等到期清理。保留真实版本ID与LegalHold状态，不删除无所有权证据的资源。
+
+日志交付保留源5.5秒等待和dummy PUT；不伪造flush API。`workload.identities.main.user_id` 是日志 SourceAccount/路径所需用户ID，`canonical_id` 用于ACL，二者不互相替代。缺身份、远端目标或服务端后台条件均明确 not_run。
+
+以上为迁移范围，尚不表示任何云厂商已通过；本地 HTTP/Moto 只验证真实 SDK 链路和预期诊断。

@@ -11,7 +11,7 @@ import java.util.concurrent.*;
  */
 final class S3Concurrency {
     static Map<String,Object> execute(WorkerMain.Store store,JsonNode input) throws Exception {
-        for(String name:Arrays.asList("identity","wire_headers","checksum_when_required"))
+        for(String name:Arrays.asList("identity","wire_headers","wire_query","checksum_when_required"))
             if(input.has(name))throw new IllegalArgumentException("concurrent batch requires the default client: "+name);
         JsonNode requests=input.get("requests");
         if(requests==null || !requests.isArray() || requests.size()<1 || requests.size()>64)
@@ -22,7 +22,7 @@ final class S3Concurrency {
             String op=request.get("op").textValue();
             if(op.isEmpty() || "concurrent_requests".equals(op) || "info".equals(op))
                 throw new IllegalArgumentException("invalid concurrent operation: "+op);
-            for(String name:Arrays.asList("identity","wire_headers","checksum_when_required"))
+            for(String name:Arrays.asList("identity","wire_headers","wire_query","checksum_when_required"))
                 if(request.has(name))throw new IllegalArgumentException("concurrent request requires the default client: "+name);
         }
         CountDownLatch start=new CountDownLatch(1);

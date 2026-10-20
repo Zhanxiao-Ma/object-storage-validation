@@ -17,7 +17,7 @@ final class S3Identities implements AutoCloseable {
     static final List<String> NAMED=Arrays.asList("alt","tenant","bad_auth");
 
     static List<String> capabilities() {
-        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous","wire_headers","checksum_when_required"));
+        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous","wire_headers","wire_query","checksum_when_required"));
         for(String name:NAMED) {
             String prefix=name.toUpperCase(Locale.ROOT)+"_";
             if(!env(prefix+"ACCESS_KEY","").isEmpty() && !env(prefix+"SECRET_KEY","").isEmpty()) result.add("identity_"+name);
@@ -31,9 +31,9 @@ final class S3Identities implements AutoCloseable {
         // guard this mapping so a future SDK upgrade cannot silently enable trailers.
         if(request.has("checksum_when_required") && (!request.get("checksum_when_required").isBoolean() || !request.get("checksum_when_required").booleanValue()))
             throw new IllegalArgumentException("checksum_when_required must be true");
-        if(!request.has("identity")) return get("main",request.has("wire_headers"));
+        if(!request.has("identity")) return get("main",(request.has("wire_headers")||request.has("wire_query")));
         if(!request.get("identity").isTextual())throw new IllegalArgumentException("identity must be a string");
-        return get(request.get("identity").textValue(),request.has("wire_headers"));
+        return get(request.get("identity").textValue(),(request.has("wire_headers")||request.has("wire_query")));
     }
 
     S3Client get(String name) { return get(name,false); }
@@ -62,7 +62,7 @@ final class S3Identities implements AutoCloseable {
             .overrideConfiguration(c->{
                 c.apiCallTimeout(java.time.Duration.ofMillis(headers?Long.parseLong(env("HEADER_REQUEST_TIMEOUT_MS","30000")):30000))
                     .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build());
-                if(headers)c.addExecutionInterceptor(new WireHeaders());
+                if(headers){c.addExecutionInterceptor(new WireHeaders());c.addExecutionInterceptor(new WireQuery());}
             })
             .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))))
             .build();

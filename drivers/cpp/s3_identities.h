@@ -43,7 +43,7 @@ class S3Identities {
     }
 public:
     static json capabilities() {
-        json result=json::array({"identity_main","identity_anonymous","wire_headers","checksum_when_required"});
+        json result=json::array({"identity_main","identity_anonymous","wire_headers","wire_query","checksum_when_required"});
         for(const auto& name:{"alt","tenant","bad_auth"}) {
             auto credential_prefix=prefix(name);
             if(!env(("OSV_"+credential_prefix+"ACCESS_KEY").c_str()).empty() && !env(("OSV_"+credential_prefix+"SECRET_KEY").c_str()).empty())result.push_back(std::string("identity_")+name);
@@ -63,8 +63,8 @@ public:
             if(!request.at("checksum_when_required").is_boolean() || !request.at("checksum_when_required").get<bool>())throw std::runtime_error("checksum_when_required must be true");
             required_checksum=true;
         }
-        if(!request.contains("identity"))return get("main",request.contains("wire_headers"),required_checksum);
+        if(!request.contains("identity"))return get("main",(request.contains("wire_headers")||request.contains("wire_query")),required_checksum);
         if(!request.at("identity").is_string())throw std::runtime_error("identity must be a string");
-        return get(request.at("identity").get<std::string>(),request.contains("wire_headers"),required_checksum);
+        return get(request.at("identity").get<std::string>(),(request.contains("wire_headers")||request.contains("wire_query")),required_checksum);
     }
 };

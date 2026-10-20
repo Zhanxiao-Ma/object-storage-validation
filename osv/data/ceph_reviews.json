@@ -2933,31 +2933,673 @@
       "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging@L15528",
       "source_sha256": "195f405fa7c1a59f2e42bfaa38e58bdbe5d4a4f36b72b0a70c2a7dda2cde74ef",
       "implementation": "ceph_logging_controls_roundtrip",
-      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；SourceAccount严格取identities.main.user_id，不回退canonical_id；ACL owner/grant仍取canonical_id+display_name。先停止日志再清理所有策略/桶。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_errors@L16526",
       "source_sha256": "85db9883f68d53d91e2dce5e2c5a193c71fd03d3592cf94efe5c10f233987e7e",
       "implementation": "ceph_logging_controls_errors",
-      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；SourceAccount严格取identities.main.user_id，不回退canonical_id；ACL owner/grant仍取canonical_id+display_name。先停止日志再清理所有策略/桶。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_owner@L16645",
       "source_sha256": "eeee2df4ee87bfc3c8e39499afd24e93e17fa83d792de7b40090993700cf5bc4",
       "implementation": "ceph_logging_controls_owner",
-      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；SourceAccount严格取identities.main.user_id，不回退canonical_id；ACL owner/grant仍取canonical_id+display_name。先停止日志再清理所有策略/桶。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_permissions@L16692",
       "source_sha256": "3220ec11502fc3a2f29ccfbb5824a92850e022c8253be44a1c48836c0314326a",
       "implementation": "ceph_logging_controls_permissions",
-      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；SourceAccount严格取identities.main.user_id，不回退canonical_id；ACL owner/grant仍取canonical_id+display_name。先停止日志再清理所有策略/桶。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_rm_bucket_logging@L17236",
       "source_sha256": "2937cee3a9d69648672c47e766c8ce20fc3fd6fbdb2365d04fdca9cab9c0c706",
       "implementation": "ceph_logging_controls_remove",
-      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；SourceAccount严格取identities.main.user_id，不回退canonical_id；ACL owner/grant仍取canonical_id+display_name。先停止日志再清理所有策略/桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_anonymous_request@L1948",
+      "source_sha256": "48b711b492e3b5bc8129980fef12ce2e2f6dec917606bcd5912fb01c54edc10a",
+      "implementation": "ceph_raw_post_anonymous",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_request@L1962",
+      "source_sha256": "4ba8a4d0366caad18d287e80e926595a3f75f2ac7e20542c74675c0d05e92839",
+      "implementation": "ceph_raw_post_authenticated",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_no_content_type@L2000",
+      "source_sha256": "1544b645bcef5329c63a82ff9e4d75a11d7574ea23842be92da367452d8e85d9",
+      "implementation": "ceph_raw_post_no_content_type",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_request_bad_access_key@L2037",
+      "source_sha256": "5a645f5bdf3a0bd25b6c9b9b1e816afcd95c3b7f9d4deeb96848747938fd141a",
+      "implementation": "ceph_raw_post_bad_access_key",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_set_success_code@L2072",
+      "source_sha256": "dbf8cc9bb061d0ca1a1bd97a78e4eca5f6f56615f9db5cd0b5a369ae2cfc6e7d",
+      "implementation": "ceph_raw_post_success",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_set_invalid_success_code@L2087",
+      "source_sha256": "2d70d2d25a8202e7debc719ce936b635c891f039f96bb60085cb5b9e77238f7d",
+      "implementation": "ceph_raw_post_invalid_success",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_larger_than_chunk@L2102",
+      "source_sha256": "076197b0789c9c6e6793dba6b019f68e5178cba0bb3a07f7e8abaa879000b4ef",
+      "implementation": "ceph_raw_post_large",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_set_key_from_filename@L2141",
+      "source_sha256": "67fe2e0e84af2beddcd663ad2d9c8af35e47b76723decf6811c912cdfa0040d0",
+      "implementation": "ceph_raw_post_filename",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_ignored_header@L2177",
+      "source_sha256": "1e839e6898dca373525b967d0aef300fad498ca25caa82f1a5d692600d941ae5",
+      "implementation": "ceph_raw_post_ignored",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_case_insensitive_condition_fields@L2211",
+      "source_sha256": "076ef853345c875f33a7edd5715ae4c90c10759b1ff61e512c7ba39a8ad1e8e2",
+      "implementation": "ceph_raw_post_case_insensitive",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_escaped_field_values@L2246",
+      "source_sha256": "65855ff494b8cc1c722cb009f1abed45a33d430498619e1a2da1866363e9b201",
+      "implementation": "ceph_raw_post_escaped",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_success_redirect_action@L2282",
+      "source_sha256": "7f3da9770b752d702856d065823a0b59aaa9304633899e6b7a6dc0ab68ee60bd",
+      "implementation": "ceph_raw_post_redirect",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_signature@L2324",
+      "source_sha256": "9df538f1ed0b810b66d35d02dce674440e8cbc9e62ae6bcc017242d9913c801c",
+      "implementation": "ceph_raw_post_invalid_signature",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_access_key@L2357",
+      "source_sha256": "a6f9f9c41021b3a3bd2fcefd9ee2017f4635cf8aace98b78aa666c53c30a7ca1",
+      "implementation": "ceph_raw_post_invalid_access_key",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_date_format@L2390",
+      "source_sha256": "a27cc3c7dad25723b026ac8cb1d6e947e356a25bb2904a974cdde8eb99eafa55",
+      "implementation": "ceph_raw_post_invalid_date",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_no_key_specified@L2423",
+      "source_sha256": "10c739fbcde6e14f9f62e91bb1d53076aeb72fa0555dc225839717a86be4754a",
+      "implementation": "ceph_raw_post_no_key",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_signature@L2455",
+      "source_sha256": "39e862c5f4a531e4a10c421f8ce63c5ba9c71bf2b72f67eea7e388cfc42df224",
+      "implementation": "ceph_raw_post_missing_signature",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_policy_condition@L2488",
+      "source_sha256": "3c43126e3ef29cb4fd5129ab6dd8aff7c471d274c3b87b8187dd05528ed60cb7",
+      "implementation": "ceph_raw_post_missing_bucket_condition",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_user_specified_header@L2520",
+      "source_sha256": "f7f6b5640c62cd26f69e876257574909f1611baa72cbe9f67d939af4c2feca28",
+      "implementation": "ceph_raw_post_metadata",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_request_missing_policy_specified_field@L2556",
+      "source_sha256": "d548c1c76c3da1ea710d1172610c5590635bcf135f47e20f360a58788fa3d38b",
+      "implementation": "ceph_raw_post_missing_metadata",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_condition_is_case_sensitive@L2590",
+      "source_sha256": "c450cdd1f88dfe992c06277a8445e93bced1467e593caa38c7af884b007bcd28",
+      "implementation": "ceph_raw_post_conditions_case",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_expires_is_case_sensitive@L2623",
+      "source_sha256": "b2d770740d263c98fa4b1c1d4fefbb8ee3a8e14904ba0abe720e5e2fcc1cceec",
+      "implementation": "ceph_raw_post_expiration_case",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_expired_policy@L2656",
+      "source_sha256": "719180d3e8b47f41986b2a7c1a89f64f51dcd1b6534ac7a8565b217e866dabce",
+      "implementation": "ceph_raw_post_expired",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_wrong_bucket@L2689",
+      "source_sha256": "fef295eb39fa76ee2e06775d80845d70dab8467b00064674b8f5d7d2185c23dc",
+      "implementation": "ceph_raw_post_wrong_bucket",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_request_field_value@L2725",
+      "source_sha256": "69a1bee05c944db40528babd11f14173f78c160b47cc131ac7d213ee4b0b3b60",
+      "implementation": "ceph_raw_post_invalid_metadata",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_expires_condition@L2758",
+      "source_sha256": "a9ee829ca07fa5bf1c6ffcbc45804cbf20be7b1eae2acd566016aad3324f13e0",
+      "implementation": "ceph_raw_post_no_expiration",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_conditions_list@L2791",
+      "source_sha256": "7b871eab19af73538da89637189654bd39f2ef2cbb5d2c7455fe88ba95b837cc",
+      "implementation": "ceph_raw_post_no_conditions",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_limit_exceeded@L2816",
+      "source_sha256": "ab6a19f5ac97f9e134e054400a4bd3dab73a33d3b2a402094718b22bc8cfc21f",
+      "implementation": "ceph_raw_post_above_maximum",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_content_length_argument@L2849",
+      "source_sha256": "c56dd54306aed7c12ec272e0335d30d94c974007473c9e874a3cf38037b0520c",
+      "implementation": "ceph_raw_post_missing_length",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_content_length_argument@L2882",
+      "source_sha256": "bf280967fdbc26ba17e454c25ac6ce11cc667447631e191ccf101d0f64233360",
+      "implementation": "ceph_raw_post_negative_length",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_below_minimum@L2915",
+      "source_sha256": "8a7ab688265ab1482d02e1b5724a7b7f9582ed2b0330418659c1a90510061dd1",
+      "implementation": "ceph_raw_post_below_minimum",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_rgw_chunk_size_bug@L2948",
+      "source_sha256": "42e479bfa454121bceeb5fd4c8bb4dff3817a02e8bf2e590c0bf285e61615a6d",
+      "implementation": "ceph_raw_post_chunk_bug",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_empty_conditions@L2995",
+      "source_sha256": "ba0a0502fb6245516c3836ef7307af2f5086b05cb58df4317399db535e1646bc",
+      "implementation": "ceph_raw_post_empty_conditions",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_tags_anonymous_request@L12203",
+      "source_sha256": "0b336fb7ca61f5321cd8a00402da143cb523cfed20a11404adf354fad8cc99f3",
+      "implementation": "ceph_raw_post_tags_anonymous",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_tags_authenticated_request@L12234",
+      "source_sha256": "f978fd4a9dab36f0928e6e5fe32c23ff81385d7d6c2b1d59e5463825ac3a598a",
+      "implementation": "ceph_raw_post_tags_authenticated",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_checksum@L15299",
+      "source_sha256": "81b26315ee47942ac11d6e858843af8270f4d2acf0cbce012109a79b6f434715",
+      "implementation": "ceph_raw_post_checksum",
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_origin_response@L6916",
+      "source_sha256": "81b6a8c3bf4e0d5f0d7290bce8d8d963a00a3ea7c8b2205cf4d6532c2be9e3ae",
+      "implementation": "ceph_raw_cors_origins",
+      "review": "保留源全部CORS匿名GET/PUT/OPTIONS矩阵、3秒等待、状态与响应头存在/缺失断言；真SDK配置清理，HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_origin_wildcard@L6991",
+      "source_sha256": "75675336cdaa825224e298d5e9471ecc42ba5cfb6b2f271c616b1590a325653c",
+      "implementation": "ceph_raw_cors_wildcard",
+      "review": "保留源全部CORS匿名GET/PUT/OPTIONS矩阵、3秒等待、状态与响应头存在/缺失断言；真SDK配置清理，HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_cors_header_option@L7016",
+      "source_sha256": "1101c2a5f0be3aa34ee1556deba30240c20447353c31e3544656b7d60307355a",
+      "implementation": "ceph_raw_cors_header",
+      "review": "保留源全部CORS匿名GET/PUT/OPTIONS矩阵、3秒等待、状态与响应头存在/缺失断言；真SDK配置清理，HTTP协议不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_100_continue@L6847",
+      "source_sha256": "de172f5779173f8a62d8ed7f480383865b88df5ed4170e0f0e800ea217191110",
+      "implementation": "ceph_raw_continue_interim",
+      "review": "原始socket声明123字节而不发body，真实私有403→公开写100，五秒超时与HTTP解析，连接finally关闭；SDK仅配置清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_100_continue_error_retry@L6868",
+      "source_sha256": "23b0cd6a799396e3c1bc719e5cf2e614913596113aa0322eb2f0a6090232b6c8",
+      "implementation": "ceph_raw_continue_retry",
+      "review": "同一缓存官方SDK client以真实Expect头发送缺桶404→有效bar写入；只声明client复用，不冒称物理TCP连接复用，缺桶预先只读确认；不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_head_bucket_usage@L1115",
+      "source_sha256": "481bbb844e995039bfa024d404379bde3720707308f942de214af8800931d3f9",
+      "implementation": "ceph_query_head_usage",
+      "review": "read-stats=true原始对象数/字节数/配额头字面值；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_unordered@L1132",
+      "source_sha256": "679cdbd072a16411bfcea24ea76d7f2287eaf4c329524ef4fc263a7f64bd2702",
+      "implementation": "ceph_query_unordered_v1",
+      "review": "完整26键计数、原sort返回值断言、真实marker与delimiter拒绝；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_unordered@L1186",
+      "source_sha256": "f20e7cdd93faed26b6e8b74c1a0f9a1575608d44dd363e2b21729a9e5782f5fa",
+      "implementation": "ceph_query_unordered_v2",
+      "review": "忠实源V2无扩展、末尾V1才有扩展；保留全部原断言；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_maxkeys_invalid@L1239",
+      "source_sha256": "f7a2c2535b32f0dc286e8580bfb82813795cf0b56602fc33cd4d828fb8fa4791",
+      "implementation": "ceph_query_invalid_maxkeys",
+      "review": "原blah值必须400/InvalidArgument；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_head_extended@L3367",
+      "source_sha256": "84613366169178671d95e57d0c5e7c2ddcc08291d3da57b1b8f6a2b924c11543",
+      "implementation": "ceph_query_head_extended",
+      "review": "原零到三对象/九字节整数断言；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_response_headers@L3445",
+      "source_sha256": "daee5b65869c9bf9e58771562c1d63de69530803fcc8bd5f5ef8b5ef89a9fef4",
+      "implementation": "ceph_query_response_headers",
+      "review": "六个原query实际SDK请求及原五响应头精确断言；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_buckets_paginated@L5403",
+      "source_sha256": "796903659da5bbfb5ddf94cc28ee3c55bb1b76431d35a9062996a5ea79d0ecd0",
+      "implementation": "ceph_query_list_buckets_paginated",
+      "review": "空账户前提、创建顺序、真实opaque token与最终字段缺失；官方SDK签名前wire_query扩展，所有源输入/响应断言及安全清理保留；测试实际SDK连接独立HTTP原文。 SDK必须真实暴露ContinuationToken，list_buckets_pagination缺失时整源函数not_run；非空账户亦not_run且零写。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration@L8528",
+      "source_sha256": "6731627adfa16f33784e10e3228502337f967e99e58c66e35bdd8f7bac6f7467",
+      "implementation": "ceph_lc_expiration_prefix",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecyclev2_expiration@L8563",
+      "source_sha256": "30f01aa4984e2aee8aa65b32a8827ebcf250fabd0e4f6fb346f9029837cda9f7",
+      "implementation": "ceph_lc_expiration_prefix_v2",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_versioning_enabled@L8596",
+      "source_sha256": "c9a744a80afee67c7d89d96b6d0053c92764f0aad941f075d750b2503c819155",
+      "implementation": "ceph_lc_expiration_enabled_version",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_tags1@L8620",
+      "source_sha256": "62f41553501a9f645caebbd24a03631b61ab6b534d4cfe6556b5fea71b496199",
+      "implementation": "ceph_lc_expiration_tag_one",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_tags2@L8729",
+      "source_sha256": "3b91f9e3ab6c16000bccf51351684a6c9f19332ce20efe1f720fc16476553b1a",
+      "implementation": "ceph_lc_expiration_tag_two",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_versioned_tags2@L8747",
+      "source_sha256": "e98538c119775e34f552e6895cc8aa55bcc783adb5f04ea8e9021b79f37b9909",
+      "implementation": "ceph_lc_expiration_versioned_tag_two",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_noncur_tags1@L8817",
+      "source_sha256": "b90b414d913d0a8f19ffd2d9a8fb421686cb57f4e9a36b414173f147498017ff",
+      "implementation": "ceph_lc_expiration_noncurrent_tag",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_newer_noncurrent@L8854",
+      "source_sha256": "65b97af970759e31ab9d4030bc56b8bc03f7ff3faf055db3b79ddd7fa17e320b",
+      "implementation": "ceph_lc_expiration_newer_noncurrent",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_size_gt@L8909",
+      "source_sha256": "88f5df0d88fd09c4763e877f8082ae6fe30b0a5446f6048c5557765260610fc8",
+      "implementation": "ceph_lc_expiration_size_gt",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_size_lt@L8962",
+      "source_sha256": "b269f8f912796e2cdf5a6a75c5c4094d2a68854aa7cd079b57b02bbfab522d54",
+      "implementation": "ceph_lc_expiration_size_lt",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_date@L9089",
+      "source_sha256": "aeb1d194a7b217c5309a27b01d9bc9453d7837f387e4ee975b2410f48465a5b9",
+      "implementation": "ceph_lc_expiration_date",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_days0@L9111",
+      "source_sha256": "438fa07162d5f4522e40f1e80474a604d4e498e27b232f443a35b781c58e0fa5",
+      "implementation": "ceph_lc_expiration_days_zero",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_header_put@L9162",
+      "source_sha256": "844073a72cecd4d091f0701465d3613c3a3e39a138cbcac1ce794bf0eda7a2a4",
+      "implementation": "ceph_lc_expiration_header_put",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_header_head@L9174",
+      "source_sha256": "26f33430ea23c85e9e3c7014629c6580178f648ed4c3dcbb3ba006a92a071b9f",
+      "implementation": "ceph_lc_expiration_header_head",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_header_tags_head@L9192",
+      "source_sha256": "c9652db8801e1cbe9dfd94b069ce4152df36fe5a7e32f7f11ed6173a36468216",
+      "implementation": "ceph_lc_expiration_header_tag",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_expiration_header_and_tags_head@L9248",
+      "source_sha256": "d7a55ed636d7ffd26825f2977aab1dab6d99654bbd15c6e1b6e9ada2886a25b1",
+      "implementation": "ceph_lc_expiration_header_and_tags",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_noncur_expiration@L9305",
+      "source_sha256": "ce1c846732f0948d0d88d06301ab03c28de50a9c272c44904075112c822d9bd4",
+      "implementation": "ceph_lc_expiration_noncurrent",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_deletemarker_expiration@L9361",
+      "source_sha256": "c6334532a444e2d79e04a2aed4390f931ab7ff534ad2359740b5ea58a344c5a4",
+      "implementation": "ceph_lc_expiration_marker",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_deletemarker_expiration_with_days_tag@L9396",
+      "source_sha256": "1164c53eec3624723e52ae46dd72c77b762ec4abe0af7255125e4bb30e1ad8b5",
+      "implementation": "ceph_lc_expiration_marker_days",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_multipart_expiration@L9444",
+      "source_sha256": "6ea1c36625618aa7323874f1584efdb969b9999c884b199d0357b5f11e445bb3",
+      "implementation": "ceph_lc_expiration_multipart",
+      "review": "核对固定源码生命周期规则的原Prefix/Filter/Tag/And、日期UTC午夜、对象原始body、版本与删除标记、原阶段等待倍数、原列表缺字段规则及全部数量/键/状态/错误码/expiration头断言。后台需已配置加速服务的显式有限正间隔；不缩短原阶段。tags1保留源函数读取配置PUT响应Contents而非过期后list的缺陷并明示。Java/C++真实SDK独立静态HTTP文档验证客户端输入/消费者，不冒充后台服务认证；C++真实模型没有Legacy Prefix时11项依独立cap not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_transition@L9515",
+      "source_sha256": "167757c26e099c89c3d02c712bb07697cf063f6b21bfe3c019a2f08346c88180",
+      "implementation": "ceph_lc_transition_current",
+      "review": "核对固定源码普通生命周期存储类别迁移规则、原始对象body与版本前plain/null对象、真实ListObjectVersions逐对象StorageClass分组、各阶段全部类别计数、3/2个配置存储类别前提与原4/1/5、5/1/6、4/4/6、4加速等待倍数。保持旧Prefix输入，固定C++SDK模型不支持时独立cap not_run；未实配后台服务不声称通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_transition_single_rule_multi_trans@L9560",
+      "source_sha256": "f7e4fa8925436eadfe2b459c9a8bb1da6f58766fb4bfdb3675e8c6044bb3e214",
+      "implementation": "ceph_lc_transition_current_multiple",
+      "review": "核对固定源码普通生命周期存储类别迁移规则、原始对象body与版本前plain/null对象、真实ListObjectVersions逐对象StorageClass分组、各阶段全部类别计数、3/2个配置存储类别前提与原4/1/5、5/1/6、4/4/6、4加速等待倍数。保持旧Prefix输入，固定C++SDK模型不支持时独立cap not_run；未实配后台服务不声称通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_noncur_transition@L9640",
+      "source_sha256": "db3028b390b97c13c52f601a2da5acba8a921ad5af0b21b0f1102a6c680a10a9",
+      "implementation": "ceph_lc_transition_noncurrent",
+      "review": "核对固定源码普通生命周期存储类别迁移规则、原始对象body与版本前plain/null对象、真实ListObjectVersions逐对象StorageClass分组、各阶段全部类别计数、3/2个配置存储类别前提与原4/1/5、5/1/6、4/4/6、4加速等待倍数。保持旧Prefix输入，固定C++SDK模型不支持时独立cap not_run；未实配后台服务不声称通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_plain_null_version_current_transition@L9709",
+      "source_sha256": "7ddd6b7a1ea48efeacea68def354b876b79fd150b49af1735a2de0abf73e5ae5",
+      "implementation": "ceph_lc_transition_plain_null",
+      "review": "核对固定源码普通生命周期存储类别迁移规则、原始对象body与版本前plain/null对象、真实ListObjectVersions逐对象StorageClass分组、各阶段全部类别计数、3/2个配置存储类别前提与原4/1/5、5/1/6、4/4/6、4加速等待倍数。保持旧Prefix输入，固定C++SDK模型不支持时独立cap not_run；未实配后台服务不声称通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_marker_expiration@L19443",
+      "source_sha256": "1a06f5deaf324ace6c6e00e05c10e0dba8da2578d8f50d2bfbbb7f5954d6d8df",
+      "implementation": "ceph_lc_delete_marker_expiration",
+      "review": "核对源19443与check_delete_marker@19390原始body、Enabled版本、delete marker、两个非当前/删除标记过期规则、配置200及完整6倍实际服务间隔；HEAD成功时为none，错误响应直接索引实际x-amz-delete-marker字符串，保留true→false断言，不用bool转换或虚构false头。后台加速与Legacy Prefix支持均显式门控；真实SDK HTTP文档仅验证客户端消费者。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_retention_invalid_bucket@L13584",
+      "source_sha256": "0d98ad8b54e0805deb5d1c5b851991e4138efa39fc5524200b84d00bd898f5d8",
+      "implementation": "ceph_object_lock_invalid_get_retention",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_invalid_bucket@L13518",
+      "source_sha256": "f069e9048e70806b4500c68afa93858592a456c27dfafb5aa0d28dfb0fba81a8",
+      "implementation": "ceph_object_lock_invalid_put_retention",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_legal_hold_invalid_bucket@L13882",
+      "source_sha256": "9ef262a6761c364e39bd465cba44ecd47200db79904efcec3037d646ae958bad",
+      "implementation": "ceph_object_lock_invalid_get_legal_hold",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_legal_hold_invalid_bucket@L13838",
+      "source_sha256": "71b8aa2cda2d21ada144ff8801f4c50cfd9273bf4fdae2dc60881f9c4125a943",
+      "implementation": "ceph_object_lock_invalid_put_legal_hold",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention@L13502",
+      "source_sha256": "9534302887bb7508f05241c1872b009eaa30e71b0c13bb21c838bc86fa3b59ad",
+      "implementation": "ceph_object_lock_retention_put",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_invalid_mode@L13532",
+      "source_sha256": "af82a057b14ce520e0428157609f9f7ede51da7aa011032ac7e3fff303911127",
+      "implementation": "ceph_object_lock_retention_invalid_mode",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_retention@L13552",
+      "source_sha256": "bae17b48c7868392d0eab38c7a8e4edad0908a5c959df28b03fb69400db2f02a",
+      "implementation": "ceph_object_lock_retention_get",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_retention_iso8601@L13567",
+      "source_sha256": "5cd65f318805ae02b3dece1fb1332af68e78d43d1f7dfa71f6eaac9bc5874b3f",
+      "implementation": "ceph_object_lock_retention_iso",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_versionid@L13597",
+      "source_sha256": "90e029032907263973c9fcef21923bbdc8593e7c3d245748a6c273d9c43d4b0a",
+      "implementation": "ceph_object_lock_retention_version",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_override_default_retention@L13613",
+      "source_sha256": "f784dde3af874717a14588813943aa3e83ff0ca6f380fd52f057354666a7ccbd",
+      "implementation": "ceph_object_lock_retention_override",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_increase_period@L13638",
+      "source_sha256": "d15107b023e3cd5c0e254693f916275ee741366882a3f22b7197e2cdc40362eb",
+      "implementation": "ceph_object_lock_retention_increase",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_shorten_period@L13655",
+      "source_sha256": "82054a3a2e7256812905f90d4a8065ec86aea8cc3d1282a305c040834c67b8b5",
+      "implementation": "ceph_object_lock_retention_shorten",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_obj_retention_shorten_period_bypass@L13673",
+      "source_sha256": "41fa6e4802cc796d93988c11dda50bb6fb5059939ed3a77f44ab03f319c1e888",
+      "implementation": "ceph_object_lock_retention_shorten_bypass",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_legal_hold@L13825",
+      "source_sha256": "a75cd213389ec472e610e571121a65955ff16e703846ee57175bc0aa95a7fc08",
+      "implementation": "ceph_object_lock_hold_put",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_put_legal_hold_invalid_status@L13852",
+      "source_sha256": "0c6df78a39eb0e9e8fb9b59e5f69f237201392f5a9ea9a8cf764aa519105a169",
+      "implementation": "ceph_object_lock_hold_invalid_status",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_legal_hold@L13866",
+      "source_sha256": "30cb511f5b366fb2bd63bd6559892a6c931c71c79ca7bd9ba3090fc047f1070a",
+      "implementation": "ceph_object_lock_hold_get",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_object_with_legal_hold_on@L13895",
+      "source_sha256": "cbf4f1a05fb366d040a3f78e20d0da27e0c253168ed56802811bc54b6bd58dd6",
+      "implementation": "ceph_object_lock_hold_delete_on",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_object_with_legal_hold_off@L13931",
+      "source_sha256": "9e1f05f577a7045aad61542862155cee98b23f23381e0d11be5e86324c45d357",
+      "implementation": "ceph_object_lock_hold_delete_off",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_object_with_retention@L13690",
+      "source_sha256": "6336ecba095b4a40e189e1cc230857cf93b9d476c616f0cb9558c7f45a5e9c67",
+      "implementation": "ceph_object_lock_delete_plain",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_multipart_object_with_retention@L13708",
+      "source_sha256": "37079b9abf5326dbde5d574014b508822dbf17d2e715ae7ed3467fe661d25eae",
+      "implementation": "ceph_object_lock_delete_multipart",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_object_with_retention_and_marker@L13733",
+      "source_sha256": "f9eda53806b23051abb1f2d1a3d448e8f432d4f218a845b4b13ad335e250c635",
+      "implementation": "ceph_object_lock_delete_marker",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_multi_delete_object_with_retention@L13758",
+      "source_sha256": "909defbe80703b3491dd14da9a3c741991763a9ae9e887743f818d4781b0f540",
+      "implementation": "ceph_object_lock_multi_delete",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_delete_multipart_object_with_legal_hold_on@L13909",
+      "source_sha256": "9aecae54246e470024e0fb534c32976bb54a4f0305c3f6a9c16357b995668d15",
+      "implementation": "ceph_object_lock_multipart_hold",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_get_obj_metadata@L13943",
+      "source_sha256": "fb06c97fd52492d1e36d241faed5cb2465b7dd721767737698215ad9eda8e15c",
+      "implementation": "ceph_object_lock_metadata_later",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_uploading_obj@L13963",
+      "source_sha256": "2098b55d97558ae671b584a4fef47d02399a2324e64e78aa8942544d544af24f",
+      "implementation": "ceph_object_lock_metadata_upload",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_changing_mode_from_governance_with_bypass@L13979",
+      "source_sha256": "9c97f9c39a800845ad7da96a5d22e995d7ba541b772d755d3c5bb85364c1764c",
+      "implementation": "ceph_object_lock_mode_with_bypass",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_changing_mode_from_governance_without_bypass@L13993",
+      "source_sha256": "ee24e903857dc042916fcea924d9c354d2ab29201810b67bce5162a578b9860b",
+      "implementation": "ceph_object_lock_mode_without_bypass",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_lock_changing_mode_from_compliance@L14010",
+      "source_sha256": "160844f81dc51996792dd412f34e39b73dd3d47da4453a90d935c1426ad6051b",
+      "implementation": "ceph_object_lock_mode_from_compliance",
+      "review": "逐源核对28函数原始abc/file1/file2、2030/2140日期、非法值、全部HTTP与结构断言、真实VersionId/ETag和源fails_on_dbstore标记。除只读非锁桶负例，其余要求object_lock_cleanup_authorized=true；长GOVERNANCE先在同桶同key证明真实2秒bypass删除，失败等真实expiry清理后not_run。COMPLIANCE原10秒不缩短，finally等实际expiry再OFF/bypass逐实际版本删除。负例写意外成功仍保护清理，不作为源通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mtime@L15634",
+      "source_sha256": "f45f2d86e0f620fabbeb3c227b464d9ff3ab0e1a83d3d8f57b673f32d16cf039",
+      "implementation": "ceph_logging_records_mtime",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_request_id@L15941",
+      "source_sha256": "9fd8f2b1bd39c666b7397d7167b6af6e9b1a8b6920093ef2c3cd563575744f06",
+      "implementation": "ceph_logging_records_request_id",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_bucket_acl_required@L16135",
+      "source_sha256": "7947f636f24282a50dbc528433ed0acdfa534a8dd7229761c1b603ee19f4344a",
+      "implementation": "ceph_logging_records_acl_bucket",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_object_acl_required@L16206",
+      "source_sha256": "4b8c2b853e840330555f68fbbab98b1e3fe6bc5a96ec8710650a973ab874ed10",
+      "implementation": "ceph_logging_records_acl_object",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_simple_key@L15828",
+      "source_sha256": "c9bc73b00089797572ee8f951d5682b2498a628a48c3a2d648f995f17aa7d7af",
+      "implementation": "ceph_logging_records_key_simple",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_partitioned_key@L15836",
+      "source_sha256": "f4266017733ece14e0ff78ddfbf1f6a60f161c33df9bb6cc86ce9e58a79494cc",
+      "implementation": "ceph_logging_records_key_partitioned",
+      "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
     }
   ]
 }

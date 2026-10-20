@@ -105,6 +105,18 @@ jobs:
           OSV_RUN_REMAINING_POLICY_TESTS: '1'
           OSV_RUN_LOGGING_CONTROL_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java source HTTP, query, lifecycle, locking and delivered logs
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_wire_query_sdk test_raw_http_sdk test_query_edges_sdk test_lifecycle_expiration_sdk test_lifecycle_transition_sdk test_lifecycle_marker_expiration_sdk test_object_locks_sdk test_logging_records_sdk -v
+        env:
+          OSV_RUN_WIRE_QUERY_TESTS: '1'
+          OSV_RUN_RAW_HTTP_TESTS: '1'
+          OSV_RUN_QUERY_EDGES_TESTS: '1'
+          OSV_RUN_LIFECYCLE_EXPIRATION_TESTS: '1'
+          OSV_RUN_LIFECYCLE_TRANSITION_TESTS: '1'
+          OSV_RUN_LIFECYCLE_MARKER_TESTS: '1'
+          OSV_RUN_OBJECT_LOCK_TESTS: '1'
+          OSV_RUN_LOGGING_RECORD_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:
