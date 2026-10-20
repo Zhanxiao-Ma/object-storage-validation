@@ -67,7 +67,7 @@ public final class WorkerMain {
                         result.put("protocol_version", 1);
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
-                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"));
+                        if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
                         result.put("capabilities",capabilities);
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
@@ -84,7 +84,7 @@ public final class WorkerMain {
                     result.put("error", error.getClass().getSimpleName()+": "+error.getMessage());
                     if(error instanceof software.amazon.awssdk.services.s3.model.S3Exception) {
                         software.amazon.awssdk.services.s3.model.S3Exception e=(software.amazon.awssdk.services.s3.model.S3Exception)error;
-                        result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null) result.put("error_code",e.awsErrorDetails().errorCode());
+                        result.put("status_code",e.statusCode()); if(e.awsErrorDetails()!=null && e.awsErrorDetails().sdkHttpResponse()!=null) result.put("http_headers",e.awsErrorDetails().sdkHttpResponse().headers()); if(e.awsErrorDetails()!=null) result.put("error_code",e.awsErrorDetails().errorCode());
                     } else if(error instanceof com.aliyun.oss.OSSException) result.put("error_code",((com.aliyun.oss.OSSException)error).getErrorCode());
                     else if(error instanceof com.obs.services.exception.ObsException) { result.put("status_code",((com.obs.services.exception.ObsException)error).getResponseCode()); result.put("error_code",((com.obs.services.exception.ObsException)error).getErrorCode()); }
                     else if(error instanceof com.volcengine.tos.TosServerException) { result.put("status_code",((com.volcengine.tos.TosServerException)error).getStatusCode()); result.put("error_code",((com.volcengine.tos.TosServerException)error).getCode()); }
@@ -219,6 +219,7 @@ public final class WorkerMain {
         public Map<String,Object> execute(JsonNode q) throws Exception {
             String key=text(q,"key"), op=text(q,"op");
             String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
+            if(S3Versioning.handles(op)) return S3Versioning.execute(client,op,q,bucket,key);
             switch(op) {
             case "delete_many": case "delete_many_versions": {
                 List<software.amazon.awssdk.services.s3.model.ObjectIdentifier> identifiers=new ArrayList<>();
@@ -415,7 +416,9 @@ public final class WorkerMain {
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id"));
                 if(!"mp_complete_empty".equals(op)) b.multipartUpload(m->m.parts(parts));
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse result=client.completeMultipartUpload(b.build());
-                return withHttp(one("etag",result.eTag()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
+                Map<String,Object> observed=fields("etag",result.eTag());
+                if(result.versionId()!=null) observed.put("version_id",result.versionId());
+                return withHttp(observed,result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers());
             }
             case "mp_abort": case "mp_abort_raw": client.abortMultipartUpload(b->b.bucket(bucket).key(key).uploadId(text(q,"upload_id"))); return empty();
             default: throw new UnsupportedOperationException(op);

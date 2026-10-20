@@ -810,6 +810,132 @@
       "source_sha256": "1fc544af9650ed084ca679a27b959676c6f91bf4bafb4a17c0fdec282f3f648c",
       "implementation": "ceph_get_part_ordinary",
       "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_bucket_create_suspend@L7654",
+      "source_sha256": "3db0c71b13cb84ce51c6dd42764d8dcfd54d907669bdbf5cc32cf45bba490295",
+      "implementation": "ceph_version_configure",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_create_read_remove@L7737",
+      "source_sha256": "8a70b6dda797612ba5c11abdffffc607e0302280eeb2b7824ee8bb870feee01d",
+      "implementation": "ceph_version_walks",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_create_read_remove_head@L7751",
+      "source_sha256": "8a1597180fbd8f5bf5885f4d5a705dc04171d3076084b60ccf559bb72694ee83",
+      "implementation": "ceph_version_head",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_stack_delete_merkers@L7786",
+      "source_sha256": "c5f2afc5cbe1d34d9022e418b7521af80ff203ec717a264502cebd4b6598c9cd",
+      "implementation": "ceph_version_stack",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_plain_null_version_removal@L7801",
+      "source_sha256": "f2ba798671529a93f77c9a375c530579fa635b991f0e2b78b19fbff7fd6533ec",
+      "implementation": "ceph_version_null_remove",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_plain_null_version_overwrite@L7821",
+      "source_sha256": "7c0ea26e9cce9ed33c3b4cede65c80e690f8021f40f64f4822d0eadf1b6bbd79",
+      "implementation": "ceph_version_null_overwrite",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_plain_null_version_overwrite_suspended@L7854",
+      "source_sha256": "4b647cebafe0507e9a38a6dc103d9971f5a786efcaa5ed5a2891095bfd528f5e",
+      "implementation": "ceph_version_null_suspended",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_suspend_versions@L7919",
+      "source_sha256": "dc63575d14d7c7c324db2cebd400359ad582450286180630097e7f330cc565a7",
+      "implementation": "ceph_version_suspend_versions",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_suspended_copy@L7953",
+      "source_sha256": "7590c2e63e3b262e454936dc1692810e4a435fc4f31810d5f96f078c90d85d71",
+      "implementation": "ceph_version_suspended_copy",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_create_versions_remove_all@L7999",
+      "source_sha256": "2699cf39e9eca05fad6523873578f356d835da88d328cbd2578e48c6a7c74a98",
+      "implementation": "ceph_version_remove_all",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_create_versions_remove_special_names@L8015",
+      "source_sha256": "e3639cecf3f04cf013d8bb8ac874bad8049864167c6a082a6bcdd810f5a9b6d6",
+      "implementation": "ceph_version_special",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_create_overwrite_multipart@L8033",
+      "source_sha256": "5549e69f74f9f3a1457f4512e88160dcd8f1f5377e9a0dd836e40bce302d736e",
+      "implementation": "ceph_version_multipart_overwrite",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_obj_list_marker@L8061",
+      "source_sha256": "5e98ff720503af920dc21c14bfe06ec01f0f03093385752def804937df9f4c26",
+      "implementation": "ceph_version_list_marker",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_multi_object_delete@L8155",
+      "source_sha256": "4a8f00504ec47d5c41948ef86d706baecb19eb810fec267ea257f6d1644e890f",
+      "implementation": "ceph_version_bulk",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_multi_object_delete_with_marker@L8180",
+      "source_sha256": "f17ffa37a79c5e422a96b9a512bc22f5079355a2418805e128fc0a7347643d99",
+      "implementation": "ceph_version_bulk_marker",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_multi_object_delete_with_marker_create@L8213",
+      "source_sha256": "192202c15570e977d1a754abb095b7182a9dc111519e41caa72dc83d5f16bcad",
+      "implementation": "ceph_version_bulk_marker_create",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_bucket_atomic_upload_return_version_id@L12382",
+      "source_sha256": "7c2238f192fea86449143fa4ca3a857756701c843fb494ae02a8cd97e941ad3f",
+      "implementation": "ceph_version_atomic_id",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_bucket_multipart_upload_return_version_id@L12411",
+      "source_sha256": "3e7fbb99d58fb5f8aa199c55ca5c34d409e253782930f10f0ee5f8a643ef2e02",
+      "implementation": "ceph_version_multipart_id",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_marker_nonversioned@L19403",
+      "source_sha256": "f0de109927708d446307ac36ffabeef220405769665873ba8386ee2c4bc89f64",
+      "implementation": "ceph_version_marker_header_plain",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_marker_versioned@L19415",
+      "source_sha256": "0139b119625ccb19bbcc1791f657d9a1372489edf2d7e1551e154a80e003b112",
+      "implementation": "ceph_version_marker_header_enabled",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_delete_marker_suspended@L19428",
+      "source_sha256": "6396f36b5e77d97e37038dc4a2b7f3398ca425bb4948a8a5947d3de984ece4cb",
+      "implementation": "ceph_version_marker_header_suspended",
+      "review": "逐项核对固定版本的启停序列、原始版本数量与删除遍历、null 版本及暂停覆盖、删除标记、版本列表顺序、历史内容、批量删除和返回字段/错误响应头；保留全部原始断言与源版本数据大小，真实 SDK 执行结果另列。仅独立桶配置版本控制，清理逐版本删除。"
     }
   ]
 }

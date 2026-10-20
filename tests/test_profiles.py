@@ -24,23 +24,32 @@ class ProfileTest(unittest.TestCase):
         return path
 
     def test_both_profiles_run_real_producer_consumer_and_report(self):
-        """Run normal and complete through real IO; expect 24/229 catalogued results, clean objects and truthful reports."""
-        for profile, count, observations in (("normal", 24, 2), ("complete", 229, 4)):
+        """Run real local IO and complete CLI; expect 24/250 rows, advanced versioning not_run, blocked metrics/exit 1 and clean actual files."""
+        for profile, count, observations,not_run in (("normal", 24, 2,0), ("complete", 250, 4,21)):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
-                report = run(load_config(self.manifest(directory, {"profile": profile})), directory/"results")
+                manifest=self.manifest(directory,{"profile":profile})
+                if profile=="complete":
+                    result=subprocess.run([sys.executable,"-m","osv","run",str(manifest),"--output",str(directory/"results")],capture_output=True,text=True,timeout=90)
+                    self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+                    report=json.loads((directory/"results/report.json").read_text())
+                    self.assertEqual(report["samples"],[])
+                else:report=run(load_config(manifest),directory/"results")
                 self.assertEqual(report["coverage"]["profile"], profile)
                 self.assertEqual(len(report["coverage"]["catalog"]), count)
                 rows = [c for c in report["cases"] if c.get("suite")]
                 self.assertEqual(len(rows), count)
                 self.assertEqual(sum(c["status"] == "observation" for c in rows), observations)
                 self.assertFalse([c for c in rows if c["status"] == "fail"], rows)
+                unsupported=[c for c in rows if c["status"]=="not_run"]
+                self.assertEqual(len(unsupported),not_run)
+                self.assertTrue(all(c["case"].startswith("ceph_version_") and c["reason"]=="unsupported_operations" and c["missing_operations"] for c in unsupported))
                 self.assertTrue(all(s["ok"] for s in report["samples"]))
                 self.assertEqual([p for p in (directory/"objects").rglob("*") if p.is_file()], [])
                 self.assertTrue(report["coverage"]["exclusions"])
                 self.assertEqual(json.loads((directory/"results/report.json").read_text())["coverage"], report["coverage"])
                 markdown = (directory/"results/report.md").read_text()
-                self.assertIn(f"| local | {count} | {count-observations} | 0 | {observations} | 0 |", markdown)
+                self.assertIn(f"| local | {count} | {count-observations-not_run} | 0 | {observations} | {not_run} |", markdown)
                 self.assertIn("不在本档位覆盖范围", markdown)
                 if profile == "complete":
                     self.assertIn("multipart_resend", markdown)
@@ -53,7 +62,7 @@ class ProfileTest(unittest.TestCase):
             self.assertEqual(load_config(self.manifest(directory))["workload"]["profile"], "normal")
             custom = self.manifest(directory, {"compatibility_suites": ["baseline"]})
             self.assertNotIn("profile", load_config(custom)["workload"])
-            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part"])
+            self.assertEqual(load_config(custom, "complete")["workload"]["compatibility_suites"], ["core_objects", "objbench_objects", "extended_objects", "ceph_object_boundaries", "ceph_conditions", "ceph_metadata", "ceph_copy", "ceph_http_range", "ceph_tags", "ceph_headers", "ceph_buckets", "ceph_exact_listing", "ceph_delete_many", "ceph_exact_multipart", "ceph_multipart_copy", "ceph_get_part","ceph_versioning"])
             for overrides in ({"profile":"unknown"}, {"profile":[]},
                               {"profile":"normal", "compatibility_suites":["baseline"]},
                               {"list_objects":1000}, {"list_objects":10001}, {"list_objects":True}):
@@ -61,7 +70,7 @@ class ProfileTest(unittest.TestCase):
                     load_config(self.manifest(directory, overrides))
 
     def test_missing_worker_reports_planned_cases_as_not_run(self):
-        """Fail actual process startup; expect all 229 planned cases reported as not run rather than compatibility passes."""
+        """Fail actual process startup; expect all 250 planned cases reported as not run rather than compatibility passes."""
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
             path = self.manifest(directory, {"profile":"complete"})
@@ -71,7 +80,7 @@ class ProfileTest(unittest.TestCase):
             report = run(load_config(path), directory/"results")
             self.assertEqual(report["samples"], [])
             self.assertEqual(report["cases"][0]["status"], "fail")
-            self.assertIn("| local | 229 | 0 | 0 | 0 | 229 |", (directory/"results/report.md").read_text())
+            self.assertIn("| local | 250 | 0 | 0 | 0 | 250 |", (directory/"results/report.md").read_text())
 
     def test_plugin_profile_reuses_suite_without_language_changes(self):
         """Register another profile reusing a real suite; expect execution and reporting without a scheduler language branch."""
@@ -117,5 +126,5 @@ class ProfileTest(unittest.TestCase):
                                     capture_output=True, text=True, timeout=10, check=True)
             inventory = json.loads(result.stdout)
             self.assertEqual(inventory["profile"], "complete")
-            self.assertEqual(len(inventory["catalog"]), 229)
+            self.assertEqual(len(inventory["catalog"]), 250)
             self.assertFalse((directory/"objects").exists())

@@ -60,15 +60,19 @@ class SdkError : public std::runtime_error {
 public:
     int status;
     std::string error_code;
-    SdkError(int code, const std::string& message, const std::string& name) : std::runtime_error(message), status(code), error_code(name) {}
+    json headers;
+    SdkError(int code, const std::string& message, const std::string& name,json observed_headers=json::object()) : std::runtime_error(message), status(code), error_code(name),headers(std::move(observed_headers)) {}
 };
 
 template<class Outcome> static void checked(const Outcome& outcome) {
     if (!outcome.IsSuccess()) {
         auto& error = outcome.GetError();
-        throw SdkError(static_cast<int>(error.GetResponseCode()), error.GetMessage().c_str(), error.GetExceptionName().c_str());
+        json headers=json::object();for(const auto& entry:error.GetResponseHeaders()) headers[std::string(entry.first.c_str())]=std::string(entry.second.c_str());
+        throw SdkError(static_cast<int>(error.GetResponseCode()), error.GetMessage().c_str(), error.GetExceptionName().c_str(),headers);
     }
 }
+
+#include "versioning_ops.h"
 
 /**
  * Runs AWS C++ SDK S3 operations for direct comparison with other C++ adapters.
@@ -98,6 +102,7 @@ public:
         const std::string& bucket=q.contains("bucket")?q.at("bucket").get_ref<const std::string&>():this->bucket;
         if (op == "info") return {{"backend", "s3"}, {"api", "s3"}, {"language", "cpp"}, {"sdk", "aws-sdk-cpp"},
             {"sdk_version", AWS_SDK_VERSION_STRING}, {"measurement", "operation including local payload IO; excludes JSONL serialization"}};
+        if(is_version_operation(op))return execute_version_operation(*client,q,bucket,key);
         if(op=="delete_many" || op=="delete_many_versions") {
             Aws::S3::Model::DeleteObjectsRequest request;request.SetBucket(bucket);Aws::S3::Model::Delete deletion;
             for(const auto& item:q.at("objects")) {
@@ -352,7 +357,8 @@ public:
             json http;HttpObservationScope observation(&http);
             auto outcome=client->CompleteMultipartUpload(request); checked(outcome);
             if(!http.contains("status_code")) throw std::runtime_error("SDK HTTP observation unavailable");
-            http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return http;
+            http["etag"]=std::string(outcome.GetResult().GetETag().c_str());
+            if(!outcome.GetResult().GetVersionId().empty())http["version_id"]=std::string(outcome.GetResult().GetVersionId().c_str());return http;
         } else if (op == "mp_abort" || op == "mp_abort_raw") {
             Aws::S3::Model::AbortMultipartUploadRequest request;
             request.SetBucket(bucket); request.SetKey(key); request.SetUploadId(q.at("upload_id").get<std::string>());
@@ -376,14 +382,14 @@ int main() {
                 auto request = json::parse(line); start=std::chrono::steady_clock::now(); response = worker.execute(request);
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"};
+                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","bucket_create_raw","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");
                 }
                 response["ok"] = true;
             } catch (const SdkError& error) {
-                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}, {"status_code",error.status},{"error_code",error.error_code}};
+                response = {{"ok", false}, {"error", error.what()}, {"error_kind", error.status == 404 ? "not_found" : "sdk_error"}, {"status_code",error.status},{"error_code",error.error_code},{"http_headers",error.headers}};
             } catch (const std::exception& error) {
                 response = {{"ok", false}, {"error", error.what()}, {"error_kind", "worker_error"}};
             }

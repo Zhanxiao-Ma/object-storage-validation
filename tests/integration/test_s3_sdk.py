@@ -26,6 +26,11 @@ def expected_exact_list_diagnostics(language):
         common.update({"ceph_exact_list_v1_encoding_basic","ceph_exact_list_v2_startafter_unreadable"})
     return common
 
+def expected_version_diagnostics(language):
+    names={"ceph_version_"+name for name in ("suspend_versions","bulk_marker_create","multipart_id","marker_header_plain","marker_header_suspended")}
+    if language=="cpp":names.add("ceph_version_special")
+    return names
+
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_SDK_TESTS") == "1", "enable explicitly after building both SDK workers")
 class SdkIntegrationTest(unittest.TestCase):
@@ -187,6 +192,67 @@ class SdkIntegrationTest(unittest.TestCase):
                 finally:worker.close()
         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
+    def test_versioned_cleanup_purges_real_first_pages_and_opaque_keys(self):
+        """Create real versions/markers including whitespace keys and limit actual list requests to one entry; expect all six exact versions removed without new markers or default-bucket changes."""
+        from osv.version_scope import VersionScope
+        from osv.scenarios import Context
+        from osv.suites import Probe
+        for target in self.targets:
+            with self.subTest(language=target["language"]),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);worker=Worker(target,30);original=worker.call;deletions=[];pages=[]
+                def capped(request):
+                    if request["op"]=="versions_list":
+                        request={**request,"max_keys":1};pages.append(request)
+                    if request["op"]=="delete_version" and "version_id" in request:deletions.append((request["key"],request["version_id"]))
+                    return original(request)
+                worker.call=capped
+                try:
+                    self.assertNotIn("versioning_status",original({"op":"versioning_get"}))
+                    ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                    scope=VersionScope(Probe(ctx));expected=set()
+                    with self.assertRaisesRegex(AssertionError,"case failed after real versions"):
+                        with scope as bucket:
+                            bucket.call("versioning_put",status="Enabled")
+                            for key in (" ","ordinary"):
+                                for payload in (b"first-real-version",b"second-real-version"):
+                                    ctx.body.write_bytes(payload)
+                                    result=bucket.call("put_version",key=key,body_path=str(ctx.body));expected.add((key,result["version_id"]))
+                                result=bucket.call("delete_version",key=key);self.assertTrue(result["delete_marker"]);expected.add((key,result["version_id"]))
+                            raise AssertionError("case failed after real versions")
+                    self.assertTrue(scope.cleanup_completed);self.assertEqual(set(deletions),expected);self.assertEqual(len(deletions),6)
+                    self.assertGreaterEqual(len(pages),7)
+                    self.assertNotIn("versioning_status",original({"op":"versioning_get"}))
+                    self.assertEqual(original({"op":"bucket_head","bucket":scope.name})["status_code"],404)
+                finally:worker.close()
+        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+
+    def test_corrupt_version_oracles_fail_and_clean_real_history(self):
+        """Corrupt one actual marker/count/ID observation after genuine SDK writes; expect source assertions to fail and every historical object/marker bucket to be removed."""
+        from osv.ceph_versioning import CASES
+        from osv.scenarios import Context
+        from osv.suites import run_cases
+        for target in self.targets:
+            for mode in ("head","stack","atomic_id"):
+                with self.subTest(language=target["language"],mode=mode),tempfile.TemporaryDirectory() as temporary:
+                    directory=Path(temporary);worker=Worker(target,30);original=worker.call;faulted=[]
+                    def corrupt(request):
+                        result=original(request)
+                        if not faulted and result["ok"]:
+                            if mode=="head" and request["op"]=="delete_version" and "version_id" not in request:
+                                result["delete_marker"]=False;faulted.append(True)
+                            elif mode=="stack" and request["op"]=="versions_list" and len(result["delete_markers"])==3:
+                                result["delete_markers"]=result["delete_markers"][:-1];faulted.append(True)
+                            elif mode=="atomic_id" and request["op"]=="put_version":
+                                result.pop("version_id",None);faulted.append(True)
+                        return result
+                    worker.call=corrupt
+                    try:
+                        ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
+                        rows=run_cases(ctx,(next(c for c in CASES if c.name=="ceph_version_"+mode),))
+                        self.assertTrue(faulted);self.assertEqual(rows[0]["status"],"fail",rows)
+                        self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
+                    finally:worker.close()
+
     def test_ceph_bucket_cases_create_and_clean_actual_owned_buckets(self):
         """Run the seven real SDK bucket scenarios; expect exact source responses, a usable default bucket and no extra buckets afterward."""
         with tempfile.TemporaryDirectory() as temporary:
@@ -257,6 +323,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2))
             expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload"))
             expected.extend((target["id"],name) for target in self.targets for name in ("ceph_exact_multipart_copy_invalid","ceph_exact_multipart_copy_improper","ceph_get_part_multiple","ceph_get_part_single","ceph_get_part_ordinary"))
+            expected.extend((target["id"],name) for target in self.targets for name in expected_version_diagnostics(target["language"]))
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
             self.assertEqual(sorted(failures),sorted(expected))
@@ -270,7 +337,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),229)
+            self.assertEqual(len(report["coverage"]["catalog"]),250)
             self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 

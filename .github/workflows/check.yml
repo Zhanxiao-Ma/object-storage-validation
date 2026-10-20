@@ -15,7 +15,7 @@ jobs:
       - run: python -m osv check examples/cpp-cos.json
       - run: python -m osv check examples/cpp-obs.json
       - run: python -m osv run examples/selftest.json --output results/selftest
-      - run: python -m osv run examples/selftest.json --profile complete --output results/complete-selftest
+      - run: python -m osv catalog examples/selftest.json --profile complete > results/complete-catalog.json
   java:
     runs-on: ubuntu-latest
     steps:
@@ -57,6 +57,7 @@ jobs:
           OSV_RUN_LIST_TESTS: '1'
           OSV_RUN_DELETE_TESTS: '1'
           OSV_RUN_MULTIPART_TESTS: '1'
+          OSV_RUN_VERSION_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
           OSV_PAGE_TEST_TARGETS: java:s3,java:oss,java:obs,java:tos,java:cos
       - name: Install local S3 integration server

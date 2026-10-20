@@ -19,7 +19,7 @@ class BucketScope:
         if "bucket" in options:raise ValueError("cannot override the owned bucket scope")
         # Retain the real producer's opaque keys before a possibly ambiguous request.
         # Typed XML list parsers can trim whitespace keys; they are still valid objects.
-        if op in ("put","put_http","put_metadata","copy","copy_replace","mp_create","mp_create_metadata","mp_complete","mp_complete_observed") and "key" in options:
+        if op in ("put","put_http","put_metadata","put_version","copy","copy_replace","mp_create","mp_create_metadata","mp_complete","mp_complete_observed") and "key" in options:
             self.written_keys.add(options["key"])
         return self.probe.ctx.worker.call({"op":op,"bucket":self.name,**options})
 
@@ -47,16 +47,7 @@ class BucketScope:
         try:
             exists=self.raw("bucket_head")
             if exists["ok"]:
-                failures=[]
-                for key in sorted(self.written_keys):
-                    result=self.raw("delete",key=key)
-                    if not result["ok"]:failures.append(result)
-                remaining=self.raw("list",prefix="")
-                if remaining["ok"]:
-                    for key in remaining["keys"]:
-                        result=self.raw("delete",key=key)
-                        if not result["ok"]:failures.append(result)
-                else:failures.append(remaining)
+                failures=self.cleanup_objects()
                 result=self.raw("bucket_delete")
                 if not result["ok"]:raise RuntimeError(str(result)+"; earlier cleanup responses: "+str(failures))
                 gone=self.raw("bucket_head")
@@ -66,3 +57,17 @@ class BucketScope:
             raise RuntimeError((str(error)+"; " if error else "")+"isolated bucket cleanup failed for "+self.name+": "+str(cleanup_error)) from cleanup_error
         self.cleanup_completed=True
         return False
+
+    def cleanup_objects(self):
+        """Delete actual known/current objects; specialized scopes can purge history without creating new delete markers."""
+        failures=[]
+        for key in sorted(self.written_keys):
+            result=self.raw("delete",key=key)
+            if not result["ok"]:failures.append(result)
+        remaining=self.raw("list",prefix="")
+        if remaining["ok"]:
+            for key in remaining["keys"]:
+                result=self.raw("delete",key=key)
+                if not result["ok"]:failures.append(result)
+        else:failures.append(remaining)
+        return failures

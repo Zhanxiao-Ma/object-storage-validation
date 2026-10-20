@@ -121,3 +121,5 @@ Java/C++ AWS worker 的 `delete_many` 接受 `objects: [{"key":"...","version_id
 `mp_list`：单页真实 ListMultipartUploads，支持 `prefix`、`delimiter`、`key_marker`、`upload_id_marker`、`max_uploads`；返回实际 `uploads`（键、ID、时间及 SDK 暴露的 owner/initiator）、`common_prefixes`、截断状态与两个后续标记。
 
 `get_part` / `head_part`：调用 SDK 的 PartNumber 参数，输入 `key`/`part_number`，GET 另需 `output_path`；返回 SDK 实际 `parts_count`、`etag`、`size`，保留缺失值和服务错误。以上能力当前为 AWS Java/C++。
+
+版本控制操作（目前 AWS Java/C++）：`versioning_get` 返回服务端存在的 `versioning_status`/`mfa_delete`；`versioning_put` 发送 `status` 及可选 `mfa_delete`。`put_version` 读取 `body_path` 上传，`get_version`/`head_version` 接收可选 `version_id`，`delete_version` 可按实际 ID 删除或创建删除标记；只返回服务端暴露的 `version_id`/`delete_marker`，不从请求推测结果。GET 另需 `output_path`。`versions_list` 是单页 ListObjectVersions，可选 `prefix`/`delimiter`/`key_marker`/`version_id_marker`/`max_keys`，返回 SDK 顺序的 `versions`/`delete_markers`、实际字段有无、截断状态及两个后续标记。成功与失败 HTTP 响应头均保留。分块完成也返回实际存在的版本 ID。
