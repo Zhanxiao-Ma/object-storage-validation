@@ -68,7 +68,7 @@ public final class WorkerMain {
                         List<String> capabilities=new ArrayList<>(Arrays.asList("put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace"));
                         if(!"cos".equals(provider)) capabilities.add("get_http");
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
-                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions"); }
+                        if("s3".equals(provider)) { capabilities.addAll(S3Identities.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format"); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
@@ -82,6 +82,15 @@ public final class WorkerMain {
                     } else result.putAll(store.execute(request));
                     result.put("ok", true);
                 } catch (Exception error) {
+                    result.putAll(failure(error));
+                }
+                result.put("elapsed_ns", System.nanoTime()-start);
+                protocol.println(JSON.writeValueAsString(result));
+            }
+        }
+    }
+    static Map<String,Object> failure(Exception error) {
+        Map<String,Object> result=new LinkedHashMap<>();
                     result.put("ok", false);
                     result.put("error_kind", notFound(error) ? "not_found" : "sdk_error");
                     result.put("error", error.getClass().getSimpleName()+": "+error.getMessage());
@@ -92,11 +101,7 @@ public final class WorkerMain {
                     else if(error instanceof com.obs.services.exception.ObsException) { result.put("status_code",((com.obs.services.exception.ObsException)error).getResponseCode()); result.put("error_code",((com.obs.services.exception.ObsException)error).getErrorCode()); }
                     else if(error instanceof com.volcengine.tos.TosServerException) { result.put("status_code",((com.volcengine.tos.TosServerException)error).getStatusCode()); result.put("error_code",((com.volcengine.tos.TosServerException)error).getCode()); }
                     else if(error instanceof com.qcloud.cos.exception.CosServiceException) { result.put("status_code",((com.qcloud.cos.exception.CosServiceException)error).getStatusCode()); result.put("error_code",((com.qcloud.cos.exception.CosServiceException)error).getErrorCode()); }
-                }
-                result.put("elapsed_ns", System.nanoTime()-start);
-                protocol.println(JSON.writeValueAsString(result));
-            }
-        }
+        return result;
     }
     static boolean notFound(Exception error) {
         if (error instanceof software.amazon.awssdk.services.s3.model.S3Exception)
@@ -206,6 +211,7 @@ public final class WorkerMain {
         final S3Identities identities=new S3Identities();
         AwsStore() { client=identities.get("main"); }
         public Map<String,Object> execute(JsonNode q) throws Exception {
+            if("concurrent_requests".equals(text(q,"op")))return S3Concurrency.execute(this,q);
             if(q.has("wire_headers")) {
                 try(WireHeaders.Scope ignored=new WireHeaders.Scope(q.get("wire_headers"))) {
                     return executeSelected(q,identities.select(q));
@@ -435,6 +441,10 @@ public final class WorkerMain {
                 if("mp_create_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if(q.has("content_type")) b.contentType(text(q,"content_type"));
                 if(q.has("metadata")) b.metadata(JSON.convertValue(q.get("metadata"),new com.fasterxml.jackson.core.type.TypeReference<Map<String,String>>(){}));
+                if(q.has("tagging")) {
+                    if(!q.get("tagging").isTextual())throw new IllegalArgumentException("tagging must be textual");
+                    b.tagging(q.get("tagging").textValue());
+                }
                 S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
                 software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse result=client.createMultipartUpload(b.build());
                 return S3Checksums.observe(withHttp(one("upload_id",result.uploadId()),result.sdkHttpResponse().statusCode(),result.sdkHttpResponse().headers()),result);

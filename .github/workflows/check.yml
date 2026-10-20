@@ -97,6 +97,14 @@ jobs:
           OSV_RUN_PUBLIC_CONTROL_TESTS: '1'
           OSV_RUN_COPY_CONTRACT_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java shared-client concurrency, state, policies and logging controls
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_state_boundaries_sdk test_basic_boundaries_sdk test_policy_remaining_sdk test_logging_controls_sdk -v
+        env:
+          OSV_RUN_STATE_BOUNDARY_TESTS: '1'
+          OSV_RUN_BASIC_BOUNDARY_TESTS: '1'
+          OSV_RUN_REMAINING_POLICY_TESTS: '1'
+          OSV_RUN_LOGGING_CONTROL_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:

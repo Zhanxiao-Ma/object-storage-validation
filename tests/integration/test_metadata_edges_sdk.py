@@ -38,7 +38,7 @@ class MetadataEdgesSdkTest(unittest.TestCase):
         host,port=cls.server.get_host_and_port()
         cls.environment=patch.dict(os.environ,{"OSV_ACCESS_KEY":"local-test","OSV_SECRET_KEY":"local-test","OSV_SESSION_TOKEN":"",
             "OSV_ALT_ACCESS_KEY":"alternate-test","OSV_ALT_SECRET_KEY":"alternate-test","OSV_ALT_SESSION_TOKEN":"",
-            "OSV_ENDPOINT":f"http://{host}:{port}","OSV_REGION":"us-east-1","OSV_BUCKET":"osv-metadata-edges",
+            "OSV_ENDPOINT":f"http://{host}:{port}","AWS_EC2_METADATA_DISABLED":"true","OSV_REGION":"us-east-1","OSV_BUCKET":"osv-metadata-edges",
             "OSV_PATH_STYLE":"true","OSV_RETRIES":"0","OSV_TENANT_ACCESS_KEY":"","OSV_TENANT_SECRET_KEY":""})
         cls.environment.start();cls.addClassCleanup(cls.environment.stop)
         cls.client=boto3.client("s3",endpoint_url=f"http://{host}:{port}",region_name="us-east-1",aws_access_key_id="local-test",aws_secret_access_key="local-test")

@@ -2730,6 +2730,234 @@
       "source_sha256": "d9a91ee91a65659038ea789eba9f4623eb82ae6c56335b68decde17fe3f2a5a2",
       "implementation": "ceph_copy_contract_self_metadata",
       "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifmatch_failed@L3034",
+      "source_sha256": "7e6fea38a45051596f672e735866fa12c091c177ee8bc6cf3548e9c2563cf29d",
+      "implementation": "ceph_state_condition_if_match",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifnonematch_good@L3044",
+      "source_sha256": "2ca3d4512680197dd8596b25e6c0a4733a062575663910879bcd8b7eadfa208d",
+      "implementation": "ceph_state_condition_not_match",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifmodifiedsince_failed@L3075",
+      "source_sha256": "ff576e179a85c24e191fe2f319a2ccf2f4262a60ac9253195de84697111c6569",
+      "implementation": "ceph_state_condition_not_modified",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_ifunmodifiedsince_good@L3098",
+      "source_sha256": "64b867ee07e553c8fb81f633227a24ef3097a56c539bfc82d66bc6ae3068cea7",
+      "implementation": "ceph_state_condition_unmodified",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get@L3297",
+      "source_sha256": "30fba0e01ccdc27f185e417575a027d56130e6420f524491435dc4440f7388b9",
+      "implementation": "ceph_state_access_raw_get",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_bucket_gone@L3304",
+      "source_sha256": "c0176dd1b246363c2ba2dc82af8ea01bac3abfcfc637c523e6aca212e78bfd93",
+      "implementation": "ceph_state_access_raw_get_bucket_gone",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_delete_key_bucket_gone@L3318",
+      "source_sha256": "3262d1579ea109bd4002fe1f8acac3b345617a40aa23db784ab95f06d9773576",
+      "implementation": "ceph_state_access_delete_key_bucket_gone",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_object_gone@L3332",
+      "source_sha256": "1cf2965ea536db7aa65d0c795ee4d9e0d01a74122f1d564cc51a7252cae393c5",
+      "implementation": "ceph_state_access_raw_get_object_gone",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_bucket_acl@L3385",
+      "source_sha256": "91cb51fe0740501e8a7731dca74accbde3ac8b74230b0cf27b8c94764e0cac31",
+      "implementation": "ceph_state_access_raw_get_bucket_acl",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_get_object_acl@L3392",
+      "source_sha256": "96d73be78519115ade93e4eb6e73f35c6fd3262ce269b6634d25bc08640238cd",
+      "implementation": "ceph_state_access_raw_get_object_acl",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_authenticated@L3438",
+      "source_sha256": "53fc7c2f5bc34b32e648cec6557f9d70763456175c8935b3014452eedee81f05",
+      "implementation": "ceph_state_access_raw_authenticated",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_authenticated_bucket_acl@L3458",
+      "source_sha256": "823a0d6cccc0ab95bbb60e70f5099773276c4c57706f0c211fb209a449965d81",
+      "implementation": "ceph_state_access_raw_authenticated_bucket_acl",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_authenticated_object_acl@L3465",
+      "source_sha256": "e599d5b9fc259f72fc24e22bc1172640d41c62e67e6936842ba3f7cb30fe2210",
+      "implementation": "ceph_state_access_raw_authenticated_object_acl",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_authenticated_bucket_gone@L3472",
+      "source_sha256": "070245b2ea69d324e926c604869c6cbee8ade187c459a529edc62ad1e04559d3",
+      "implementation": "ceph_state_access_raw_authenticated_bucket_gone",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_raw_authenticated_object_gone@L3484",
+      "source_sha256": "2d4f7ccf2c8e406538cc31cadd8295a34dc0e576d71d10644f3c6e8cb2324149",
+      "implementation": "ceph_state_access_raw_authenticated_object_gone",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioned_object_acl@L8234",
+      "source_sha256": "92338b46f2a70178ffaac482d71242bf4aef3dcda2c4ed74128700fc56f76ecb",
+      "implementation": "ceph_state_version_acl_explicit",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioned_object_acl_no_version_specified@L8302",
+      "source_sha256": "452d865c599c099b8b2e03d0427e6ecdb37da13e63269ed9f45e2ca4e8811888",
+      "implementation": "ceph_state_version_acl_current",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioning_concurrent_multi_object_delete@L1658",
+      "source_sha256": "f5a9b8e604875a1dec67fcb573b024cb92064dd57342908c6acef49fe5604bdc",
+      "implementation": "ceph_state_concurrent_versions_delete",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_recreate_overwrite_acl@L3882",
+      "source_sha256": "35c0ee64cee7899417f01c51c04d0f2f040526918d1a0eccce6b4a6c12ac4f42",
+      "implementation": "ceph_state_recreate_acl_overwrite",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_recreate_new_acl@L3893",
+      "source_sha256": "41877ace80e2e3d709598e8ef1260eb21740921333b2064b217381b1593258ba",
+      "implementation": "ceph_state_recreate_acl_new",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_obj_head_tagging@L12043",
+      "source_sha256": "24bbb22d6515d20118116f844f8ef841a80ad8c24703252c7213e140237cb7b0",
+      "implementation": "ceph_state_tagging_head",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_set_multipart_tagging@L12003",
+      "source_sha256": "40e1b165517f5affe4b7b2a9e2915117fc4202919e97c5d7ca46620289c5b738",
+      "implementation": "ceph_state_multipart_tagging",
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_notexist@L1506",
+      "source_sha256": "41b104ccd85b8bcf83e982e4268fb92e1a1730df58a7d4593d39e3e71f54300e",
+      "implementation": "ceph_basic_missing_list",
+      "review": "真实HEAD建立随机UUID桶不存在，仅原始V1 LIST，严格404/NoSuchBucket，无创建操作。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_write_to_nonexist_bucket@L1582",
+      "source_sha256": "7424c704cfdceed8f04168a16f21fe594f1c7b90a86b0e95d97a6f34976abf5c",
+      "implementation": "ceph_basic_literal_missing_put",
+      "review": "保留源字面桶whatchutalkinboutwillis、foo键与foo内容；只读HEAD确认不存在作为安全前提，存在/403/不确定时not_run；真实SDK PUT严格404/NoSuchBucket，不删除不属于本用例的桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_expected_bucket_owner@L1719",
+      "source_sha256": "d1665bea2ab2d1bbae5feb59bc133e7cdbe229dd177b2b46980881c17e68c0ab",
+      "implementation": "ceph_basic_expected_owner",
+      "review": "源创建私有桶后改public-read-write，原空V1 LIST，foo/bar写入；独立配置main canonicalID+foo原头值，真正匿名SDK LIST与bar/coffee写入均严格403/AccessDenied；缺独立ID明确not_run。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_concurrent_set_canned_acl@L1567",
+      "source_sha256": "9172565b575fc58572adecf03b1cb965e00f7ad5e4c48588687e03b0eaa79eb5",
+      "implementation": "ceph_basic_concurrent_acl",
+      "review": "源50个请求使用同一个默认官方SDK client的concurrent_requests桥接，逐项public-read且所有ok必须true；无50进程替代，无序列排队冒充；缺能力not_run；HTTP barrier独立验证50同时到达连接，最后确认桶清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_versioned_concurrent_object_create_concurrent_remove@L8388",
+      "source_sha256": "95a7ef38c94c919ab46eafc41218234a15855f688172726e59ced74f19b175ae",
+      "implementation": "ceph_basic_versions_phased",
+      "review": "启用版本，myobj与data i原内容；5轮各5条同SDK-client并发PUT，源必须存在Versions且数量5；保留clear helper额外真实LIST，生产者Key/VersionId直接进入同client并发Delete；最后源Versions字段缺失。保留原线程异常不经join传播的缺陷，实际子请求错误仅记录证据，不增加源断言；真实历史版本最终清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_different_tenant@L11721",
+      "source_sha256": "24c986b0dfed45fd21be8e437630cce41f282f3103537ca81e9e3f98cee6e1dd",
+      "implementation": "ceph_remaining_policy_tenant_global",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；原始 asdf、裸桶 ARN、:bucket/tenant:bucket 语法、真实租户/主身份和 Contents 长度1；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_tenanted_bucket@L11787",
+      "source_sha256": "694ee0a5730795dd16f8ca5a6c119f7e201aa291317c7907c0c291f14c2e6f08",
+      "implementation": "ceph_remaining_policy_tenant_owned",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；原始 asdf、裸桶 ARN、:bucket/tenant:bucket 语法、真实租户/主身份和 Contents 长度1；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_upload_part_copy@L12641",
+      "source_sha256": "a05e7353ff41de971430bb519563c73796650e509b70a490c7ded4d162c7ee94",
+      "implementation": "ceph_remaining_policy_copy_parts",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；保留 public/* 策略、真正由 alt 创建目标桶、两个读取正文和 private/foo UploadPartCopy 403，finally 清理真实ID；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_on_a_bucket_with_policy@L14469",
+      "source_sha256": "c981579b128aaa3787fc72d4213d4888c893a41acd86e6cc6eb71472182d3069",
+      "implementation": "ceph_remaining_policy_multipart_50mib",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；原始 Principal/Action *、桶/对象ARN、50MiB和十个5MiB分块、精确完成状态200；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_buckets_invalid_auth@L5389",
+      "source_sha256": "14f92640e3ea87dab61890dd9d8ccadff314f44493622e2520c9d36820be3697",
+      "implementation": "ceph_remaining_policy_bad_access_key",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；原始 badauth/roflmao 或真实主访问键+roflmao 独立SDK进程，保留403，不打印凭证；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_buckets_bad_auth@L5395",
+      "source_sha256": "e4dd177f9228275511cd586cfb50d8e51d5b2a06c59ac7dd4bda4d66e177ccd7",
+      "implementation": "ceph_remaining_policy_bad_signature",
+      "review": "核对固定版本全部原始输入、身份、策略ARN、源/目标桶所有者和断言；原始 badauth/roflmao 或真实主访问键+roflmao 独立SDK进程，保留403，不打印凭证；框架额外finally清理分块不收窄源成功/失败预期。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging@L15528",
+      "source_sha256": "195f405fa7c1a59f2e42bfaa38e58bdbe5d4a4f36b72b0a70c2a7dda2cde74ef",
+      "implementation": "ceph_logging_controls_roundtrip",
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_errors@L16526",
+      "source_sha256": "85db9883f68d53d91e2dce5e2c5a193c71fd03d3592cf94efe5c10f233987e7e",
+      "implementation": "ceph_logging_controls_errors",
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_owner@L16645",
+      "source_sha256": "eeee2df4ee87bfc3c8e39499afd24e93e17fa83d792de7b40090993700cf5bc4",
+      "implementation": "ceph_logging_controls_owner",
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_permissions@L16692",
+      "source_sha256": "3220ec11502fc3a2f29ccfbb5824a92850e022c8253be44a1c48836c0314326a",
+      "implementation": "ceph_logging_controls_permissions",
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_rm_bucket_logging@L17236",
+      "source_sha256": "2937cee3a9d69648672c47e766c8ce20fc3fd6fbdb2365d04fdca9cab9c0c706",
+      "implementation": "ceph_logging_controls_remove",
+      "review": "核对原始标准SDK分支的完整输入/断言；保留_has_target_object_key_format finally True、TargetGrants源删除后比较、SourceArn错误Boto资源repr和资源缺失policy等缺陷。标准KeyFormat必走分支需真实logging_target_key_format能力，旧Java整函数not_run，未删字段。Ceph日志扩展按独立SDK能力处理，未伪造AWS模型支持；先停止日志再清理所有策略/桶。"
     }
   ]
 }

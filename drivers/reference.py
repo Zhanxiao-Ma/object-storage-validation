@@ -161,10 +161,10 @@ def execute(q):
         content = key.read_bytes()
         etag='"'+hashlib.md5(content).hexdigest()+'"'
         modified=int(key.stat().st_mtime)*1000
-        if "if_match" in q and q["if_match"] not in (etag,"*"):raise OperationError("PreconditionFailed")
-        if "if_unmodified_since_ms" in q and modified>q["if_unmodified_since_ms"] and "if_match" not in q:raise OperationError("PreconditionFailed")
-        if "if_none_match" in q and q["if_none_match"] in (etag,"*"):raise OperationError("NotModified")
-        if "if_modified_since_ms" in q and modified<=q["if_modified_since_ms"] and "if_none_match" not in q:raise OperationError("NotModified")
+        if "if_match" in q and q["if_match"] not in (etag,"*"):raise OperationError("PreconditionFailed",412)
+        if "if_unmodified_since_ms" in q and modified>q["if_unmodified_since_ms"] and "if_match" not in q:raise OperationError("PreconditionFailed",412)
+        if "if_none_match" in q and q["if_none_match"] in (etag,"*"):raise OperationError("NotModified",304)
+        if "if_modified_since_ms" in q and modified<=q["if_modified_since_ms"] and "if_none_match" not in q:raise OperationError("NotModified",304)
         total=len(content); response_headers={}; status=200
         if "range_header" in q:
             match=re.fullmatch(r"bytes=(\d*)-(\d*)",q["range_header"])
@@ -187,6 +187,7 @@ def execute(q):
                     "etag":etag.strip('"'),"metadata":info["metadata"],"content_type":info["content_type"]}
     elif op=="head_http":
         info=json.loads(key.with_suffix(".json").read_text());headers={}
+        if info.get("tags"):headers["x-amz-tagging-count"]=str(len(info["tags"]))
         if "cache_control" in info:headers["cache-control"]=info["cache_control"]
         if "expires_ms" in info:headers["expires"]=formatdate(info["expires_ms"]/1000,usegmt=True)
         return {"size":key.stat().st_size,"status_code":200,"http_headers":headers}

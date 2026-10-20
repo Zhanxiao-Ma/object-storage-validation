@@ -294,3 +294,12 @@ PYTHONPATH=tests/integration:. OSV_RUN_CONDITIONAL_VERSIONS_TESTS=1 OSV_RUN_PUBL
 ```bash
 PYTHONPATH=tests/integration:. OSV_RUN_MOTO_TESTS=1 python3 -m unittest test_local_moto -v
 ```
+
+
+共享客户端并发、状态、剩余策略和标准日志控制回归：
+
+```bash
+PYTHONPATH=tests/integration:. OSV_RUN_STATE_BOUNDARY_TESTS=1 OSV_RUN_BASIC_BOUNDARY_TESTS=1 OSV_RUN_REMAINING_POLICY_TESTS=1 OSV_RUN_LOGGING_CONTROL_TESTS=1 python3 -m unittest test_state_boundaries_sdk test_basic_boundaries_sdk test_policy_remaining_sdk test_logging_controls_sdk -v
+```
+
+本地固定凭证和区域的 HTTP/Moto fixtures 设置 `AWS_EC2_METADATA_DISABLED=true`，防止 C++ 默认配置构造等待无关 EC2 metadata 探测。生产 runner 环境不作此改动；本地启动耗时下降不作为云存储性能证据。

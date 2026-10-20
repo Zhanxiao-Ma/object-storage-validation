@@ -92,6 +92,7 @@ template<class Outcome> static void checked(const Outcome& outcome) {
 #include "bucket_api_generated.h"
 #include "checksum_models.h"
 #include "copy_request.h"
+#include <future>
 
 #include "wire_headers.h"
 #include "s3_identities.h"
@@ -107,6 +108,27 @@ class S3Worker {
 public:
     S3Worker():client(identities.get("main")) {}
     json execute(const json& q) {
+        if(q.value("op",std::string())=="concurrent_requests") {
+            for(const auto* name:{"identity","wire_headers","checksum_when_required"})if(q.contains(name))throw std::runtime_error(std::string("concurrent batch requires the default client: ")+name);
+            if(!q.contains("requests") || !q.at("requests").is_array() || q.at("requests").empty() || q.at("requests").size()>64)throw std::runtime_error("concurrent requests must be an array of 1..64 requests");
+            for(const auto& request:q.at("requests")) {
+                if(!request.is_object() || !request.contains("op") || !request.at("op").is_string())throw std::runtime_error("concurrent request requires a textual op");
+                const auto& op=request.at("op").get_ref<const std::string&>();
+                if(op.empty() || op=="concurrent_requests" || op=="info")throw std::runtime_error("invalid concurrent operation: "+op);
+                for(const auto* name:{"identity","wire_headers","checksum_when_required"})if(request.contains(name))throw std::runtime_error(std::string("concurrent request requires the default client: ")+name);
+            }
+            std::promise<void> release;auto start=release.get_future().share();
+            std::vector<std::future<json>> pending;
+            try {
+                for(const auto& request:q.at("requests"))pending.push_back(std::async(std::launch::async,[this,start,request] {
+                    try {start.get();auto result=execute(request);result["ok"]=true;return result;}
+                    catch(const SdkError& error){return json{{"ok",false},{"error",error.what()},{"error_kind",error.status==404?"not_found":"sdk_error"},{"status_code",error.status},{"error_code",error.error_code},{"error_message",error.what()},{"http_headers",error.headers}};}
+                    catch(const std::exception& error){return json{{"ok",false},{"error",error.what()},{"error_kind","worker_error"}};}
+                }));
+            } catch(...) {release.set_exception(std::current_exception());throw;}
+            release.set_value();json results=json::array();for(auto& future:pending)results.push_back(future.get());
+            return {{"results",results}};
+        }
         std::unique_ptr<WireHeaderScope> header_scope;
         if(q.contains("wire_headers"))header_scope=std::make_unique<WireHeaderScope>(q.at("wire_headers"));
         auto client=(q.contains("identity")||q.contains("wire_headers")||q.contains("checksum_when_required"))?identities.select(q):this->client;
@@ -371,6 +393,7 @@ public:
             if(op=="mp_create_sse_c") encryption_headers(request,q);
             if(q.contains("content_type")) request.SetContentType(q.at("content_type").get<std::string>());
             if(q.contains("metadata")) for(auto it=q.at("metadata").begin();it!=q.at("metadata").end();++it) request.AddMetadata(it.key(),it.value().get<std::string>());
+            if(q.contains("tagging"))request.SetTagging(q.at("tagging").get<std::string>());
             osv_checksums::apply(request,q);json http;HttpObservationScope observation(&http);
             auto outcome = client->CreateMultipartUpload(request); checked(outcome);
             http["upload_id"]=std::string(outcome.GetResult().GetUploadId().c_str());return osv_checksums::observe(http,outcome.GetResult());
@@ -434,7 +457,7 @@ int main() {
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& capability:osv_checksums::capabilities())response["capabilities"].push_back(capability);
-                    response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
+                    response["capabilities"].push_back("mp_create_tagging");response["capabilities"].push_back("logging_target_key_format");response["capabilities"].push_back("concurrent_requests");response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");

@@ -91,7 +91,7 @@ class SdkIntegrationTest(unittest.TestCase):
         host, port = cls.server.get_host_and_port()
         cls.environment = patch.dict(os.environ, {
             "OSV_ACCESS_KEY": "local-test", "OSV_SECRET_KEY": "local-test", "OSV_SESSION_TOKEN": "",
-            "OSV_ENDPOINT": f"http://{host}:{port}", "OSV_REGION": "us-east-1",
+            "OSV_ENDPOINT": f"http://{host}:{port}", "AWS_EC2_METADATA_DISABLED":"true","OSV_REGION": "us-east-1",
             "OSV_BUCKET": "osv-sdk-integration", "OSV_PATH_STYLE": "true", "OSV_RETRIES": "0",
             "OSV_ALT_ACCESS_KEY":"","OSV_ALT_SECRET_KEY":"","OSV_ALT_SESSION_TOKEN":"",
             "OSV_TENANT_ACCESS_KEY":"","OSV_TENANT_SECRET_KEY":"","OSV_BAD_AUTH_ACCESS_KEY":"","OSV_BAD_AUTH_SECRET_KEY":""})
@@ -570,6 +570,9 @@ class SdkIntegrationTest(unittest.TestCase):
                 else:extra=extra|({item.name for item in checksum_cases}-checksum_missing)
                 expected.extend((target["id"],name) for name in extra)
             expected.extend((target["id"],name) for target in self.targets for name in expected_conditional_version_diagnostics(target["language"])|expected_public_controls_diagnostics(target["language"]))
+            state_fail={"ceph_state_"+name for name in ("condition_not_match","condition_not_modified","access_raw_get_object_acl","recreate_acl_overwrite","recreate_acl_new")}
+            policy_tail_fail={"ceph_remaining_policy_bad_access_key","ceph_remaining_policy_bad_signature"}
+            expected.extend((target["id"],name) for target in self.targets for name in state_fail|policy_tail_fail|({"ceph_remaining_policy_multipart_50mib"} if target["language"]=="cpp" else set()))
             self.assertEqual(sorted(failures),sorted(expected))
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
@@ -581,7 +584,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),549)
+            self.assertEqual(len(report["coverage"]["catalog"]),587)
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -589,9 +592,22 @@ class SdkIntegrationTest(unittest.TestCase):
             public_missing={"ceph_public_controls_ignore_acl"}|{"ceph_public_ownership_"+when+mode for when in ("create_","put_") for mode in ("bucket_owner_enforced","bucket_owner_preferred","object_writer")}
             copy_missing={"ceph_copy_contract_other_owner","ceph_copy_contract_multipart_owners"}
             conditional_missing={"ceph_conditional_versions_bulk_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
+            state_missing={"ceph_state_version_acl_explicit","ceph_state_version_acl_current"}
+            basic_missing={"ceph_basic_expected_owner"}
+            policy_tail_missing={"ceph_remaining_policy_tenant_global","ceph_remaining_policy_tenant_owned","ceph_remaining_policy_copy_parts"}
+            logging_missing={"ceph_logging_controls_"+mode for mode in ("roundtrip","errors","owner","permissions","remove")}
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
-            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|public_missing|copy_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
+            self.assertEqual({(row["target"],row["case"]) for row in missing},{(target["id"],name) for target in self.targets for name in (access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})})
             for row in missing:
+                if row["case"] in state_missing|basic_missing|policy_tail_missing|logging_missing:
+                    if row["case"] in policy_tail_missing|{"ceph_logging_controls_owner"}:
+                        self.assertEqual(row["reason"],"unsupported_operations")
+                        self.assertEqual(row["missing_operations"],["identity_tenant"] if row["case"].startswith("ceph_remaining_policy_tenant_") else ["identity_alt"])
+                    elif row["case"] in {"ceph_logging_controls_roundtrip","ceph_logging_controls_errors"} and row["target"]=="java":
+                        self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["logging_target_key_format"])
+                    else:
+                        self.assertEqual(row["reason"],"missing_prerequisites");self.assertTrue(row["missing_requirements"])
+                    continue
                 if row["case"] in public_missing|copy_missing|conditional_missing:
                     self.assertEqual(row["reason"],"unsupported_operations")
                     self.assertEqual(row["missing_operations"],["delete_many_conditions"] if row["case"] in conditional_missing else ["identity_alt"])

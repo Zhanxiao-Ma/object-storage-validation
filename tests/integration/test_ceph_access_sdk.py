@@ -93,7 +93,7 @@ class AccessServiceTest(unittest.TestCase):
         try:
             host,port=service.get_host_and_port();endpoint=f"http://{host}:{port}"
             client=boto3.client("s3",endpoint_url=endpoint,region_name="us-east-1",aws_access_key_id="local-test",aws_secret_access_key="local-test")
-            overrides={"OSV_ENDPOINT":endpoint,"OSV_REGION":"us-east-1","OSV_ALT_ACCESS_KEY":"alternate-key","OSV_ALT_SECRET_KEY":"alternate-secret"}
+            overrides={"OSV_ENDPOINT":endpoint,"AWS_EC2_METADATA_DISABLED":"true","OSV_REGION":"us-east-1","OSV_ALT_ACCESS_KEY":"alternate-key","OSV_ALT_SECRET_KEY":"alternate-secret"}
             for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
                 with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3",overrides) as (worker,_):
                     directory=Path(temporary);ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})

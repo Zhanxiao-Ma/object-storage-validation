@@ -48,7 +48,7 @@ class ConditionalWriteServiceTest(unittest.TestCase):
             host,port=service.get_host_and_port();endpoint=f"http://{host}:{port}"
             client=boto3.client("s3",endpoint_url=endpoint,region_name="us-east-1",aws_access_key_id="local-test",aws_secret_access_key="local-test")
             for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
-                with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3",{"OSV_ENDPOINT":endpoint,"OSV_REGION":"us-east-1"}) as (worker,_):
+                with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3",{"OSV_ENDPOINT":endpoint,"AWS_EC2_METADATA_DISABLED":"true","OSV_REGION":"us-east-1"}) as (worker,_):
                     directory=Path(temporary);ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                     rows=run_cases(ctx,CASES)
                     self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{"ceph_put_condition_match_existing","ceph_put_condition_none_etag","ceph_copy_condition_match_bad"})

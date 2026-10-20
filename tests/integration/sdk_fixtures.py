@@ -79,7 +79,7 @@ def fixture_worker(language, fixtures, backend="cos", overrides=None, handler=Fi
                if language == "java" else [str(ROOT/("drivers/cpp/build/osv-cpp-"+backend))])
     environment = {"OSV_ACCESS_KEY":"local-test", "OSV_SECRET_KEY":"local-test", "OSV_SESSION_TOKEN":"",
         "OSV_ENDPOINT":f"http://127.0.0.1:{server.server_port}", "OSV_BUCKET":"fixture-1250000000",
-        "OSV_REGION":"ap-guangzhou", "OSV_RETRIES":"0", "OSV_CONNECTIONS":"2", "OSV_PATH_STYLE":"true", "OSV_CNAME":"true",
+        "AWS_EC2_METADATA_DISABLED":"true","OSV_REGION":"ap-guangzhou", "OSV_RETRIES":"0", "OSV_CONNECTIONS":"2", "OSV_PATH_STYLE":"true", "OSV_CNAME":"true",
         "http_proxy":"","HTTP_PROXY":"","https_proxy":"","HTTPS_PROXY":"","ALL_PROXY":"","all_proxy":"",
         "no_proxy":"127.0.0.1,localhost","NO_PROXY":"127.0.0.1,localhost"}
     if backend == "obs":

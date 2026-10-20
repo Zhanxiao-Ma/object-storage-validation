@@ -602,6 +602,62 @@
       "output": {
         "shape": "ListPartsOutput"
       }
+    },
+    "GetBucketLogging": {
+      "name": "GetBucketLogging",
+      "http": {
+        "method": "GET",
+        "requestUri": "/{Bucket}?logging"
+      },
+      "input": {
+        "shape": "GetBucketLoggingRequest"
+      },
+      "output": {
+        "shape": "GetBucketLoggingOutput"
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketLogging": {
+      "name": "PutBucketLogging",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?logging"
+      },
+      "input": {
+        "shape": "PutBucketLoggingRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
+    },
+    "PutBucketRequestPayment": {
+      "name": "PutBucketRequestPayment",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}?requestPayment"
+      },
+      "input": {
+        "shape": "PutBucketRequestPaymentRequest"
+      },
+      "httpChecksum": {
+        "requestAlgorithmMember": "ChecksumAlgorithm",
+        "requestChecksumRequired": true
+      },
+      "staticContextParams": {
+        "UseS3ExpressControlEndpoint": {
+          "value": true
+        }
+      }
     }
   },
   "shapes": {
@@ -3171,6 +3227,228 @@
           "shape": "DisplayName"
         }
       }
+    },
+    "GetBucketLoggingRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      }
+    },
+    "GetBucketLoggingOutput": {
+      "type": "structure",
+      "members": {
+        "LoggingEnabled": {
+          "shape": "LoggingEnabled"
+        }
+      }
+    },
+    "LoggingEnabled": {
+      "type": "structure",
+      "required": [
+        "TargetBucket",
+        "TargetPrefix"
+      ],
+      "members": {
+        "TargetBucket": {
+          "shape": "TargetBucket"
+        },
+        "TargetGrants": {
+          "shape": "TargetGrants"
+        },
+        "TargetPrefix": {
+          "shape": "TargetPrefix"
+        },
+        "TargetObjectKeyFormat": {
+          "shape": "TargetObjectKeyFormat"
+        }
+      }
+    },
+    "TargetBucket": {
+      "type": "string"
+    },
+    "TargetGrants": {
+      "type": "list",
+      "member": {
+        "shape": "TargetGrant",
+        "locationName": "Grant"
+      }
+    },
+    "TargetGrant": {
+      "type": "structure",
+      "members": {
+        "Grantee": {
+          "shape": "Grantee"
+        },
+        "Permission": {
+          "shape": "BucketLogsPermission"
+        }
+      }
+    },
+    "BucketLogsPermission": {
+      "type": "string",
+      "enum": [
+        "FULL_CONTROL",
+        "READ",
+        "WRITE"
+      ]
+    },
+    "TargetPrefix": {
+      "type": "string"
+    },
+    "TargetObjectKeyFormat": {
+      "type": "structure",
+      "members": {
+        "SimplePrefix": {
+          "shape": "SimplePrefix",
+          "locationName": "SimplePrefix"
+        },
+        "PartitionedPrefix": {
+          "shape": "PartitionedPrefix",
+          "locationName": "PartitionedPrefix"
+        }
+      }
+    },
+    "SimplePrefix": {
+      "type": "structure",
+      "members": {},
+      "locationName": "SimplePrefix"
+    },
+    "PartitionedPrefix": {
+      "type": "structure",
+      "members": {
+        "PartitionDateSource": {
+          "shape": "PartitionDateSource"
+        }
+      },
+      "locationName": "PartitionedPrefix"
+    },
+    "PartitionDateSource": {
+      "type": "string",
+      "enum": [
+        "EventTime",
+        "DeliveryTime"
+      ]
+    },
+    "PutBucketLoggingRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "BucketLoggingStatus"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "BucketLoggingStatus": {
+          "shape": "BucketLoggingStatus",
+          "locationName": "BucketLoggingStatus",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "BucketLoggingStatus"
+    },
+    "BucketLoggingStatus": {
+      "type": "structure",
+      "members": {
+        "LoggingEnabled": {
+          "shape": "LoggingEnabled"
+        }
+      }
+    },
+    "PutBucketRequestPaymentRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "RequestPaymentConfiguration"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "ContentMD5": {
+          "shape": "ContentMD5",
+          "location": "header",
+          "locationName": "Content-MD5"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "location": "header",
+          "locationName": "x-amz-sdk-checksum-algorithm"
+        },
+        "RequestPaymentConfiguration": {
+          "shape": "RequestPaymentConfiguration",
+          "locationName": "RequestPaymentConfiguration",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        }
+      },
+      "payload": "RequestPaymentConfiguration"
+    },
+    "RequestPaymentConfiguration": {
+      "type": "structure",
+      "required": [
+        "Payer"
+      ],
+      "members": {
+        "Payer": {
+          "shape": "Payer"
+        }
+      }
+    },
+    "Payer": {
+      "type": "string",
+      "enum": [
+        "Requester",
+        "BucketOwner"
+      ]
     }
   }
 }

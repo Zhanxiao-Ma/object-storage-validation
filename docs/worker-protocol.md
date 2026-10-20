@@ -150,3 +150,10 @@ AWS S3 Java/C++ 的 `copy`/`copy_replace` 支持可选 `acl` 和 `source_version
 `mp_copy` 的可选 `version_id` 要求 `mp_copy_version`。固定 C++ SDK 只提供 CopySource 路径字段，桥接通过官方 Request 的虚方法扩展：基类编码路径，再追加单独编码的 `?versionId=` 参数，随后由官方签名器发送；普通 Copy 和 UploadPartCopy 共用规则。版本参数不存在、空字符串、字面 `null` 和特殊字符分别验证，不能把整头解码后比较而掩盖路径/查询混淆。
 
 `api.GetBucketPolicyStatus`、`api.ListParts` 复用 typed API 模型入口。`sdk_error_message` 表示响应 `error_message` 暴露真实 SDK 的错误消息（可能为空或缺失），与包含异常上下文的 `error` 分开。
+
+
+AWS S3 的 `concurrent_requests` 接收 `requests` 数组（1–64 项），在一个持久 worker 内共享同一默认 SDK client、同时释放线程执行各个普通 RPC。`results` 按输入顺序返回各项的真实 `ok`、SDK 响应或错误；某项失败不改写其它项的结果。结构校验先于全部 HTTP：禁止空数组、嵌套并发、info、缺少文本 op，以及批次/子项上的 identity、wire_headers、checksum_when_required。普通操作执行失败按项报告；接口不提供写入事务保证。它用于源并发语义验证，不增加性能阶段指标。50 路 ACL 无需 50 个 JVM；独立 HTTP barrier 验证同一 worker 的 50 条连接同时到达。
+
+`mp_create_tagging` 能力表示 `mp_create_metadata.tagging` 字符串进入官方 CreateMultipartUpload.Tagging，非字符串在 HTTP 前拒绝。
+
+`api.GetBucketLogging`、`api.PutBucketLogging`、`api.PutBucketRequestPayment` 使用真实 typed 模型。`logging_target_key_format` 按实际 LoggingEnabled 模型字段声明；旧 Java SDK 缺该字段时，涉及原始 SimplePrefix/PartitionedPrefix 全分支的源函数明确 not_run。Ceph 专用 LoggingType/POST flush 不借此冒充标准 SDK 能力。

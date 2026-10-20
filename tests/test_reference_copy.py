@@ -35,3 +35,21 @@ class ReferenceCopyTest(unittest.TestCase):
                 call("copy","b",key="default-source",source_key="same")
                 call("get","b",key="default-source",output_path=str(output));self.assertEqual(output.read_bytes(),b"source-value")
             finally:worker.close()
+
+    def test_conditional_status_and_tag_count_follow_real_stored_object(self):
+        """Create actual bytes/tags through the production worker; expect exact 412/304 statuses and HEAD tag count changing from absent to 2 back to absent."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);worker=Worker(config(directory)["targets"][0],5)
+            try:
+                body=directory/"body";body.write_bytes(b"bar")
+                self.assertTrue(worker.call({"op":"put","key":"test","body_path":str(body)})["ok"])
+                output=directory/"output"
+                for condition,status,code in (({"if_match":'"ABCORZ"'},412,"PreconditionFailed"),({"if_unmodified_since_ms":0},412,"PreconditionFailed"),({"if_none_match":"*"},304,"NotModified"),({"if_modified_since_ms":9223372036854775807},304,"NotModified")):
+                    row=worker.call({"op":"get_http","key":"test","output_path":str(output),**condition})
+                    self.assertFalse(row["ok"],row);self.assertEqual(row["status_code"],status);self.assertEqual(row["error_code"],code)
+                self.assertNotIn("x-amz-tagging-count",worker.call({"op":"head_http","key":"test"})["http_headers"])
+                self.assertTrue(worker.call({"op":"tags_put","key":"test","tags":[{"key":"a","value":"1"},{"key":"b","value":"2"}]})["ok"])
+                self.assertEqual(worker.call({"op":"head_http","key":"test"})["http_headers"]["x-amz-tagging-count"],"2")
+                self.assertTrue(worker.call({"op":"tags_delete","key":"test"})["ok"])
+                self.assertNotIn("x-amz-tagging-count",worker.call({"op":"head_http","key":"test"})["http_headers"])
+            finally:worker.close()
