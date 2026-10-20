@@ -117,6 +117,22 @@ jobs:
           OSV_RUN_OBJECT_LOCK_TESTS: '1'
           OSV_RUN_LOGGING_RECORD_TESTS: '1'
           OSV_S3_TEST_LANGUAGES: java
+      - name: Java bucket names, cloud restores, delivered workloads and encrypted forms
+        run: PYTHONPATH=tests/integration:. python3 -m unittest test_bucket_names_sdk test_cloud_lifecycle_sdk test_logging_workloads_sdk test_logging_extensions_sdk test_metadata_tail_sdk test_encrypted_forms_sdk test_storage_options_sdk test_copy_api_sdk test_encryption_tail_sdk test_logging_policy_transitions_sdk test_logging_prefixes_sdk test_encrypted_copy_matrix_sdk -v
+        env:
+          OSV_RUN_BUCKET_NAMES_TESTS: '1'
+          OSV_RUN_CLOUD_LIFECYCLE_TESTS: '1'
+          OSV_RUN_LOGGING_WORKLOAD_TESTS: '1'
+          OSV_RUN_LOGGING_EXTENSION_TESTS: '1'
+          OSV_RUN_METADATA_TAIL_TESTS: '1'
+          OSV_RUN_ENCRYPTED_FORM_TESTS: '1'
+          OSV_RUN_STORAGE_OPTION_TESTS: '1'
+          OSV_RUN_COPY_API_TESTS: '1'
+          OSV_RUN_ENCRYPTION_TAIL_TESTS: '1'
+          OSV_RUN_LOGGING_POLICY_TRANSITION_TESTS: '1'
+          OSV_RUN_LOGGING_PREFIX_TESTS: '1'
+          OSV_RUN_ENCRYPTED_COPY_MATRIX_TESTS: '1'
+          OSV_S3_TEST_LANGUAGES: java
   obs-c:
     runs-on: ubuntu-latest
     steps:

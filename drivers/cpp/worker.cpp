@@ -281,6 +281,10 @@ public:
         } else if ((op == "put" || op == "put_metadata" || op == "put_http" || op == "put_sse_c" || op == "put_acl")) {
             Aws::S3::Model::PutObjectRequest request;
             request.SetBucket(bucket); request.SetKey(key);
+            if(q.contains("storage_class")) {
+                if(!q.at("storage_class").is_string() || q.at("storage_class").get<std::string>().empty())throw std::runtime_error("storage_class must be a nonempty string");
+                request.SetStorageClass(Aws::S3::Model::StorageClassMapper::GetStorageClassForName(q.at("storage_class").get<std::string>()));
+            }
             auto stream = Aws::MakeShared<Aws::FStream>("osv", q.at("body_path").get<std::string>(), std::ios::in | std::ios::binary);
             if (!*stream) throw std::runtime_error("cannot open body_path");
             request.SetBody(stream);
@@ -459,7 +463,7 @@ int main() {
                     response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& identity:S3Identities::capabilities())response["capabilities"].push_back(identity);
                     for(const auto& capability:osv_checksums::capabilities())response["capabilities"].push_back(capability);
-                    response["capabilities"].push_back("versions_storage_class");response["capabilities"].push_back("list_buckets_pagination");response["capabilities"].push_back("mp_create_tagging");response["capabilities"].push_back("logging_target_key_format");response["capabilities"].push_back("concurrent_requests");response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
+                    response["capabilities"].push_back("put_storage_class");response["capabilities"].push_back("client_timeouts");response["capabilities"].push_back("versions_storage_class");response["capabilities"].push_back("list_buckets_pagination");response["capabilities"].push_back("mp_create_tagging");response["capabilities"].push_back("logging_target_key_format");response["capabilities"].push_back("concurrent_requests");response["capabilities"].push_back("sdk_error_message");response["capabilities"].push_back("mp_copy_version");response["capabilities"].push_back("copy_source_version");response["capabilities"].push_back("copy_acl");
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");

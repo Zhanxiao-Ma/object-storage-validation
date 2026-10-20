@@ -8,7 +8,7 @@
 
 用例设计参考 objbench 与 Ceph s3-tests，自行实现语言无关的输入、步骤和预期。
 不执行或依赖这两个项目的测试程序，不把上游 Go/Python 的运行结果算作 Java/C++ 证据。
-来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 18；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
+来源用于定位场景；只有 alignment.json 中通过源指纹与全部断言审查的 aligned 行表示已完成对应迁移。当前目录版本为 21；上游提交固定，逐项实现映射见运行生成的 `alignment.json`。
 
 ## 正常档 normal（默认）
 
@@ -45,7 +45,7 @@ bucket_create 针对 manifest 指定的桶，不创建随机测试桶也不删�
 
 ## 完善档 complete
 
-包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，及原始HTTP 41项、查询扩展7项、生命周期过期20项/迁移4项/删除标记过期1项、对象锁28项及交付日志6项，总计 694 项（690 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
+包含正常档、`extended_objects` 的 18 项、`ceph_object_boundaries` 的 39 项、条件读取 8 项、元数据 4 项、同桶复制 9 项、精确 HTTP Range 6 项、对象标签 8 项和响应字段/对象生命周期 5 项及独立桶 7 项及精确 LIST 74 项及批量删除 4 项及精确分块上传 13 项，分块复制/上传清单 7 项及按分块编号读取 3 项，及版本控制 21 项，及桶配置 24 项及 SSE-C 11 项及桶控制 17 项及 SSE-C 分块 7 项及 SSE-S3/KMS 对象 22 项及多身份策略列举 6 项及 ACL 26 项及桶清单 3 项及原始 V4 请求头 27 项及条件写入/复制 12 项、ACL 访问 16 项与对象互操作 14 项，及策略条件 20 项、元数据边界 18 项与摘要/对象属性 17 项，及版本条件 25 项、公共访问/所有权 18 项和完整复制 16 项，及状态边界 22 项、基础/共享客户端并发 5 项、剩余策略 6 项及日志控制 5 项，及原始HTTP 41项、查询扩展7项、生命周期过期20项/迁移4项/删除标记过期1项、对象锁28项及交付日志6项，及桶命名/位置22项、云生命周期/恢复13项、交付日志负载18项/扩展3项、grant/URI边界2项及加密表单4项，及加密multipart/torrent5项、日志策略变化4项/多前缀2项，及完整加密复制/分块复制矩阵2项，总计 769 项（765 个门槛、4 个观察）。Ceph 全量迁移尚未完成。
 
 | 新增用例 ID | 断言 |
 |---|---|
@@ -392,3 +392,25 @@ AWS Java/C++ worker 支持逐请求 `identity`：`main`、`alt`、`tenant`、`ba
 日志交付保留源5.5秒等待和dummy PUT；不伪造flush API。`workload.identities.main.user_id` 是日志 SourceAccount/路径所需用户ID，`canonical_id` 用于ACL，二者不互相替代。缺身份、远端目标或服务端后台条件均明确 not_run。
 
 以上为迁移范围，尚不表示任何云厂商已通过；本地 HTTP/Moto 只验证真实 SDK 链路和预期诊断。
+
+
+### 精确桶名称、跨云恢复与日志负载
+
+`ceph_bucket_names` 保留源60–63精确长度、首字符、固定非法字面名和独立 `workload.ceph_api_name` 位置预期。固定字面名仅在专用环境显式设置 `workload.ceph_literal_bucket_names_authorized: true` 后执行，所有创建前确认HEAD404，创建结果不明时先以独立控制桶核对ACL owner再回收，不删除未知所有者资源。
+
+`cloud_lifecycle` 对象提供真实服务配置：`storage_class`、可选 `regular_storage_class`、`retain_head_object`、`target_path`、`target_storage_class`、`target_by_bucket`、`target_by_bucket_prefix`、`allow_read_through`、`read_through_days`。原字符串true/false分支保持不变；服务计时使用有限正数 `restore_debug_interval_seconds`、`restore_processor_period_seconds` 和前述生命周期间隔。跨端客户端由 `OSV_CLOUD_ENDPOINT/REGION/ACCESS_KEY/SECRET_KEY/SESSION_TOKEN` 环境变量配置，使用同一语言的真正AWS SDK独立会话；目标清理仅针对自有源桶前缀及真实opaque版本ID。没有云配置仍为not_run，不能用本地等待模拟后台能力。
+
+原read-through会单独创建100秒连接/请求超时的SDK客户端；`put_storage_class` 使用typed PutObject字段覆盖普通、SSE-C和KMS路径，不靠伪造HTTP响应。四模式加密迁移保留全部配置存储类别的不同有序组合、对象键、原等待倍数和读回断言。
+
+日志负载覆盖原五个对象及版本化读/写/删/HEAD/复制，原30MiB、六个5MiB分块、两代对象与批删，以及交付日志完整计数。日志扩展三项保留 `LoggingType`、`ObjectRollTime`、`RecordsBatchSize` 和真实POST flush要求；当前官方SDK模型不提供这些字段，成功路径缺能力而not_run，不删掉字段降级成标准日志。
+
+加密表单四项保留SSE-C原密钥/MD5、KMS key及默认加密配置、policy/HMAC-SHA1和真实SDK GET响应头/字节；仍属原始HTTP传输，不计SDK性能样本。KMS测试的主、次密钥分别由 `kms_key_id`、`secondary_kms_key_id` 提供，凭据只通过环境传递。
+
+
+补充加密multipart保留原30MiB/六个5MiB分块和两次实际完整GET驱动的Range循环；名为invalid_chunks的两个源函数并没有预期拒绝断言，真实服务拒绝仍按源失败，不能擅自当负测通过。torrent保留7MiB对象、UTF-8正文比较及404/NoSuchKey可接受分支，缺torrent支持不以普通GET成功冒充通过。日志策略变化和多个/单个前缀继续保留5.5秒与11秒原等待，以及源只检验最后桶的弱断言，不悄悄强化或修正来源。
+
+
+所有可能生成云端副本的生命周期/恢复/状态列举路径，都要求真实云端独立SDK配置，并在源桶先清理后按自有UUID前缀清理云端实际版本。逐桶目标模板必须恰好包含一个 `${bucket}`，只允许 `${zonegroup}`、`${storage_class}`、`${bucket}` 占位；固定共享目标仅清理自有UUID/前缀。拒绝既有逐桶目标及无法证明属于本次测试的清理范围。
+
+
+完整加密复制的两个源函数按各自全部参数实例执行：四种源模式×四种目标模式×全部源/目标存储类别×原对象大小。两类存储类别时，每个SDK是256个对象复制实例与64个分块复制实例；这仍只计两个源函数。保留全部SSE-C 400负面请求、真实ETag/UploadId的后续消费和A/B正文断言；必须同时配置主/次KMS，不静默省略KMS参数实例。创建结果未知、缺UploadId或原响应头断言失败时，按自有桶实际ListMultipartUploads/opaque ID回收未完成上传，然后清理对象及桶。

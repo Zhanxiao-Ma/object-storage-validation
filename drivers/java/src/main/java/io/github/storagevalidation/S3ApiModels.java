@@ -33,6 +33,19 @@ final class S3ApiModels {
             if(input.has("Bucket") && !text(input,"Bucket").equals(text(q,"bucket")))throw new IllegalArgumentException("cannot override scoped API bucket");
             input.put("Bucket",text(q,"bucket"));
         }
+        // The pinned SDK's copy customization names URI fields DestinationBucket/Key,
+        // while the S3 API model and C++ use Bucket/Key. Bind only these proven URI aliases.
+        if(api.equals("CopyObject") || api.equals("UploadPartCopy")) {
+            for(software.amazon.awssdk.core.SdkField<?> field:builder.sdkFields()) {
+                String source=field.locationName();
+                if((field.memberName().equals("DestinationBucket") && "Bucket".equals(source)) || (field.memberName().equals("DestinationKey") && "Key".equals(source))) {
+                    if(input.has(source)) {
+                        if(input.has(field.memberName()))throw new IllegalArgumentException("ambiguous copy destination field: "+source);
+                        input.set(field.memberName(),input.remove(source));
+                    }
+                }
+            }
+        }
         Object request=SdkModelJson.read(builder,input);
         Method method=S3Client.class.getMethod(Character.toLowerCase(javaApi.charAt(0))+javaApi.substring(1),requestClass);
         try {

@@ -149,6 +149,17 @@
 #include <aws/s3/model/ObjectVersion.h>
 #include <aws/s3/model/ObjectVersionStorageClass.h>
 #include <aws/s3/model/DeleteMarkerEntry.h>
+#include <aws/s3/model/CopyObjectRequest.h>
+#include <aws/s3/model/MetadataDirective.h>
+#include <aws/s3/model/TaggingDirective.h>
+#include <aws/s3/model/ObjectLockMode.h>
+#include <aws/s3/model/CopyObjectResultDetails.h>
+#include <aws/s3/model/CreateMultipartUploadRequest.h>
+#include <aws/s3/model/UploadPartCopyRequest.h>
+#include <aws/s3/model/CopyPartResult.h>
+#include <aws/s3/model/CompleteMultipartUploadRequest.h>
+#include <aws/s3/model/CompletedMultipartUpload.h>
+#include <aws/s3/model/CompletedPart.h>
 #include <aws/s3/model/GetBucketTaggingResult.h>
 #include <aws/s3/model/GetBucketCorsResult.h>
 #include <aws/s3/model/GetBucketLifecycleConfigurationResult.h>
@@ -176,6 +187,10 @@
 #include <aws/s3/model/ListObjectsResult.h>
 #include <aws/s3/model/ListObjectsV2Result.h>
 #include <aws/s3/model/ListObjectVersionsResult.h>
+#include <aws/s3/model/CopyObjectResult.h>
+#include <aws/s3/model/CreateMultipartUploadResult.h>
+#include <aws/s3/model/UploadPartCopyResult.h>
+#include <aws/s3/model/CompleteMultipartUploadResult.h>
 namespace osv_bucket_api {
 using J=nlohmann::json;
 inline int64_t signed_integer(const J& value,int64_t minimum,int64_t maximum,const char* field){
@@ -727,6 +742,82 @@ inline Aws::Vector<Aws::S3::Model::DeleteMarkerEntry> read_DeleteMarkers(const J
 inline J write_DeleteMarkers(const Aws::Vector<Aws::S3::Model::DeleteMarkerEntry>& value);
 inline Aws::S3::Model::DeleteMarkerEntry read_DeleteMarkerEntry(const J& value);
 inline J write_DeleteMarkerEntry(const Aws::S3::Model::DeleteMarkerEntry& value);
+inline Aws::S3::Model::CopyObjectRequest read_CopyObjectRequest(const J& value);
+inline J write_CopyObjectRequest(const Aws::S3::Model::CopyObjectRequest& value);
+inline Aws::String read_CacheControl(const J& value);
+inline J write_CacheControl(const Aws::String& value);
+inline Aws::String read_ContentDisposition(const J& value);
+inline J write_ContentDisposition(const Aws::String& value);
+inline Aws::String read_ContentEncoding(const J& value);
+inline J write_ContentEncoding(const Aws::String& value);
+inline Aws::String read_ContentLanguage(const J& value);
+inline J write_ContentLanguage(const Aws::String& value);
+inline Aws::String read_ContentType(const J& value);
+inline J write_ContentType(const Aws::String& value);
+inline Aws::String read_CopySource(const J& value);
+inline J write_CopySource(const Aws::String& value);
+inline Aws::String read_CopySourceIfMatch(const J& value);
+inline J write_CopySourceIfMatch(const Aws::String& value);
+inline Aws::Utils::DateTime read_CopySourceIfModifiedSince(const J& value);
+inline J write_CopySourceIfModifiedSince(const Aws::Utils::DateTime& value);
+inline Aws::String read_CopySourceIfNoneMatch(const J& value);
+inline J write_CopySourceIfNoneMatch(const Aws::String& value);
+inline Aws::Utils::DateTime read_CopySourceIfUnmodifiedSince(const J& value);
+inline J write_CopySourceIfUnmodifiedSince(const Aws::Utils::DateTime& value);
+inline Aws::Utils::DateTime read_Expires(const J& value);
+inline J write_Expires(const Aws::Utils::DateTime& value);
+inline Aws::Map<Aws::String,Aws::String> read_Metadata(const J& value);
+inline J write_Metadata(const Aws::Map<Aws::String,Aws::String>& value);
+inline Aws::S3::Model::MetadataDirective read_MetadataDirective(const J& value);
+inline J write_MetadataDirective(const Aws::S3::Model::MetadataDirective& value);
+inline Aws::S3::Model::TaggingDirective read_TaggingDirective(const J& value);
+inline J write_TaggingDirective(const Aws::S3::Model::TaggingDirective& value);
+inline Aws::String read_WebsiteRedirectLocation(const J& value);
+inline J write_WebsiteRedirectLocation(const Aws::String& value);
+inline Aws::String read_SSEKMSEncryptionContext(const J& value);
+inline J write_SSEKMSEncryptionContext(const Aws::String& value);
+inline Aws::String read_CopySourceSSECustomerAlgorithm(const J& value);
+inline J write_CopySourceSSECustomerAlgorithm(const Aws::String& value);
+inline Aws::String read_CopySourceSSECustomerKey(const J& value);
+inline J write_CopySourceSSECustomerKey(const Aws::String& value);
+inline Aws::String read_CopySourceSSECustomerKeyMD5(const J& value);
+inline J write_CopySourceSSECustomerKeyMD5(const Aws::String& value);
+inline Aws::String read_TaggingHeader(const J& value);
+inline J write_TaggingHeader(const Aws::String& value);
+inline Aws::S3::Model::ObjectLockMode read_ObjectLockMode(const J& value);
+inline J write_ObjectLockMode(const Aws::S3::Model::ObjectLockMode& value);
+inline Aws::Utils::DateTime read_ObjectLockRetainUntilDate(const J& value);
+inline J write_ObjectLockRetainUntilDate(const Aws::Utils::DateTime& value);
+inline Aws::S3::Model::CopyObjectResultDetails read_CopyObjectResult(const J& value);
+inline J write_CopyObjectResult(const Aws::S3::Model::CopyObjectResultDetails& value);
+inline Aws::String read_Expiration(const J& value);
+inline J write_Expiration(const Aws::String& value);
+inline Aws::String read_CopySourceVersionId(const J& value);
+inline J write_CopySourceVersionId(const Aws::String& value);
+inline Aws::S3::Model::CreateMultipartUploadRequest read_CreateMultipartUploadRequest(const J& value);
+inline J write_CreateMultipartUploadRequest(const Aws::S3::Model::CreateMultipartUploadRequest& value);
+inline Aws::S3::Model::UploadPartCopyRequest read_UploadPartCopyRequest(const J& value);
+inline J write_UploadPartCopyRequest(const Aws::S3::Model::UploadPartCopyRequest& value);
+inline Aws::String read_CopySourceRange(const J& value);
+inline J write_CopySourceRange(const Aws::String& value);
+inline Aws::S3::Model::CopyPartResult read_CopyPartResult(const J& value);
+inline J write_CopyPartResult(const Aws::S3::Model::CopyPartResult& value);
+inline Aws::S3::Model::CompleteMultipartUploadRequest read_CompleteMultipartUploadRequest(const J& value);
+inline J write_CompleteMultipartUploadRequest(const Aws::S3::Model::CompleteMultipartUploadRequest& value);
+inline Aws::S3::Model::CompletedMultipartUpload read_CompletedMultipartUpload(const J& value);
+inline J write_CompletedMultipartUpload(const Aws::S3::Model::CompletedMultipartUpload& value);
+inline Aws::Vector<Aws::S3::Model::CompletedPart> read_CompletedPartList(const J& value);
+inline J write_CompletedPartList(const Aws::Vector<Aws::S3::Model::CompletedPart>& value);
+inline Aws::S3::Model::CompletedPart read_CompletedPart(const J& value);
+inline J write_CompletedPart(const Aws::S3::Model::CompletedPart& value);
+inline int64_t read_MpuObjectSize(const J& value);
+inline J write_MpuObjectSize(const int64_t& value);
+inline Aws::String read_IfMatch(const J& value);
+inline J write_IfMatch(const Aws::String& value);
+inline Aws::String read_IfNoneMatch(const J& value);
+inline J write_IfNoneMatch(const Aws::String& value);
+inline Aws::String read_Location(const J& value);
+inline J write_Location(const Aws::String& value);
 inline Aws::S3::Model::AbortIncompleteMultipartUpload read_AbortIncompleteMultipartUpload(const J& value) {
     if(!value.is_object())throw std::runtime_error("SDK structure must be an object: AbortIncompleteMultipartUpload");
     static const std::set<std::string> allowed={"DaysAfterInitiation"};
@@ -3798,8 +3889,542 @@ inline J write_DeleteMarkerEntry(const Aws::S3::Model::DeleteMarkerEntry& value)
     if(value.LastModifiedHasBeenSet())result["LastModified"]=write_LastModified(value.GetLastModified());
     return result;
 }
-inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions"});}
-inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions"};return allowed.count(op)!=0;}
+inline Aws::S3::Model::CopyObjectRequest read_CopyObjectRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CopyObjectRequest");
+    static const std::set<std::string> allowed={"ACL","Bucket","CacheControl","ChecksumAlgorithm","ContentDisposition","ContentEncoding","ContentLanguage","ContentType","CopySource","CopySourceIfMatch","CopySourceIfModifiedSince","CopySourceIfNoneMatch","CopySourceIfUnmodifiedSince","Expires","GrantFullControl","GrantRead","GrantReadACP","GrantWriteACP","Key","Metadata","MetadataDirective","TaggingDirective","ServerSideEncryption","StorageClass","WebsiteRedirectLocation","SSECustomerAlgorithm","SSECustomerKey","SSECustomerKeyMD5","SSEKMSKeyId","SSEKMSEncryptionContext","BucketKeyEnabled","CopySourceSSECustomerAlgorithm","CopySourceSSECustomerKey","CopySourceSSECustomerKeyMD5","RequestPayer","Tagging","ObjectLockMode","ObjectLockRetainUntilDate","ObjectLockLegalHoldStatus","ExpectedBucketOwner","ExpectedSourceBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CopyObjectRequest result;
+    if(value.contains("ACL") && !value.at("ACL").is_null())result.SetACL(read_ObjectCannedACL(value.at("ACL")));
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("CacheControl") && !value.at("CacheControl").is_null())result.SetCacheControl(read_CacheControl(value.at("CacheControl")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("ContentDisposition") && !value.at("ContentDisposition").is_null())result.SetContentDisposition(read_ContentDisposition(value.at("ContentDisposition")));
+    if(value.contains("ContentEncoding") && !value.at("ContentEncoding").is_null())result.SetContentEncoding(read_ContentEncoding(value.at("ContentEncoding")));
+    if(value.contains("ContentLanguage") && !value.at("ContentLanguage").is_null())result.SetContentLanguage(read_ContentLanguage(value.at("ContentLanguage")));
+    if(value.contains("ContentType") && !value.at("ContentType").is_null())result.SetContentType(read_ContentType(value.at("ContentType")));
+    if(value.contains("CopySource") && !value.at("CopySource").is_null())result.SetCopySource(read_CopySource(value.at("CopySource")));
+    if(value.contains("CopySourceIfMatch") && !value.at("CopySourceIfMatch").is_null())result.SetCopySourceIfMatch(read_CopySourceIfMatch(value.at("CopySourceIfMatch")));
+    if(value.contains("CopySourceIfModifiedSince") && !value.at("CopySourceIfModifiedSince").is_null())result.SetCopySourceIfModifiedSince(read_CopySourceIfModifiedSince(value.at("CopySourceIfModifiedSince")));
+    if(value.contains("CopySourceIfNoneMatch") && !value.at("CopySourceIfNoneMatch").is_null())result.SetCopySourceIfNoneMatch(read_CopySourceIfNoneMatch(value.at("CopySourceIfNoneMatch")));
+    if(value.contains("CopySourceIfUnmodifiedSince") && !value.at("CopySourceIfUnmodifiedSince").is_null())result.SetCopySourceIfUnmodifiedSince(read_CopySourceIfUnmodifiedSince(value.at("CopySourceIfUnmodifiedSince")));
+    if(value.contains("Expires") && !value.at("Expires").is_null())result.SetExpires(read_Expires(value.at("Expires")));
+    if(value.contains("GrantFullControl") && !value.at("GrantFullControl").is_null())result.SetGrantFullControl(read_GrantFullControl(value.at("GrantFullControl")));
+    if(value.contains("GrantRead") && !value.at("GrantRead").is_null())result.SetGrantRead(read_GrantRead(value.at("GrantRead")));
+    if(value.contains("GrantReadACP") && !value.at("GrantReadACP").is_null())result.SetGrantReadACP(read_GrantReadACP(value.at("GrantReadACP")));
+    if(value.contains("GrantWriteACP") && !value.at("GrantWriteACP").is_null())result.SetGrantWriteACP(read_GrantWriteACP(value.at("GrantWriteACP")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("Metadata") && !value.at("Metadata").is_null())result.SetMetadata(read_Metadata(value.at("Metadata")));
+    if(value.contains("MetadataDirective") && !value.at("MetadataDirective").is_null())result.SetMetadataDirective(read_MetadataDirective(value.at("MetadataDirective")));
+    if(value.contains("TaggingDirective") && !value.at("TaggingDirective").is_null())result.SetTaggingDirective(read_TaggingDirective(value.at("TaggingDirective")));
+    if(value.contains("ServerSideEncryption") && !value.at("ServerSideEncryption").is_null())result.SetServerSideEncryption(read_ServerSideEncryption(value.at("ServerSideEncryption")));
+    if(value.contains("StorageClass") && !value.at("StorageClass").is_null())result.SetStorageClass(read_StorageClass(value.at("StorageClass")));
+    if(value.contains("WebsiteRedirectLocation") && !value.at("WebsiteRedirectLocation").is_null())result.SetWebsiteRedirectLocation(read_WebsiteRedirectLocation(value.at("WebsiteRedirectLocation")));
+    if(value.contains("SSECustomerAlgorithm") && !value.at("SSECustomerAlgorithm").is_null())result.SetSSECustomerAlgorithm(read_SSECustomerAlgorithm(value.at("SSECustomerAlgorithm")));
+    if(value.contains("SSECustomerKey") && !value.at("SSECustomerKey").is_null())result.SetSSECustomerKey(read_SSECustomerKey(value.at("SSECustomerKey")));
+    if(value.contains("SSECustomerKeyMD5") && !value.at("SSECustomerKeyMD5").is_null())result.SetSSECustomerKeyMD5(read_SSECustomerKeyMD5(value.at("SSECustomerKeyMD5")));
+    if(value.contains("SSEKMSKeyId") && !value.at("SSEKMSKeyId").is_null())result.SetSSEKMSKeyId(read_SSEKMSKeyId(value.at("SSEKMSKeyId")));
+    if(value.contains("SSEKMSEncryptionContext") && !value.at("SSEKMSEncryptionContext").is_null())result.SetSSEKMSEncryptionContext(read_SSEKMSEncryptionContext(value.at("SSEKMSEncryptionContext")));
+    if(value.contains("BucketKeyEnabled") && !value.at("BucketKeyEnabled").is_null())result.SetBucketKeyEnabled(read_BucketKeyEnabled(value.at("BucketKeyEnabled")));
+    if(value.contains("CopySourceSSECustomerAlgorithm") && !value.at("CopySourceSSECustomerAlgorithm").is_null())result.SetCopySourceSSECustomerAlgorithm(read_CopySourceSSECustomerAlgorithm(value.at("CopySourceSSECustomerAlgorithm")));
+    if(value.contains("CopySourceSSECustomerKey") && !value.at("CopySourceSSECustomerKey").is_null())result.SetCopySourceSSECustomerKey(read_CopySourceSSECustomerKey(value.at("CopySourceSSECustomerKey")));
+    if(value.contains("CopySourceSSECustomerKeyMD5") && !value.at("CopySourceSSECustomerKeyMD5").is_null())result.SetCopySourceSSECustomerKeyMD5(read_CopySourceSSECustomerKeyMD5(value.at("CopySourceSSECustomerKeyMD5")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("Tagging") && !value.at("Tagging").is_null())result.SetTagging(read_TaggingHeader(value.at("Tagging")));
+    if(value.contains("ObjectLockMode") && !value.at("ObjectLockMode").is_null())result.SetObjectLockMode(read_ObjectLockMode(value.at("ObjectLockMode")));
+    if(value.contains("ObjectLockRetainUntilDate") && !value.at("ObjectLockRetainUntilDate").is_null())result.SetObjectLockRetainUntilDate(read_ObjectLockRetainUntilDate(value.at("ObjectLockRetainUntilDate")));
+    if(value.contains("ObjectLockLegalHoldStatus") && !value.at("ObjectLockLegalHoldStatus").is_null())result.SetObjectLockLegalHoldStatus(read_ObjectLockLegalHoldStatus(value.at("ObjectLockLegalHoldStatus")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("ExpectedSourceBucketOwner") && !value.at("ExpectedSourceBucketOwner").is_null())result.SetExpectedSourceBucketOwner(read_AccountId(value.at("ExpectedSourceBucketOwner")));
+    return result;
+}
+inline J write_CopyObjectRequest(const Aws::S3::Model::CopyObjectRequest& value) {
+    J result=J::object();
+    if(value.ACLHasBeenSet())result["ACL"]=write_ObjectCannedACL(value.GetACL());
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.CacheControlHasBeenSet())result["CacheControl"]=write_CacheControl(value.GetCacheControl());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.ContentDispositionHasBeenSet())result["ContentDisposition"]=write_ContentDisposition(value.GetContentDisposition());
+    if(value.ContentEncodingHasBeenSet())result["ContentEncoding"]=write_ContentEncoding(value.GetContentEncoding());
+    if(value.ContentLanguageHasBeenSet())result["ContentLanguage"]=write_ContentLanguage(value.GetContentLanguage());
+    if(value.ContentTypeHasBeenSet())result["ContentType"]=write_ContentType(value.GetContentType());
+    if(value.CopySourceHasBeenSet())result["CopySource"]=write_CopySource(value.GetCopySource());
+    if(value.CopySourceIfMatchHasBeenSet())result["CopySourceIfMatch"]=write_CopySourceIfMatch(value.GetCopySourceIfMatch());
+    if(value.CopySourceIfModifiedSinceHasBeenSet())result["CopySourceIfModifiedSince"]=write_CopySourceIfModifiedSince(value.GetCopySourceIfModifiedSince());
+    if(value.CopySourceIfNoneMatchHasBeenSet())result["CopySourceIfNoneMatch"]=write_CopySourceIfNoneMatch(value.GetCopySourceIfNoneMatch());
+    if(value.CopySourceIfUnmodifiedSinceHasBeenSet())result["CopySourceIfUnmodifiedSince"]=write_CopySourceIfUnmodifiedSince(value.GetCopySourceIfUnmodifiedSince());
+    if(value.ExpiresHasBeenSet())result["Expires"]=write_Expires(value.GetExpires());
+    if(value.GrantFullControlHasBeenSet())result["GrantFullControl"]=write_GrantFullControl(value.GetGrantFullControl());
+    if(value.GrantReadHasBeenSet())result["GrantRead"]=write_GrantRead(value.GetGrantRead());
+    if(value.GrantReadACPHasBeenSet())result["GrantReadACP"]=write_GrantReadACP(value.GetGrantReadACP());
+    if(value.GrantWriteACPHasBeenSet())result["GrantWriteACP"]=write_GrantWriteACP(value.GetGrantWriteACP());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.MetadataHasBeenSet())result["Metadata"]=write_Metadata(value.GetMetadata());
+    if(value.MetadataDirectiveHasBeenSet())result["MetadataDirective"]=write_MetadataDirective(value.GetMetadataDirective());
+    if(value.TaggingDirectiveHasBeenSet())result["TaggingDirective"]=write_TaggingDirective(value.GetTaggingDirective());
+    if(value.ServerSideEncryptionHasBeenSet())result["ServerSideEncryption"]=write_ServerSideEncryption(value.GetServerSideEncryption());
+    if(value.StorageClassHasBeenSet())result["StorageClass"]=write_StorageClass(value.GetStorageClass());
+    if(value.WebsiteRedirectLocationHasBeenSet())result["WebsiteRedirectLocation"]=write_WebsiteRedirectLocation(value.GetWebsiteRedirectLocation());
+    if(value.SSECustomerAlgorithmHasBeenSet())result["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(value.GetSSECustomerAlgorithm());
+    if(value.SSECustomerKeyHasBeenSet())result["SSECustomerKey"]=write_SSECustomerKey(value.GetSSECustomerKey());
+    if(value.SSECustomerKeyMD5HasBeenSet())result["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(value.GetSSECustomerKeyMD5());
+    if(value.SSEKMSKeyIdHasBeenSet())result["SSEKMSKeyId"]=write_SSEKMSKeyId(value.GetSSEKMSKeyId());
+    if(value.SSEKMSEncryptionContextHasBeenSet())result["SSEKMSEncryptionContext"]=write_SSEKMSEncryptionContext(value.GetSSEKMSEncryptionContext());
+    if(value.BucketKeyEnabledHasBeenSet())result["BucketKeyEnabled"]=write_BucketKeyEnabled(value.GetBucketKeyEnabled());
+    if(value.CopySourceSSECustomerAlgorithmHasBeenSet())result["CopySourceSSECustomerAlgorithm"]=write_CopySourceSSECustomerAlgorithm(value.GetCopySourceSSECustomerAlgorithm());
+    if(value.CopySourceSSECustomerKeyHasBeenSet())result["CopySourceSSECustomerKey"]=write_CopySourceSSECustomerKey(value.GetCopySourceSSECustomerKey());
+    if(value.CopySourceSSECustomerKeyMD5HasBeenSet())result["CopySourceSSECustomerKeyMD5"]=write_CopySourceSSECustomerKeyMD5(value.GetCopySourceSSECustomerKeyMD5());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.TaggingHasBeenSet())result["Tagging"]=write_TaggingHeader(value.GetTagging());
+    if(value.ObjectLockModeHasBeenSet())result["ObjectLockMode"]=write_ObjectLockMode(value.GetObjectLockMode());
+    if(value.ObjectLockRetainUntilDateHasBeenSet())result["ObjectLockRetainUntilDate"]=write_ObjectLockRetainUntilDate(value.GetObjectLockRetainUntilDate());
+    if(value.ObjectLockLegalHoldStatusHasBeenSet())result["ObjectLockLegalHoldStatus"]=write_ObjectLockLegalHoldStatus(value.GetObjectLockLegalHoldStatus());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.ExpectedSourceBucketOwnerHasBeenSet())result["ExpectedSourceBucketOwner"]=write_AccountId(value.GetExpectedSourceBucketOwner());
+    return result;
+}
+inline Aws::String read_CacheControl(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CacheControl(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ContentDisposition(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ContentDisposition(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ContentEncoding(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ContentEncoding(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ContentLanguage(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ContentLanguage(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_ContentType(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_ContentType(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySource(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySource(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySourceIfMatch(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceIfMatch(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Utils::DateTime read_CopySourceIfModifiedSince(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"CopySourceIfModifiedSince")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_CopySourceIfModifiedSince(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::String read_CopySourceIfNoneMatch(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceIfNoneMatch(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::Utils::DateTime read_CopySourceIfUnmodifiedSince(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"CopySourceIfUnmodifiedSince")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_CopySourceIfUnmodifiedSince(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::Utils::DateTime read_Expires(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"Expires")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_Expires(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::Map<Aws::String,Aws::String> read_Metadata(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK map must be an object: Metadata");
+    Aws::Map<Aws::String,Aws::String> result;for(auto it=value.begin();it!=value.end();++it)result[it.key()]=read_MetadataValue(it.value());return result;
+}
+inline J write_Metadata(const Aws::Map<Aws::String,Aws::String>& value) {
+    J result=J::object();for(const auto& item:value)result[std::string(item.first.c_str())]=write_MetadataValue(item.second);return result;
+}
+inline Aws::S3::Model::MetadataDirective read_MetadataDirective(const J& value) {
+    return Aws::S3::Model::MetadataDirectiveMapper::GetMetadataDirectiveForName(value.get<std::string>());
+}
+inline J write_MetadataDirective(const Aws::S3::Model::MetadataDirective& value) {
+    return std::string(Aws::S3::Model::MetadataDirectiveMapper::GetNameForMetadataDirective(value).c_str());
+}
+inline Aws::S3::Model::TaggingDirective read_TaggingDirective(const J& value) {
+    return Aws::S3::Model::TaggingDirectiveMapper::GetTaggingDirectiveForName(value.get<std::string>());
+}
+inline J write_TaggingDirective(const Aws::S3::Model::TaggingDirective& value) {
+    return std::string(Aws::S3::Model::TaggingDirectiveMapper::GetNameForTaggingDirective(value).c_str());
+}
+inline Aws::String read_WebsiteRedirectLocation(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_WebsiteRedirectLocation(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_SSEKMSEncryptionContext(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_SSEKMSEncryptionContext(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySourceSSECustomerAlgorithm(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceSSECustomerAlgorithm(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySourceSSECustomerKey(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceSSECustomerKey(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySourceSSECustomerKeyMD5(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceSSECustomerKeyMD5(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_TaggingHeader(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_TaggingHeader(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::ObjectLockMode read_ObjectLockMode(const J& value) {
+    return Aws::S3::Model::ObjectLockModeMapper::GetObjectLockModeForName(value.get<std::string>());
+}
+inline J write_ObjectLockMode(const Aws::S3::Model::ObjectLockMode& value) {
+    return std::string(Aws::S3::Model::ObjectLockModeMapper::GetNameForObjectLockMode(value).c_str());
+}
+inline Aws::Utils::DateTime read_ObjectLockRetainUntilDate(const J& value) {
+    return value.is_number_integer()?Aws::Utils::DateTime(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"ObjectLockRetainUntilDate")):Aws::Utils::DateTime(value.get<std::string>(),Aws::Utils::DateFormat::ISO_8601);
+}
+inline J write_ObjectLockRetainUntilDate(const Aws::Utils::DateTime& value) {
+    return value.Millis();
+}
+inline Aws::S3::Model::CopyObjectResultDetails read_CopyObjectResult(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CopyObjectResult");
+    static const std::set<std::string> allowed={"ETag","LastModified","ChecksumType","ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CopyObjectResultDetails result;
+    if(value.contains("ETag") && !value.at("ETag").is_null())result.SetETag(read_ETag(value.at("ETag")));
+    if(value.contains("LastModified") && !value.at("LastModified").is_null())result.SetLastModified(read_LastModified(value.at("LastModified")));
+    if(value.contains("ChecksumType") && !value.at("ChecksumType").is_null())result.SetChecksumType(read_ChecksumType(value.at("ChecksumType")));
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    return result;
+}
+inline J write_CopyObjectResult(const Aws::S3::Model::CopyObjectResultDetails& value) {
+    J result=J::object();
+    if(value.ETagHasBeenSet())result["ETag"]=write_ETag(value.GetETag());
+    if(value.LastModifiedHasBeenSet())result["LastModified"]=write_LastModified(value.GetLastModified());
+    if(value.ChecksumTypeHasBeenSet())result["ChecksumType"]=write_ChecksumType(value.GetChecksumType());
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    return result;
+}
+inline Aws::String read_Expiration(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_Expiration(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_CopySourceVersionId(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceVersionId(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::CreateMultipartUploadRequest read_CreateMultipartUploadRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CreateMultipartUploadRequest");
+    static const std::set<std::string> allowed={"ACL","Bucket","CacheControl","ContentDisposition","ContentEncoding","ContentLanguage","ContentType","Expires","GrantFullControl","GrantRead","GrantReadACP","GrantWriteACP","Key","Metadata","ServerSideEncryption","StorageClass","WebsiteRedirectLocation","SSECustomerAlgorithm","SSECustomerKey","SSECustomerKeyMD5","SSEKMSKeyId","SSEKMSEncryptionContext","BucketKeyEnabled","RequestPayer","Tagging","ObjectLockMode","ObjectLockRetainUntilDate","ObjectLockLegalHoldStatus","ExpectedBucketOwner","ChecksumAlgorithm","ChecksumType"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CreateMultipartUploadRequest result;
+    if(value.contains("ACL") && !value.at("ACL").is_null())result.SetACL(read_ObjectCannedACL(value.at("ACL")));
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("CacheControl") && !value.at("CacheControl").is_null())result.SetCacheControl(read_CacheControl(value.at("CacheControl")));
+    if(value.contains("ContentDisposition") && !value.at("ContentDisposition").is_null())result.SetContentDisposition(read_ContentDisposition(value.at("ContentDisposition")));
+    if(value.contains("ContentEncoding") && !value.at("ContentEncoding").is_null())result.SetContentEncoding(read_ContentEncoding(value.at("ContentEncoding")));
+    if(value.contains("ContentLanguage") && !value.at("ContentLanguage").is_null())result.SetContentLanguage(read_ContentLanguage(value.at("ContentLanguage")));
+    if(value.contains("ContentType") && !value.at("ContentType").is_null())result.SetContentType(read_ContentType(value.at("ContentType")));
+    if(value.contains("Expires") && !value.at("Expires").is_null())result.SetExpires(read_Expires(value.at("Expires")));
+    if(value.contains("GrantFullControl") && !value.at("GrantFullControl").is_null())result.SetGrantFullControl(read_GrantFullControl(value.at("GrantFullControl")));
+    if(value.contains("GrantRead") && !value.at("GrantRead").is_null())result.SetGrantRead(read_GrantRead(value.at("GrantRead")));
+    if(value.contains("GrantReadACP") && !value.at("GrantReadACP").is_null())result.SetGrantReadACP(read_GrantReadACP(value.at("GrantReadACP")));
+    if(value.contains("GrantWriteACP") && !value.at("GrantWriteACP").is_null())result.SetGrantWriteACP(read_GrantWriteACP(value.at("GrantWriteACP")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("Metadata") && !value.at("Metadata").is_null())result.SetMetadata(read_Metadata(value.at("Metadata")));
+    if(value.contains("ServerSideEncryption") && !value.at("ServerSideEncryption").is_null())result.SetServerSideEncryption(read_ServerSideEncryption(value.at("ServerSideEncryption")));
+    if(value.contains("StorageClass") && !value.at("StorageClass").is_null())result.SetStorageClass(read_StorageClass(value.at("StorageClass")));
+    if(value.contains("WebsiteRedirectLocation") && !value.at("WebsiteRedirectLocation").is_null())result.SetWebsiteRedirectLocation(read_WebsiteRedirectLocation(value.at("WebsiteRedirectLocation")));
+    if(value.contains("SSECustomerAlgorithm") && !value.at("SSECustomerAlgorithm").is_null())result.SetSSECustomerAlgorithm(read_SSECustomerAlgorithm(value.at("SSECustomerAlgorithm")));
+    if(value.contains("SSECustomerKey") && !value.at("SSECustomerKey").is_null())result.SetSSECustomerKey(read_SSECustomerKey(value.at("SSECustomerKey")));
+    if(value.contains("SSECustomerKeyMD5") && !value.at("SSECustomerKeyMD5").is_null())result.SetSSECustomerKeyMD5(read_SSECustomerKeyMD5(value.at("SSECustomerKeyMD5")));
+    if(value.contains("SSEKMSKeyId") && !value.at("SSEKMSKeyId").is_null())result.SetSSEKMSKeyId(read_SSEKMSKeyId(value.at("SSEKMSKeyId")));
+    if(value.contains("SSEKMSEncryptionContext") && !value.at("SSEKMSEncryptionContext").is_null())result.SetSSEKMSEncryptionContext(read_SSEKMSEncryptionContext(value.at("SSEKMSEncryptionContext")));
+    if(value.contains("BucketKeyEnabled") && !value.at("BucketKeyEnabled").is_null())result.SetBucketKeyEnabled(read_BucketKeyEnabled(value.at("BucketKeyEnabled")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("Tagging") && !value.at("Tagging").is_null())result.SetTagging(read_TaggingHeader(value.at("Tagging")));
+    if(value.contains("ObjectLockMode") && !value.at("ObjectLockMode").is_null())result.SetObjectLockMode(read_ObjectLockMode(value.at("ObjectLockMode")));
+    if(value.contains("ObjectLockRetainUntilDate") && !value.at("ObjectLockRetainUntilDate").is_null())result.SetObjectLockRetainUntilDate(read_ObjectLockRetainUntilDate(value.at("ObjectLockRetainUntilDate")));
+    if(value.contains("ObjectLockLegalHoldStatus") && !value.at("ObjectLockLegalHoldStatus").is_null())result.SetObjectLockLegalHoldStatus(read_ObjectLockLegalHoldStatus(value.at("ObjectLockLegalHoldStatus")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("ChecksumAlgorithm") && !value.at("ChecksumAlgorithm").is_null())result.SetChecksumAlgorithm(read_ChecksumAlgorithm(value.at("ChecksumAlgorithm")));
+    if(value.contains("ChecksumType") && !value.at("ChecksumType").is_null())result.SetChecksumType(read_ChecksumType(value.at("ChecksumType")));
+    return result;
+}
+inline J write_CreateMultipartUploadRequest(const Aws::S3::Model::CreateMultipartUploadRequest& value) {
+    J result=J::object();
+    if(value.ACLHasBeenSet())result["ACL"]=write_ObjectCannedACL(value.GetACL());
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.CacheControlHasBeenSet())result["CacheControl"]=write_CacheControl(value.GetCacheControl());
+    if(value.ContentDispositionHasBeenSet())result["ContentDisposition"]=write_ContentDisposition(value.GetContentDisposition());
+    if(value.ContentEncodingHasBeenSet())result["ContentEncoding"]=write_ContentEncoding(value.GetContentEncoding());
+    if(value.ContentLanguageHasBeenSet())result["ContentLanguage"]=write_ContentLanguage(value.GetContentLanguage());
+    if(value.ContentTypeHasBeenSet())result["ContentType"]=write_ContentType(value.GetContentType());
+    if(value.ExpiresHasBeenSet())result["Expires"]=write_Expires(value.GetExpires());
+    if(value.GrantFullControlHasBeenSet())result["GrantFullControl"]=write_GrantFullControl(value.GetGrantFullControl());
+    if(value.GrantReadHasBeenSet())result["GrantRead"]=write_GrantRead(value.GetGrantRead());
+    if(value.GrantReadACPHasBeenSet())result["GrantReadACP"]=write_GrantReadACP(value.GetGrantReadACP());
+    if(value.GrantWriteACPHasBeenSet())result["GrantWriteACP"]=write_GrantWriteACP(value.GetGrantWriteACP());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.MetadataHasBeenSet())result["Metadata"]=write_Metadata(value.GetMetadata());
+    if(value.ServerSideEncryptionHasBeenSet())result["ServerSideEncryption"]=write_ServerSideEncryption(value.GetServerSideEncryption());
+    if(value.StorageClassHasBeenSet())result["StorageClass"]=write_StorageClass(value.GetStorageClass());
+    if(value.WebsiteRedirectLocationHasBeenSet())result["WebsiteRedirectLocation"]=write_WebsiteRedirectLocation(value.GetWebsiteRedirectLocation());
+    if(value.SSECustomerAlgorithmHasBeenSet())result["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(value.GetSSECustomerAlgorithm());
+    if(value.SSECustomerKeyHasBeenSet())result["SSECustomerKey"]=write_SSECustomerKey(value.GetSSECustomerKey());
+    if(value.SSECustomerKeyMD5HasBeenSet())result["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(value.GetSSECustomerKeyMD5());
+    if(value.SSEKMSKeyIdHasBeenSet())result["SSEKMSKeyId"]=write_SSEKMSKeyId(value.GetSSEKMSKeyId());
+    if(value.SSEKMSEncryptionContextHasBeenSet())result["SSEKMSEncryptionContext"]=write_SSEKMSEncryptionContext(value.GetSSEKMSEncryptionContext());
+    if(value.BucketKeyEnabledHasBeenSet())result["BucketKeyEnabled"]=write_BucketKeyEnabled(value.GetBucketKeyEnabled());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.TaggingHasBeenSet())result["Tagging"]=write_TaggingHeader(value.GetTagging());
+    if(value.ObjectLockModeHasBeenSet())result["ObjectLockMode"]=write_ObjectLockMode(value.GetObjectLockMode());
+    if(value.ObjectLockRetainUntilDateHasBeenSet())result["ObjectLockRetainUntilDate"]=write_ObjectLockRetainUntilDate(value.GetObjectLockRetainUntilDate());
+    if(value.ObjectLockLegalHoldStatusHasBeenSet())result["ObjectLockLegalHoldStatus"]=write_ObjectLockLegalHoldStatus(value.GetObjectLockLegalHoldStatus());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.ChecksumAlgorithmHasBeenSet())result["ChecksumAlgorithm"]=write_ChecksumAlgorithm(value.GetChecksumAlgorithm());
+    if(value.ChecksumTypeHasBeenSet())result["ChecksumType"]=write_ChecksumType(value.GetChecksumType());
+    return result;
+}
+inline Aws::S3::Model::UploadPartCopyRequest read_UploadPartCopyRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: UploadPartCopyRequest");
+    static const std::set<std::string> allowed={"Bucket","CopySource","CopySourceIfMatch","CopySourceIfModifiedSince","CopySourceIfNoneMatch","CopySourceIfUnmodifiedSince","CopySourceRange","Key","PartNumber","UploadId","SSECustomerAlgorithm","SSECustomerKey","SSECustomerKeyMD5","CopySourceSSECustomerAlgorithm","CopySourceSSECustomerKey","CopySourceSSECustomerKeyMD5","RequestPayer","ExpectedBucketOwner","ExpectedSourceBucketOwner"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::UploadPartCopyRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("CopySource") && !value.at("CopySource").is_null())result.SetCopySource(read_CopySource(value.at("CopySource")));
+    if(value.contains("CopySourceIfMatch") && !value.at("CopySourceIfMatch").is_null())result.SetCopySourceIfMatch(read_CopySourceIfMatch(value.at("CopySourceIfMatch")));
+    if(value.contains("CopySourceIfModifiedSince") && !value.at("CopySourceIfModifiedSince").is_null())result.SetCopySourceIfModifiedSince(read_CopySourceIfModifiedSince(value.at("CopySourceIfModifiedSince")));
+    if(value.contains("CopySourceIfNoneMatch") && !value.at("CopySourceIfNoneMatch").is_null())result.SetCopySourceIfNoneMatch(read_CopySourceIfNoneMatch(value.at("CopySourceIfNoneMatch")));
+    if(value.contains("CopySourceIfUnmodifiedSince") && !value.at("CopySourceIfUnmodifiedSince").is_null())result.SetCopySourceIfUnmodifiedSince(read_CopySourceIfUnmodifiedSince(value.at("CopySourceIfUnmodifiedSince")));
+    if(value.contains("CopySourceRange") && !value.at("CopySourceRange").is_null())result.SetCopySourceRange(read_CopySourceRange(value.at("CopySourceRange")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("PartNumber") && !value.at("PartNumber").is_null())result.SetPartNumber(read_PartNumber(value.at("PartNumber")));
+    if(value.contains("UploadId") && !value.at("UploadId").is_null())result.SetUploadId(read_MultipartUploadId(value.at("UploadId")));
+    if(value.contains("SSECustomerAlgorithm") && !value.at("SSECustomerAlgorithm").is_null())result.SetSSECustomerAlgorithm(read_SSECustomerAlgorithm(value.at("SSECustomerAlgorithm")));
+    if(value.contains("SSECustomerKey") && !value.at("SSECustomerKey").is_null())result.SetSSECustomerKey(read_SSECustomerKey(value.at("SSECustomerKey")));
+    if(value.contains("SSECustomerKeyMD5") && !value.at("SSECustomerKeyMD5").is_null())result.SetSSECustomerKeyMD5(read_SSECustomerKeyMD5(value.at("SSECustomerKeyMD5")));
+    if(value.contains("CopySourceSSECustomerAlgorithm") && !value.at("CopySourceSSECustomerAlgorithm").is_null())result.SetCopySourceSSECustomerAlgorithm(read_CopySourceSSECustomerAlgorithm(value.at("CopySourceSSECustomerAlgorithm")));
+    if(value.contains("CopySourceSSECustomerKey") && !value.at("CopySourceSSECustomerKey").is_null())result.SetCopySourceSSECustomerKey(read_CopySourceSSECustomerKey(value.at("CopySourceSSECustomerKey")));
+    if(value.contains("CopySourceSSECustomerKeyMD5") && !value.at("CopySourceSSECustomerKeyMD5").is_null())result.SetCopySourceSSECustomerKeyMD5(read_CopySourceSSECustomerKeyMD5(value.at("CopySourceSSECustomerKeyMD5")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("ExpectedSourceBucketOwner") && !value.at("ExpectedSourceBucketOwner").is_null())result.SetExpectedSourceBucketOwner(read_AccountId(value.at("ExpectedSourceBucketOwner")));
+    return result;
+}
+inline J write_UploadPartCopyRequest(const Aws::S3::Model::UploadPartCopyRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.CopySourceHasBeenSet())result["CopySource"]=write_CopySource(value.GetCopySource());
+    if(value.CopySourceIfMatchHasBeenSet())result["CopySourceIfMatch"]=write_CopySourceIfMatch(value.GetCopySourceIfMatch());
+    if(value.CopySourceIfModifiedSinceHasBeenSet())result["CopySourceIfModifiedSince"]=write_CopySourceIfModifiedSince(value.GetCopySourceIfModifiedSince());
+    if(value.CopySourceIfNoneMatchHasBeenSet())result["CopySourceIfNoneMatch"]=write_CopySourceIfNoneMatch(value.GetCopySourceIfNoneMatch());
+    if(value.CopySourceIfUnmodifiedSinceHasBeenSet())result["CopySourceIfUnmodifiedSince"]=write_CopySourceIfUnmodifiedSince(value.GetCopySourceIfUnmodifiedSince());
+    if(value.CopySourceRangeHasBeenSet())result["CopySourceRange"]=write_CopySourceRange(value.GetCopySourceRange());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.PartNumberHasBeenSet())result["PartNumber"]=write_PartNumber(value.GetPartNumber());
+    if(value.UploadIdHasBeenSet())result["UploadId"]=write_MultipartUploadId(value.GetUploadId());
+    if(value.SSECustomerAlgorithmHasBeenSet())result["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(value.GetSSECustomerAlgorithm());
+    if(value.SSECustomerKeyHasBeenSet())result["SSECustomerKey"]=write_SSECustomerKey(value.GetSSECustomerKey());
+    if(value.SSECustomerKeyMD5HasBeenSet())result["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(value.GetSSECustomerKeyMD5());
+    if(value.CopySourceSSECustomerAlgorithmHasBeenSet())result["CopySourceSSECustomerAlgorithm"]=write_CopySourceSSECustomerAlgorithm(value.GetCopySourceSSECustomerAlgorithm());
+    if(value.CopySourceSSECustomerKeyHasBeenSet())result["CopySourceSSECustomerKey"]=write_CopySourceSSECustomerKey(value.GetCopySourceSSECustomerKey());
+    if(value.CopySourceSSECustomerKeyMD5HasBeenSet())result["CopySourceSSECustomerKeyMD5"]=write_CopySourceSSECustomerKeyMD5(value.GetCopySourceSSECustomerKeyMD5());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.ExpectedSourceBucketOwnerHasBeenSet())result["ExpectedSourceBucketOwner"]=write_AccountId(value.GetExpectedSourceBucketOwner());
+    return result;
+}
+inline Aws::String read_CopySourceRange(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_CopySourceRange(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::S3::Model::CopyPartResult read_CopyPartResult(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CopyPartResult");
+    static const std::set<std::string> allowed={"ETag","LastModified","ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CopyPartResult result;
+    if(value.contains("ETag") && !value.at("ETag").is_null())result.SetETag(read_ETag(value.at("ETag")));
+    if(value.contains("LastModified") && !value.at("LastModified").is_null())result.SetLastModified(read_LastModified(value.at("LastModified")));
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    return result;
+}
+inline J write_CopyPartResult(const Aws::S3::Model::CopyPartResult& value) {
+    J result=J::object();
+    if(value.ETagHasBeenSet())result["ETag"]=write_ETag(value.GetETag());
+    if(value.LastModifiedHasBeenSet())result["LastModified"]=write_LastModified(value.GetLastModified());
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    return result;
+}
+inline Aws::S3::Model::CompleteMultipartUploadRequest read_CompleteMultipartUploadRequest(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CompleteMultipartUploadRequest");
+    static const std::set<std::string> allowed={"Bucket","Key","MultipartUpload","UploadId","ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256","ChecksumType","MpuObjectSize","RequestPayer","ExpectedBucketOwner","IfMatch","IfNoneMatch","SSECustomerAlgorithm","SSECustomerKey","SSECustomerKeyMD5"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CompleteMultipartUploadRequest result;
+    if(value.contains("Bucket") && !value.at("Bucket").is_null())result.SetBucket(read_BucketName(value.at("Bucket")));
+    if(value.contains("Key") && !value.at("Key").is_null())result.SetKey(read_ObjectKey(value.at("Key")));
+    if(value.contains("MultipartUpload") && !value.at("MultipartUpload").is_null())result.SetMultipartUpload(read_CompletedMultipartUpload(value.at("MultipartUpload")));
+    if(value.contains("UploadId") && !value.at("UploadId").is_null())result.SetUploadId(read_MultipartUploadId(value.at("UploadId")));
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    if(value.contains("ChecksumType") && !value.at("ChecksumType").is_null())result.SetChecksumType(read_ChecksumType(value.at("ChecksumType")));
+    if(value.contains("MpuObjectSize") && !value.at("MpuObjectSize").is_null())result.SetMpuObjectSize(read_MpuObjectSize(value.at("MpuObjectSize")));
+    if(value.contains("RequestPayer") && !value.at("RequestPayer").is_null())result.SetRequestPayer(read_RequestPayer(value.at("RequestPayer")));
+    if(value.contains("ExpectedBucketOwner") && !value.at("ExpectedBucketOwner").is_null())result.SetExpectedBucketOwner(read_AccountId(value.at("ExpectedBucketOwner")));
+    if(value.contains("IfMatch") && !value.at("IfMatch").is_null())result.SetIfMatch(read_IfMatch(value.at("IfMatch")));
+    if(value.contains("IfNoneMatch") && !value.at("IfNoneMatch").is_null())result.SetIfNoneMatch(read_IfNoneMatch(value.at("IfNoneMatch")));
+    if(value.contains("SSECustomerAlgorithm") && !value.at("SSECustomerAlgorithm").is_null())result.SetSSECustomerAlgorithm(read_SSECustomerAlgorithm(value.at("SSECustomerAlgorithm")));
+    if(value.contains("SSECustomerKey") && !value.at("SSECustomerKey").is_null())result.SetSSECustomerKey(read_SSECustomerKey(value.at("SSECustomerKey")));
+    if(value.contains("SSECustomerKeyMD5") && !value.at("SSECustomerKeyMD5").is_null())result.SetSSECustomerKeyMD5(read_SSECustomerKeyMD5(value.at("SSECustomerKeyMD5")));
+    return result;
+}
+inline J write_CompleteMultipartUploadRequest(const Aws::S3::Model::CompleteMultipartUploadRequest& value) {
+    J result=J::object();
+    if(value.BucketHasBeenSet())result["Bucket"]=write_BucketName(value.GetBucket());
+    if(value.KeyHasBeenSet())result["Key"]=write_ObjectKey(value.GetKey());
+    if(value.MultipartUploadHasBeenSet())result["MultipartUpload"]=write_CompletedMultipartUpload(value.GetMultipartUpload());
+    if(value.UploadIdHasBeenSet())result["UploadId"]=write_MultipartUploadId(value.GetUploadId());
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    if(value.ChecksumTypeHasBeenSet())result["ChecksumType"]=write_ChecksumType(value.GetChecksumType());
+    if(value.MpuObjectSizeHasBeenSet())result["MpuObjectSize"]=write_MpuObjectSize(value.GetMpuObjectSize());
+    if(value.RequestPayerHasBeenSet())result["RequestPayer"]=write_RequestPayer(value.GetRequestPayer());
+    if(value.ExpectedBucketOwnerHasBeenSet())result["ExpectedBucketOwner"]=write_AccountId(value.GetExpectedBucketOwner());
+    if(value.IfMatchHasBeenSet())result["IfMatch"]=write_IfMatch(value.GetIfMatch());
+    if(value.IfNoneMatchHasBeenSet())result["IfNoneMatch"]=write_IfNoneMatch(value.GetIfNoneMatch());
+    if(value.SSECustomerAlgorithmHasBeenSet())result["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(value.GetSSECustomerAlgorithm());
+    if(value.SSECustomerKeyHasBeenSet())result["SSECustomerKey"]=write_SSECustomerKey(value.GetSSECustomerKey());
+    if(value.SSECustomerKeyMD5HasBeenSet())result["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(value.GetSSECustomerKeyMD5());
+    return result;
+}
+inline Aws::S3::Model::CompletedMultipartUpload read_CompletedMultipartUpload(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CompletedMultipartUpload");
+    static const std::set<std::string> allowed={"Parts"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CompletedMultipartUpload result;
+    if(value.contains("Parts") && !value.at("Parts").is_null())result.SetParts(read_CompletedPartList(value.at("Parts")));
+    return result;
+}
+inline J write_CompletedMultipartUpload(const Aws::S3::Model::CompletedMultipartUpload& value) {
+    J result=J::object();
+    if(value.PartsHasBeenSet())result["Parts"]=write_CompletedPartList(value.GetParts());
+    return result;
+}
+inline Aws::Vector<Aws::S3::Model::CompletedPart> read_CompletedPartList(const J& value) {
+    if(!value.is_array())throw std::runtime_error("SDK list must be an array: CompletedPartList");
+    Aws::Vector<Aws::S3::Model::CompletedPart> result;for(const auto& item:value)result.push_back(read_CompletedPart(item));return result;
+}
+inline J write_CompletedPartList(const Aws::Vector<Aws::S3::Model::CompletedPart>& value) {
+    J result=J::array();for(const auto& item:value)result.push_back(write_CompletedPart(item));return result;
+}
+inline Aws::S3::Model::CompletedPart read_CompletedPart(const J& value) {
+    if(!value.is_object())throw std::runtime_error("SDK structure must be an object: CompletedPart");
+    static const std::set<std::string> allowed={"ETag","ChecksumCRC32","ChecksumCRC32C","ChecksumCRC64NVME","ChecksumSHA1","ChecksumSHA256","PartNumber"};
+    for(auto it=value.begin();it!=value.end();++it)if(!allowed.count(it.key()))throw std::runtime_error("SDK model has no member: "+it.key());
+    Aws::S3::Model::CompletedPart result;
+    if(value.contains("ETag") && !value.at("ETag").is_null())result.SetETag(read_ETag(value.at("ETag")));
+    if(value.contains("ChecksumCRC32") && !value.at("ChecksumCRC32").is_null())result.SetChecksumCRC32(read_ChecksumCRC32(value.at("ChecksumCRC32")));
+    if(value.contains("ChecksumCRC32C") && !value.at("ChecksumCRC32C").is_null())result.SetChecksumCRC32C(read_ChecksumCRC32C(value.at("ChecksumCRC32C")));
+    if(value.contains("ChecksumCRC64NVME") && !value.at("ChecksumCRC64NVME").is_null())result.SetChecksumCRC64NVME(read_ChecksumCRC64NVME(value.at("ChecksumCRC64NVME")));
+    if(value.contains("ChecksumSHA1") && !value.at("ChecksumSHA1").is_null())result.SetChecksumSHA1(read_ChecksumSHA1(value.at("ChecksumSHA1")));
+    if(value.contains("ChecksumSHA256") && !value.at("ChecksumSHA256").is_null())result.SetChecksumSHA256(read_ChecksumSHA256(value.at("ChecksumSHA256")));
+    if(value.contains("PartNumber") && !value.at("PartNumber").is_null())result.SetPartNumber(read_PartNumber(value.at("PartNumber")));
+    return result;
+}
+inline J write_CompletedPart(const Aws::S3::Model::CompletedPart& value) {
+    J result=J::object();
+    if(value.ETagHasBeenSet())result["ETag"]=write_ETag(value.GetETag());
+    if(value.ChecksumCRC32HasBeenSet())result["ChecksumCRC32"]=write_ChecksumCRC32(value.GetChecksumCRC32());
+    if(value.ChecksumCRC32CHasBeenSet())result["ChecksumCRC32C"]=write_ChecksumCRC32C(value.GetChecksumCRC32C());
+    if(value.ChecksumCRC64NVMEHasBeenSet())result["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(value.GetChecksumCRC64NVME());
+    if(value.ChecksumSHA1HasBeenSet())result["ChecksumSHA1"]=write_ChecksumSHA1(value.GetChecksumSHA1());
+    if(value.ChecksumSHA256HasBeenSet())result["ChecksumSHA256"]=write_ChecksumSHA256(value.GetChecksumSHA256());
+    if(value.PartNumberHasBeenSet())result["PartNumber"]=write_PartNumber(value.GetPartNumber());
+    return result;
+}
+inline int64_t read_MpuObjectSize(const J& value) {
+    return static_cast<int64_t>(signed_integer(value,std::numeric_limits<int64_t>::min(),std::numeric_limits<int64_t>::max(),"MpuObjectSize"));
+}
+inline J write_MpuObjectSize(const int64_t& value) {
+    return value;
+}
+inline Aws::String read_IfMatch(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_IfMatch(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_IfNoneMatch(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_IfNoneMatch(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline Aws::String read_Location(const J& value) {
+    return value.get<std::string>();
+}
+inline J write_Location(const Aws::String& value) {
+    return std::string(value.c_str());
+}
+inline J capabilities(){return J::array({"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload"});}
+inline bool handles(const std::string& op){static const std::set<std::string> allowed={"api.GetBucketTagging","api.PutBucketTagging","api.DeleteBucketTagging","api.GetBucketCors","api.PutBucketCors","api.DeleteBucketCors","api.GetBucketLifecycleConfiguration","api.PutBucketLifecycleConfiguration","api.DeleteBucketLifecycle","api.GetBucketPolicy","api.PutBucketPolicy","api.DeleteBucketPolicy","api.GetBucketWebsite","api.PutBucketWebsite","api.DeleteBucketWebsite","api.GetBucketEncryption","api.PutBucketEncryption","api.DeleteBucketEncryption","api.GetObjectLockConfiguration","api.PutObjectLockConfiguration","api.GetPublicAccessBlock","api.PutPublicAccessBlock","api.DeletePublicAccessBlock","api.GetBucketOwnershipControls","api.PutBucketOwnershipControls","api.DeleteBucketOwnershipControls","api.GetBucketAcl","api.PutBucketAcl","api.GetObjectAcl","api.PutObjectAcl","api.ListBuckets","api.GetObjectAttributes","api.GetBucketPolicyStatus","api.ListParts","api.GetBucketLogging","api.PutBucketLogging","api.PutBucketRequestPayment","api.GetObjectRetention","api.PutObjectRetention","api.GetObjectLegalHold","api.PutObjectLegalHold","api.RestoreObject","api.ListObjects","api.ListObjectsV2","api.ListObjectVersions","api.CopyObject","api.CreateMultipartUpload","api.UploadPartCopy","api.CompleteMultipartUpload"};return allowed.count(op)!=0;}
 inline J execute(Aws::S3::S3Client& client,const J& q){
     const std::string op=q.at("op");J input=q.at("input");
     if(!input.is_object())throw std::runtime_error("api input must be a JSON object");
@@ -4239,6 +4864,87 @@ inline J execute(Aws::S3::S3Client& client,const J& q){
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("MaxKeys"))!=observed["fields"].end())data["MaxKeys"]=write_MaxKeys(result.GetMaxKeys());
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("CommonPrefixes"))!=observed["fields"].end())data["CommonPrefixes"]=write_CommonPrefixList(result.GetCommonPrefixes());
         if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("EncodingType"))!=observed["fields"].end())data["EncodingType"]=write_EncodingType(result.GetEncodingType());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.CopyObject"){
+        auto request=read_CopyObjectRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.CopyObject(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(true)data["CopyObjectResult"]=write_CopyObjectResult(result.GetCopyObjectResultDetails());
+        if(observed["http_headers"].contains("x-amz-expiration"))data["Expiration"]=write_Expiration(result.GetExpiration());
+        if(observed["http_headers"].contains("x-amz-copy-source-version-id"))data["CopySourceVersionId"]=write_CopySourceVersionId(result.GetCopySourceVersionId());
+        if(observed["http_headers"].contains("x-amz-version-id"))data["VersionId"]=write_ObjectVersionId(result.GetVersionId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption"))data["ServerSideEncryption"]=write_ServerSideEncryption(result.GetServerSideEncryption());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-algorithm"))data["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(result.GetSSECustomerAlgorithm());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-key-md5"))data["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(result.GetSSECustomerKeyMD5());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-aws-kms-key-id"))data["SSEKMSKeyId"]=write_SSEKMSKeyId(result.GetSSEKMSKeyId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-context"))data["SSEKMSEncryptionContext"]=write_SSEKMSEncryptionContext(result.GetSSEKMSEncryptionContext());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-bucket-key-enabled"))data["BucketKeyEnabled"]=write_BucketKeyEnabled(result.GetBucketKeyEnabled());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.CreateMultipartUpload"){
+        auto request=read_CreateMultipartUploadRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.CreateMultipartUpload(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed["http_headers"].contains("x-amz-abort-date"))data["AbortDate"]=write_AbortDate(result.GetAbortDate());
+        if(observed["http_headers"].contains("x-amz-abort-rule-id"))data["AbortRuleId"]=write_AbortRuleId(result.GetAbortRuleId());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Bucket"))!=observed["fields"].end())data["Bucket"]=write_BucketName(result.GetBucket());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Key"))!=observed["fields"].end())data["Key"]=write_ObjectKey(result.GetKey());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("UploadId"))!=observed["fields"].end())data["UploadId"]=write_MultipartUploadId(result.GetUploadId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption"))data["ServerSideEncryption"]=write_ServerSideEncryption(result.GetServerSideEncryption());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-algorithm"))data["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(result.GetSSECustomerAlgorithm());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-key-md5"))data["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(result.GetSSECustomerKeyMD5());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-aws-kms-key-id"))data["SSEKMSKeyId"]=write_SSEKMSKeyId(result.GetSSEKMSKeyId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-context"))data["SSEKMSEncryptionContext"]=write_SSEKMSEncryptionContext(result.GetSSEKMSEncryptionContext());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-bucket-key-enabled"))data["BucketKeyEnabled"]=write_BucketKeyEnabled(result.GetBucketKeyEnabled());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        if(observed["http_headers"].contains("x-amz-checksum-algorithm"))data["ChecksumAlgorithm"]=write_ChecksumAlgorithm(result.GetChecksumAlgorithm());
+        if(observed["http_headers"].contains("x-amz-checksum-type"))data["ChecksumType"]=write_ChecksumType(result.GetChecksumType());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.UploadPartCopy"){
+        auto request=read_UploadPartCopyRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.UploadPartCopy(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed["http_headers"].contains("x-amz-copy-source-version-id"))data["CopySourceVersionId"]=write_CopySourceVersionId(result.GetCopySourceVersionId());
+        if(true)data["CopyPartResult"]=write_CopyPartResult(result.GetCopyPartResult());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption"))data["ServerSideEncryption"]=write_ServerSideEncryption(result.GetServerSideEncryption());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-algorithm"))data["SSECustomerAlgorithm"]=write_SSECustomerAlgorithm(result.GetSSECustomerAlgorithm());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-customer-key-md5"))data["SSECustomerKeyMD5"]=write_SSECustomerKeyMD5(result.GetSSECustomerKeyMD5());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-aws-kms-key-id"))data["SSEKMSKeyId"]=write_SSEKMSKeyId(result.GetSSEKMSKeyId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-bucket-key-enabled"))data["BucketKeyEnabled"]=write_BucketKeyEnabled(result.GetBucketKeyEnabled());
+        if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
+        observed["data"]=data;return observed;
+    }
+    if(op=="api.CompleteMultipartUpload"){
+        auto request=read_CompleteMultipartUploadRequest(input);J observed;HttpObservationScope observation(&observed,true);
+        auto outcome=client.CompleteMultipartUpload(request);checked(outcome);
+        if(!observed.contains("status_code"))throw std::runtime_error("SDK HTTP observation unavailable");
+        J data=J::object();
+        const auto& result=outcome.GetResult();
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Location"))!=observed["fields"].end())data["Location"]=write_Location(result.GetLocation());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Bucket"))!=observed["fields"].end())data["Bucket"]=write_BucketName(result.GetBucket());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("Key"))!=observed["fields"].end())data["Key"]=write_ObjectKey(result.GetKey());
+        if(observed["http_headers"].contains("x-amz-expiration"))data["Expiration"]=write_Expiration(result.GetExpiration());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ETag"))!=observed["fields"].end())data["ETag"]=write_ETag(result.GetETag());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumCRC32"))!=observed["fields"].end())data["ChecksumCRC32"]=write_ChecksumCRC32(result.GetChecksumCRC32());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumCRC32C"))!=observed["fields"].end())data["ChecksumCRC32C"]=write_ChecksumCRC32C(result.GetChecksumCRC32C());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumCRC64NVME"))!=observed["fields"].end())data["ChecksumCRC64NVME"]=write_ChecksumCRC64NVME(result.GetChecksumCRC64NVME());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumSHA1"))!=observed["fields"].end())data["ChecksumSHA1"]=write_ChecksumSHA1(result.GetChecksumSHA1());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumSHA256"))!=observed["fields"].end())data["ChecksumSHA256"]=write_ChecksumSHA256(result.GetChecksumSHA256());
+        if(observed.contains("fields") && std::find(observed["fields"].begin(),observed["fields"].end(),J("ChecksumType"))!=observed["fields"].end())data["ChecksumType"]=write_ChecksumType(result.GetChecksumType());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption"))data["ServerSideEncryption"]=write_ServerSideEncryption(result.GetServerSideEncryption());
+        if(observed["http_headers"].contains("x-amz-version-id"))data["VersionId"]=write_ObjectVersionId(result.GetVersionId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-aws-kms-key-id"))data["SSEKMSKeyId"]=write_SSEKMSKeyId(result.GetSSEKMSKeyId());
+        if(observed["http_headers"].contains("x-amz-server-side-encryption-bucket-key-enabled"))data["BucketKeyEnabled"]=write_BucketKeyEnabled(result.GetBucketKeyEnabled());
         if(observed["http_headers"].contains("x-amz-request-charged"))data["RequestCharged"]=write_RequestCharged(result.GetRequestCharged());
         observed["data"]=data;return observed;
     }

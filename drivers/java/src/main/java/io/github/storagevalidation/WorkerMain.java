@@ -232,6 +232,7 @@ public final class WorkerMain {
             if("put_encryption".equals(op)) op="put_sse_c";
             else if("get_encryption".equals(op)) op="get_sse_c";
             else if("head_encryption".equals(op)) op="head_sse_c";
+            if(q.has("storage_class") && (!q.get("storage_class").isTextual() || q.get("storage_class").textValue().isEmpty()))throw new IllegalArgumentException("storage_class must be a nonempty string");
             String bucket=q.has("bucket")?text(q,"bucket"):this.bucket;
             if(S3Versioning.handles(op)) return S3Versioning.execute(client,op,q,bucket,key);
             if(S3ApiModels.handles(op)) return S3ApiModels.execute(client,op,q);
@@ -307,6 +308,7 @@ public final class WorkerMain {
             }
             case "put_http": case "put_sse_c": case "put_acl": {
                 software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
+                if(q.has("storage_class")) request.storageClass(text(q,"storage_class"));
                 if("put_sse_c".equals(op)) request.overrideConfiguration(EncryptionHeaders.fromRequest(q));
                 if("put_acl".equals(op)) request.acl(text(q,"acl"));
                 if(q.has("content_length")) request.contentLength(q.get("content_length").asLong());
@@ -378,9 +380,11 @@ public final class WorkerMain {
                 client.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key)
                     .contentType(text(q,"content_type")).metadata(userMetadata(q)).build(),
                     software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
-            case "put":
-                client.putObject(software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key).build(),
-                    software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
+            case "put": {
+                software.amazon.awssdk.services.s3.model.PutObjectRequest.Builder request=software.amazon.awssdk.services.s3.model.PutObjectRequest.builder().bucket(bucket).key(key);
+                if(q.has("storage_class"))request.storageClass(text(q,"storage_class"));
+                client.putObject(request.build(),software.amazon.awssdk.core.sync.RequestBody.fromFile(Paths.get(text(q,"body_path")))); return empty();
+            }
             case "get": case "get_conditional": case "get_metadata": case "get_http": case "get_sse_c": case "get_part": {
                 software.amazon.awssdk.services.s3.model.GetObjectRequest.Builder b=software.amazon.awssdk.services.s3.model.GetObjectRequest.builder().bucket(bucket).key(key);
                 if("get_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));

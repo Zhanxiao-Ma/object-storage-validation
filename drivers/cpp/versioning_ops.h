@@ -33,7 +33,7 @@ inline json execute_version_operation(Aws::S3::S3Client& client,const json& q,co
         auto outcome=client.ListObjectVersions(request);checked(outcome);require_http();const auto& result=outcome.GetResult();
         if(observed.value("xml_root","")!="ListVersionsResult")throw std::runtime_error("actual response is not a valid ListVersionsResult");
         auto present=[&](const std::string& name){return std::find(observed["fields"].begin(),observed["fields"].end(),json(name))!=observed["fields"].end();};
-        const bool versions_present=present("Version"),markers_present=present("DeleteMarker");
+        const bool versions_present=present("Version"),markers_present=present("DeleteMarker"),name_present=present("Name");
         if(present("Name"))observed["bucket_name"]=std::string(result.GetName().c_str());
         json versions=json::array(),markers=json::array();
         for(const auto& item:result.GetVersions()) {
@@ -52,7 +52,7 @@ inline json execute_version_operation(Aws::S3::S3Client& client,const json& q,co
         observed["version_id_marker"]=present("VersionIdMarker")?json(std::string(result.GetVersionIdMarker().c_str())):json(nullptr);
         observed["next_key_marker"]=present("NextKeyMarker")?json(std::string(result.GetNextKeyMarker().c_str())):json(nullptr);
         observed["next_version_id_marker"]=present("NextVersionIdMarker")?json(std::string(result.GetNextVersionIdMarker().c_str())):json(nullptr);
-        observed["fields"]=json::array();if(versions_present)observed["fields"].push_back("Versions");if(markers_present)observed["fields"].push_back("DeleteMarkers");
+        observed["fields"]=json::array();if(name_present)observed["fields"].push_back("Name");if(versions_present)observed["fields"].push_back("Versions");if(markers_present)observed["fields"].push_back("DeleteMarkers");
         observed["versions"]=versions;observed["delete_markers"]=markers;
     } else if(op=="put_version") {
         Aws::S3::Model::PutObjectRequest request;request.SetBucket(bucket);request.SetKey(key);

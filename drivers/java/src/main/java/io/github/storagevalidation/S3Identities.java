@@ -17,7 +17,7 @@ final class S3Identities implements AutoCloseable {
     static final List<String> NAMED=Arrays.asList("alt","tenant","bad_auth");
 
     static List<String> capabilities() {
-        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous","wire_headers","wire_query","checksum_when_required"));
+        List<String> result=new ArrayList<>(Arrays.asList("identity_main","identity_anonymous","wire_headers","wire_query","checksum_when_required","put_storage_class","client_timeouts"));
         for(String name:NAMED) {
             String prefix=name.toUpperCase(Locale.ROOT)+"_";
             if(!env(prefix+"ACCESS_KEY","").isEmpty() && !env(prefix+"SECRET_KEY","").isEmpty()) result.add("identity_"+name);
@@ -53,6 +53,8 @@ final class S3Identities implements AutoCloseable {
                 :AwsSessionCredentials.create(required(prefix+"ACCESS_KEY"),required(prefix+"SECRET_KEY"),token);
             provider=StaticCredentialsProvider.create(credentials);
         }
+        long requestTimeout=timeout("REQUEST_TIMEOUT_MS",30000);
+        long connectTimeout=timeout("CONNECT_TIMEOUT_MS",2000);
         return S3Client.builder()
             .endpointOverride(java.net.URI.create(required("ENDPOINT")))
             .region(software.amazon.awssdk.regions.Region.of(required("REGION")))
@@ -60,12 +62,20 @@ final class S3Identities implements AutoCloseable {
             .serviceConfiguration(software.amazon.awssdk.services.s3.S3Configuration.builder()
                 .pathStyleAccessEnabled(Boolean.parseBoolean(env("PATH_STYLE","false"))).build())
             .overrideConfiguration(c->{
-                c.apiCallTimeout(java.time.Duration.ofMillis(headers?Long.parseLong(env("HEADER_REQUEST_TIMEOUT_MS","30000")):30000))
+                c.apiCallTimeout(java.time.Duration.ofMillis(headers?timeout("HEADER_REQUEST_TIMEOUT_MS",requestTimeout):requestTimeout))
                     .retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build());
                 if(headers){c.addExecutionInterceptor(new WireHeaders());c.addExecutionInterceptor(new WireQuery());}
             })
-            .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))))
+            .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))).connectionTimeout(java.time.Duration.ofMillis(connectTimeout)).socketTimeout(java.time.Duration.ofMillis(requestTimeout)))
             .build();
+    }
+
+    private static long timeout(String name,long fallback) {
+        String value=env(name,Long.toString(fallback));
+        if(!value.matches("[0-9]+"))throw new IllegalArgumentException(name+" must be a positive millisecond integer");
+        long parsed=Long.parseLong(value);
+        if(parsed<1 || parsed>2147483647L)throw new IllegalArgumentException(name+" must be in 1..2147483647");
+        return parsed;
     }
 
     public void close() { for(S3Client client:clients.values())client.close();clients.clear(); }

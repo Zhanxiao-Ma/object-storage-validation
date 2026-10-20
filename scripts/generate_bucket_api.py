@@ -30,7 +30,7 @@ def generate(model):
 
     def cpp(name):
         shape=shapes[name];kind=shape["type"]
-        if kind=="structure" or "enum" in shape:return "Aws::S3::Model::"+name
+        if kind=="structure" or "enum" in shape:return "Aws::S3::Model::"+shape.get("cpp_name",name)
         if kind=="string":return "Aws::String"
         if kind=="integer":return "int"
         if kind=="long":return "int64_t"
@@ -45,7 +45,7 @@ def generate(model):
            "// API model provenance and Apache-2.0 notice: drivers/schema/bucket-api.json.",
            "#pragma once","#include <set>","#include <limits>"]
     for name in reusable:
-        if shapes[name]["type"]=="structure" or "enum" in shapes[name]:lines.append("#include <aws/s3/model/"+name+".h>")
+        if shapes[name]["type"]=="structure" or "enum" in shapes[name]:lines.append("#include <aws/s3/model/"+shapes[name].get("cpp_name",name)+".h>")
     for name,operation in operations.items():
         if "output" in operation:lines.append("#include <aws/s3/model/"+name+"Result.h>")
     lines.extend(["namespace osv_bucket_api {","using J=nlohmann::json;",
@@ -126,7 +126,7 @@ def generate(model):
                 else:condition="observed.contains(\"fields\") && std::find(observed[\"fields\"].begin(),observed[\"fields\"].end(),J(\""+key+"\"))!=observed[\"fields\"].end()"
                 if field==output.get("cpp_streaming_payload"):
                     lines.append("        {std::ostringstream body;body<<result.Get"+field+"().rdbuf();if(result.Get"+field+"().bad())throw std::runtime_error(\"SDK response stream failed\");data[\""+field+"\"]=body.str();}")
-                else:lines.append("        if("+condition+")data[\""+field+"\"]=write_"+member["shape"]+"(result.Get"+field+"());")
+                else:lines.append("        if("+condition+")data[\""+field+"\"]=write_"+member["shape"]+"(result.Get"+member.get("cpp_getter",field)+"());")
         lines.extend(["        observed[\"data\"]=data;return observed;","    }"])
     lines.extend(["    throw std::runtime_error(\"unsupported bucket API: \"+op);","}","}",""])
     java="""package io.github.storagevalidation;

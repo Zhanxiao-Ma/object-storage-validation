@@ -4,7 +4,11 @@
     "source_sha256": "6be3b05aac4ff8719e9a30a376de413523e9eab28a248195c8ab1cf9baacac80",
     "sdk_version": "1.11.675",
     "license": "Apache-2.0",
-    "qualification": "SDK API model subset; contains no AWS official test cases"
+    "qualification": "SDK API model subset; contains no AWS official test cases",
+    "binding_overrides": {
+      "CopyObjectResult": "C++ public class CopyObjectResultDetails; output getter GetCopyObjectResultDetails",
+      "Expires": "Official C++ DateTime / Java Instant public SDK field; JSON milliseconds, rather than model wire string"
+    }
   },
   "operations": {
     "GetBucketTagging": {
@@ -789,6 +793,77 @@
       "output": {
         "shape": "ListObjectVersionsOutput"
       }
+    },
+    "CopyObject": {
+      "name": "CopyObject",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}/{Key+}"
+      },
+      "input": {
+        "shape": "CopyObjectRequest"
+      },
+      "output": {
+        "shape": "CopyObjectOutput"
+      },
+      "errors": [
+        {
+          "shape": "ObjectNotInActiveTierError"
+        }
+      ],
+      "documentation": "<important> <p>End of support notice: Beginning October 1, 2025, Amazon S3 will discontinue support for creating new Email Grantee Access Control Lists (ACL). Email Grantee ACLs created prior to this date will continue to work and remain accessible through the Amazon Web Services Management Console, Command Line Interface (CLI), SDKs, and REST API. However, you will no longer be able to create new Email Grantee ACLs. </p> <p>This change affects the following Amazon Web Services Regions: US East (N. Virginia) Region, US West (N. California) Region, US West (Oregon) Region, Asia Pacific (Singapore) Region, Asia Pacific (Sydney) Region, Asia Pacific (Tokyo) Region, Europe (Ireland) Region, and South America (São Paulo) Region.</p> </important> <p>Creates a copy of an object that is already stored in Amazon S3.</p> <note> <p>You can store individual objects of up to 5 TB in Amazon S3. You create a copy of your object up to 5 GB in size in a single atomic action using this API. However, to copy an object greater than 5 GB, you must use the multipart upload Upload Part - Copy (UploadPartCopy) API. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/CopyingObjctsUsingRESTMPUapi.html\">Copy Object Using the REST Multipart Upload API</a>.</p> </note> <p>You can copy individual objects between general purpose buckets, between directory buckets, and between general purpose buckets and directory buckets.</p> <note> <ul> <li> <p>Amazon S3 supports copy operations using Multi-Region Access Points only as a destination when using the Multi-Region Access Point ARN. </p> </li> <li> <p> <b>Directory buckets </b> - For directory buckets, you must make requests for this API operation to the Zonal endpoint. These endpoints support virtual-hosted-style requests in the format <code>https://<i>amzn-s3-demo-bucket</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com/<i>key-name</i> </code>. Path-style requests are not supported. For more information about endpoints in Availability Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html\">Regional and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html\">Concepts for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.</p> </li> <li> <p>VPC endpoints don't support cross-Region requests (including copies). If you're using VPC endpoints, your source and destination buckets should be in the same Amazon Web Services Region as your VPC endpoint.</p> </li> </ul> </note> <p>Both the Region that you want to copy the object from and the Region that you want to copy the object to must be enabled for your account. For more information about how to enable a Region for your account, see <a href=\"https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-regions.html#manage-acct-regions-enable-standalone\">Enable or disable a Region for standalone accounts</a> in the <i>Amazon Web Services Account Management Guide</i>.</p> <important> <p>Amazon S3 transfer acceleration does not support cross-Region copies. If you request a cross-Region copy using a transfer acceleration endpoint, you get a <code>400 Bad Request</code> error. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/transfer-acceleration.html\">Transfer Acceleration</a>.</p> </important> <dl> <dt>Authentication and authorization</dt> <dd> <p>All <code>CopyObject</code> requests must be authenticated and signed by using IAM credentials (access key ID and secret access key for the IAM identities). All headers with the <code>x-amz-</code> prefix, including <code>x-amz-copy-source</code>, must be signed. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html\">REST Authentication</a>.</p> <p> <b>Directory buckets</b> - You must use the IAM credentials to authenticate and authorize your access to the <code>CopyObject</code> API operation, instead of using the temporary security credentials through the <code>CreateSession</code> API operation.</p> <p>Amazon Web Services CLI or SDKs handles authentication and authorization on your behalf.</p> </dd> <dt>Permissions</dt> <dd> <p>You must have <i>read</i> access to the source object and <i>write</i> access to the destination bucket.</p> <ul> <li> <p> <b>General purpose bucket permissions</b> - You must have permissions in an IAM policy based on the source and destination bucket types in a <code>CopyObject</code> operation.</p> <ul> <li> <p>If the source object is in a general purpose bucket, you must have <b> <code>s3:GetObject</code> </b> permission to read the source object that is being copied. </p> </li> <li> <p>If the destination bucket is a general purpose bucket, you must have <b> <code>s3:PutObject</code> </b> permission to write the object copy to the destination bucket. </p> </li> </ul> </li> <li> <p> <b>Directory bucket permissions</b> - You must have permissions in a bucket policy or an IAM identity-based policy based on the source and destination bucket types in a <code>CopyObject</code> operation.</p> <ul> <li> <p>If the source object that you want to copy is in a directory bucket, you must have the <b> <code>s3express:CreateSession</code> </b> permission in the <code>Action</code> element of a policy to read the object. By default, the session is in the <code>ReadWrite</code> mode. If you want to restrict the access, you can explicitly set the <code>s3express:SessionMode</code> condition key to <code>ReadOnly</code> on the copy source bucket.</p> </li> <li> <p>If the copy destination is a directory bucket, you must have the <b> <code>s3express:CreateSession</code> </b> permission in the <code>Action</code> element of a policy to write the object to the destination. The <code>s3express:SessionMode</code> condition key can't be set to <code>ReadOnly</code> on the copy destination bucket. </p> </li> </ul> <p>If the object is encrypted with SSE-KMS, you must also have the <code>kms:GenerateDataKey</code> and <code>kms:Decrypt</code> permissions in IAM identity-based policies and KMS key policies for the KMS key.</p> <p>For example policies, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam-example-bucket-policies.html\">Example bucket policies for S3 Express One Zone</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam-identity-policies.html\">Amazon Web Services Identity and Access Management (IAM) identity-based policies for S3 Express One Zone</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </dd> <dt>Response and special errors</dt> <dd> <p>When the request is an HTTP 1.1 request, the response is chunk encoded. When the request is not an HTTP 1.1 request, the response would not contain the <code>Content-Length</code>. You always need to read the entire response body to check if the copy succeeds. </p> <ul> <li> <p>If the copy is successful, you receive a response with information about the copied object.</p> </li> <li> <p>A copy request might return an error when Amazon S3 receives the copy request or while Amazon S3 is copying the files. A <code>200 OK</code> response can contain either a success or an error.</p> <ul> <li> <p>If the error occurs before the copy action starts, you receive a standard Amazon S3 error.</p> </li> <li> <p>If the error occurs during the copy operation, the error response is embedded in the <code>200 OK</code> response. For example, in a cross-region copy, you may encounter throttling and receive a <code>200 OK</code> response. For more information, see <a href=\"https://repost.aws/knowledge-center/s3-resolve-200-internalerror\">Resolve the Error 200 response when copying objects to Amazon S3</a>. The <code>200 OK</code> status code means the copy was accepted, but it doesn't mean the copy is complete. Another example is when you disconnect from Amazon S3 before the copy is complete, Amazon S3 might cancel the copy and you may receive a <code>200 OK</code> response. You must stay connected to Amazon S3 until the entire response is successfully received and processed.</p> <p>If you call this API operation directly, make sure to design your application to parse the content of the response and handle it appropriately. If you use Amazon Web Services SDKs, SDKs handle this condition. The SDKs detect the embedded error and apply error handling per your configuration settings (including automatically retrying the request as appropriate). If the condition persists, the SDKs throw an exception (or, for the SDKs that don't use exceptions, they return an error).</p> </li> </ul> </li> </ul> </dd> <dt>Charge</dt> <dd> <p>The copy request charge is based on the storage class and Region that you specify for the destination object. The request can also result in a data retrieval charge for the source if the source storage class bills for data retrieval. If the copy source is in a different region, the data transfer is billed to the copy source account. For pricing information, see <a href=\"http://aws.amazon.com/s3/pricing/\">Amazon S3 pricing</a>.</p> </dd> <dt>HTTP Host header syntax</dt> <dd> <ul> <li> <p> <b>Directory buckets </b> - The HTTP Host header syntax is <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>.</p> </li> <li> <p> <b>Amazon S3 on Outposts</b> - When you use this action with S3 on Outposts through the REST API, you must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. The hostname isn't required when you use the Amazon Web Services CLI or SDKs.</p> </li> </ul> </dd> </dl> <p>The following operations are related to <code>CopyObject</code>:</p> <ul> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_PutObject.html\">PutObject</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html\">GetObject</a> </p> </li> </ul>",
+      "staticContextParams": {
+        "DisableS3ExpressSessionAuth": {
+          "value": true
+        }
+      }
+    },
+    "CreateMultipartUpload": {
+      "name": "CreateMultipartUpload",
+      "http": {
+        "method": "POST",
+        "requestUri": "/{Bucket}/{Key+}?uploads"
+      },
+      "input": {
+        "shape": "CreateMultipartUploadRequest"
+      },
+      "output": {
+        "shape": "CreateMultipartUploadOutput"
+      },
+      "documentation": "<important> <p>End of support notice: Beginning October 1, 2025, Amazon S3 will discontinue support for creating new Email Grantee Access Control Lists (ACL). Email Grantee ACLs created prior to this date will continue to work and remain accessible through the Amazon Web Services Management Console, Command Line Interface (CLI), SDKs, and REST API. However, you will no longer be able to create new Email Grantee ACLs. </p> <p>This change affects the following Amazon Web Services Regions: US East (N. Virginia) Region, US West (N. California) Region, US West (Oregon) Region, Asia Pacific (Singapore) Region, Asia Pacific (Sydney) Region, Asia Pacific (Tokyo) Region, Europe (Ireland) Region, and South America (São Paulo) Region.</p> </important> <p>This action initiates a multipart upload and returns an upload ID. This upload ID is used to associate all of the parts in the specific multipart upload. You specify this upload ID in each of your subsequent upload part requests (see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a>). You also include this upload ID in the final request to either complete or abort the multipart upload request. For more information about multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html\">Multipart Upload Overview</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>After you initiate a multipart upload and upload one or more parts, to stop being charged for storing the uploaded parts, you must either complete or abort the multipart upload. Amazon S3 frees up the space used to store the parts and stops charging you for storing them only after you either complete or abort a multipart upload. </p> </note> <p>If you have configured a lifecycle rule to abort incomplete multipart uploads, the created multipart upload must be completed within the number of days specified in the bucket lifecycle configuration. Otherwise, the incomplete multipart upload becomes eligible for an abort action and Amazon S3 aborts the multipart upload. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config\">Aborting Incomplete Multipart Uploads Using a Bucket Lifecycle Configuration</a>.</p> <note> <ul> <li> <p> <b>Directory buckets </b> - S3 Lifecycle is not supported by directory buckets.</p> </li> <li> <p> <b>Directory buckets </b> - For directory buckets, you must make requests for this API operation to the Zonal endpoint. These endpoints support virtual-hosted-style requests in the format <code>https://<i>amzn-s3-demo-bucket</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com/<i>key-name</i> </code>. Path-style requests are not supported. For more information about endpoints in Availability Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html\">Regional and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html\">Concepts for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </note> <dl> <dt>Request signing</dt> <dd> <p>For request signing, multipart upload is just a series of regular requests. You initiate a multipart upload, send one or more requests to upload parts, and then complete the multipart upload process. You sign each request individually. There is nothing special about signing multipart upload requests. For more information about signing, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html\">Authenticating Requests (Amazon Web Services Signature Version 4)</a> in the <i>Amazon S3 User Guide</i>.</p> </dd> <dt>Permissions</dt> <dd> <ul> <li> <p> <b>General purpose bucket permissions</b> - To perform a multipart upload with encryption using an Key Management Service (KMS) KMS key, the requester must have permission to the <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> actions on the key. The requester must also have permissions for the <code>kms:GenerateDataKey</code> action for the <code>CreateMultipartUpload</code> API. Then, the requester needs permissions for the <code>kms:Decrypt</code> action on the <code>UploadPart</code> and <code>UploadPartCopy</code> APIs. These permissions are required because Amazon S3 must decrypt and read data from the encrypted file parts before it completes the multipart upload. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html#mpuAndPermissions\">Multipart upload API and permissions</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html\">Protecting data using server-side encryption with Amazon Web Services KMS</a> in the <i>Amazon S3 User Guide</i>.</p> </li> <li> <p> <b>Directory bucket permissions</b> - To grant access to this API operation on a directory bucket, we recommend that you use the <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateSession.html\"> <code>CreateSession</code> </a> API operation for session-based authorization. Specifically, you grant the <code>s3express:CreateSession</code> permission to the directory bucket in a bucket policy or an IAM identity-based policy. Then, you make the <code>CreateSession</code> API call on the bucket to obtain a session token. With the session token in your request header, you can make API requests to this operation. After the session token expires, you make another <code>CreateSession</code> API call to generate a new session token for use. Amazon Web Services CLI or SDKs create session and refresh the session token automatically to avoid service interruptions when a session expires. For more information about authorization, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateSession.html\"> <code>CreateSession</code> </a>.</p> </li> </ul> </dd> <dt>Encryption</dt> <dd> <ul> <li> <p> <b>General purpose buckets</b> - Server-side encryption is for data encryption at rest. Amazon S3 encrypts your data as it writes it to disks in its data centers and decrypts it when you access it. Amazon S3 automatically encrypts all new objects that are uploaded to an S3 bucket. When doing a multipart upload, if you don't specify encryption information in your request, the encryption setting of the uploaded parts is set to the default encryption configuration of the destination bucket. By default, all buckets have a base level of encryption configuration that uses server-side encryption with Amazon S3 managed keys (SSE-S3). If the destination bucket has a default encryption configuration that uses server-side encryption with an Key Management Service (KMS) key (SSE-KMS), or a customer-provided encryption key (SSE-C), Amazon S3 uses the corresponding KMS key, or a customer-provided key to encrypt the uploaded parts. When you perform a CreateMultipartUpload operation, if you want to use a different type of encryption setting for the uploaded parts, you can request that Amazon S3 encrypts the object with a different encryption key (such as an Amazon S3 managed key, a KMS key, or a customer-provided key). When the encryption setting in your request is different from the default encryption configuration of the destination bucket, the encryption setting in your request takes precedence. If you choose to provide your own encryption key, the request headers you provide in <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a> requests must match the headers you used in the <code>CreateMultipartUpload</code> request.</p> <ul> <li> <p>Use KMS keys (SSE-KMS) that include the Amazon Web Services managed key (<code>aws/s3</code>) and KMS customer managed keys stored in Key Management Service (KMS) – If you want Amazon Web Services to manage the keys used to encrypt data, specify the following headers in the request.</p> <ul> <li> <p> <code>x-amz-server-side-encryption</code> </p> </li> <li> <p> <code>x-amz-server-side-encryption-aws-kms-key-id</code> </p> </li> <li> <p> <code>x-amz-server-side-encryption-context</code> </p> </li> </ul> <note> <ul> <li> <p>If you specify <code>x-amz-server-side-encryption:aws:kms</code>, but don't provide <code>x-amz-server-side-encryption-aws-kms-key-id</code>, Amazon S3 uses the Amazon Web Services managed key (<code>aws/s3</code> key) in KMS to protect the data.</p> </li> <li> <p>To perform a multipart upload with encryption by using an Amazon Web Services KMS key, the requester must have permission to the <code>kms:Decrypt</code> and <code>kms:GenerateDataKey*</code> actions on the key. These permissions are required because Amazon S3 must decrypt and read data from the encrypted file parts before it completes the multipart upload. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html#mpuAndPermissions\">Multipart upload API and permissions</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html\">Protecting data using server-side encryption with Amazon Web Services KMS</a> in the <i>Amazon S3 User Guide</i>.</p> </li> <li> <p>If your Identity and Access Management (IAM) user or role is in the same Amazon Web Services account as the KMS key, then you must have these permissions on the key policy. If your IAM user or role is in a different account from the key, then you must have the permissions on both the key policy and your IAM user or role.</p> </li> <li> <p>All <code>GET</code> and <code>PUT</code> requests for an object protected by KMS fail if you don't make them by using Secure Sockets Layer (SSL), Transport Layer Security (TLS), or Signature Version 4. For information about configuring any of the officially supported Amazon Web Services SDKs and Amazon Web Services CLI, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify-signature-version\">Specifying the Signature Version in Request Authentication</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </note> <p>For more information about server-side encryption with KMS keys (SSE-KMS), see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html\">Protecting Data Using Server-Side Encryption with KMS keys</a> in the <i>Amazon S3 User Guide</i>.</p> </li> <li> <p>Use customer-provided encryption keys (SSE-C) – If you want to manage your own encryption keys, provide all the following headers in the request.</p> <ul> <li> <p> <code>x-amz-server-side-encryption-customer-algorithm</code> </p> </li> <li> <p> <code>x-amz-server-side-encryption-customer-key</code> </p> </li> <li> <p> <code>x-amz-server-side-encryption-customer-key-MD5</code> </p> </li> </ul> <p>For more information about server-side encryption with customer-provided encryption keys (SSE-C), see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerSideEncryptionCustomerKeys.html\"> Protecting data using server-side encryption with customer-provided encryption keys (SSE-C)</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </li> <li> <p> <b>Directory buckets</b> - For directory buckets, there are only two supported options for server-side encryption: server-side encryption with Amazon S3 managed keys (SSE-S3) (<code>AES256</code>) and server-side encryption with KMS keys (SSE-KMS) (<code>aws:kms</code>). We recommend that the bucket's default encryption uses the desired encryption configuration and you don't override the bucket default encryption in your <code>CreateSession</code> requests or <code>PUT</code> object requests. Then, new objects are automatically encrypted with the desired encryption settings. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html\">Protecting data with server-side encryption</a> in the <i>Amazon S3 User Guide</i>. For more information about the encryption overriding behaviors in directory buckets, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-specifying-kms-encryption.html\">Specifying server-side encryption with KMS for new object uploads</a>.</p> <p>In the Zonal endpoint API calls (except <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>) using the REST API, the encryption request headers must match the encryption settings that are specified in the <code>CreateSession</code> request. You can't override the values of the encryption settings (<code>x-amz-server-side-encryption</code>, <code>x-amz-server-side-encryption-aws-kms-key-id</code>, <code>x-amz-server-side-encryption-context</code>, and <code>x-amz-server-side-encryption-bucket-key-enabled</code>) that are specified in the <code>CreateSession</code> request. You don't need to explicitly specify these encryption settings values in Zonal endpoint API calls, and Amazon S3 will use the encryption settings values from the <code>CreateSession</code> request to protect new objects in the directory bucket. </p> <note> <p>When you use the CLI or the Amazon Web Services SDKs, for <code>CreateSession</code>, the session token refreshes automatically to avoid service interruptions when a session expires. The CLI or the Amazon Web Services SDKs use the bucket's default encryption configuration for the <code>CreateSession</code> request. It's not supported to override the encryption settings values in the <code>CreateSession</code> request. So in the Zonal endpoint API calls (except <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>), the encryption request headers must match the default encryption configuration of the directory bucket. </p> </note> <note> <p>For directory buckets, when you perform a <code>CreateMultipartUpload</code> operation and an <code>UploadPartCopy</code> operation, the request headers you provide in the <code>CreateMultipartUpload</code> request must match the default encryption configuration of the destination bucket. </p> </note> </li> </ul> </dd> <dt>HTTP Host header syntax</dt> <dd> <p> <b>Directory buckets </b> - The HTTP Host header syntax is <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>.</p> </dd> </dl> <p>The following operations are related to <code>CreateMultipartUpload</code>:</p> <ul> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html\">CompleteMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html\">AbortMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html\">ListParts</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html\">ListMultipartUploads</a> </p> </li> </ul>"
+    },
+    "UploadPartCopy": {
+      "name": "UploadPartCopy",
+      "http": {
+        "method": "PUT",
+        "requestUri": "/{Bucket}/{Key+}"
+      },
+      "input": {
+        "shape": "UploadPartCopyRequest"
+      },
+      "output": {
+        "shape": "UploadPartCopyOutput"
+      },
+      "documentation": "<p>Uploads a part by copying data from an existing object as data source. To specify the data source, you add the request header <code>x-amz-copy-source</code> in your request. To specify a byte range, you add the request header <code>x-amz-copy-source-range</code> in your request. </p> <p>For information about maximum and minimum part sizes and other multipart upload specifications, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/qfacts.html\">Multipart upload limits</a> in the <i>Amazon S3 User Guide</i>. </p> <note> <p>Instead of copying data from an existing object as part data, you might use the <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> action to upload new data as a part of an object in your request.</p> </note> <p>You must initiate a multipart upload before you can upload any part. In response to your initiate request, Amazon S3 returns the upload ID, a unique identifier that you must include in your upload part request.</p> <p>For conceptual information about multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/uploadobjusingmpu.html\">Uploading Objects Using Multipart Upload</a> in the <i>Amazon S3 User Guide</i>. For information about copying objects using a single atomic action vs. a multipart upload, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/ObjectOperations.html\">Operations on Objects</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p> <b>Directory buckets</b> - For directory buckets, you must make requests for this API operation to the Zonal endpoint. These endpoints support virtual-hosted-style requests in the format <code>https://<i>amzn-s3-demo-bucket</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com/<i>key-name</i> </code>. Path-style requests are not supported. For more information about endpoints in Availability Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html\">Regional and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html\">Concepts for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.</p> </note> <dl> <dt>Authentication and authorization</dt> <dd> <p>All <code>UploadPartCopy</code> requests must be authenticated and signed by using IAM credentials (access key ID and secret access key for the IAM identities). All headers with the <code>x-amz-</code> prefix, including <code>x-amz-copy-source</code>, must be signed. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/RESTAuthentication.html\">REST Authentication</a>.</p> <p> <b>Directory buckets</b> - You must use IAM credentials to authenticate and authorize your access to the <code>UploadPartCopy</code> API operation, instead of using the temporary security credentials through the <code>CreateSession</code> API operation.</p> <p>Amazon Web Services CLI or SDKs handles authentication and authorization on your behalf.</p> </dd> <dt>Permissions</dt> <dd> <p>You must have <code>READ</code> access to the source object and <code>WRITE</code> access to the destination bucket.</p> <ul> <li> <p> <b>General purpose bucket permissions</b> - You must have the permissions in a policy based on the bucket types of your source bucket and destination bucket in an <code>UploadPartCopy</code> operation.</p> <ul> <li> <p>If the source object is in a general purpose bucket, you must have the <b> <code>s3:GetObject</code> </b> permission to read the source object that is being copied. </p> </li> <li> <p>If the destination bucket is a general purpose bucket, you must have the <b> <code>s3:PutObject</code> </b> permission to write the object copy to the destination bucket. </p> </li> <li> <p>To perform a multipart upload with encryption using an Key Management Service key, the requester must have permission to the <code>kms:Decrypt</code> and <code>kms:GenerateDataKey</code> actions on the key. The requester must also have permissions for the <code>kms:GenerateDataKey</code> action for the <code>CreateMultipartUpload</code> API. Then, the requester needs permissions for the <code>kms:Decrypt</code> action on the <code>UploadPart</code> and <code>UploadPartCopy</code> APIs. These permissions are required because Amazon S3 must decrypt and read data from the encrypted file parts before it completes the multipart upload. For more information about KMS permissions, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html\">Protecting data using server-side encryption with KMS</a> in the <i>Amazon S3 User Guide</i>. For information about the permissions required to use the multipart upload API, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuAndPermissions.html\">Multipart upload and permissions</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/mpuoverview.html#mpuAndPermissions\">Multipart upload API and permissions</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </li> <li> <p> <b>Directory bucket permissions</b> - You must have permissions in a bucket policy or an IAM identity-based policy based on the source and destination bucket types in an <code>UploadPartCopy</code> operation.</p> <ul> <li> <p>If the source object that you want to copy is in a directory bucket, you must have the <b> <code>s3express:CreateSession</code> </b> permission in the <code>Action</code> element of a policy to read the object. By default, the session is in the <code>ReadWrite</code> mode. If you want to restrict the access, you can explicitly set the <code>s3express:SessionMode</code> condition key to <code>ReadOnly</code> on the copy source bucket.</p> </li> <li> <p>If the copy destination is a directory bucket, you must have the <b> <code>s3express:CreateSession</code> </b> permission in the <code>Action</code> element of a policy to write the object to the destination. The <code>s3express:SessionMode</code> condition key cannot be set to <code>ReadOnly</code> on the copy destination. </p> </li> </ul> <p>If the object is encrypted with SSE-KMS, you must also have the <code>kms:GenerateDataKey</code> and <code>kms:Decrypt</code> permissions in IAM identity-based policies and KMS key policies for the KMS key.</p> <p>For example policies, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam-example-bucket-policies.html\">Example bucket policies for S3 Express One Zone</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-security-iam-identity-policies.html\">Amazon Web Services Identity and Access Management (IAM) identity-based policies for S3 Express One Zone</a> in the <i>Amazon S3 User Guide</i>.</p> </li> </ul> </dd> <dt>Encryption</dt> <dd> <ul> <li> <p> <b>General purpose buckets </b> - For information about using server-side encryption with customer-provided encryption keys with the <code>UploadPartCopy</code> operation, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a>. </p> </li> <li> <p> <b>Directory buckets </b> - For directory buckets, there are only two supported options for server-side encryption: server-side encryption with Amazon S3 managed keys (SSE-S3) (<code>AES256</code>) and server-side encryption with KMS keys (SSE-KMS) (<code>aws:kms</code>). For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html\">Protecting data with server-side encryption</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>For directory buckets, when you perform a <code>CreateMultipartUpload</code> operation and an <code>UploadPartCopy</code> operation, the request headers you provide in the <code>CreateMultipartUpload</code> request must match the default encryption configuration of the destination bucket. </p> </note> <p>S3 Bucket Keys aren't supported, when you copy SSE-KMS encrypted objects from general purpose buckets to directory buckets, from directory buckets to general purpose buckets, or between directory buckets, through <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>. In this case, Amazon S3 makes a call to KMS every time a copy request is made for a KMS-encrypted object.</p> </li> </ul> </dd> <dt>Special errors</dt> <dd> <ul> <li> <p>Error Code: <code>NoSuchUpload</code> </p> <ul> <li> <p>Description: The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.</p> </li> <li> <p>HTTP Status Code: 404 Not Found</p> </li> </ul> </li> <li> <p>Error Code: <code>InvalidRequest</code> </p> <ul> <li> <p>Description: The specified copy source is not supported as a byte-range copy source.</p> </li> <li> <p>HTTP Status Code: 400 Bad Request</p> </li> </ul> </li> </ul> </dd> <dt>HTTP Host header syntax</dt> <dd> <p> <b>Directory buckets </b> - The HTTP Host header syntax is <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>.</p> </dd> </dl> <p>The following operations are related to <code>UploadPartCopy</code>:</p> <ul> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html\">CreateMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CompleteMultipartUpload.html\">CompleteMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html\">AbortMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html\">ListParts</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html\">ListMultipartUploads</a> </p> </li> </ul>",
+      "staticContextParams": {
+        "DisableS3ExpressSessionAuth": {
+          "value": true
+        }
+      }
+    },
+    "CompleteMultipartUpload": {
+      "name": "CompleteMultipartUpload",
+      "http": {
+        "method": "POST",
+        "requestUri": "/{Bucket}/{Key+}"
+      },
+      "input": {
+        "shape": "CompleteMultipartUploadRequest"
+      },
+      "output": {
+        "shape": "CompleteMultipartUploadOutput"
+      },
+      "documentation": "<p>Completes a multipart upload by assembling previously uploaded parts.</p> <p>You first initiate the multipart upload and then upload all parts using the <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> operation or the <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a> operation. After successfully uploading all relevant parts of an upload, you call this <code>CompleteMultipartUpload</code> operation to complete the upload. Upon receiving this request, Amazon S3 concatenates all the parts in ascending order by part number to create a new object. In the CompleteMultipartUpload request, you must provide the parts list and ensure that the parts list is complete. The CompleteMultipartUpload API operation concatenates the parts that you provide in the list. For each part in the list, you must provide the <code>PartNumber</code> value and the <code>ETag</code> value that are returned after that part was uploaded.</p> <p>The processing of a CompleteMultipartUpload request could take several minutes to finalize. After Amazon S3 begins processing the request, it sends an HTTP response header that specifies a <code>200 OK</code> response. While processing is in progress, Amazon S3 periodically sends white space characters to keep the connection from timing out. A request could fail after the initial <code>200 OK</code> response has been sent. This means that a <code>200 OK</code> response can contain either a success or an error. The error response might be embedded in the <code>200 OK</code> response. If you call this API operation directly, make sure to design your application to parse the contents of the response and handle it appropriately. If you use Amazon Web Services SDKs, SDKs handle this condition. The SDKs detect the embedded error and apply error handling per your configuration settings (including automatically retrying the request as appropriate). If the condition persists, the SDKs throw an exception (or, for the SDKs that don't use exceptions, they return an error). </p> <p>Note that if <code>CompleteMultipartUpload</code> fails, applications should be prepared to retry any failed requests (including 500 error responses). For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/ErrorBestPractices.html\">Amazon S3 Error Best Practices</a>.</p> <important> <p>You can't use <code>Content-Type: application/x-www-form-urlencoded</code> for the CompleteMultipartUpload requests. Also, if you don't provide a <code>Content-Type</code> header, <code>CompleteMultipartUpload</code> can still return a <code>200 OK</code> response.</p> </important> <p>For more information about multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/uploadobjusingmpu.html\">Uploading Objects Using Multipart Upload</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p> <b>Directory buckets</b> - For directory buckets, you must make requests for this API operation to the Zonal endpoint. These endpoints support virtual-hosted-style requests in the format <code>https://<i>amzn-s3-demo-bucket</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com/<i>key-name</i> </code>. Path-style requests are not supported. For more information about endpoints in Availability Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/endpoint-directory-buckets-AZ.html\">Regional and Zonal endpoints for directory buckets in Availability Zones</a> in the <i>Amazon S3 User Guide</i>. For more information about endpoints in Local Zones, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-lzs-for-directory-buckets.html\">Concepts for directory buckets in Local Zones</a> in the <i>Amazon S3 User Guide</i>.</p> </note> <dl> <dt>Permissions</dt> <dd> <ul> <li> <p> <b>General purpose bucket permissions</b> - For information about permissions required to use the multipart upload API, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuAndPermissions.html\">Multipart Upload and Permissions</a> in the <i>Amazon S3 User Guide</i>.</p> <p>If you provide an <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_Checksum.html\">additional checksum value</a> in your <code>MultipartUpload</code> requests and the object is encrypted with Key Management Service, you must have permission to use the <code>kms:Decrypt</code> action for the <code>CompleteMultipartUpload</code> request to succeed.</p> </li> <li> <p> <b>Directory bucket permissions</b> - To grant access to this API operation on a directory bucket, we recommend that you use the <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateSession.html\"> <code>CreateSession</code> </a> API operation for session-based authorization. Specifically, you grant the <code>s3express:CreateSession</code> permission to the directory bucket in a bucket policy or an IAM identity-based policy. Then, you make the <code>CreateSession</code> API call on the bucket to obtain a session token. With the session token in your request header, you can make API requests to this operation. After the session token expires, you make another <code>CreateSession</code> API call to generate a new session token for use. Amazon Web Services CLI or SDKs create session and refresh the session token automatically to avoid service interruptions when a session expires. For more information about authorization, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateSession.html\"> <code>CreateSession</code> </a>.</p> <p>If the object is encrypted with SSE-KMS, you must also have the <code>kms:GenerateDataKey</code> and <code>kms:Decrypt</code> permissions in IAM identity-based policies and KMS key policies for the KMS key.</p> </li> </ul> </dd> <dt>Special errors</dt> <dd> <ul> <li> <p>Error Code: <code>EntityTooSmall</code> </p> <ul> <li> <p>Description: Your proposed upload is smaller than the minimum allowed object size. Each part must be at least 5 MB in size, except the last part.</p> </li> <li> <p>HTTP Status Code: 400 Bad Request</p> </li> </ul> </li> <li> <p>Error Code: <code>InvalidPart</code> </p> <ul> <li> <p>Description: One or more of the specified parts could not be found. The part might not have been uploaded, or the specified ETag might not have matched the uploaded part's ETag.</p> </li> <li> <p>HTTP Status Code: 400 Bad Request</p> </li> </ul> </li> <li> <p>Error Code: <code>InvalidPartOrder</code> </p> <ul> <li> <p>Description: The list of parts was not in ascending order. The parts list must be specified in order by part number.</p> </li> <li> <p>HTTP Status Code: 400 Bad Request</p> </li> </ul> </li> <li> <p>Error Code: <code>NoSuchUpload</code> </p> <ul> <li> <p>Description: The specified multipart upload does not exist. The upload ID might be invalid, or the multipart upload might have been aborted or completed.</p> </li> <li> <p>HTTP Status Code: 404 Not Found</p> </li> </ul> </li> </ul> </dd> <dt>HTTP Host header syntax</dt> <dd> <p> <b>Directory buckets </b> - The HTTP Host header syntax is <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>.</p> </dd> </dl> <p>The following operations are related to <code>CompleteMultipartUpload</code>:</p> <ul> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CreateMultipartUpload.html\">CreateMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPart.html\">UploadPart</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_AbortMultipartUpload.html\">AbortMultipartUpload</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListParts.html\">ListParts</a> </p> </li> <li> <p> <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListMultipartUploads.html\">ListMultipartUploads</a> </p> </li> </ul>"
     }
   },
   "shapes": {
@@ -4783,6 +4858,1242 @@
           "shape": "LastModified"
         }
       }
+    },
+    "CopyObjectRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "CopySource",
+        "Key"
+      ],
+      "members": {
+        "ACL": {
+          "shape": "ObjectCannedACL",
+          "documentation": "<p>The canned access control list (ACL) to apply to the object.</p> <p>When you copy an object, the ACL metadata is not preserved and is set to <code>private</code> by default. Only the owner has full access control. To override the default ACL setting, specify a new ACL when you generate a copy request. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/S3_ACLs_UsingACLs.html\">Using ACLs</a>. </p> <p>If the destination bucket that you're copying objects to uses the bucket owner enforced setting for S3 Object Ownership, ACLs are disabled and no longer affect permissions. Buckets that use this setting only accept <code>PUT</code> requests that don't specify an ACL or <code>PUT</code> requests that specify bucket owner full control ACLs, such as the <code>bucket-owner-full-control</code> canned ACL or an equivalent form of this ACL expressed in the XML format. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html\">Controlling ownership of objects and disabling ACLs</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <ul> <li> <p>If your destination bucket uses the bucket owner enforced setting for Object Ownership, all objects written to the bucket by any account will be owned by the bucket owner.</p> </li> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-acl"
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>The name of the destination bucket.</p> <p> <b>Directory buckets</b> - When you use this operation with a directory bucket, you must use virtual-hosted-style requests in the format <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>. Path-style requests are not supported. Directory bucket names must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must follow the format <code> <i>bucket-base-name</i>--<i>zone-id</i>--x-s3</code> (for example, <code> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</code>). For information about bucket naming restrictions, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\">Directory bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Copying objects across different Amazon Web Services Regions isn't supported when the source or destination bucket is in Amazon Web Services Local Zones. The source and destination buckets must have the same parent Amazon Web Services Region. Otherwise, you get an HTTP <code>400 Bad Request</code> error with the error code <code>InvalidRequest</code>.</p> </note> <p> <b>Access points</b> - When you use this action with an access point for general purpose buckets, you must provide the alias of the access point in place of the bucket name or specify the access point ARN. When you use this action with an access point for directory buckets, you must provide the access point name in place of the bucket name. When using the access point ARN, you must direct requests to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket name. For more information about access point ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html\">Using access points</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Object Lambda access points are not supported by directory buckets.</p> </note> <p> <b>S3 on Outposts</b> - When you use this action with S3 on Outposts, you must use the Outpost bucket access point ARN or the access point alias for the destination bucket. You can only copy objects within the same Outpost bucket. It's not supported to copy objects across different Amazon Web Services Outposts, between buckets on the same Outposts, or between Outposts buckets and any other bucket types. For more information about S3 on Outposts, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html\">What is S3 on Outposts?</a> in the <i>S3 on Outposts guide</i>. When you use this action with S3 on Outposts through the REST API, you must direct requests to the S3 on Outposts hostname, in the format <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. The hostname isn't required when you use the Amazon Web Services CLI or SDKs. </p>",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "CacheControl": {
+          "shape": "CacheControl",
+          "documentation": "<p>Specifies the caching behavior along the request/reply chain.</p>",
+          "location": "header",
+          "locationName": "Cache-Control"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "documentation": "<p>Indicates the algorithm that you want Amazon S3 to use to create the checksum for the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p> <p>When you copy an object, if the source object has a checksum, that checksum value will be copied to the new object by default. If the <code>CopyObject</code> request does not include this <code>x-amz-checksum-algorithm</code> header, the checksum algorithm will be copied from the source object to the destination object (if it's present on the source object). You can optionally specify a different checksum algorithm to use with the <code>x-amz-checksum-algorithm</code> header. Unrecognized or unsupported values will respond with the HTTP status code <code>400 Bad Request</code>.</p> <note> <p>For directory buckets, when you use Amazon Web Services SDKs, <code>CRC32</code> is the default checksum algorithm that's used for performance.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-checksum-algorithm"
+        },
+        "ContentDisposition": {
+          "shape": "ContentDisposition",
+          "documentation": "<p>Specifies presentational information for the object. Indicates whether an object should be displayed in a web browser or downloaded as a file. It allows specifying the desired filename for the downloaded file.</p>",
+          "location": "header",
+          "locationName": "Content-Disposition"
+        },
+        "ContentEncoding": {
+          "shape": "ContentEncoding",
+          "documentation": "<p>Specifies what content encodings have been applied to the object and thus what decoding mechanisms must be applied to obtain the media-type referenced by the Content-Type header field.</p> <note> <p>For directory buckets, only the <code>aws-chunked</code> value is supported in this header field.</p> </note>",
+          "location": "header",
+          "locationName": "Content-Encoding"
+        },
+        "ContentLanguage": {
+          "shape": "ContentLanguage",
+          "documentation": "<p>The language the content is in.</p>",
+          "location": "header",
+          "locationName": "Content-Language"
+        },
+        "ContentType": {
+          "shape": "ContentType",
+          "documentation": "<p>A standard MIME type that describes the format of the object data.</p>",
+          "location": "header",
+          "locationName": "Content-Type"
+        },
+        "CopySource": {
+          "shape": "CopySource",
+          "documentation": "<p>Specifies the source object for the copy operation. The source object can be up to 5 GB. If the source object is an object that was uploaded by using a multipart upload, the object copy will be a single part object after the source object is copied to the destination bucket.</p> <p>You specify the value of the copy source in one of two formats, depending on whether you want to access the source object through an <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points.html\">access point</a>:</p> <ul> <li> <p>For objects not accessed through an access point, specify the name of the source bucket and the key of the source object, separated by a slash (/). For example, to copy the object <code>reports/january.pdf</code> from the general purpose bucket <code>awsexamplebucket</code>, use <code>awsexamplebucket/reports/january.pdf</code>. The value must be URL-encoded. To copy the object <code>reports/january.pdf</code> from the directory bucket <code>awsexamplebucket--use1-az5--x-s3</code>, use <code>awsexamplebucket--use1-az5--x-s3/reports/january.pdf</code>. The value must be URL-encoded.</p> </li> <li> <p>For objects accessed through access points, specify the Amazon Resource Name (ARN) of the object as accessed through the access point, in the format <code>arn:aws:s3:&lt;Region&gt;:&lt;account-id&gt;:accesspoint/&lt;access-point-name&gt;/object/&lt;key&gt;</code>. For example, to copy the object <code>reports/january.pdf</code> through access point <code>my-access-point</code> owned by account <code>123456789012</code> in Region <code>us-west-2</code>, use the URL encoding of <code>arn:aws:s3:us-west-2:123456789012:accesspoint/my-access-point/object/reports/january.pdf</code>. The value must be URL encoded.</p> <note> <ul> <li> <p>Amazon S3 supports copy operations using Access points only when the source and destination buckets are in the same Amazon Web Services Region.</p> </li> <li> <p>Access points are not supported by directory buckets.</p> </li> </ul> </note> <p>Alternatively, for objects accessed through Amazon S3 on Outposts, specify the ARN of the object as accessed in the format <code>arn:aws:s3-outposts:&lt;Region&gt;:&lt;account-id&gt;:outpost/&lt;outpost-id&gt;/object/&lt;key&gt;</code>. For example, to copy the object <code>reports/january.pdf</code> through outpost <code>my-outpost</code> owned by account <code>123456789012</code> in Region <code>us-west-2</code>, use the URL encoding of <code>arn:aws:s3-outposts:us-west-2:123456789012:outpost/my-outpost/object/reports/january.pdf</code>. The value must be URL-encoded. </p> </li> </ul> <p>If your source bucket versioning is enabled, the <code>x-amz-copy-source</code> header by default identifies the current version of an object to copy. If the current version is a delete marker, Amazon S3 behaves as if the object was deleted. To copy a different version, use the <code>versionId</code> query parameter. Specifically, append <code>?versionId=&lt;version-id&gt;</code> to the value (for example, <code>awsexamplebucket/reports/january.pdf?versionId=QUpfdndhfd8438MNFDN93jdnJFkdmqnh893</code>). If you don't specify a version ID, Amazon S3 copies the latest version of the source object.</p> <p>If you enable versioning on the destination bucket, Amazon S3 generates a unique version ID for the copied object. This version ID is different from the version ID of the source object. Amazon S3 returns the version ID of the copied object in the <code>x-amz-version-id</code> response header in the response.</p> <p>If you do not enable versioning or suspend it on the destination bucket, the version ID that Amazon S3 generates in the <code>x-amz-version-id</code> response header is always null.</p> <note> <p> <b>Directory buckets</b> - S3 Versioning isn't enabled and supported for directory buckets.</p> </note>",
+          "contextParam": {
+            "name": "CopySource"
+          },
+          "location": "header",
+          "locationName": "x-amz-copy-source"
+        },
+        "CopySourceIfMatch": {
+          "shape": "CopySourceIfMatch",
+          "documentation": "<p>Copies the object if its entity tag (ETag) matches the specified tag.</p> <p> If both the <code>x-amz-copy-source-if-match</code> and <code>x-amz-copy-source-if-unmodified-since</code> headers are present in the request and evaluate as follows, Amazon S3 returns <code>200 OK</code> and copies the data:</p> <ul> <li> <p> <code>x-amz-copy-source-if-match</code> condition evaluates to true</p> </li> <li> <p> <code>x-amz-copy-source-if-unmodified-since</code> condition evaluates to false</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-match"
+        },
+        "CopySourceIfModifiedSince": {
+          "shape": "CopySourceIfModifiedSince",
+          "documentation": "<p>Copies the object if it has been modified since the specified time.</p> <p>If both the <code>x-amz-copy-source-if-none-match</code> and <code>x-amz-copy-source-if-modified-since</code> headers are present in the request and evaluate as follows, Amazon S3 returns the <code>412 Precondition Failed</code> response code:</p> <ul> <li> <p> <code>x-amz-copy-source-if-none-match</code> condition evaluates to false</p> </li> <li> <p> <code>x-amz-copy-source-if-modified-since</code> condition evaluates to true</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-modified-since"
+        },
+        "CopySourceIfNoneMatch": {
+          "shape": "CopySourceIfNoneMatch",
+          "documentation": "<p>Copies the object if its entity tag (ETag) is different than the specified ETag.</p> <p>If both the <code>x-amz-copy-source-if-none-match</code> and <code>x-amz-copy-source-if-modified-since</code> headers are present in the request and evaluate as follows, Amazon S3 returns the <code>412 Precondition Failed</code> response code:</p> <ul> <li> <p> <code>x-amz-copy-source-if-none-match</code> condition evaluates to false</p> </li> <li> <p> <code>x-amz-copy-source-if-modified-since</code> condition evaluates to true</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-none-match"
+        },
+        "CopySourceIfUnmodifiedSince": {
+          "shape": "CopySourceIfUnmodifiedSince",
+          "documentation": "<p>Copies the object if it hasn't been modified since the specified time.</p> <p> If both the <code>x-amz-copy-source-if-match</code> and <code>x-amz-copy-source-if-unmodified-since</code> headers are present in the request and evaluate as follows, Amazon S3 returns <code>200 OK</code> and copies the data:</p> <ul> <li> <p> <code>x-amz-copy-source-if-match</code> condition evaluates to true</p> </li> <li> <p> <code>x-amz-copy-source-if-unmodified-since</code> condition evaluates to false</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-unmodified-since"
+        },
+        "Expires": {
+          "shape": "Expires",
+          "documentation": "<p>The date and time at which the object is no longer cacheable.</p>",
+          "location": "header",
+          "locationName": "Expires"
+        },
+        "GrantFullControl": {
+          "shape": "GrantFullControl",
+          "documentation": "<p>Gives the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.</p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-full-control"
+        },
+        "GrantRead": {
+          "shape": "GrantRead",
+          "documentation": "<p>Allows grantee to read the object data and its metadata.</p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-read"
+        },
+        "GrantReadACP": {
+          "shape": "GrantReadACP",
+          "documentation": "<p>Allows grantee to read the object ACL.</p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-read-acp"
+        },
+        "GrantWriteACP": {
+          "shape": "GrantWriteACP",
+          "documentation": "<p>Allows grantee to write the ACL for the applicable object.</p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-write-acp"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>The key of the destination object.</p>",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "Metadata": {
+          "shape": "Metadata",
+          "documentation": "<p>A map of metadata to store with the object in S3.</p>",
+          "location": "headers",
+          "locationName": "x-amz-meta-"
+        },
+        "MetadataDirective": {
+          "shape": "MetadataDirective",
+          "documentation": "<p>Specifies whether the metadata is copied from the source object or replaced with metadata that's provided in the request. When copying an object, you can preserve all metadata (the default) or specify new metadata. If this header isn’t specified, <code>COPY</code> is the default behavior. </p> <p> <b>General purpose bucket</b> - For general purpose buckets, when you grant permissions, you can use the <code>s3:x-amz-metadata-directive</code> condition key to enforce certain metadata behavior when objects are uploaded. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/amazon-s3-policy-keys.html\">Amazon S3 condition key examples</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p> <code>x-amz-website-redirect-location</code> is unique to each object and is not copied when using the <code>x-amz-metadata-directive</code> header. To copy the value, you must specify <code>x-amz-website-redirect-location</code> in the request header.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-metadata-directive"
+        },
+        "TaggingDirective": {
+          "shape": "TaggingDirective",
+          "documentation": "<p>Specifies whether the object tag-set is copied from the source object or replaced with the tag-set that's provided in the request.</p> <p>The default value is <code>COPY</code>.</p> <note> <p> <b>Directory buckets</b> - For directory buckets in a <code>CopyObject</code> operation, only the empty tag-set is supported. Any requests that attempt to write non-empty tags into directory buckets will receive a <code>501 Not Implemented</code> status code. When the destination bucket is a directory bucket, you will receive a <code>501 Not Implemented</code> response in any of the following situations:</p> <ul> <li> <p>When you attempt to <code>COPY</code> the tag-set from an S3 source object that has non-empty tags.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a source object and set a non-empty value to <code>x-amz-tagging</code>.</p> </li> <li> <p>When you don't set the <code>x-amz-tagging-directive</code> header and the source object has non-empty tags. This is because the default value of <code>x-amz-tagging-directive</code> is <code>COPY</code>.</p> </li> </ul> <p>Because only the empty tag-set is supported for directory buckets in a <code>CopyObject</code> operation, the following situations are allowed:</p> <ul> <li> <p>When you attempt to <code>COPY</code> the tag-set from a directory bucket source object that has no tags to a general purpose bucket. It copies an empty tag-set to the destination object.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a directory bucket source object and set the <code>x-amz-tagging</code> value of the directory bucket destination object to empty.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a general purpose bucket source object that has non-empty tags and set the <code>x-amz-tagging</code> value of the directory bucket destination object to empty.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a directory bucket source object and don't set the <code>x-amz-tagging</code> value of the directory bucket destination object. This is because the default value of <code>x-amz-tagging</code> is the empty value.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-tagging-directive"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when storing this object in Amazon S3. Unrecognized or unsupported values won’t write a destination object and will receive a <code>400 Bad Request</code> response. </p> <p>Amazon S3 automatically encrypts all new objects that are copied to an S3 bucket. When copying an object, if you don't specify encryption information in your copy request, the encryption setting of the target object is set to the default encryption configuration of the destination bucket. By default, all buckets have a base level of encryption configuration that uses server-side encryption with Amazon S3 managed keys (SSE-S3). If the destination bucket has a different default encryption configuration, Amazon S3 uses the corresponding encryption key to encrypt the target object copy.</p> <p>With server-side encryption, Amazon S3 encrypts your data as it writes your data to disks in its data centers and decrypts the data when you access it. For more information about server-side encryption, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html\">Using Server-Side Encryption</a> in the <i>Amazon S3 User Guide</i>.</p> <p> <b>General purpose buckets </b> </p> <ul> <li> <p>For general purpose buckets, there are the following supported options for server-side encryption: server-side encryption with Key Management Service (KMS) keys (SSE-KMS), dual-layer server-side encryption with Amazon Web Services KMS keys (DSSE-KMS), and server-side encryption with customer-provided encryption keys (SSE-C). Amazon S3 uses the corresponding KMS key, or a customer-provided key to encrypt the target object copy.</p> </li> <li> <p>When you perform a <code>CopyObject</code> operation, if you want to use a different type of encryption setting for the target object, you can specify appropriate encryption-related headers to encrypt the target object with an Amazon S3 managed key, a KMS key, or a customer-provided key. If the encryption setting in your request is different from the default encryption configuration of the destination bucket, the encryption setting in your request takes precedence. </p> </li> </ul> <p> <b>Directory buckets </b> </p> <ul> <li> <p>For directory buckets, there are only two supported options for server-side encryption: server-side encryption with Amazon S3 managed keys (SSE-S3) (<code>AES256</code>) and server-side encryption with KMS keys (SSE-KMS) (<code>aws:kms</code>). We recommend that the bucket's default encryption uses the desired encryption configuration and you don't override the bucket default encryption in your <code>CreateSession</code> requests or <code>PUT</code> object requests. Then, new objects are automatically encrypted with the desired encryption settings. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html\">Protecting data with server-side encryption</a> in the <i>Amazon S3 User Guide</i>. For more information about the encryption overriding behaviors in directory buckets, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-specifying-kms-encryption.html\">Specifying server-side encryption with KMS for new object uploads</a>.</p> </li> <li> <p>To encrypt new object copies to a directory bucket with SSE-KMS, we recommend you specify SSE-KMS as the directory bucket's default encryption configuration with a KMS key (specifically, a <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk\">customer managed key</a>). The <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk\">Amazon Web Services managed key</a> (<code>aws/s3</code>) isn't supported. Your SSE-KMS configuration can only support 1 <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk\">customer managed key</a> per directory bucket for the lifetime of the bucket. After you specify a customer managed key for SSE-KMS, you can't override the customer managed key for the bucket's SSE-KMS configuration. Then, when you perform a <code>CopyObject</code> operation and want to specify server-side encryption settings for new object copies with SSE-KMS in the encryption-related request headers, you must ensure the encryption key is the same customer managed key that you specified for the directory bucket's default encryption configuration. </p> </li> <li> <p> <b>S3 access points for Amazon FSx </b> - When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>. All Amazon FSx file systems have encryption configured by default and are encrypted at rest. Data is automatically encrypted before being written to the file system, and automatically decrypted as it is read. These processes are handled transparently by Amazon FSx.</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "StorageClass": {
+          "shape": "StorageClass",
+          "documentation": "<p>If the <code>x-amz-storage-class</code> header is not used, the copied object will be stored in the <code>STANDARD</code> Storage Class by default. The <code>STANDARD</code> storage class provides high durability and high availability. Depending on performance needs, you can specify a different Storage Class. </p> <note> <ul> <li> <p> <b>Directory buckets </b> - Directory buckets only support <code>EXPRESS_ONEZONE</code> (the S3 Express One Zone storage class) in Availability Zones and <code>ONEZONE_IA</code> (the S3 One Zone-Infrequent Access storage class) in Dedicated Local Zones. Unsupported storage class values won't write a destination object and will respond with the HTTP status code <code>400 Bad Request</code>.</p> </li> <li> <p> <b>Amazon S3 on Outposts </b> - S3 on Outposts only uses the <code>OUTPOSTS</code> Storage Class.</p> </li> </ul> </note> <p>You can use the <code>CopyObject</code> action to change the storage class of an object that is already stored in Amazon S3 by using the <code>x-amz-storage-class</code> header. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html\">Storage Classes</a> in the <i>Amazon S3 User Guide</i>.</p> <p>Before using an object as a source object for the copy operation, you must restore a copy of it if it meets any of the following conditions:</p> <ul> <li> <p>The storage class of the source object is <code>GLACIER</code> or <code>DEEP_ARCHIVE</code>.</p> </li> <li> <p>The storage class of the source object is <code>INTELLIGENT_TIERING</code> and it's <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/intelligent-tiering-overview.html#intel-tiering-tier-definition\">S3 Intelligent-Tiering access tier</a> is <code>Archive Access</code> or <code>Deep Archive Access</code>.</p> </li> </ul> <p>For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_RestoreObject.html\">RestoreObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/CopyingObjectsExamples.html\">Copying Objects</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-storage-class"
+        },
+        "WebsiteRedirectLocation": {
+          "shape": "WebsiteRedirectLocation",
+          "documentation": "<p>If the destination bucket is configured as a website, redirects requests for this object copy to another object in the same bucket or to an external URL. Amazon S3 stores the value of this header in the object metadata. This value is unique to each object and is not copied when using the <code>x-amz-metadata-directive</code> header. Instead, you may opt to provide this header in combination with the <code>x-amz-metadata-directive</code> header.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-website-redirect-location"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>Specifies the algorithm to use when encrypting the object (for example, <code>AES256</code>).</p> <p>When you perform a <code>CopyObject</code> operation, if you want to use a different type of encryption setting for the target object, you can specify appropriate encryption-related headers to encrypt the target object with an Amazon S3 managed key, a KMS key, or a customer-provided key. If the encryption setting in your request is different from the default encryption configuration of the destination bucket, the encryption setting in your request takes precedence. </p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "documentation": "<p>Specifies the customer-provided encryption key for Amazon S3 to use in encrypting data. This value is used to store the object and then it is discarded. Amazon S3 does not store the encryption key. The key must be appropriate for use with the algorithm specified in the <code>x-amz-server-side-encryption-customer-algorithm</code> header.</p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>Specifies the 128-bit MD5 digest of the encryption key according to RFC 1321. Amazon S3 uses this header for a message integrity check to ensure that the encryption key was transmitted without error.</p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>Specifies the KMS key ID (Key ID, Key ARN, or Key Alias) to use for object encryption. All GET and PUT requests for an object protected by KMS will fail if they're not made via SSL or using SigV4. For information about configuring any of the officially supported Amazon Web Services SDKs and Amazon Web Services CLI, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/UsingAWSSDK.html#specify-signature-version\">Specifying the Signature Version in Request Authentication</a> in the <i>Amazon S3 User Guide</i>.</p> <p> <b>Directory buckets</b> - To encrypt data using SSE-KMS, it's recommended to specify the <code>x-amz-server-side-encryption</code> header to <code>aws:kms</code>. Then, the <code>x-amz-server-side-encryption-aws-kms-key-id</code> header implicitly uses the bucket's default KMS customer managed key ID. If you want to explicitly set the <code> x-amz-server-side-encryption-aws-kms-key-id</code> header, it must match the bucket's default customer managed key (using key ID or ARN, not alias). Your SSE-KMS configuration can only support 1 <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk\">customer managed key</a> per directory bucket's lifetime. The <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk\">Amazon Web Services managed key</a> (<code>aws/s3</code>) isn't supported. Incorrect key specification results in an HTTP <code>400 Bad Request</code> error. </p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "SSEKMSEncryptionContext": {
+          "shape": "SSEKMSEncryptionContext",
+          "documentation": "<p>Specifies the Amazon Web Services KMS Encryption Context as an additional encryption context to use for the destination object encryption. The value of this header is a base64-encoded UTF-8 string holding JSON with the encryption context key-value pairs.</p> <p> <b>General purpose buckets</b> - This value must be explicitly added to specify encryption context for <code>CopyObject</code> requests if you want an additional encryption context for your destination object. The additional encryption context of the source object won't be copied to the destination object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingKMSEncryption.html#encryption-context\">Encryption context</a> in the <i>Amazon S3 User Guide</i>.</p> <p> <b>Directory buckets</b> - You can optionally provide an explicit encryption context value. The value must match the default encryption context - the bucket Amazon Resource Name (ARN). An additional encryption context value is not supported. </p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-context"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Specifies whether Amazon S3 should use an S3 Bucket Key for object encryption with server-side encryption using Key Management Service (KMS) keys (SSE-KMS). If a target object uses SSE-KMS, you can enable an S3 Bucket Key for the object.</p> <p>Setting this header to <code>true</code> causes Amazon S3 to use an S3 Bucket Key for object encryption with SSE-KMS. Specifying this header with a COPY action doesn’t affect bucket-level settings for S3 Bucket Key.</p> <p>For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/bucket-key.html\">Amazon S3 Bucket Keys</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p> <b>Directory buckets</b> - S3 Bucket Keys aren't supported, when you copy SSE-KMS encrypted objects from general purpose buckets to directory buckets, from directory buckets to general purpose buckets, or between directory buckets, through <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a>. In this case, Amazon S3 makes a call to KMS every time a copy request is made for a KMS-encrypted object.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "CopySourceSSECustomerAlgorithm": {
+          "shape": "CopySourceSSECustomerAlgorithm",
+          "documentation": "<p>Specifies the algorithm to use when decrypting the source object (for example, <code>AES256</code>).</p> <p>If the source object for the copy is stored in Amazon S3 using SSE-C, you must provide the necessary encryption information in your request so that Amazon S3 can decrypt the object for copying.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-algorithm"
+        },
+        "CopySourceSSECustomerKey": {
+          "shape": "CopySourceSSECustomerKey",
+          "documentation": "<p>Specifies the customer-provided encryption key for Amazon S3 to use to decrypt the source object. The encryption key provided in this header must be the same one that was used when the source object was created.</p> <p>If the source object for the copy is stored in Amazon S3 using SSE-C, you must provide the necessary encryption information in your request so that Amazon S3 can decrypt the object for copying.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-key"
+        },
+        "CopySourceSSECustomerKeyMD5": {
+          "shape": "CopySourceSSECustomerKeyMD5",
+          "documentation": "<p>Specifies the 128-bit MD5 digest of the encryption key according to RFC 1321. Amazon S3 uses this header for a message integrity check to ensure that the encryption key was transmitted without error.</p> <p>If the source object for the copy is stored in Amazon S3 using SSE-C, you must provide the necessary encryption information in your request so that Amazon S3 can decrypt the object for copying.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-key-MD5"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "Tagging": {
+          "shape": "TaggingHeader",
+          "documentation": "<p>The tag-set for the object copy in the destination bucket. This value must be used in conjunction with the <code>x-amz-tagging-directive</code> if you choose <code>REPLACE</code> for the <code>x-amz-tagging-directive</code>. If you choose <code>COPY</code> for the <code>x-amz-tagging-directive</code>, you don't need to set the <code>x-amz-tagging</code> header, because the tag-set will be copied from the source object directly. The tag-set must be encoded as URL Query parameters.</p> <p>The default value is the empty value.</p> <note> <p> <b>Directory buckets</b> - For directory buckets in a <code>CopyObject</code> operation, only the empty tag-set is supported. Any requests that attempt to write non-empty tags into directory buckets will receive a <code>501 Not Implemented</code> status code. When the destination bucket is a directory bucket, you will receive a <code>501 Not Implemented</code> response in any of the following situations:</p> <ul> <li> <p>When you attempt to <code>COPY</code> the tag-set from an S3 source object that has non-empty tags.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a source object and set a non-empty value to <code>x-amz-tagging</code>.</p> </li> <li> <p>When you don't set the <code>x-amz-tagging-directive</code> header and the source object has non-empty tags. This is because the default value of <code>x-amz-tagging-directive</code> is <code>COPY</code>.</p> </li> </ul> <p>Because only the empty tag-set is supported for directory buckets in a <code>CopyObject</code> operation, the following situations are allowed:</p> <ul> <li> <p>When you attempt to <code>COPY</code> the tag-set from a directory bucket source object that has no tags to a general purpose bucket. It copies an empty tag-set to the destination object.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a directory bucket source object and set the <code>x-amz-tagging</code> value of the directory bucket destination object to empty.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a general purpose bucket source object that has non-empty tags and set the <code>x-amz-tagging</code> value of the directory bucket destination object to empty.</p> </li> <li> <p>When you attempt to <code>REPLACE</code> the tag-set of a directory bucket source object and don't set the <code>x-amz-tagging</code> value of the directory bucket destination object. This is because the default value of <code>x-amz-tagging</code> is the empty value.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-tagging"
+        },
+        "ObjectLockMode": {
+          "shape": "ObjectLockMode",
+          "documentation": "<p>The Object Lock mode that you want to apply to the object copy.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-mode"
+        },
+        "ObjectLockRetainUntilDate": {
+          "shape": "ObjectLockRetainUntilDate",
+          "documentation": "<p>The date and time when you want the Object Lock of the object copy to expire.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-retain-until-date"
+        },
+        "ObjectLockLegalHoldStatus": {
+          "shape": "ObjectLockLegalHoldStatus",
+          "documentation": "<p>Specifies whether you want to apply a legal hold to the object copy.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-legal-hold"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected destination bucket owner. If the account ID that you provide does not match the actual owner of the destination bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "ExpectedSourceBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected source bucket owner. If the account ID that you provide does not match the actual owner of the source bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-source-expected-bucket-owner"
+        }
+      }
+    },
+    "CacheControl": {
+      "type": "string"
+    },
+    "ContentDisposition": {
+      "type": "string"
+    },
+    "ContentEncoding": {
+      "type": "string"
+    },
+    "ContentLanguage": {
+      "type": "string"
+    },
+    "ContentType": {
+      "type": "string"
+    },
+    "CopySource": {
+      "type": "string",
+      "pattern": "\\/?.+\\/.+"
+    },
+    "CopySourceIfMatch": {
+      "type": "string"
+    },
+    "CopySourceIfModifiedSince": {
+      "type": "timestamp"
+    },
+    "CopySourceIfNoneMatch": {
+      "type": "string"
+    },
+    "CopySourceIfUnmodifiedSince": {
+      "type": "timestamp"
+    },
+    "Expires": {
+      "type": "timestamp"
+    },
+    "Metadata": {
+      "type": "map",
+      "key": {
+        "shape": "MetadataKey"
+      },
+      "value": {
+        "shape": "MetadataValue"
+      }
+    },
+    "MetadataDirective": {
+      "type": "string",
+      "enum": [
+        "COPY",
+        "REPLACE"
+      ]
+    },
+    "TaggingDirective": {
+      "type": "string",
+      "enum": [
+        "COPY",
+        "REPLACE"
+      ]
+    },
+    "WebsiteRedirectLocation": {
+      "type": "string"
+    },
+    "SSEKMSEncryptionContext": {
+      "type": "string",
+      "sensitive": true
+    },
+    "CopySourceSSECustomerAlgorithm": {
+      "type": "string"
+    },
+    "CopySourceSSECustomerKey": {
+      "type": "string",
+      "sensitive": true
+    },
+    "CopySourceSSECustomerKeyMD5": {
+      "type": "string"
+    },
+    "TaggingHeader": {
+      "type": "string"
+    },
+    "ObjectLockMode": {
+      "type": "string",
+      "enum": [
+        "GOVERNANCE",
+        "COMPLIANCE"
+      ]
+    },
+    "ObjectLockRetainUntilDate": {
+      "type": "timestamp",
+      "timestampFormat": "iso8601"
+    },
+    "CopyObjectOutput": {
+      "type": "structure",
+      "members": {
+        "CopyObjectResult": {
+          "shape": "CopyObjectResult",
+          "documentation": "<p>Container for all response elements.</p>",
+          "cpp_getter": "CopyObjectResultDetails"
+        },
+        "Expiration": {
+          "shape": "Expiration",
+          "documentation": "<p>If the object expiration is configured, the response includes this header.</p> <note> <p>Object expiration information is not returned in directory buckets and this header returns the value \"<code>NotImplemented</code>\" in all responses for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-expiration"
+        },
+        "CopySourceVersionId": {
+          "shape": "CopySourceVersionId",
+          "documentation": "<p>Version ID of the source object that was copied.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-version-id"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "documentation": "<p>Version ID of the newly created copy.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-version-id"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when you store this object in Amazon S3 or Amazon FSx.</p> <note> <p>When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to confirm the encryption algorithm that's used.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to provide the round-trip message integrity verification of the customer-provided encryption key.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>If present, indicates the ID of the KMS key that was used for object encryption.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "SSEKMSEncryptionContext": {
+          "shape": "SSEKMSEncryptionContext",
+          "documentation": "<p>If present, indicates the Amazon Web Services KMS Encryption Context to use for object encryption. The value of this header is a Base64 encoded UTF-8 string holding JSON with the encryption context key-value pairs.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-context"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Indicates whether the copied object uses an S3 Bucket Key for server-side encryption with Key Management Service (KMS) keys (SSE-KMS).</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      },
+      "payload": "CopyObjectResult"
+    },
+    "CopyObjectResult": {
+      "type": "structure",
+      "members": {
+        "ETag": {
+          "shape": "ETag",
+          "documentation": "<p>Returns the ETag of the new object. The ETag reflects only changes to the contents of an object, not its metadata.</p>"
+        },
+        "LastModified": {
+          "shape": "LastModified",
+          "documentation": "<p>Creation date of the object.</p>"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType",
+          "documentation": "<p>The checksum type that is used to calculate the object’s checksum value. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32</code> checksum of the object. This checksum is only present if the object was uploaded with the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32C</code> checksum of the object. This will only be present if the object was uploaded with the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME",
+          "documentation": "<p>The Base64 encoded, 64-bit <code>CRC64NVME</code> checksum of the object. This checksum is present if the object being copied was uploaded with the <code>CRC64NVME</code> checksum algorithm, or if the object was uploaded without a checksum (and Amazon S3 added the default checksum, <code>CRC64NVME</code>, to the uploaded object). For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1",
+          "documentation": "<p>The Base64 encoded, 160-bit <code>SHA1</code> digest of the object. This will only be present if the object was uploaded with the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256",
+          "documentation": "<p>The Base64 encoded, 256-bit <code>SHA256</code> digest of the object. This will only be present if the object was uploaded with the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        }
+      },
+      "documentation": "<p>Container for all response elements.</p>",
+      "cpp_name": "CopyObjectResultDetails"
+    },
+    "Expiration": {
+      "type": "string"
+    },
+    "CopySourceVersionId": {
+      "type": "string"
+    },
+    "CreateMultipartUploadRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key"
+      ],
+      "members": {
+        "ACL": {
+          "shape": "ObjectCannedACL",
+          "documentation": "<p>The canned ACL to apply to the object. Amazon S3 supports a set of predefined ACLs, known as <i>canned ACLs</i>. Each canned ACL has a predefined set of grantees and permissions. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#CannedACL\">Canned ACL</a> in the <i>Amazon S3 User Guide</i>.</p> <p>By default, all objects are private. Only the owner has full access control. When uploading an object, you can grant access permissions to individual Amazon Web Services accounts or to predefined groups defined by Amazon S3. These permissions are then added to the access control list (ACL) on the new object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/S3_ACLs_UsingACLs.html\">Using ACLs</a>. One way to grant the permissions using the request headers is to specify a canned ACL with the <code>x-amz-acl</code> request header.</p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-acl"
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>The name of the bucket where the multipart upload is initiated and where the object is uploaded.</p> <p> <b>Directory buckets</b> - When you use this operation with a directory bucket, you must use virtual-hosted-style requests in the format <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>. Path-style requests are not supported. Directory bucket names must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must follow the format <code> <i>bucket-base-name</i>--<i>zone-id</i>--x-s3</code> (for example, <code> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</code>). For information about bucket naming restrictions, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\">Directory bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.</p> <p> <b>Access points</b> - When you use this action with an access point for general purpose buckets, you must provide the alias of the access point in place of the bucket name or specify the access point ARN. When you use this action with an access point for directory buckets, you must provide the access point name in place of the bucket name. When using the access point ARN, you must direct requests to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket name. For more information about access point ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html\">Using access points</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Object Lambda access points are not supported by directory buckets.</p> </note> <p> <b>S3 on Outposts</b> - When you use this action with S3 on Outposts, you must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. When you use this action with S3 on Outposts, the destination bucket must be the Outposts access point ARN or the access point alias. For more information about S3 on Outposts, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html\">What is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "CacheControl": {
+          "shape": "CacheControl",
+          "documentation": "<p>Specifies caching behavior along the request/reply chain.</p>",
+          "location": "header",
+          "locationName": "Cache-Control"
+        },
+        "ContentDisposition": {
+          "shape": "ContentDisposition",
+          "documentation": "<p>Specifies presentational information for the object.</p>",
+          "location": "header",
+          "locationName": "Content-Disposition"
+        },
+        "ContentEncoding": {
+          "shape": "ContentEncoding",
+          "documentation": "<p>Specifies what content encodings have been applied to the object and thus what decoding mechanisms must be applied to obtain the media-type referenced by the Content-Type header field.</p> <note> <p>For directory buckets, only the <code>aws-chunked</code> value is supported in this header field.</p> </note>",
+          "location": "header",
+          "locationName": "Content-Encoding"
+        },
+        "ContentLanguage": {
+          "shape": "ContentLanguage",
+          "documentation": "<p>The language that the content is in.</p>",
+          "location": "header",
+          "locationName": "Content-Language"
+        },
+        "ContentType": {
+          "shape": "ContentType",
+          "documentation": "<p>A standard MIME type describing the format of the object data.</p>",
+          "location": "header",
+          "locationName": "Content-Type"
+        },
+        "Expires": {
+          "shape": "Expires",
+          "documentation": "<p>The date and time at which the object is no longer cacheable.</p>",
+          "location": "header",
+          "locationName": "Expires"
+        },
+        "GrantFullControl": {
+          "shape": "GrantFullControl",
+          "documentation": "<p>Specify access permissions explicitly to give the grantee READ, READ_ACP, and WRITE_ACP permissions on the object.</p> <p>By default, all objects are private. Only the owner has full access control. When uploading an object, you can use this header to explicitly grant access permissions to specific Amazon Web Services accounts or groups. This header maps to specific permissions that Amazon S3 supports in an ACL. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html\">Access Control List (ACL) Overview</a> in the <i>Amazon S3 User Guide</i>.</p> <p>You specify each grantee as a type=value pair, where the type is one of the following:</p> <ul> <li> <p> <code>id</code> – if the value specified is the canonical user ID of an Amazon Web Services account</p> </li> <li> <p> <code>uri</code> – if you are granting permissions to a predefined group</p> </li> <li> <p> <code>emailAddress</code> – if the value specified is the email address of an Amazon Web Services account</p> <note> <p>Using email addresses to specify a grantee is only supported in the following Amazon Web Services Regions: </p> <ul> <li> <p>US East (N. Virginia)</p> </li> <li> <p>US West (N. California)</p> </li> <li> <p> US West (Oregon)</p> </li> <li> <p> Asia Pacific (Singapore)</p> </li> <li> <p>Asia Pacific (Sydney)</p> </li> <li> <p>Asia Pacific (Tokyo)</p> </li> <li> <p>Europe (Ireland)</p> </li> <li> <p>South America (São Paulo)</p> </li> </ul> <p>For a list of all the Amazon S3 supported Regions and endpoints, see <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region\">Regions and Endpoints</a> in the Amazon Web Services General Reference.</p> </note> </li> </ul> <p>For example, the following <code>x-amz-grant-read</code> header grants the Amazon Web Services accounts identified by account IDs permissions to read object data and its metadata:</p> <p> <code>x-amz-grant-read: id=\"11112222333\", id=\"444455556666\" </code> </p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-full-control"
+        },
+        "GrantRead": {
+          "shape": "GrantRead",
+          "documentation": "<p>Specify access permissions explicitly to allow grantee to read the object data and its metadata.</p> <p>By default, all objects are private. Only the owner has full access control. When uploading an object, you can use this header to explicitly grant access permissions to specific Amazon Web Services accounts or groups. This header maps to specific permissions that Amazon S3 supports in an ACL. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html\">Access Control List (ACL) Overview</a> in the <i>Amazon S3 User Guide</i>.</p> <p>You specify each grantee as a type=value pair, where the type is one of the following:</p> <ul> <li> <p> <code>id</code> – if the value specified is the canonical user ID of an Amazon Web Services account</p> </li> <li> <p> <code>uri</code> – if you are granting permissions to a predefined group</p> </li> <li> <p> <code>emailAddress</code> – if the value specified is the email address of an Amazon Web Services account</p> <note> <p>Using email addresses to specify a grantee is only supported in the following Amazon Web Services Regions: </p> <ul> <li> <p>US East (N. Virginia)</p> </li> <li> <p>US West (N. California)</p> </li> <li> <p> US West (Oregon)</p> </li> <li> <p> Asia Pacific (Singapore)</p> </li> <li> <p>Asia Pacific (Sydney)</p> </li> <li> <p>Asia Pacific (Tokyo)</p> </li> <li> <p>Europe (Ireland)</p> </li> <li> <p>South America (São Paulo)</p> </li> </ul> <p>For a list of all the Amazon S3 supported Regions and endpoints, see <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region\">Regions and Endpoints</a> in the Amazon Web Services General Reference.</p> </note> </li> </ul> <p>For example, the following <code>x-amz-grant-read</code> header grants the Amazon Web Services accounts identified by account IDs permissions to read object data and its metadata:</p> <p> <code>x-amz-grant-read: id=\"11112222333\", id=\"444455556666\" </code> </p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-read"
+        },
+        "GrantReadACP": {
+          "shape": "GrantReadACP",
+          "documentation": "<p>Specify access permissions explicitly to allows grantee to read the object ACL.</p> <p>By default, all objects are private. Only the owner has full access control. When uploading an object, you can use this header to explicitly grant access permissions to specific Amazon Web Services accounts or groups. This header maps to specific permissions that Amazon S3 supports in an ACL. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html\">Access Control List (ACL) Overview</a> in the <i>Amazon S3 User Guide</i>.</p> <p>You specify each grantee as a type=value pair, where the type is one of the following:</p> <ul> <li> <p> <code>id</code> – if the value specified is the canonical user ID of an Amazon Web Services account</p> </li> <li> <p> <code>uri</code> – if you are granting permissions to a predefined group</p> </li> <li> <p> <code>emailAddress</code> – if the value specified is the email address of an Amazon Web Services account</p> <note> <p>Using email addresses to specify a grantee is only supported in the following Amazon Web Services Regions: </p> <ul> <li> <p>US East (N. Virginia)</p> </li> <li> <p>US West (N. California)</p> </li> <li> <p> US West (Oregon)</p> </li> <li> <p> Asia Pacific (Singapore)</p> </li> <li> <p>Asia Pacific (Sydney)</p> </li> <li> <p>Asia Pacific (Tokyo)</p> </li> <li> <p>Europe (Ireland)</p> </li> <li> <p>South America (São Paulo)</p> </li> </ul> <p>For a list of all the Amazon S3 supported Regions and endpoints, see <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region\">Regions and Endpoints</a> in the Amazon Web Services General Reference.</p> </note> </li> </ul> <p>For example, the following <code>x-amz-grant-read</code> header grants the Amazon Web Services accounts identified by account IDs permissions to read object data and its metadata:</p> <p> <code>x-amz-grant-read: id=\"11112222333\", id=\"444455556666\" </code> </p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-read-acp"
+        },
+        "GrantWriteACP": {
+          "shape": "GrantWriteACP",
+          "documentation": "<p>Specify access permissions explicitly to allows grantee to allow grantee to write the ACL for the applicable object.</p> <p>By default, all objects are private. Only the owner has full access control. When uploading an object, you can use this header to explicitly grant access permissions to specific Amazon Web Services accounts or groups. This header maps to specific permissions that Amazon S3 supports in an ACL. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html\">Access Control List (ACL) Overview</a> in the <i>Amazon S3 User Guide</i>.</p> <p>You specify each grantee as a type=value pair, where the type is one of the following:</p> <ul> <li> <p> <code>id</code> – if the value specified is the canonical user ID of an Amazon Web Services account</p> </li> <li> <p> <code>uri</code> – if you are granting permissions to a predefined group</p> </li> <li> <p> <code>emailAddress</code> – if the value specified is the email address of an Amazon Web Services account</p> <note> <p>Using email addresses to specify a grantee is only supported in the following Amazon Web Services Regions: </p> <ul> <li> <p>US East (N. Virginia)</p> </li> <li> <p>US West (N. California)</p> </li> <li> <p> US West (Oregon)</p> </li> <li> <p> Asia Pacific (Singapore)</p> </li> <li> <p>Asia Pacific (Sydney)</p> </li> <li> <p>Asia Pacific (Tokyo)</p> </li> <li> <p>Europe (Ireland)</p> </li> <li> <p>South America (São Paulo)</p> </li> </ul> <p>For a list of all the Amazon S3 supported Regions and endpoints, see <a href=\"https://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region\">Regions and Endpoints</a> in the Amazon Web Services General Reference.</p> </note> </li> </ul> <p>For example, the following <code>x-amz-grant-read</code> header grants the Amazon Web Services accounts identified by account IDs permissions to read object data and its metadata:</p> <p> <code>x-amz-grant-read: id=\"11112222333\", id=\"444455556666\" </code> </p> <note> <ul> <li> <p>This functionality is not supported for directory buckets.</p> </li> <li> <p>This functionality is not supported for Amazon S3 on Outposts.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-grant-write-acp"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>Object key for which the multipart upload is to be initiated.</p>",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "Metadata": {
+          "shape": "Metadata",
+          "documentation": "<p>A map of metadata to store with the object in S3.</p>",
+          "location": "headers",
+          "locationName": "x-amz-meta-"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when you store this object in Amazon S3 or Amazon FSx.</p> <ul> <li> <p> <b>Directory buckets </b> - For directory buckets, there are only two supported options for server-side encryption: server-side encryption with Amazon S3 managed keys (SSE-S3) (<code>AES256</code>) and server-side encryption with KMS keys (SSE-KMS) (<code>aws:kms</code>). We recommend that the bucket's default encryption uses the desired encryption configuration and you don't override the bucket default encryption in your <code>CreateSession</code> requests or <code>PUT</code> object requests. Then, new objects are automatically encrypted with the desired encryption settings. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-serv-side-encryption.html\">Protecting data with server-side encryption</a> in the <i>Amazon S3 User Guide</i>. For more information about the encryption overriding behaviors in directory buckets, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-express-specifying-kms-encryption.html\">Specifying server-side encryption with KMS for new object uploads</a>. </p> <p>In the Zonal endpoint API calls (except <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>) using the REST API, the encryption request headers must match the encryption settings that are specified in the <code>CreateSession</code> request. You can't override the values of the encryption settings (<code>x-amz-server-side-encryption</code>, <code>x-amz-server-side-encryption-aws-kms-key-id</code>, <code>x-amz-server-side-encryption-context</code>, and <code>x-amz-server-side-encryption-bucket-key-enabled</code>) that are specified in the <code>CreateSession</code> request. You don't need to explicitly specify these encryption settings values in Zonal endpoint API calls, and Amazon S3 will use the encryption settings values from the <code>CreateSession</code> request to protect new objects in the directory bucket. </p> <note> <p>When you use the CLI or the Amazon Web Services SDKs, for <code>CreateSession</code>, the session token refreshes automatically to avoid service interruptions when a session expires. The CLI or the Amazon Web Services SDKs use the bucket's default encryption configuration for the <code>CreateSession</code> request. It's not supported to override the encryption settings values in the <code>CreateSession</code> request. So in the Zonal endpoint API calls (except <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a> and <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>), the encryption request headers must match the default encryption configuration of the directory bucket. </p> </note> </li> <li> <p> <b>S3 access points for Amazon FSx </b> - When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>. All Amazon FSx file systems have encryption configured by default and are encrypted at rest. Data is automatically encrypted before being written to the file system, and automatically decrypted as it is read. These processes are handled transparently by Amazon FSx.</p> </li> </ul>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "StorageClass": {
+          "shape": "StorageClass",
+          "documentation": "<p>By default, Amazon S3 uses the STANDARD Storage Class to store newly created objects. The STANDARD storage class provides high durability and high availability. Depending on performance needs, you can specify a different Storage Class. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/storage-class-intro.html\">Storage Classes</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <ul> <li> <p>Directory buckets only support <code>EXPRESS_ONEZONE</code> (the S3 Express One Zone storage class) in Availability Zones and <code>ONEZONE_IA</code> (the S3 One Zone-Infrequent Access storage class) in Dedicated Local Zones.</p> </li> <li> <p>Amazon S3 on Outposts only uses the OUTPOSTS Storage Class.</p> </li> </ul> </note>",
+          "location": "header",
+          "locationName": "x-amz-storage-class"
+        },
+        "WebsiteRedirectLocation": {
+          "shape": "WebsiteRedirectLocation",
+          "documentation": "<p>If the bucket is configured as a website, redirects requests for this object to another object in the same bucket or to an external URL. Amazon S3 stores the value of this header in the object metadata.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-website-redirect-location"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>Specifies the algorithm to use when encrypting the object (for example, AES256).</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "documentation": "<p>Specifies the customer-provided encryption key for Amazon S3 to use in encrypting data. This value is used to store the object and then it is discarded; Amazon S3 does not store the encryption key. The key must be appropriate for use with the algorithm specified in the <code>x-amz-server-side-encryption-customer-algorithm</code> header.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>Specifies the 128-bit MD5 digest of the customer-provided encryption key according to RFC 1321. Amazon S3 uses this header for a message integrity check to ensure that the encryption key was transmitted without error.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>Specifies the KMS key ID (Key ID, Key ARN, or Key Alias) to use for object encryption. If the KMS key doesn't exist in the same account that's issuing the command, you must use the full Key ARN not the Key ID.</p> <p> <b>General purpose buckets</b> - If you specify <code>x-amz-server-side-encryption</code> with <code>aws:kms</code> or <code>aws:kms:dsse</code>, this header specifies the ID (Key ID, Key ARN, or Key Alias) of the KMS key to use. If you specify <code>x-amz-server-side-encryption:aws:kms</code> or <code>x-amz-server-side-encryption:aws:kms:dsse</code>, but do not provide <code>x-amz-server-side-encryption-aws-kms-key-id</code>, Amazon S3 uses the Amazon Web Services managed key (<code>aws/s3</code>) to protect the data.</p> <p> <b>Directory buckets</b> - To encrypt data using SSE-KMS, it's recommended to specify the <code>x-amz-server-side-encryption</code> header to <code>aws:kms</code>. Then, the <code>x-amz-server-side-encryption-aws-kms-key-id</code> header implicitly uses the bucket's default KMS customer managed key ID. If you want to explicitly set the <code> x-amz-server-side-encryption-aws-kms-key-id</code> header, it must match the bucket's default customer managed key (using key ID or ARN, not alias). Your SSE-KMS configuration can only support 1 <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#customer-cmk\">customer managed key</a> per directory bucket's lifetime. The <a href=\"https://docs.aws.amazon.com/kms/latest/developerguide/concepts.html#aws-managed-cmk\">Amazon Web Services managed key</a> (<code>aws/s3</code>) isn't supported. Incorrect key specification results in an HTTP <code>400 Bad Request</code> error. </p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "SSEKMSEncryptionContext": {
+          "shape": "SSEKMSEncryptionContext",
+          "documentation": "<p>Specifies the Amazon Web Services KMS Encryption Context to use for object encryption. The value of this header is a Base64 encoded string of a UTF-8 encoded JSON, which contains the encryption context as key-value pairs.</p> <p> <b>Directory buckets</b> - You can optionally provide an explicit encryption context value. The value must match the default encryption context - the bucket Amazon Resource Name (ARN). An additional encryption context value is not supported. </p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-context"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Specifies whether Amazon S3 should use an S3 Bucket Key for object encryption with server-side encryption using Key Management Service (KMS) keys (SSE-KMS).</p> <p> <b>General purpose buckets</b> - Setting this header to <code>true</code> causes Amazon S3 to use an S3 Bucket Key for object encryption with SSE-KMS. Also, specifying this header with a PUT action doesn't affect bucket-level settings for S3 Bucket Key.</p> <p> <b>Directory buckets</b> - S3 Bucket Keys are always enabled for <code>GET</code> and <code>PUT</code> operations in a directory bucket and can’t be disabled. S3 Bucket Keys aren't supported, when you copy SSE-KMS encrypted objects from general purpose buckets to directory buckets, from directory buckets to general purpose buckets, or between directory buckets, through <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_CopyObject.html\">CopyObject</a>, <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/API/API_UploadPartCopy.html\">UploadPartCopy</a>, <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-buckets-objects-Batch-Ops\">the Copy operation in Batch Operations</a>, or <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/create-import-job\">the import jobs</a>. In this case, Amazon S3 makes a call to KMS every time a copy request is made for a KMS-encrypted object.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "Tagging": {
+          "shape": "TaggingHeader",
+          "documentation": "<p>The tag-set for the object. The tag-set must be encoded as URL Query parameters.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-tagging"
+        },
+        "ObjectLockMode": {
+          "shape": "ObjectLockMode",
+          "documentation": "<p>Specifies the Object Lock mode that you want to apply to the uploaded object.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-mode"
+        },
+        "ObjectLockRetainUntilDate": {
+          "shape": "ObjectLockRetainUntilDate",
+          "documentation": "<p>Specifies the date and time when you want the Object Lock to expire.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-retain-until-date"
+        },
+        "ObjectLockLegalHoldStatus": {
+          "shape": "ObjectLockLegalHoldStatus",
+          "documentation": "<p>Specifies whether you want to apply a legal hold to the uploaded object.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-object-lock-legal-hold"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected bucket owner. If the account ID that you provide does not match the actual owner of the bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "documentation": "<p>Indicates the algorithm that you want Amazon S3 to use to create the checksum for the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-algorithm"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType",
+          "documentation": "<p>Indicates the checksum type that you want Amazon S3 to use to calculate the object’s checksum value. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity in the Amazon S3 User Guide</a>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-type"
+        }
+      }
+    },
+    "CreateMultipartUploadOutput": {
+      "type": "structure",
+      "members": {
+        "AbortDate": {
+          "shape": "AbortDate",
+          "documentation": "<p>If the bucket has a lifecycle rule configured with an action to abort incomplete multipart uploads and the prefix in the lifecycle rule matches the object name in the request, the response includes this header. The header indicates when the initiated multipart upload becomes eligible for an abort operation. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/mpuoverview.html#mpu-abort-incomplete-mpu-lifecycle-config\"> Aborting Incomplete Multipart Uploads Using a Bucket Lifecycle Configuration</a> in the <i>Amazon S3 User Guide</i>.</p> <p>The response also includes the <code>x-amz-abort-rule-id</code> header that provides the ID of the lifecycle configuration rule that defines the abort action.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-abort-date"
+        },
+        "AbortRuleId": {
+          "shape": "AbortRuleId",
+          "documentation": "<p>This header is returned along with the <code>x-amz-abort-date</code> header. It identifies the applicable lifecycle configuration rule that defines the action to abort incomplete multipart uploads.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-abort-rule-id"
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>The name of the bucket to which the multipart upload was initiated. Does not return the access point ARN or access point alias if used.</p> <note> <p>Access points are not supported by directory buckets.</p> </note>",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>Object key for which the multipart upload was initiated.</p>"
+        },
+        "UploadId": {
+          "shape": "MultipartUploadId",
+          "documentation": "<p>ID for the initiated multipart upload.</p>"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when you store this object in Amazon S3 or Amazon FSx.</p> <note> <p>When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to confirm the encryption algorithm that's used.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to provide the round-trip message integrity verification of the customer-provided encryption key.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>If present, indicates the ID of the KMS key that was used for object encryption.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "SSEKMSEncryptionContext": {
+          "shape": "SSEKMSEncryptionContext",
+          "documentation": "<p>If present, indicates the Amazon Web Services KMS Encryption Context to use for object encryption. The value of this header is a Base64 encoded string of a UTF-8 encoded JSON, which contains the encryption context as key-value pairs.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-context"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Indicates whether the multipart upload uses an S3 Bucket Key for server-side encryption with Key Management Service (KMS) keys (SSE-KMS).</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        },
+        "ChecksumAlgorithm": {
+          "shape": "ChecksumAlgorithm",
+          "documentation": "<p>The algorithm that was used to create a checksum of the object.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-algorithm"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType",
+          "documentation": "<p> Indicates the checksum type that you want Amazon S3 to use to calculate the object’s checksum value. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity in the Amazon S3 User Guide</a>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-type"
+        }
+      }
+    },
+    "UploadPartCopyRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "CopySource",
+        "Key",
+        "PartNumber",
+        "UploadId"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>The bucket name.</p> <p> <b>Directory buckets</b> - When you use this operation with a directory bucket, you must use virtual-hosted-style requests in the format <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>. Path-style requests are not supported. Directory bucket names must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must follow the format <code> <i>bucket-base-name</i>--<i>zone-id</i>--x-s3</code> (for example, <code> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</code>). For information about bucket naming restrictions, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\">Directory bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Copying objects across different Amazon Web Services Regions isn't supported when the source or destination bucket is in Amazon Web Services Local Zones. The source and destination buckets must have the same parent Amazon Web Services Region. Otherwise, you get an HTTP <code>400 Bad Request</code> error with the error code <code>InvalidRequest</code>.</p> </note> <p> <b>Access points</b> - When you use this action with an access point for general purpose buckets, you must provide the alias of the access point in place of the bucket name or specify the access point ARN. When you use this action with an access point for directory buckets, you must provide the access point name in place of the bucket name. When using the access point ARN, you must direct requests to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket name. For more information about access point ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html\">Using access points</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Object Lambda access points are not supported by directory buckets.</p> </note> <p> <b>S3 on Outposts</b> - When you use this action with S3 on Outposts, you must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. When you use this action with S3 on Outposts, the destination bucket must be the Outposts access point ARN or the access point alias. For more information about S3 on Outposts, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html\">What is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "CopySource": {
+          "shape": "CopySource",
+          "documentation": "<p>Specifies the source object for the copy operation. You specify the value in one of two formats, depending on whether you want to access the source object through an <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-points.html\">access point</a>:</p> <ul> <li> <p>For objects not accessed through an access point, specify the name of the source bucket and key of the source object, separated by a slash (/). For example, to copy the object <code>reports/january.pdf</code> from the bucket <code>awsexamplebucket</code>, use <code>awsexamplebucket/reports/january.pdf</code>. The value must be URL-encoded.</p> </li> <li> <p>For objects accessed through access points, specify the Amazon Resource Name (ARN) of the object as accessed through the access point, in the format <code>arn:aws:s3:&lt;Region&gt;:&lt;account-id&gt;:accesspoint/&lt;access-point-name&gt;/object/&lt;key&gt;</code>. For example, to copy the object <code>reports/january.pdf</code> through access point <code>my-access-point</code> owned by account <code>123456789012</code> in Region <code>us-west-2</code>, use the URL encoding of <code>arn:aws:s3:us-west-2:123456789012:accesspoint/my-access-point/object/reports/january.pdf</code>. The value must be URL encoded.</p> <note> <ul> <li> <p>Amazon S3 supports copy operations using Access points only when the source and destination buckets are in the same Amazon Web Services Region.</p> </li> <li> <p>Access points are not supported by directory buckets.</p> </li> </ul> </note> <p>Alternatively, for objects accessed through Amazon S3 on Outposts, specify the ARN of the object as accessed in the format <code>arn:aws:s3-outposts:&lt;Region&gt;:&lt;account-id&gt;:outpost/&lt;outpost-id&gt;/object/&lt;key&gt;</code>. For example, to copy the object <code>reports/january.pdf</code> through outpost <code>my-outpost</code> owned by account <code>123456789012</code> in Region <code>us-west-2</code>, use the URL encoding of <code>arn:aws:s3-outposts:us-west-2:123456789012:outpost/my-outpost/object/reports/january.pdf</code>. The value must be URL-encoded. </p> </li> </ul> <p>If your bucket has versioning enabled, you could have multiple versions of the same object. By default, <code>x-amz-copy-source</code> identifies the current version of the source object to copy. To copy a specific version of the source object to copy, append <code>?versionId=&lt;version-id&gt;</code> to the <code>x-amz-copy-source</code> request header (for example, <code>x-amz-copy-source: /awsexamplebucket/reports/january.pdf?versionId=QUpfdndhfd8438MNFDN93jdnJFkdmqnh893</code>). </p> <p>If the current version is a delete marker and you don't specify a versionId in the <code>x-amz-copy-source</code> request header, Amazon S3 returns a <code>404 Not Found</code> error, because the object does not exist. If you specify versionId in the <code>x-amz-copy-source</code> and the versionId is a delete marker, Amazon S3 returns an HTTP <code>400 Bad Request</code> error, because you are not allowed to specify a delete marker as a version for the <code>x-amz-copy-source</code>. </p> <note> <p> <b>Directory buckets</b> - S3 Versioning isn't enabled and supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source"
+        },
+        "CopySourceIfMatch": {
+          "shape": "CopySourceIfMatch",
+          "documentation": "<p>Copies the object if its entity tag (ETag) matches the specified tag.</p> <p>If both of the <code>x-amz-copy-source-if-match</code> and <code>x-amz-copy-source-if-unmodified-since</code> headers are present in the request as follows:</p> <p> <code>x-amz-copy-source-if-match</code> condition evaluates to <code>true</code>, and;</p> <p> <code>x-amz-copy-source-if-unmodified-since</code> condition evaluates to <code>false</code>;</p> <p>Amazon S3 returns <code>200 OK</code> and copies the data. </p>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-match"
+        },
+        "CopySourceIfModifiedSince": {
+          "shape": "CopySourceIfModifiedSince",
+          "documentation": "<p>Copies the object if it has been modified since the specified time.</p> <p>If both of the <code>x-amz-copy-source-if-none-match</code> and <code>x-amz-copy-source-if-modified-since</code> headers are present in the request as follows:</p> <p> <code>x-amz-copy-source-if-none-match</code> condition evaluates to <code>false</code>, and;</p> <p> <code>x-amz-copy-source-if-modified-since</code> condition evaluates to <code>true</code>;</p> <p>Amazon S3 returns <code>412 Precondition Failed</code> response code. </p>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-modified-since"
+        },
+        "CopySourceIfNoneMatch": {
+          "shape": "CopySourceIfNoneMatch",
+          "documentation": "<p>Copies the object if its entity tag (ETag) is different than the specified ETag.</p> <p>If both of the <code>x-amz-copy-source-if-none-match</code> and <code>x-amz-copy-source-if-modified-since</code> headers are present in the request as follows:</p> <p> <code>x-amz-copy-source-if-none-match</code> condition evaluates to <code>false</code>, and;</p> <p> <code>x-amz-copy-source-if-modified-since</code> condition evaluates to <code>true</code>;</p> <p>Amazon S3 returns <code>412 Precondition Failed</code> response code. </p>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-none-match"
+        },
+        "CopySourceIfUnmodifiedSince": {
+          "shape": "CopySourceIfUnmodifiedSince",
+          "documentation": "<p>Copies the object if it hasn't been modified since the specified time.</p> <p>If both of the <code>x-amz-copy-source-if-match</code> and <code>x-amz-copy-source-if-unmodified-since</code> headers are present in the request as follows:</p> <p> <code>x-amz-copy-source-if-match</code> condition evaluates to <code>true</code>, and;</p> <p> <code>x-amz-copy-source-if-unmodified-since</code> condition evaluates to <code>false</code>;</p> <p>Amazon S3 returns <code>200 OK</code> and copies the data. </p>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-if-unmodified-since"
+        },
+        "CopySourceRange": {
+          "shape": "CopySourceRange",
+          "documentation": "<p>The range of bytes to copy from the source object. The range value must use the form bytes=first-last, where the first and last are the zero-based byte offsets to copy. For example, bytes=0-9 indicates that you want to copy the first 10 bytes of the source. You can copy a range only if the source object is greater than 5 MB.</p>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-range"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>Object key for which the multipart upload was initiated.</p>",
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "PartNumber": {
+          "shape": "PartNumber",
+          "documentation": "<p>Part number of part being copied. This is a positive integer between 1 and 10,000.</p>",
+          "location": "querystring",
+          "locationName": "partNumber"
+        },
+        "UploadId": {
+          "shape": "MultipartUploadId",
+          "documentation": "<p>Upload ID identifying the multipart upload whose part is being copied.</p>",
+          "location": "querystring",
+          "locationName": "uploadId"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>Specifies the algorithm to use when encrypting the object (for example, AES256).</p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "documentation": "<p>Specifies the customer-provided encryption key for Amazon S3 to use in encrypting data. This value is used to store the object and then it is discarded; Amazon S3 does not store the encryption key. The key must be appropriate for use with the algorithm specified in the <code>x-amz-server-side-encryption-customer-algorithm</code> header. This must be the same encryption key specified in the initiate multipart upload request.</p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>Specifies the 128-bit MD5 digest of the encryption key according to RFC 1321. Amazon S3 uses this header for a message integrity check to ensure that the encryption key was transmitted without error.</p> <note> <p>This functionality is not supported when the destination bucket is a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "CopySourceSSECustomerAlgorithm": {
+          "shape": "CopySourceSSECustomerAlgorithm",
+          "documentation": "<p>Specifies the algorithm to use when decrypting the source object (for example, <code>AES256</code>).</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-algorithm"
+        },
+        "CopySourceSSECustomerKey": {
+          "shape": "CopySourceSSECustomerKey",
+          "documentation": "<p>Specifies the customer-provided encryption key for Amazon S3 to use to decrypt the source object. The encryption key provided in this header must be one that was used when the source object was created.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-key"
+        },
+        "CopySourceSSECustomerKeyMD5": {
+          "shape": "CopySourceSSECustomerKeyMD5",
+          "documentation": "<p>Specifies the 128-bit MD5 digest of the encryption key according to RFC 1321. Amazon S3 uses this header for a message integrity check to ensure that the encryption key was transmitted without error.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-server-side-encryption-customer-key-MD5"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected destination bucket owner. If the account ID that you provide does not match the actual owner of the destination bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "ExpectedSourceBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected source bucket owner. If the account ID that you provide does not match the actual owner of the source bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-source-expected-bucket-owner"
+        }
+      }
+    },
+    "CopySourceRange": {
+      "type": "string"
+    },
+    "UploadPartCopyOutput": {
+      "type": "structure",
+      "members": {
+        "CopySourceVersionId": {
+          "shape": "CopySourceVersionId",
+          "documentation": "<p>The version of the source object that was copied, if you have enabled versioning on the source bucket.</p> <note> <p>This functionality is not supported when the source object is in a directory bucket.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-copy-source-version-id"
+        },
+        "CopyPartResult": {
+          "shape": "CopyPartResult",
+          "documentation": "<p>Container for all response elements.</p>"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when you store this object in Amazon S3 or Amazon FSx.</p> <note> <p>When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to confirm the encryption algorithm that's used.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>If server-side encryption with a customer-provided encryption key was requested, the response will include this header to provide the round-trip message integrity verification of the customer-provided encryption key.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>If present, indicates the ID of the KMS key that was used for object encryption.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Indicates whether the multipart upload uses an S3 Bucket Key for server-side encryption with Key Management Service (KMS) keys (SSE-KMS).</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      },
+      "payload": "CopyPartResult"
+    },
+    "CopyPartResult": {
+      "type": "structure",
+      "members": {
+        "ETag": {
+          "shape": "ETag",
+          "documentation": "<p>Entity tag of the object.</p>"
+        },
+        "LastModified": {
+          "shape": "LastModified",
+          "documentation": "<p>Date and time at which the object was uploaded.</p>"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 32-bit <code>CRC32</code> checksum of the part. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 32-bit <code>CRC32C</code> checksum of the part. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME",
+          "documentation": "<p>The Base64 encoded, 64-bit <code>CRC64NVME</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>CRC64NVME</code> checksum algorithm to the uploaded object). For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 160-bit <code>SHA1</code> checksum of the part. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 256-bit <code>SHA256</code> checksum of the part. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        }
+      },
+      "documentation": "<p>Container for all response elements.</p>"
+    },
+    "CompleteMultipartUploadRequest": {
+      "type": "structure",
+      "required": [
+        "Bucket",
+        "Key",
+        "UploadId"
+      ],
+      "members": {
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>Name of the bucket to which the multipart upload was initiated.</p> <p> <b>Directory buckets</b> - When you use this operation with a directory bucket, you must use virtual-hosted-style requests in the format <code> <i>Bucket-name</i>.s3express-<i>zone-id</i>.<i>region-code</i>.amazonaws.com</code>. Path-style requests are not supported. Directory bucket names must be unique in the chosen Zone (Availability Zone or Local Zone). Bucket names must follow the format <code> <i>bucket-base-name</i>--<i>zone-id</i>--x-s3</code> (for example, <code> <i>amzn-s3-demo-bucket</i>--<i>usw2-az1</i>--x-s3</code>). For information about bucket naming restrictions, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/directory-bucket-naming-rules.html\">Directory bucket naming rules</a> in the <i>Amazon S3 User Guide</i>.</p> <p> <b>Access points</b> - When you use this action with an access point for general purpose buckets, you must provide the alias of the access point in place of the bucket name or specify the access point ARN. When you use this action with an access point for directory buckets, you must provide the access point name in place of the bucket name. When using the access point ARN, you must direct requests to the access point hostname. The access point hostname takes the form <i>AccessPointName</i>-<i>AccountId</i>.s3-accesspoint.<i>Region</i>.amazonaws.com. When using this action with an access point through the Amazon Web Services SDKs, you provide the access point ARN in place of the bucket name. For more information about access point ARNs, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-access-points.html\">Using access points</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>Object Lambda access points are not supported by directory buckets.</p> </note> <p> <b>S3 on Outposts</b> - When you use this action with S3 on Outposts, you must direct requests to the S3 on Outposts hostname. The S3 on Outposts hostname takes the form <code> <i>AccessPointName</i>-<i>AccountId</i>.<i>outpostID</i>.s3-outposts.<i>Region</i>.amazonaws.com</code>. When you use this action with S3 on Outposts, the destination bucket must be the Outposts access point ARN or the access point alias. For more information about S3 on Outposts, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/S3onOutposts.html\">What is S3 on Outposts?</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "contextParam": {
+            "name": "Bucket"
+          },
+          "location": "uri",
+          "locationName": "Bucket"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>Object key for which the multipart upload was initiated.</p>",
+          "contextParam": {
+            "name": "Key"
+          },
+          "location": "uri",
+          "locationName": "Key"
+        },
+        "MultipartUpload": {
+          "shape": "CompletedMultipartUpload",
+          "documentation": "<p>The container for the multipart upload request information.</p>",
+          "locationName": "CompleteMultipartUpload",
+          "xmlNamespace": {
+            "uri": "http://s3.amazonaws.com/doc/2006-03-01/"
+          }
+        },
+        "UploadId": {
+          "shape": "MultipartUploadId",
+          "documentation": "<p>ID for the initiated multipart upload.</p>",
+          "location": "querystring",
+          "locationName": "uploadId"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 32-bit <code>CRC32</code> checksum of the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-crc32"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 32-bit <code>CRC32C</code> checksum of the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-crc32c"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 64-bit <code>CRC64NVME</code> checksum of the object. The <code>CRC64NVME</code> checksum is always a full object checksum. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity in the Amazon S3 User Guide</a>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-crc64nvme"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 160-bit <code>SHA1</code> digest of the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-sha1"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 256-bit <code>SHA256</code> digest of the object. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-sha256"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType",
+          "documentation": "<p>This header specifies the checksum type of the object, which determines how part-level checksums are combined to create an object-level checksum for multipart objects. You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum that was specified. If the checksum type doesn’t match the checksum type that was specified for the object during the <code>CreateMultipartUpload</code> request, it’ll result in a <code>BadDigest</code> error. For more information, see Checking object integrity in the Amazon S3 User Guide. </p>",
+          "location": "header",
+          "locationName": "x-amz-checksum-type"
+        },
+        "MpuObjectSize": {
+          "shape": "MpuObjectSize",
+          "documentation": "<p> The expected total object size of the multipart upload request. If there’s a mismatch between the specified object size value and the actual object size value, it results in an <code>HTTP 400 InvalidRequest</code> error. </p>",
+          "location": "header",
+          "locationName": "x-amz-mp-object-size"
+        },
+        "RequestPayer": {
+          "shape": "RequestPayer",
+          "location": "header",
+          "locationName": "x-amz-request-payer"
+        },
+        "ExpectedBucketOwner": {
+          "shape": "AccountId",
+          "documentation": "<p>The account ID of the expected bucket owner. If the account ID that you provide does not match the actual owner of the bucket, the request fails with the HTTP status code <code>403 Forbidden</code> (access denied).</p>",
+          "location": "header",
+          "locationName": "x-amz-expected-bucket-owner"
+        },
+        "IfMatch": {
+          "shape": "IfMatch",
+          "documentation": "<p>Uploads the object only if the ETag (entity tag) value provided during the WRITE operation matches the ETag of the object in S3. If the ETag values do not match, the operation returns a <code>412 Precondition Failed</code> error.</p> <p>If a conflicting operation occurs during the upload S3 returns a <code>409 ConditionalRequestConflict</code> response. On a 409 failure you should fetch the object's ETag, re-initiate the multipart upload with <code>CreateMultipartUpload</code>, and re-upload each part.</p> <p>Expects the ETag value as a string.</p> <p>For more information about conditional requests, see <a href=\"https://tools.ietf.org/html/rfc7232\">RFC 7232</a>, or <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html\">Conditional requests</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "If-Match"
+        },
+        "IfNoneMatch": {
+          "shape": "IfNoneMatch",
+          "documentation": "<p>Uploads the object only if the object key name does not already exist in the bucket specified. Otherwise, Amazon S3 returns a <code>412 Precondition Failed</code> error.</p> <p>If a conflicting operation occurs during the upload S3 returns a <code>409 ConditionalRequestConflict</code> response. On a 409 failure you should re-initiate the multipart upload with <code>CreateMultipartUpload</code> and re-upload each part.</p> <p>Expects the '*' (asterisk) character.</p> <p>For more information about conditional requests, see <a href=\"https://tools.ietf.org/html/rfc7232\">RFC 7232</a>, or <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/conditional-requests.html\">Conditional requests</a> in the <i>Amazon S3 User Guide</i>.</p>",
+          "location": "header",
+          "locationName": "If-None-Match"
+        },
+        "SSECustomerAlgorithm": {
+          "shape": "SSECustomerAlgorithm",
+          "documentation": "<p>The server-side encryption (SSE) algorithm used to encrypt the object. This parameter is required only when the object was created using a checksum algorithm or if your bucket policy requires the use of SSE-C. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/ServerSideEncryptionCustomerKeys.html#ssec-require-condition-key\">Protecting data using SSE-C keys</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-algorithm"
+        },
+        "SSECustomerKey": {
+          "shape": "SSECustomerKey",
+          "documentation": "<p>The server-side encryption (SSE) customer managed key. This parameter is needed only when the object was created using a checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerSideEncryptionCustomerKeys.html\">Protecting data using SSE-C keys</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key"
+        },
+        "SSECustomerKeyMD5": {
+          "shape": "SSECustomerKeyMD5",
+          "documentation": "<p>The MD5 server-side encryption (SSE) customer managed key. This parameter is needed only when the object was created using a checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/dev/ServerSideEncryptionCustomerKeys.html\">Protecting data using SSE-C keys</a> in the <i>Amazon S3 User Guide</i>.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-customer-key-MD5"
+        }
+      },
+      "payload": "MultipartUpload"
+    },
+    "CompletedMultipartUpload": {
+      "type": "structure",
+      "members": {
+        "Parts": {
+          "shape": "CompletedPartList",
+          "documentation": "<p>Array of CompletedPart data types.</p> <p>If you do not supply a valid <code>Part</code> with your request, the service sends back an HTTP 400 response.</p>",
+          "locationName": "Part"
+        }
+      },
+      "documentation": "<p>The container for the completed multipart upload details.</p>"
+    },
+    "CompletedPartList": {
+      "type": "list",
+      "member": {
+        "shape": "CompletedPart"
+      },
+      "flattened": true
+    },
+    "CompletedPart": {
+      "type": "structure",
+      "members": {
+        "ETag": {
+          "shape": "ETag",
+          "documentation": "<p>Entity tag returned when the part was uploaded.</p>"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>CRC32</code> checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32C</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>CRC32C</code> checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME",
+          "documentation": "<p>The Base64 encoded, 64-bit <code>CRC64NVME</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>CRC64NVME</code> checksum algorithm to the uploaded object). For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1",
+          "documentation": "<p>The Base64 encoded, 160-bit <code>SHA1</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>SHA1</code> checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256",
+          "documentation": "<p>The Base64 encoded, 256-bit <code>SHA256</code> checksum of the part. This checksum is present if the multipart upload request was created with the <code>SHA256</code> checksum algorithm. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "PartNumber": {
+          "shape": "PartNumber",
+          "documentation": "<p>Part number that identifies the part. This is a positive integer between 1 and 10,000.</p> <note> <ul> <li> <p> <b>General purpose buckets</b> - In <code>CompleteMultipartUpload</code>, when a additional checksum (including <code>x-amz-checksum-crc32</code>, <code>x-amz-checksum-crc32c</code>, <code>x-amz-checksum-sha1</code>, or <code>x-amz-checksum-sha256</code>) is applied to each part, the <code>PartNumber</code> must start at 1 and the part numbers must be consecutive. Otherwise, Amazon S3 generates an HTTP <code>400 Bad Request</code> status code and an <code>InvalidPartOrder</code> error code.</p> </li> <li> <p> <b>Directory buckets</b> - In <code>CompleteMultipartUpload</code>, the <code>PartNumber</code> must start at 1 and the part numbers must be consecutive.</p> </li> </ul> </note>"
+        }
+      },
+      "documentation": "<p>Details of the parts that were uploaded.</p>"
+    },
+    "MpuObjectSize": {
+      "type": "long"
+    },
+    "IfMatch": {
+      "type": "string"
+    },
+    "IfNoneMatch": {
+      "type": "string"
+    },
+    "CompleteMultipartUploadOutput": {
+      "type": "structure",
+      "members": {
+        "Location": {
+          "shape": "Location",
+          "documentation": "<p>The URI that identifies the newly created object.</p>"
+        },
+        "Bucket": {
+          "shape": "BucketName",
+          "documentation": "<p>The name of the bucket that contains the newly created object. Does not return the access point ARN or access point alias if used.</p> <note> <p>Access points are not supported by directory buckets.</p> </note>"
+        },
+        "Key": {
+          "shape": "ObjectKey",
+          "documentation": "<p>The object key of the newly created object.</p>"
+        },
+        "Expiration": {
+          "shape": "Expiration",
+          "documentation": "<p>If the object expiration is configured, this will contain the expiration date (<code>expiry-date</code>) and rule ID (<code>rule-id</code>). The value of <code>rule-id</code> is URL-encoded.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-expiration"
+        },
+        "ETag": {
+          "shape": "ETag",
+          "documentation": "<p>Entity tag that identifies the newly created object's data. Objects with different object data will have different entity tags. The entity tag is an opaque string. The entity tag may or may not be an MD5 digest of the object data. If the entity tag is not an MD5 digest of the object data, it will contain one or more nonhexadecimal characters and/or will consist of less than 32 or more than 32 hexadecimal digits. For more information about how the entity tag is calculated, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32": {
+          "shape": "ChecksumCRC32",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32 checksum</code> of the object. This checksum is only be present if the checksum was uploaded with the object. When you use an API operation on an object that was uploaded using multipart uploads, this value may not be a direct checksum value of the full object. Instead, it's a calculation based on the checksum values of each individual part. For more information about how checksums are calculated with multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC32C": {
+          "shape": "ChecksumCRC32C",
+          "documentation": "<p>The Base64 encoded, 32-bit <code>CRC32C</code> checksum of the object. This checksum is only present if the checksum was uploaded with the object. When you use an API operation on an object that was uploaded using multipart uploads, this value may not be a direct checksum value of the full object. Instead, it's a calculation based on the checksum values of each individual part. For more information about how checksums are calculated with multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumCRC64NVME": {
+          "shape": "ChecksumCRC64NVME",
+          "documentation": "<p>This header can be used as a data integrity check to verify that the data received is the same data that was originally sent. This header specifies the Base64 encoded, 64-bit <code>CRC64NVME</code> checksum of the object. The <code>CRC64NVME</code> checksum is always a full object checksum. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity in the Amazon S3 User Guide</a>. </p>"
+        },
+        "ChecksumSHA1": {
+          "shape": "ChecksumSHA1",
+          "documentation": "<p>The Base64 encoded, 160-bit <code>SHA1</code> digest of the object. This will only be present if the object was uploaded with the object. When you use the API operation on an object that was uploaded using multipart uploads, this value may not be a direct checksum value of the full object. Instead, it's a calculation based on the checksum values of each individual part. For more information about how checksums are calculated with multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumSHA256": {
+          "shape": "ChecksumSHA256",
+          "documentation": "<p>The Base64 encoded, 256-bit <code>SHA256</code> digest of the object. This will only be present if the object was uploaded with the object. When you use an API operation on an object that was uploaded using multipart uploads, this value may not be a direct checksum value of the full object. Instead, it's a calculation based on the checksum values of each individual part. For more information about how checksums are calculated with multipart uploads, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html#large-object-checksums\"> Checking object integrity</a> in the <i>Amazon S3 User Guide</i>.</p>"
+        },
+        "ChecksumType": {
+          "shape": "ChecksumType",
+          "documentation": "<p>The checksum type, which determines how part-level checksums are combined to create an object-level checksum for multipart objects. You can use this header as a data integrity check to verify that the checksum type that is received is the same checksum type that was specified during the <code>CreateMultipartUpload</code> request. For more information, see <a href=\"https://docs.aws.amazon.com/AmazonS3/latest/userguide/checking-object-integrity.html\">Checking object integrity in the Amazon S3 User Guide</a>.</p>"
+        },
+        "ServerSideEncryption": {
+          "shape": "ServerSideEncryption",
+          "documentation": "<p>The server-side encryption algorithm used when storing this object in Amazon S3.</p> <note> <p>When accessing data stored in Amazon FSx file systems using S3 access points, the only valid server side encryption option is <code>aws:fsx</code>.</p> </note> <p/>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption"
+        },
+        "VersionId": {
+          "shape": "ObjectVersionId",
+          "documentation": "<p>Version ID of the newly created object, in case the bucket has versioning turned on.</p> <note> <p>This functionality is not supported for directory buckets.</p> </note>",
+          "location": "header",
+          "locationName": "x-amz-version-id"
+        },
+        "SSEKMSKeyId": {
+          "shape": "SSEKMSKeyId",
+          "documentation": "<p>If present, indicates the ID of the KMS key that was used for object encryption.</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-aws-kms-key-id"
+        },
+        "BucketKeyEnabled": {
+          "shape": "BucketKeyEnabled",
+          "documentation": "<p>Indicates whether the multipart upload uses an S3 Bucket Key for server-side encryption with Key Management Service (KMS) keys (SSE-KMS).</p>",
+          "location": "header",
+          "locationName": "x-amz-server-side-encryption-bucket-key-enabled"
+        },
+        "RequestCharged": {
+          "shape": "RequestCharged",
+          "location": "header",
+          "locationName": "x-amz-request-charged"
+        }
+      }
+    },
+    "Location": {
+      "type": "string"
     }
   }
 }

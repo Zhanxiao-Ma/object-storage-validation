@@ -3600,6 +3600,456 @@
       "source_sha256": "f4266017733ece14e0ff78ddfbf1f6a60f161c33df9bb6cc86ce9e58a79494cc",
       "implementation": "ceph_logging_records_key_partitioned",
       "review": "逐源核对完整标准26字段日志、原始substring匹配/字符串时间比较、真实5.5秒flush及dummy写、ACL与策略两轮alt身份访问、原始Yes/-和RequestID断言、两前缀五对象及原始regex/5秒时间界限；保留fails_on_aws/fails_without_logging_rollover和固定default区域。SourceAccount/分区账号严格identities.main.user_id，不回退canonical_id；旧Java缺真实key-format能力两源not_run。Ceph扩展需实际SDK能力而不静默删字段，所有桶先停日志/删策略再清理。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_long_60@L3737",
+      "source_sha256": "c32cd59b1bd47e149fb4b81787e3ee7c8ade78880321845dffeda1aae86d1c64",
+      "implementation": "ceph_names_long_60",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_long_61@L3743",
+      "source_sha256": "83cac947e142b5384cca079cf8da6318d1a185882300e55f08217dd466ff8168",
+      "implementation": "ceph_names_long_61",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_long_62@L3749",
+      "source_sha256": "cce35dcd3652a3a121a9dcc6523259d30c7aacd18b6cb236bfc3d8dbba573864",
+      "implementation": "ceph_names_long_62",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_long_63@L3754",
+      "source_sha256": "8e068b3f13d7a61ab60f4d791e5788a5fceb8e0c863e62cf48fe50d2388fff5f",
+      "implementation": "ceph_names_long_63",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_list_long_name@L3761",
+      "source_sha256": "6b6caaa43d71cba9f98645caa2fa4181e2c65293a563ebafc45ca9618e5f704d",
+      "implementation": "ceph_names_list_long",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_long@L3792",
+      "source_sha256": "c213a47a5ff5541629573170e57001fcf4c5118137be70a66ebdbea9fa69fdb8",
+      "implementation": "ceph_names_dns_long",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_starts_alpha@L5437",
+      "source_sha256": "f6b01de2e633557e68f7b1c6a6d6965240e9b61d8cbc394086a0fa90a3bf720d",
+      "implementation": "ceph_names_starts_alpha",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_starts_digit@L5448",
+      "source_sha256": "6454917a0b1c107f52a96d1a9e507ebc156d12248dadff621706122b334ce4b5",
+      "implementation": "ceph_names_starts_digit",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_contains_period@L5451",
+      "source_sha256": "a5e0bf092d25925af37a0e31e664a4fcbe08af6768a5e66cc16f56869fb64aac",
+      "implementation": "ceph_names_period",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_good_contains_hyphen@L5454",
+      "source_sha256": "4a5d2e010e3013da0daeda6542ad0becfe4236c6f335b9d37cdea0a41feddc13",
+      "implementation": "ceph_names_hyphen",
+      "review": "原始首字符/后缀/精确长度及创建200；独立拥有者确认后清理；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_bad_starts_nonalpha@L3660",
+      "source_sha256": "406ba4a7b7381fa67de8d8b1a6d7e2997fc63f4bfbaba780792906d68c96ed8c",
+      "implementation": "ceph_names_nonalpha",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_bad_short_one@L3682",
+      "source_sha256": "c2d054fe394241aac65ff65bfdb080d046c745ba86e81a6db3270b8a27aa3861",
+      "implementation": "ceph_names_short_one",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_bad_short_two@L3685",
+      "source_sha256": "b015128cc2931b2abab025378f0bb0538137a830924ebcca8a7a13b0b8bb4a98",
+      "implementation": "ceph_names_short_two",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_bad_ip@L3778",
+      "source_sha256": "30ca69684e74586f0f7f76fdbc5097950733531c8542187dc64f1be88749bcd7",
+      "implementation": "ceph_names_ip",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_underscore@L3784",
+      "source_sha256": "55a200d7bd8aa66da2231d48027d0aba6c655940cc109c8cbc529324169e5ed6",
+      "implementation": "ceph_names_underscore",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_dash_at_end@L3801",
+      "source_sha256": "d6116bc9dca680675018dc4c09923c0660bc4557059c8805c26d34cf2762ff26",
+      "implementation": "ceph_names_dash_end",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_dot_dot@L3811",
+      "source_sha256": "4e8e399a1d63d08dee72488ac45d99f2667bb8694d3c7be8932ec50ab1f384e9",
+      "implementation": "ceph_names_dot_dot",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_dot_dash@L3821",
+      "source_sha256": "4ae0c1f9c55c8d610bdea82365d4a84065516a2f325087c42c971ae2680dd82e",
+      "implementation": "ceph_names_dot_dash",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_naming_dns_dash_dot@L3831",
+      "source_sha256": "63111bebfb73fb8605f879979bc504cdef97a976d7e0e3a4d88685b758ee25c4",
+      "implementation": "ceph_names_dash_dot",
+      "review": "不改写字面输入，HEAD404及专用隔离前提，服务400/InvalidBucketName；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_get_location@L3852",
+      "source_sha256": "32ae753e6daa2b222ba16a902035ed39a37aa8eb075dec802bd4a07d3b8ffe9b",
+      "implementation": "ceph_names_location",
+      "review": "独立main api_name与实际GetBucketLocation一致；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_exists@L3837",
+      "source_sha256": "d03fe8e03cfa3bec1e13bff86de4417a628379708f047b3c6056bcc2c94f5272",
+      "implementation": "ceph_names_recreate",
+      "review": "保留成功路径及原ClientError.status属性缺陷；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_create_exists_nonowner@L3867",
+      "source_sha256": "6773d8b87eeee31578ea77f943ef90961292565361339d0953e99516148942ab",
+      "implementation": "ceph_names_recreate_nonowner",
+      "review": "真实alt身份创建相同桶409/BucketAlreadyExists；保留原始字面/生成规则，所有create先HEAD404，所有含异常成功/不明结果经独立控制桶ACL owner证明才回收；不确定或不拥有者绝不删除，错误定位需人工核查候选。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_cloud_transition@L9785",
+      "source_sha256": "1e267217fe90657633f55b2d90c3d07c01ed3fbeeaab8706532d753d4bf65f59",
+      "implementation": "ceph_cloud_lc_ordinary",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_cloud_multiple_transition@L9869",
+      "source_sha256": "ea025ae20374c3fc55ecb75e83503f00e6c89ee9b5db58be821fb3c3324d2f69",
+      "implementation": "ceph_cloud_lc_multiple",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_noncur_cloud_transition@L9933",
+      "source_sha256": "74fb67a80d58d62de5010060d285486afb6054d846a3e5ac976aa10f1f8fb06c",
+      "implementation": "ceph_cloud_lc_noncurrent",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 源list_bucket_versions按实际Name分组却按源key索引，原跨云读回loop为空；保留缺陷并返回source_limitation，未伪称验证目标body。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_cloud_transition_large_obj@L10029",
+      "source_sha256": "9e0d7f1021c89035369f15efa6ede7717e288f26f0a673c78f913a1bb59b6f28",
+      "implementation": "ceph_cloud_lc_large",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_cloud_transition_target_by_bucket@L10090",
+      "source_sha256": "c1a5b21314b440e8942df8380fbc31331bb9d9090ca12818902813d9527ed877",
+      "implementation": "ceph_cloud_lc_target_bucket",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_cloud_transition_target_by_bucket_multiple_buckets@L10196",
+      "source_sha256": "176cec5edb7644dab5afedb519a32af212b56fae1abb47ae380556a2b125868e",
+      "implementation": "ceph_cloud_lc_target_buckets",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_restore_object_temporary@L10287",
+      "source_sha256": "936e3dc5f7aedd4de5e5d032b72e0b9f88850b3de8b9856e8743e9fa78e5f1ae",
+      "implementation": "ceph_cloud_lc_temporary",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_restore_object_permanent@L10341",
+      "source_sha256": "2910f59a7a190ce0d620d6d72354c88e2e40fbe52b77d85b568e79e5ac1b1d25",
+      "implementation": "ceph_cloud_lc_permanent",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_read_through@L10382",
+      "source_sha256": "f201fdb9abba245c827f432e2a8b0744eb590237a422defef971604e0ccffe7f",
+      "implementation": "ceph_cloud_lc_read_through",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_restore_noncur_obj@L10443",
+      "source_sha256": "07e079e89fecc18844b3789231824e0c705fbbe2f91fa6a1dd1111f5b0cc5593",
+      "implementation": "ceph_cloud_lc_restore_noncurrent",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_objects_restore_status@L10530",
+      "source_sha256": "660dd89639bd49485dc65dbb0b6618c1845bedb2a1e345637285b557ac902874",
+      "implementation": "ceph_cloud_lc_list_status",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_list_object_versions_restore_status@L10613",
+      "source_sha256": "127bb0fd6b557fb752f58a033eef17614bef85ba987b1e8d40de6849c7ce9015",
+      "implementation": "ceph_cloud_lc_list_version_status",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_lifecycle_transition_encrypted@L20820",
+      "source_sha256": "323d52bf670091f7fe0de8a5fa28702084f1ee958f27e7e9fac61da28a779a67",
+      "implementation": "ceph_cloud_lc_encrypted",
+      "review": "核对固定Ceph源原规则/原始body、真实源与独立云endpoint SDK身份读回、共享目标prefix/派生target模板与隔离、当前/null/非当前版本、所有原等待倍数、恢复Days省略/更新、原ContentLength和StorageClass、RestoreStatus/IsLatest/expiry字段存在规则及原错误断言。后台cloud类别/restore周期及跨云身份均显式前提；缺Legacy Prefix/typed storage-class/100秒client超时能力时not_run，不替换接口输入。远端清理只删除新源桶自有前缀真实版本，派生云桶须创建前确认不存在；实际SDK结果直接进入Restore/Delete消费者并有wire突变验证。 保留unencrypted/SSE-S3/SSE-C/KMS四种source模式及所有不同存储类别有序组合，源SSE-C密钥/MD5与main KMS配置不改。 安全修复：所有会迁云的multiple/restore/status路径均独立要求OSV_CLOUD_*并绑定自有源UUID；若加密存储矩阵含云class亦同。先源桶/版本清理，再独立官方SDK列举云端实际版本并将真实key/version ID传给删除；shared仅UUID/前缀，derived整桶必须创建前HEAD404、target包含确切源UUID及恰好一个bucket模板token，拒绝共享/未知映射，不接管既有云桶。源断言失败仍执行远端清理，保留原等待/Name分组缺陷和全部源oracle；故意跳过清理的真实双端SDK回归会失败，恢复后通过。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_put_objects@L17344",
+      "source_sha256": "9f94ecc6c09c4f163fad33dfc8916f0d61eb1c5fec912cc88538c9a846385c4f",
+      "implementation": "ceph_logging_workload_put",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_put_objects_versioned@L17351",
+      "source_sha256": "699a64dbea72fa0316476080d65d9b61755ecee2f432a8a9eb8fd82e84e77724",
+      "implementation": "ceph_logging_workload_put_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_delete_objects@L17474",
+      "source_sha256": "152f140233bfe56519e3a77f395c2117873dbe6fb2d195c9e68cc626b006a188",
+      "implementation": "ceph_logging_workload_delete",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_delete_objects_versioned@L17481",
+      "source_sha256": "02dce0e6c6469b187da628d47faa2039f6686a57d4760fb9b2917723be9a2a60",
+      "implementation": "ceph_logging_workload_delete_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_get_objects@L17543",
+      "source_sha256": "eb78df2bb19e3c3d8c1128a9acd5ef80f141f88ca8b22e0d8a91900eaa37f10b",
+      "implementation": "ceph_logging_workload_get",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_get_objects_versioned@L17550",
+      "source_sha256": "778c01b553f8b14663a54fe5a6b7a035ed1e88f39c39446bf6bcb04da719099e",
+      "implementation": "ceph_logging_workload_get_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_head_objects@L17700",
+      "source_sha256": "c14b317f425e394a5a9eca424d4422a6d02f4b1f7791381487f20a4b98631e27",
+      "implementation": "ceph_logging_workload_head",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_head_objects_versioned@L17707",
+      "source_sha256": "dd5a708a4648919944cf3f596cc5320d2a53d9ff1eadfe49dbf74738f125f45b",
+      "implementation": "ceph_logging_workload_head_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_s@L17767",
+      "source_sha256": "950f71308bf9c87d075cd53f4c04757f55a4f6be105eed4c10b926916a90cf60",
+      "implementation": "ceph_logging_workload_mpu",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_versioned_s@L17774",
+      "source_sha256": "ac856e8ec62011024c988170d3e466df922b8f4229f7cfcd25119d50c7c2d03f",
+      "implementation": "ceph_logging_workload_mpu_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_copy@L17842",
+      "source_sha256": "ef3c2f44965c902cc91f100a21e1a638c87ca2d361a6371ee3f12f7177050c94",
+      "implementation": "ceph_logging_workload_mpu_copy",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_copy_versioned@L17849",
+      "source_sha256": "9cff5c86dd7c24d88eefc0530faea9b11605c7f0f2a80142475c11567bb4704c",
+      "implementation": "ceph_logging_workload_mpu_copy_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_multi_delete@L17917",
+      "source_sha256": "711a3fd62cf7dbe01c51157c8ec3484cf7fcdfeb53382794548c1e5f1ec145f8",
+      "implementation": "ceph_logging_workload_multi_delete",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_multi_delete_versioned@L17924",
+      "source_sha256": "8dd52c288e2f59716730d4fc6ae357d508d98de51477e14756e92f72ac3bd9ec",
+      "implementation": "ceph_logging_workload_multi_delete_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_copy_objects@L17619",
+      "source_sha256": "180a6d1a4e32d34933effdbddee1c4ac8c9c4b11f8084a4f6887bdec8db2edc9",
+      "implementation": "ceph_logging_workload_copy",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_copy_objects_versioned@L17626",
+      "source_sha256": "9979abbb2c279dc8363cbc980a546366bc7e9c661be09f54f88f736924579ddf",
+      "implementation": "ceph_logging_workload_copy_versions",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_copy_objects_bucket@L17633",
+      "source_sha256": "693df2a0ffb54d6844cfa95433c2525920ef6f12cff0849a68ec92b21acba189",
+      "implementation": "ceph_logging_workload_copy_bucket",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_copy_objects_bucket_versioned@L17640",
+      "source_sha256": "adfc101773b30ac5cdea240f725c70c3b40baff6a6db14e9d1e250a9d016c987",
+      "implementation": "ceph_logging_workload_copy_versions_bucket",
+      "review": "逐源及对应helper核对标准SDK完整fallback输入/断言：原始5个随机小对象、版本源双写（HEAD只写一版）、HEAD真实VersionId进入GET/DELETE/HEAD、copy_of_同桶/跨桶与原始重复policy statements、批删全部实际Versions、30MiB六个5MiB分块的真实UploadId/ETag及abort、原始POST/PART事件与5/10/1/2/4/6/12计数。保留fails_on_aws/fails_without_logging_rollover标记，真实5.5秒flush+dummy、26字段及full-line substring匹配、单日志/前缀断言；仅put源比较FlushedLoggingObject，其余不新增该断言。扩展LoggingType/rolltime和8字段Journal解析路径完整保留但需真实SDK扩展/POST能力，当前标准SDK运行标准分支。user_id不同于canonical_id；先停所有日志、删除策略，再清理实际历史版本/删除标记和日志对象，finally不中断。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_extensions@L17260",
+      "source_sha256": "2609e92a5ae85e3946e5980d87a54893106d67503a61abe7ecbd8cddb5746bb7",
+      "implementation": "ceph_logging_extensions_roundtrip",
+      "review": "核对源及helper完整扩展路径：17260原LoggingType=Standard/ObjectRollTime=5/RecordsBatchSize=0和Get完整字典默认SimplePrefix；17780/17788原Journal、30MiB六part、一/两版、真实POST flush及8字段1/2条REST.POST.UPLOAD，不追加Standard PART断言。保留全部source markers。当前官方Java2.20.162/C++1.11.675真实native typed LoggingEnabled模型不具三扩展字段且无PostBucketLogging，真实SDK测试逐字段证实在HTTP前明确拒绝，故三个整源not_run，无静默字段过滤/替代Standard/手工伪造XML。完整可执行场景保留但真实扩展成功路径受原生SDK能力缺失阻塞，未声称云通过。版本与multipart finally清理复用已真实验证的生产链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_j@L17780",
+      "source_sha256": "ca29086283d7d77dfaea974ec6ad459f136d85e5f1cac625a5c009a5aa0c4cfb",
+      "implementation": "ceph_logging_extensions_mpu_j",
+      "review": "核对源及helper完整扩展路径：17260原LoggingType=Standard/ObjectRollTime=5/RecordsBatchSize=0和Get完整字典默认SimplePrefix；17780/17788原Journal、30MiB六part、一/两版、真实POST flush及8字段1/2条REST.POST.UPLOAD，不追加Standard PART断言。保留全部source markers。当前官方Java2.20.162/C++1.11.675真实native typed LoggingEnabled模型不具三扩展字段且无PostBucketLogging，真实SDK测试逐字段证实在HTTP前明确拒绝，故三个整源not_run，无静默字段过滤/替代Standard/手工伪造XML。完整可执行场景保留但真实扩展成功路径受原生SDK能力缺失阻塞，未声称云通过。版本与multipart finally清理复用已真实验证的生产链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_mpu_versioned_j@L17788",
+      "source_sha256": "c28d1c54643416b4f78093903f47092be6e56436d7962c50e561f5ce2b6baa85",
+      "implementation": "ceph_logging_extensions_mpu_j_versions",
+      "review": "核对源及helper完整扩展路径：17260原LoggingType=Standard/ObjectRollTime=5/RecordsBatchSize=0和Get完整字典默认SimplePrefix；17780/17788原Journal、30MiB六part、一/两版、真实POST flush及8字段1/2条REST.POST.UPLOAD，不追加Standard PART断言。保留全部source markers。当前官方Java2.20.162/C++1.11.675真实native typed LoggingEnabled模型不具三扩展字段且无PostBucketLogging，真实SDK测试逐字段证实在HTTP前明确拒绝，故三个整源not_run，无静默字段过滤/替代Standard/手工伪造XML。完整可执行场景保留但真实扩展成功路径受原生SDK能力缺失阻塞，未声称云通过。版本与multipart finally清理复用已真实验证的生产链。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_header_acl_grants@L4881",
+      "source_sha256": "e9667110bc289abf8c7e9f86b97790e12fb46b22c319e9d4d67040e5b267688a",
+      "implementation": "ceph_tail_bucket_header_grants",
+      "review": "五个原始id=值、完整ACL字段/原顺序、真实alt写foo/bar和恢复公开ACL；4881复用源check_grants全部字段/条件排序/额外字段拒绝，独立alt预期元数据、真实alt签名及finally恢复cleanup ACL；14078保留原Unicode字面、真实SDK一次UTF8编码、精确错误消息，无额外KMS/身份前提。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_object_read_unreadable@L14078",
+      "source_sha256": "edfec4842ec44666543e3c9f06fb287ca35ec92ba8c0c09b33376cb5475bf017",
+      "implementation": "ceph_tail_unreadable",
+      "review": "原Unicode字面键必须返回400和精确URI解析错误消息；4881复用源check_grants全部字段/条件排序/额外字段拒绝，独立alt预期元数据、真实alt签名及finally恢复cleanup ACL；14078保留原Unicode字面、真实SDK一次UTF8编码、精确错误消息，无额外KMS/身份前提。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_post_object_authenticated_request@L11091",
+      "source_sha256": "5e933e78b29374e97532d1101a973e7d95006ff968aa0392dca429f0f2883c5c",
+      "implementation": "ceph_encrypted_form_customer",
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_post_object_authenticated_request@L11410",
+      "source_sha256": "76169d2a49bb59dc18e0e476025187a8fceb9286751ef09075befeddddcd990c",
+      "implementation": "ceph_encrypted_form_kms",
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_post_object_authenticated_request@L14807",
+      "source_sha256": "7127e34bd837ec20a0a07d06244c4a0da2ae33eadd758cf7b7ebe39b74c331af",
+      "implementation": "ceph_encrypted_form_s3_default",
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_post_object_authenticated_request@L14852",
+      "source_sha256": "042345ee1901f3ef8151fcfb5b5ac2a229b50661302fdc362cb96f743e704efb",
+      "implementation": "ceph_encrypted_form_kms_default",
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_multipart_upload@L11312",
+      "source_sha256": "1349248c9ea51dd67b93d13bab3f540490e944706d60442c4c48c872206ab6b0",
+      "implementation": "ceph_encryption_tail_kms",
+      "review": "保留30MiB/六个5MiB、原始headers与元数据、真实上传ID/ETag进入complete/abort、两个Range helper各自额外wholeGET实际大小驱动请求；invalid源无assert_raises，成功上传即pass；原未触发的part_headers闭包不提前报错。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_multipart_invalid_chunks_1@L11357",
+      "source_sha256": "7d7784428a7d57e7480d6556a74efb83434598860255b73ea7d021728eefd0f8",
+      "implementation": "ceph_encryption_tail_invalid_secondary",
+      "review": "保留30MiB/六个5MiB、原始headers与元数据、真实上传ID/ETag进入complete/abort、两个Range helper各自额外wholeGET实际大小驱动请求；invalid源无assert_raises，成功上传即pass；原未触发的part_headers闭包不提前报错。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_kms_multipart_invalid_chunks_2@L11384",
+      "source_sha256": "11861972a94408620d3d256ab8ace43fb26ea9c7876d1395747c34771e02e22d",
+      "implementation": "ceph_encryption_tail_invalid_missing",
+      "review": "保留30MiB/六个5MiB、原始headers与元数据、真实上传ID/ETag进入complete/abort、两个Range helper各自额外wholeGET实际大小驱动请求；invalid源无assert_raises，成功上传即pass；原未触发的part_headers闭包不提前报错。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_multipart_upload@L14761",
+      "source_sha256": "aa947aaecc2271b2efcd73b4ef16abac12bc84e82037b97a573e717e086c10c2",
+      "implementation": "ceph_encryption_tail_s3_default",
+      "review": "保留30MiB/六个5MiB、原始headers与元数据、真实上传ID/ETag进入complete/abort、两个Range helper各自额外wholeGET实际大小驱动请求；invalid源无assert_raises，成功上传即pass；原未触发的part_headers闭包不提前报错。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_get_object_torrent@L14939",
+      "source_sha256": "06d222f120235d80b4a0ba468015564b73a25f7e2c15528166b65f4797407264",
+      "implementation": "ceph_encryption_tail_torrent",
+      "review": "保留源_get_body的UTF-8解码、7MiB A、不同正文或404/NoSuchKey两可接受分支；官方SDK签名query存在语义不被手写HTTP替代。 实际官方SDK Java发?torrent，C++签名器规范化为?torrent=，独立wire测试分别精确记录，未改写SDK结果。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_policy_wildcard@L16885",
+      "source_sha256": "c1673b7b7d1a3d7568ef18c9ff34e5aa00534edb6f743202fc9c74af408086a9",
+      "implementation": "ceph_logging_transition_wildcard",
+      "review": "核对四源及两个helper全部输入和断言：wildcard双账号各自user_id、原始StringLike/双statement、移除alt授权精确AccessDenied、SourceAccount=*/SourceArn=arn:aws:s3:::*、两用户交替10写、单log/前缀/10条Standard记录（源bucket匹配为单空格）、收紧为main user后alt再五写及flush AccessDenied而目标仍1日志。permission change源初五写、改ARN kaboom后Standard五写成功，Journal五写逐一AccessDenied且Message以Logging bucket开头；真实POST或5.5秒dummy flush拒绝、目标0日志。保留Journal原类型而不是替换Standard；stock Java/C++缺扩展typed模型/POST时J整源not_run，成功分支不声称已通过。真实alt身份创建/访问/全部finally清理不回退主身份，user_id不回退canonical_id；所有桶先停日志再删策略和各自实际对象，失败/意外200仍清理。保留源fails_on_aws/fails_without_logging_rollover/SDK扩展skip标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_put_bucket_logging_policy_wildcard_objects@L16892",
+      "source_sha256": "ddb0377b5116e58f58c286b5896811af9eaf39be7a3bbe3374e1859114b84b84",
+      "implementation": "ceph_logging_transition_wildcard_objects",
+      "review": "核对四源及两个helper全部输入和断言：wildcard双账号各自user_id、原始StringLike/双statement、移除alt授权精确AccessDenied、SourceAccount=*/SourceArn=arn:aws:s3:::*、两用户交替10写、单log/前缀/10条Standard记录（源bucket匹配为单空格）、收紧为main user后alt再五写及flush AccessDenied而目标仍1日志。permission change源初五写、改ARN kaboom后Standard五写成功，Journal五写逐一AccessDenied且Message以Logging bucket开头；真实POST或5.5秒dummy flush拒绝、目标0日志。保留Journal原类型而不是替换Standard；stock Java/C++缺扩展typed模型/POST时J整源not_run，成功分支不声称已通过。真实alt身份创建/访问/全部finally清理不回退主身份，user_id不回退canonical_id；所有桶先停日志再删策略和各自实际对象，失败/意外200仍清理。保留源fails_on_aws/fails_without_logging_rollover/SDK扩展skip标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_permission_change_s@L16975",
+      "source_sha256": "f37004249352b234aa6fb64ea5bc514aa6a5b55773a71ad5cdb5b94641ca1d63",
+      "implementation": "ceph_logging_transition_permission_s",
+      "review": "核对四源及两个helper全部输入和断言：wildcard双账号各自user_id、原始StringLike/双statement、移除alt授权精确AccessDenied、SourceAccount=*/SourceArn=arn:aws:s3:::*、两用户交替10写、单log/前缀/10条Standard记录（源bucket匹配为单空格）、收紧为main user后alt再五写及flush AccessDenied而目标仍1日志。permission change源初五写、改ARN kaboom后Standard五写成功，Journal五写逐一AccessDenied且Message以Logging bucket开头；真实POST或5.5秒dummy flush拒绝、目标0日志。保留Journal原类型而不是替换Standard；stock Java/C++缺扩展typed模型/POST时J整源not_run，成功分支不声称已通过。真实alt身份创建/访问/全部finally清理不回退主身份，user_id不回退canonical_id；所有桶先停日志再删策略和各自实际对象，失败/意外200仍清理。保留源fails_on_aws/fails_without_logging_rollover/SDK扩展skip标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_permission_change_j@L16981",
+      "source_sha256": "5430fc309466e66c1526bd933b973e3815a3f65e688595d42d173ef4da03606c",
+      "implementation": "ceph_logging_transition_permission_j",
+      "review": "核对四源及两个helper全部输入和断言：wildcard双账号各自user_id、原始StringLike/双statement、移除alt授权精确AccessDenied、SourceAccount=*/SourceArn=arn:aws:s3:::*、两用户交替10写、单log/前缀/10条Standard记录（源bucket匹配为单空格）、收紧为main user后alt再五写及flush AccessDenied而目标仍1日志。permission change源初五写、改ARN kaboom后Standard五写成功，Journal五写逐一AccessDenied且Message以Logging bucket开头；真实POST或5.5秒dummy flush拒绝、目标0日志。保留Journal原类型而不是替换Standard；stock Java/C++缺扩展typed模型/POST时J整源not_run，成功分支不声称已通过。真实alt身份创建/访问/全部finally清理不回退主身份，user_id不回退canonical_id；所有桶先停日志再删策略和各自实际对象，失败/意外200仍清理。保留源fails_on_aws/fails_without_logging_rollover/SDK扩展skip标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_multiple_prefixes@L18068",
+      "source_sha256": "8e29e978457ffb69daa656d3b8555d15e8de39ec5ec4bae536819b001dffed23",
+      "implementation": "ceph_logging_prefixes_multiple",
+      "review": "完整核对18068/18124及日志helper原始输入和全部断言：五源桶同一随机base+0..4关系、25随机小对象、五条各自SourceArn/user_id策略、独立prefix源桶名/或共享log/；multiple原五次真实5.5秒flush及len(keys)>=5，每个key必须匹配源prefix和该源五记录，未强化成等于5；single仅flush循环最后源、目标单日志、按原始五次覆盖found并最后才assert，故保留只检最后源的已知缺陷，真实SDK独立fixture只给最后源记录仍通过。标准SDK完整fallback可运行，扩展ObjectRollTime/POST需真实能力不丢字段。RelatedBucketScope限定内部生成UUID base和0..4索引，继承每桶真实absence proof/拥有证明，所有桶先停日志删策略再清理；失败/实际target日志均独立清除。保留源fails_on_aws/fails_without_logging_rollover标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_bucket_logging_single_prefix@L18124",
+      "source_sha256": "2b1dbb7ca035eb785f2884b5f917a2166c748d9dd080654f13932e882385f0a0",
+      "implementation": "ceph_logging_prefixes_single",
+      "review": "完整核对18068/18124及日志helper原始输入和全部断言：五源桶同一随机base+0..4关系、25随机小对象、五条各自SourceArn/user_id策略、独立prefix源桶名/或共享log/；multiple原五次真实5.5秒flush及len(keys)>=5，每个key必须匹配源prefix和该源五记录，未强化成等于5；single仅flush循环最后源、目标单日志、按原始五次覆盖found并最后才assert，故保留只检最后源的已知缺陷，真实SDK独立fixture只给最后源记录仍通过。标准SDK完整fallback可运行，扩展ObjectRollTime/POST需真实能力不丢字段。RelatedBucketScope限定内部生成UUID base和0..4索引，继承每桶真实absence proof/拥有证明，所有桶先停日志删策略再清理；失败/实际target日志均独立清除。保留源fails_on_aws/fails_without_logging_rollover标记。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_enc@L20748",
+      "source_sha256": "498a42a96792150b276411b32e63fd5455846e441b9a86ab08db1940387315a8",
+      "implementation": "ceph_encrypted_copy_matrix",
+      "review": "核对固定源20415..20748四种源加密模式×四种目标模式×所有配置源/目标存储类别有序组合；普通copy完整1/1024/1048576/8388608字节，part完整8388608字节。源SSE-S3响应断言、目标SSE-S3/SSE-C/KMS在copy/create/copy-part/upload-part/complete/get的原断言、两独立KMS key、两套原SSE-C key/MD5和dest-SSE-C六次原400请求全部保留（第二个负面copy仍只重复source-copy-key，未纠正源逻辑）。真实typed SDK响应UploadId/CopyPartResult.ETag/UploadPart.ETag进入真正typed完成请求，完整A或A+B文件读回。Java/C++按2存储类别实测256+64实例/语言；默认缺两独立KMS配置not_run，不丢参数实例。已登记实际uploadID的finally abort覆盖原400与header断言失败；未知Create错误/断连/缺ID以真实自有桶ListMultipartUploads枚举回收后删桶。"
+    },
+    {
+      "source_id": "s3tests/functional/test_s3.py::test_copy_part_enc@L20703",
+      "source_sha256": "4f448b02579bdce032df2b8ab3708e8a16c9eb84437b07fe06070b8ec8e8991e",
+      "implementation": "ceph_encrypted_part_copy_matrix",
+      "review": "核对固定源20415..20748四种源加密模式×四种目标模式×所有配置源/目标存储类别有序组合；普通copy完整1/1024/1048576/8388608字节，part完整8388608字节。源SSE-S3响应断言、目标SSE-S3/SSE-C/KMS在copy/create/copy-part/upload-part/complete/get的原断言、两独立KMS key、两套原SSE-C key/MD5和dest-SSE-C六次原400请求全部保留（第二个负面copy仍只重复source-copy-key，未纠正源逻辑）。真实typed SDK响应UploadId/CopyPartResult.ETag/UploadPart.ETag进入真正typed完成请求，完整A或A+B文件读回。Java/C++按2存储类别实测256+64实例/语言；默认缺两独立KMS配置not_run，不丢参数实例。已登记实际uploadID的finally abort覆盖原400与header断言失败；未知Create错误/断连/缺ID以真实自有桶ListMultipartUploads枚举回收后删桶。"
     }
   ]
 }

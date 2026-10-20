@@ -45,7 +45,7 @@ class VersioningSdkTest(unittest.TestCase):
                 for request in server.requests[1:]:self.assertEqual(parse_qs(urlsplit(request[1]).query),{"versionId":[requested]})
 
     def test_actual_version_list_order_markers_cursors_and_empty_fields(self):
-        """Consume independently ordered version/delete-marker XML then an empty page; expect unchanged IDs/order, actual continuation markers and no invented Versions field."""
+        """Consume independently ordered version/delete-marker XML then an empty page; expect unchanged IDs/order, actual continuation markers/Name and no invented absent Name or Versions field."""
         document=b'<ListVersionsResult><Name>fixture</Name><KeyMarker>input-key</KeyMarker><VersionIdMarker>input-id</VersionIdMarker><NextKeyMarker>server-next-key</NextKeyMarker><NextVersionIdMarker>server-next-id</NextVersionIdMarker><IsTruncated>true</IsTruncated><Version><Key>server-key</Key><VersionId>server-latest</VersionId><IsLatest>true</IsLatest><Size>4</Size><ETag>"server-etag"</ETag><LastModified>2026-01-01T00:00:00Z</LastModified></Version><Version><Key>server-key</Key><VersionId>server-older</VersionId><IsLatest>false</IsLatest><Size>3</Size><LastModified>2025-01-01T00:00:00Z</LastModified></Version><DeleteMarker><Key>marker-key</Key><VersionId>server-marker</VersionId><IsLatest>true</IsLatest><LastModified>2026-01-01T00:00:00Z</LastModified></DeleteMarker></ListVersionsResult>'
         responses=[(200,{"Content-Type":"application/xml"},document),(200,{"Content-Type":"application/xml"},b"<ListVersionsResult><IsTruncated>false</IsTruncated></ListVersionsResult>")]
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
@@ -54,12 +54,12 @@ class VersioningSdkTest(unittest.TestCase):
                 self.assertTrue(result["ok"],result);self.assertTrue(result["truncated"])
                 self.assertEqual([row["version_id"] for row in result["versions"]],["server-latest","server-older"])
                 self.assertEqual([row["size"] for row in result["versions"]],[4,3]);self.assertEqual(result["versions"][0]["etag"],'"server-etag"')
-                self.assertEqual(result["delete_markers"][0]["version_id"],"server-marker");self.assertEqual(set(result["fields"]),{"Versions","DeleteMarkers"})
+                self.assertEqual(result["delete_markers"][0]["version_id"],"server-marker");self.assertEqual(set(result["fields"]),{"Name","Versions","DeleteMarkers"});self.assertEqual(result["bucket_name"],"fixture")
                 self.assertEqual((result["next_key_marker"],result["next_version_id_marker"]),("server-next-key","server-next-id"))
                 query=parse_qs(urlsplit(server.requests[0][1]).query)
                 self.assertEqual(query["key-marker"],["input-key"]);self.assertEqual(query["version-id-marker"],["input-id"]);self.assertEqual(query["max-keys"],["2"])
                 result=worker.call({"op":"versions_list"});self.assertTrue(result["ok"],result);self.assertFalse(result["truncated"])
-                self.assertEqual(result["versions"],[]);self.assertEqual(result["delete_markers"],[]);self.assertEqual(result["fields"],[])
+                self.assertEqual(result["versions"],[]);self.assertEqual(result["delete_markers"],[]);self.assertEqual(result["fields"],[]);self.assertNotIn("bucket_name",result)
 
     def test_missing_head_preserves_actual_delete_marker_error_header(self):
         """Return a real bodyless HEAD 404 with a marker header; expect the SDK failure and original error header to reach the case unchanged."""

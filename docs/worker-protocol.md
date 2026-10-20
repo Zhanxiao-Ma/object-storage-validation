@@ -162,3 +162,9 @@ AWS S3 的 `concurrent_requests` 接收 `requests` 数组（1–64 项），在�
 AWS S3 Java/C++ 的 `wire_query` 在 SDK 序列化后、官方签名前修改查询参数：文本替换、true 表示空值标志、null 删除。空名称、控制字符、false、数字和容器值在 HTTP 前拒绝。编码和签名仍由真实 SDK 执行，作用域在成功或异常后恢复；未附此字段的性能请求不做修改。C++空值采用 `name=` 避免所锁版本URI正规化把裸name错误解析为name自身。独立官方签名器核验实际出站签名。
 
 `versions` 的 `storage_class` 和 `bucket_name` 只在实际返回字段存在时发布。`api.RestoreObject`、`api.ListObjects`、`api.ListObjectsV2`、`api.ListObjectVersions`、对象Retention与LegalHold使用真实官方typed模型；不把模型缺失伪装成服务端拒绝。
+
+
+AWS S3 Java/C++ 的 `put_storage_class` 支持普通 `put`、`put_sse_c`/`put_encryption` 的可选非空文本 `storage_class`，交给实际官方PutObject typed字段；允许厂商扩展字符串，缺省不注入字段。`client_timeouts` 支持环境 `OSV_REQUEST_TIMEOUT_MS`、`OSV_CONNECT_TIMEOUT_MS`，均为1–2147483647整数毫秒；Java配置实际总调用/Apache socket及连接超时，C++配置request/httpRequest和connect超时。read-through创建独立100000ms会话，普通性能目标不自动改为100秒。
+
+
+新增 `api.CopyObject`、`api.CreateMultipartUpload`、`api.UploadPartCopy`、`api.CompleteMultipartUpload` 为官方typed模型入口，响应 `data.CopyObjectResult`/`data.CopyPartResult` 保留真实ETag和日期，后续完成请求直接消费真实UploadId/ETag。C++公有类 CopyObjectResultDetails 与协议字段 CopyObjectResult 的绑定由带溯源的模型映射表达；Expires按官方DateTime/Instant使用毫秒。输入HTTP编码/签名及SSE字段均仍由SDK处理。

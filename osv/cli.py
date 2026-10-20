@@ -80,6 +80,7 @@ def load_config(path, profile_override=None):
             for field in ("canonical_id","display_name","email","user_id"):
                 if metadata.get(field) is not None and not isinstance(metadata[field],str):raise ValueError("identity metadata fields must be strings or null")
     if workload.get("kms_key_id") is not None and not isinstance(workload["kms_key_id"],str):raise ValueError("kms_key_id must be a string or null")
+    if workload.get("secondary_kms_key_id") is not None and not isinstance(workload["secondary_kms_key_id"],str):raise ValueError("secondary_kms_key_id must be a string or null")
     if "storage_classes" in workload and (not isinstance(workload["storage_classes"],list) or not all(isinstance(value,str) and value for value in workload["storage_classes"])):raise ValueError("storage_classes must be a list of nonempty strings")
     for interval_field in ("lifecycle_debug_interval_seconds","restore_debug_interval_seconds","restore_processor_period_seconds"):
         if interval_field not in workload:continue
@@ -99,6 +100,11 @@ def load_config(path, profile_override=None):
         if not isinstance(settings,dict) or set(settings)-(strings|{"target_by_bucket","read_through_days"}):raise ValueError("cloud_lifecycle contains invalid settings")
         for field in strings:
             if field in settings and (not isinstance(settings[field],str) or not settings[field]):raise ValueError("cloud_lifecycle text settings must be nonempty strings")
+        if "target_by_bucket_prefix" in settings:
+            template=settings["target_by_bucket_prefix"]
+            rest=template
+            for token in ("${bucket}","${storage_class}","${zonegroup}"):rest=rest.replace(token,"")
+            if template.count("${bucket}")!=1 or "${" in rest:raise ValueError("cloud_lifecycle.target_by_bucket_prefix requires exactly one ${bucket} and only known placeholders")
         if "target_by_bucket" in settings and type(settings["target_by_bucket"]) is not bool:raise ValueError("cloud_lifecycle.target_by_bucket must be boolean")
         if "read_through_days" in settings and (type(settings["read_through_days"]) is not int or settings["read_through_days"]<0):raise ValueError("cloud_lifecycle.read_through_days must be a nonnegative integer")
     if "ceph_http" in workload:

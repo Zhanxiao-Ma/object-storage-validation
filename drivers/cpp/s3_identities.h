@@ -17,6 +17,13 @@ class S3Identities {
         if(name=="anonymous")return "";
         throw std::runtime_error("unsupported identity");
     }
+    static long timeout(const char* name,long fallback) {
+        auto value=env(name,std::to_string(fallback));
+        if(value.empty() || value.find_first_not_of("0123456789")!=std::string::npos)throw std::runtime_error(std::string(name)+" must be a positive millisecond integer");
+        long parsed=std::stol(value);
+        if(parsed<1 || parsed>2147483647L)throw std::runtime_error(std::string(name)+" must be in 1..2147483647");
+        return parsed;
+    }
     static std::shared_ptr<Aws::S3::S3Client> create(const std::string& name,bool headers,bool required_checksum) {
         auto credential_prefix=prefix(name);
         Aws::Client::ClientConfiguration configuration;
@@ -26,9 +33,10 @@ class S3Identities {
             ? Aws::Http::Scheme::HTTP : Aws::Http::Scheme::HTTPS;
         configuration.maxConnections = std::stoul(env("OSV_CONNECTIONS", "16"));
         if(required_checksum)configuration.checksumConfig.requestChecksumCalculation=Aws::Client::RequestChecksumCalculation::WHEN_REQUIRED;
-        configuration.requestTimeoutMs = headers?std::stoul(env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000")):30000;
-        if(headers)configuration.httpRequestTimeoutMs=configuration.requestTimeoutMs;
-        configuration.connectTimeoutMs = 10000;
+        auto request_timeout=timeout("OSV_REQUEST_TIMEOUT_MS",30000);
+        configuration.requestTimeoutMs = headers?timeout("OSV_HEADER_REQUEST_TIMEOUT_MS",request_timeout):request_timeout;
+        if(headers || !env("OSV_REQUEST_TIMEOUT_MS","").empty())configuration.httpRequestTimeoutMs=configuration.requestTimeoutMs;
+        configuration.connectTimeoutMs = timeout("OSV_CONNECT_TIMEOUT_MS",10000);
         configuration.retryStrategy = Aws::MakeShared<Aws::Client::DefaultRetryStrategy>(
             "osv", std::stol(env("OSV_RETRIES", "0")));
         Aws::Auth::AWSCredentials credentials;
