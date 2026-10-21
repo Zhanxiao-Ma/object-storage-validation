@@ -51,7 +51,7 @@ class ReportPresentationTest(unittest.TestCase):
         """Purpose: execute the real multi-object workload; expect exact measured successes and performance dataset descriptions without upstream model branding or fabricated functional results."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);data=config(directory)
-            data["workload"].update(mode="performance",performance_model="objbench",rounds=1,
+            data["workload"].update(mode="performance",rounds=1,
                 objbench={"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8,"list_requests_per_lane":1})
             path=directory/"manifest.json";path.write_text(json.dumps(data))
             report=run(load_config(path),directory/"results");text=(directory/"results/report.md").read_text()

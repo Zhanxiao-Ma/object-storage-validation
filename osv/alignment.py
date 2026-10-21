@@ -36,7 +36,7 @@ def audit(config,registry):
             row["implementations"]=[name for name in required if name in names]
             row["status"]="aligned" if required and len(row["implementations"])==len(required) else "not_migrated"
         else:
-            row["status"]="aligned" if config["workload"]["performance_model"]=="objbench" else "not_selected"
+            row["status"]="aligned" if config["workload"]["mode"] in ("performance", "all") else "not_selected"
             row["implementations"]=["objbench:"+row["name"]] if row["status"]=="aligned" else []
         rows.append(row)
     for row in upstream["ceph"]["cases"]:

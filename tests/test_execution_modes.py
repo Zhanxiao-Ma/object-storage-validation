@@ -14,7 +14,7 @@ from test_harness import ROOT, config
 class ExecutionModesTest(unittest.TestCase):
     """Verify scheduling and report contracts using genuine storage IO, not a duplicate scheduler."""
 
-    def execute(self, directory, mode=None, model="operations", verdict="fail", corrupt=False):
+    def execute(self, directory, mode=None, missing_multipart=False, verdict="fail", corrupt=False):
         """Run a real CLI, recording real worker requests for independent assertions."""
         plugin=directory/"mode_suite.py"
         plugin.write_text("from osv.suites import case,run_cases,CaseNotRun\nfrom osv.scenarios import Suite\n"
@@ -29,10 +29,10 @@ class ExecutionModesTest(unittest.TestCase):
             +"  child.stdin.write(line);child.stdin.flush();r=json.loads(child.stdout.readline())\n"
             # The real producer and real consumer still run; only fault the actual bytes received.
             +("  if q.get('op')=='get' and '/performance/' in q.get('key','') and r.get('ok'): open(q['output_path'],'wb').write(b'wrong bytes')\n" if corrupt else "")
-            +"  if q['op']=='info': r['capabilities']=[x for x in r['capabilities'] if not x.startswith('mp_')]\n"
+            +("  if q['op']=='info': r['capabilities']=[x for x in r['capabilities'] if not x.startswith('mp_')]\n" if missing_multipart else "")
             +"  print(json.dumps(r),flush=True)\nfinally: child.stdin.close();child.wait()\n")
         data=config(directory);data["targets"][0]["command"]=[sys.executable,str(proxy)];data["plugins"]=["mode_suite"]
-        data["workload"].pop("mode");data["workload"].update(compatibility_suites=["independent_suite"],performance_model=model,
+        data["workload"].pop("mode");data["workload"].update(compatibility_suites=["independent_suite"],
             requests=2,rounds=1,concurrency=1,warmup_requests=0,operations=["get"],
             objbench={"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8,"list_requests_per_lane":1})
         manifest=directory/"manifest.json";manifest.write_text(json.dumps(data))
@@ -55,18 +55,62 @@ class ExecutionModesTest(unittest.TestCase):
                 self.assertTrue(any(q["op"]=="get" and "/functional/" in q.get("key","") for q in requests))
                 self.assertFalse(any("/performance/" in q.get("key",q.get("prefix","")) for q in requests))
 
-    def test_performance_only_never_invokes_functional_suites_for_either_model(self):
-        """Purpose: run both genuine performance models with unavailable multipart capability; expect exit 0, verified samples and no functional case, audit or request."""
-        for model in ("operations","objbench"):
-            with self.subTest(model=model),tempfile.TemporaryDirectory() as temporary:
-                directory=Path(temporary);result,report,requests=self.execute(directory,"performance",model)
-                self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-                self.assertEqual(report["cases"],[]);self.assertEqual(report["coverage"]["catalog"],[])
-                self.assertFalse((directory/"results/alignment.json").exists())
-                self.assertTrue(report["samples"]);self.assertTrue(all(s["ok"] for s in report["samples"]))
-                self.assertFalse(any("/functional/" in q.get("key",q.get("prefix","")) for q in requests))
-                self.assertFalse(any(q["op"].startswith("mp_") for q in requests))
-                self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
+    def test_performance_only_runs_every_case_without_selection(self):
+        """Purpose: invoke performance once with no selector; expect all real workload families, distinct repeated-operation metrics, no functional IO and no leaked data."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);result,report,requests=self.execute(directory,"performance")
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(report["cases"],[])
+            self.assertNotIn("performance_model",report["workload"])
+            self.assertFalse((directory/"results/alignment.json").exists())
+            ops={r["op"] for r in report["summary"]}
+            self.assertTrue({"smallput","smallget","put","get","range","head","list","delete","repeat_get","repeat_range","repeat_put","repeat_head","repeat_list","read_small_3","read_sequential_6","read_random_6","read_hot_6","multipart_create_17_5242880","multipart_part_17_5242880","multipart_complete_17_5242880","multipart_total_17_5242880"} <= ops,ops)
+            self.assertTrue(all(s["ok"] for s in report["samples"]))
+            self.assertFalse(any("/functional/" in q.get("key",q.get("prefix","")) for q in requests))
+            self.assertTrue(any(q["op"]=="mp_complete" for q in requests))
+            self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
+
+    def test_missing_multipart_reports_error_and_continues_other_cases(self):
+        """Purpose: remove actual worker multipart capability; expect nonzero exit and explicit setup error while all supported read/basic/repeated cases still execute and clean up."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);result,report,requests=self.execute(directory,"performance",missing_multipart=True)
+            self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+            self.assertTrue(any(r.get("workload")=="multipart" and "mp_" in r["error"] for r in report["execution_errors"]))
+            self.assertTrue(any(r["op"]=="repeat_get" for r in report["samples"]))
+            self.assertTrue(any(r["op"]=="read_hot_6" for r in report["samples"]))
+            self.assertTrue(any(r["op"]=="smallput" for r in report["samples"]))
+            self.assertFalse(any(q["op"].startswith("mp_") for q in requests))
+            self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
+
+    def test_each_case_keeps_its_own_warmup_count(self):
+        """Purpose: run different real warmup counts together; expect independent counts per case, every measured case present, warmups excluded from summaries and no storage leaks."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);data=config(directory);workload=data["workload"]
+            workload.update(mode="performance",rounds=1,requests=2,warmup_requests=3)
+            workload["objbench"]["warmup_rounds"]=1
+            workload["read"]["warmup_rounds"]=2
+            workload["multipart"]["warmup_rounds"]=0
+            path=directory/"manifest.json";path.write_text(json.dumps(data))
+            result=subprocess.run([sys.executable,"-m","osv","run",str(path),"--output",str(directory/"results")],cwd=ROOT,capture_output=True,text=True,timeout=30)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            report=json.loads((directory/"results/report.json").read_text())
+            warm=[r for r in report["samples"] if r["phase"]=="warmup"]
+            self.assertEqual(sum(r["op"].startswith("repeat_") for r in warm),15)
+            self.assertEqual(sum(r["op"].startswith("read_") for r in warm),16)
+            self.assertFalse(any(r["op"].startswith("multipart_") for r in warm))
+            self.assertEqual(len(warm),56)
+            self.assertEqual(sum(r["attempts"] for r in report["summary"]),47)
+            self.assertTrue(all(r["ok"] for r in report["samples"]))
+            self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
+
+    def test_obsolete_selector_cannot_silently_hide_performance_cases(self):
+        """Purpose: supply a retired selector; expect an actionable validation error before any IO instead of a successful partial performance run."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);data=config(directory);path=directory/"manifest.json"
+            data["workload"]["performance_model"]="read";path.write_text(json.dumps(data))
+            with self.assertRaisesRegex(ValueError,"delete it to run all performance cases"):
+                load_config(path)
+            self.assertFalse((directory/"objects").exists())
 
     def test_combined_failure_and_skip_cannot_suppress_performance(self):
         """Purpose: real functional IO ends in failure/missing prerequisite; expect unchanged verdict, independent valid GET measurements and exit 1 only for actual failure."""
@@ -80,15 +124,15 @@ class ExecutionModesTest(unittest.TestCase):
                 self.assertNotIn("gate",report["cases"][0])
 
     def test_performance_content_corruption_remains_measured_failure(self):
-        """Purpose: corrupt bytes returned by real storage in either benchmark model; expect nonzero exit, failed requests, zero verified bytes for failed requests and no fabricated functional verdict."""
-        for model in ("operations","objbench"):
-            with self.subTest(model=model),tempfile.TemporaryDirectory() as temporary:
-                result,report,_=self.execute(Path(temporary),"performance",model,corrupt=True)
-                self.assertEqual(result.returncode,1,result.stdout+result.stderr)
-                self.assertEqual(report["cases"],[])
-                failed=[s for s in report["samples"] if not s["ok"]]
-                self.assertTrue(failed);self.assertTrue(all(s["bytes"]==0 for s in failed))
-                self.assertTrue(any(s["failures"] for s in report["summary"]))
+        """Purpose: corrupt bytes returned by real storage across all performance cases; expect nonzero exit, failed requests, zero verified bytes for failed requests and no fabricated functional verdict."""
+        with tempfile.TemporaryDirectory() as temporary:
+            result,report,_=self.execute(Path(temporary),"performance",corrupt=True)
+            self.assertEqual(result.returncode,1,result.stdout+result.stderr)
+            self.assertEqual(report["cases"],[])
+            failed=[s for s in report["samples"] if not s["ok"]]
+            self.assertTrue(failed);self.assertTrue(all(s["bytes"]==0 for s in failed))
+            self.assertTrue(any(s["failures"] for s in report["summary"]))
+            self.assertTrue(any(s["op"].startswith("multipart_total_") for s in failed))
 
     def test_mode_override_and_invalid_values_are_checked_before_io(self):
         """Purpose: load mode defaults and CLI-equivalent overrides; expect explicit precedence and reject malformed values without starting a worker."""

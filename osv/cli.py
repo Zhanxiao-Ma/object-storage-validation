@@ -62,7 +62,7 @@ def load_config(path, profile_override=None, mode_override=None):
     defaults = {"mode": "functional", "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
                 "requests": 100, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 3, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
-                "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "performance_model": "objbench", "operations": ["get", "range", "put", "head"]}
+                "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "operations": ["get", "range", "put", "head", "list"]}
     workload = {**defaults, **workload}
     if workload["mode"] not in ("functional", "performance", "all"):
         raise ValueError("mode must be functional, performance or all")
@@ -73,14 +73,13 @@ def load_config(path, profile_override=None, mode_override=None):
         raise ValueError("warmup_requests must be nonnegative")
     if workload["range_size"] > workload["object_size"]:
         raise ValueError("range_size must not exceed object_size")
-    if workload["performance_model"] not in ("objbench", "operations", "read", "multipart"):
-        raise ValueError("performance_model must be objbench, operations, read or multipart")
+    if "performance_model" in workload:
+        raise ValueError("performance_model has been removed; delete it to run all performance cases")
     from .objbench import normalize
     workload["objbench"] = normalize(workload.get("objbench", {}))
     from .io_bench import normalize as normalize_io
     for model in ("read", "multipart"):
-        if workload["performance_model"] == model or model in workload:
-            workload[model] = normalize_io(model, workload.get(model, {}))
+        workload[model] = normalize_io(model, workload.get(model, {}))
     if "identities" in workload:
         if not isinstance(workload["identities"],dict):raise ValueError("identities must be a metadata object")
         for name,metadata in workload["identities"].items():
@@ -168,6 +167,7 @@ def load_config(path, profile_override=None, mode_override=None):
             raise ValueError(f"{field} must select registered names: {', '.join(choices)}")
         if len(set(selected)) != len(selected):
             raise ValueError(f"duplicate {field}")
+    workload["operations"] = list(dict.fromkeys(["get", "range", "put", "head", "list", *workload["operations"]]))
     # Explicit ceilings prevent accidental unbounded subprocess fanout or allocations.
     if workload["concurrency"] > 128 or max(workload["object_size"], workload["part_size"], workload["large_object_size"]) > 256 * 1024 * 1024:
         raise ValueError("limit concurrency to 128 and object/part size to 256 MiB")
@@ -240,11 +240,9 @@ def _run(config, output_dir):
               "coverage": coverage(config, registry),
               "operation_metrics": {name: registry.operations[name].throughput_metric for name in config["workload"]["operations"]}}
     workload = config["workload"]
-    if workload["performance_model"] == "objbench":
-        from .objbench import METRICS
-        report["operation_metrics"] = METRICS.copy()
-    if workload["performance_model"] in ("read", "multipart"):
-        report["operation_metrics"] = {}
+    from .objbench import METRICS
+    report["operation_metrics"] = {"repeat_"+name: metric for name, metric in report["operation_metrics"].items()}
+    report["operation_metrics"].update(METRICS)
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
     prefix = "osv/" + report["run_id"] + "/"
     functional = workload["mode"] in ("functional", "all")
@@ -313,86 +311,85 @@ def _run(config, output_dir):
                     except Exception as error:
                         report["execution_errors"].append({"target": ident, "phase": "functional_cleanup", "error": str(error)})
                 if performance:
-                    try:
-                        required = {"list", "delete"}  # owned performance data cleanup
-                        if workload["performance_model"] == "objbench":
-                            required.update({"put", "get", "head", "list", "delete"})
-                        elif workload["performance_model"] in ("read", "multipart"):
-                            from .io_bench import required_operations
-                            required.update(required_operations(workload["performance_model"]))
-                        else:
-                            required.add("put")
-                            for name in workload["operations"]:
-                                required.update(registry.operations[name].required_operations)
-                        for worker in workers:
-                            missing = required - worker.capabilities
-                            if missing:
-                                raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
-                        if workload["performance_model"] == "operations":
-                            require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(body)}))
-                        ready.add(ident)
-                    except Exception as error:
-                        report["execution_errors"].append({"target": ident, "phase": "performance_setup", "error": str(error)})
-            active = [t for t in config.get("targets", []) if t["id"] in ready]
+                    from .io_bench import required_operations
+                    requirements = {
+                        "objbench": {"put", "get", "head", "list", "delete"},
+                        "operations": {"put", "list", "delete"}.union(*(registry.operations[name].required_operations for name in workload["operations"])),
+                        "read": required_operations("read"),
+                        "multipart": required_operations("multipart"),
+                    }
+                    for group, required in requirements.items():
+                        try:
+                            for worker in workers:
+                                missing = required - worker.capabilities
+                                if missing:
+                                    raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
+                            if group == "operations":
+                                require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(body)}))
+                            ready.add((ident, group))
+                        except Exception as error:
+                            report["execution_errors"].append({"target": ident, "phase": "performance_setup", "workload": group, "error": str(error)})
+            groups = ("objbench", "operations", "read", "multipart")
             for phase in ("warmup", "measure"):
-                model = workload["performance_model"]
-                rounds = (workload[model]["warmup_rounds"] if model in ("objbench", "read", "multipart") else 1) if phase == "warmup" else workload["rounds"]
+                warmups = {group: workload[group]["warmup_rounds"] if group != "operations" else int(workload["warmup_requests"] > 0) for group in groups}
+                rounds = max(warmups.values()) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
                 for round_index in range(rounds):
-                    order = list(active)
+                    order = list(config.get("targets", []))
                     random.Random(workload["seed"] + round_index).shuffle(order)
                     for target in order:
                         ident = target["id"]
-                        if workload["performance_model"] == "objbench":
-                            from .objbench import run_objbench
+                        for group in groups:
+                            if (ident, group) not in ready or (phase == "warmup" and round_index >= warmups[group]):
+                                continue
                             ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
                                           root/ident/"read.bin", workload)
-                            run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
-                            continue
-                        if model in ("read", "multipart"):
-                            from .io_bench import run_reads, run_multipart
-                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
-                                          root/ident/"read.bin", workload)
-                            try:
-                                (run_reads if model == "read" else run_multipart)(ctx, pools[ident], report, ident, phase, round_index)
-                            except Exception as error:
-                                report["execution_errors"].append({"target": ident, "phase": model+"_workload", "error": str(error)})
-                            continue
-                        for op in workload["operations"]:
-                            workers = pools[ident]
-                            def lane(slot):
-                                samples = []
-                                worker = workers[slot]
-                                output = root / ident / f"slot-{slot}.bin"
-                                for index in range(slot, count, len(workers)):
-                                    operation = registry.operations[op]
-                                    ctx = Context(worker, prefix+ident+"/performance/", root/ident, payload, body,
-                                                  output, workload, round_index, index)
-                                    row = {"target": ident, "op": op, "phase": phase,
-                                           "round": round_index, "index": index, "ok": False,
-                                           "elapsed_ns": 0, "bytes": 0}
-                                    try:
-                                        request = operation.prepare(ctx)
-                                        if request.get("op") not in operation.required_operations:
-                                            raise ValueError("operation sent an undeclared worker request")
-                                        result = worker.call(request)
-                                        row["elapsed_ns"] = result["elapsed_ns"]
-                                        require_ok(result)
-                                        verified_bytes = operation.verify(ctx, request, result)
-                                        if type(verified_bytes) is not int or verified_bytes < 0:
-                                            raise ValueError("verifier must return a nonnegative byte count")
-                                        row["bytes"] = verified_bytes
-                                        row["ok"] = True
-                                    except Exception as error:
-                                        row["error"] = str(error)
-                                    samples.append(row)
-                                return samples
-                            started = time.monotonic()
-                            with ThreadPoolExecutor(max_workers=len(workers)) as executor:
-                                for samples in executor.map(lane, range(len(workers))):
-                                    report["samples"].extend(samples)
-                            report["batches"].append({"target": ident, "op": op, "phase": phase,
-                                                    "round": round_index, "wall_seconds": time.monotonic()-started})
+                            if group != "operations":
+                                try:
+                                    if group == "objbench":
+                                        from .objbench import run_objbench
+                                        run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
+                                    else:
+                                        from .io_bench import run_reads, run_multipart
+                                        (run_reads if group == "read" else run_multipart)(ctx,pools[ident],report,ident,phase,round_index)
+                                except Exception as error:
+                                    report["execution_errors"].append({"target": ident, "phase": group+"_workload", "error": str(error)})
+                                continue
+                            for op in workload["operations"]:
+                                workers = pools[ident]
+                                def lane(slot):
+                                    samples = []
+                                    worker = workers[slot]
+                                    output = root / ident / f"slot-{slot}.bin"
+                                    for index in range(slot, count, len(workers)):
+                                        operation = registry.operations[op]
+                                        ctx = Context(worker, prefix+ident+"/performance/", root/ident, payload, body,
+                                                      output, workload, round_index, index)
+                                        row = {"target": ident, "op": "repeat_"+op, "phase": phase,
+                                               "round": round_index, "index": index, "ok": False,
+                                               "elapsed_ns": 0, "bytes": 0}
+                                        try:
+                                            request = operation.prepare(ctx)
+                                            if request.get("op") not in operation.required_operations:
+                                                raise ValueError("operation sent an undeclared worker request")
+                                            result = worker.call(request)
+                                            row["elapsed_ns"] = result["elapsed_ns"]
+                                            require_ok(result)
+                                            verified_bytes = operation.verify(ctx, request, result)
+                                            if type(verified_bytes) is not int or verified_bytes < 0:
+                                                raise ValueError("verifier must return a nonnegative byte count")
+                                            row["bytes"] = verified_bytes
+                                            row["ok"] = True
+                                        except Exception as error:
+                                            row["error"] = str(error)
+                                        samples.append(row)
+                                    return samples
+                                started = time.monotonic()
+                                with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+                                    for samples in executor.map(lane, range(len(workers))):
+                                        report["samples"].extend(samples)
+                                report["batches"].append({"target": ident, "op": "repeat_"+op, "phase": phase,
+                                                        "round": round_index, "wall_seconds": time.monotonic()-started})
         finally:
             for ident, workers in pools.items():
                 if workers:

@@ -1,11 +1,26 @@
 # 性能测试
 
-性能与功能档位独立。`--mode performance` 只运行性能，`--mode all` 执行两部分；功能失败不阻断性能。
-`workload.performance_model` 可选 `objbench`（默认）、`operations`、`read`、`multipart`。
+性能测试一次运行全部用例，无需选择模型或性能档位。`--mode performance` 只运行性能，`--mode all` 执行功能与性能；功能失败不阻断性能。normal/complete 只影响功能范围。
 
-## 读取模式 read
+```bash
+cp examples/performance.json local-performance.json
+# 修改存储端点、区域、桶等目标信息后执行
+python3 -m osv run local-performance.json --mode performance --output results/performance-001
+```
 
-从 [示例配置](../examples/performance-read.json) 开始，修改真实 S3 目标。
+默认参数可直接使用，以下参数仅用于按需调整负载。旧版 `performance_model` 字段已移除；旧配置删除该字段即可运行全部用例。
+
+## 大小对象读写及元数据操作
+
+每轮依次执行多对象 PUT/GET、Range、LIST、HEAD、逐对象 DELETE。默认 100 个 128 KiB 小对象，以及总计 1 GiB、每个 4 MiB 的 256 个独立数据块对象。`workload.objbench` 用于调整这些数据量，详细字段见 [测试范围](test-scope.md#性能范围)。这些是独立对象，分片上传由后续用例单独测量。
+
+## 单对象重复访问
+
+默认对同一个 Key 分别重复 PUT、GET、Range、HEAD、LIST，样本使用 `repeat_put`、`repeat_get`、`repeat_range`、`repeat_head`、`repeat_list` 名称，避免与多对象结果混合。大小使用 `object_size` 和 `range_size`；正式轮次与请求数使用 `rounds` 和 `requests`；预热请求数使用 `warmup_requests`。插件可通过 `operations` 添加自己的重复操作；该字段不会关闭任何内置用例。
+
+## 小对象、连续与随机读取
+
+从 [统一配置示例](../examples/performance.json) 开始，修改真实 S3 目标。
 
 | `workload.read` 参数 | 默认值 | 含义 |
 |---|---|---|
@@ -25,9 +40,9 @@ hot 使用同一个 Key，其余模式在多个独立 Key 间轮转。每次下�
 阶段命名如 `read_small_4096`、`read_sequential_65536`、`read_random_1048576`、`read_hot_4194304`。
 各阶段独立统计，避免不同大小/访问模式混在同一分位数里。原始样本保留 Key、offset、length、轮次和结果。
 
-## 分片模式 multipart
+## 并发分片上传
 
-从 [示例配置](../examples/performance-multipart.json) 开始。实际调用 CreateMultipartUpload → UploadPart → CompleteMultipartUpload。
+从 [统一配置示例](../examples/performance.json) 开始。实际调用 CreateMultipartUpload → UploadPart → CompleteMultipartUpload。
 
 | `workload.multipart` 参数 | 默认值 | 含义 |
 |---|---|---|
@@ -53,13 +68,13 @@ hot 使用同一个 Key，其余模式在多个独立 Key 间轮转。每次下�
 
 ## 边界与结果
 
-新模型单个输入/分片不超过 256 MiB；每个列表最多 8 个互异大小；每组数据集不超过 2 GiB；对象数 1–64、预热轮数 0–10。
+读取与分片用例单个输入/分片不超过 256 MiB；每个列表最多 8 个互异大小；每组数据集不超过 2 GiB；对象数 1–64、预热轮数 0–10。
 Multipart 分片参数至少 5 MiB，末片按实际剩余大小上传。Range 不超过来源对象大小。
-所有参数先校验再启动 SDK。缺少所需驱动操作时明确报告 performance_setup 错误，不以 reference 替代。
+所有参数先校验再启动 SDK。缺少所需驱动操作时明确报告 performance_setup 错误，继续执行该目标支持的其他用例；不以 reference 替代。
 
 报告提供 p50/p95/p99、成功/失败次数、已校验 MiB/s 和操作数/s。预热样本保留但排除在 summary 外。
-新模型可与同语言 S3/native 性能预算比较复用；比较要求两侧场景、存储及网络条件匹配。
-这些模式可表达不同的 S3 访问形状，实际对象分布、读写比例和并发度由使用方配置。
+读取与分片用例可与同语言 S3/native 性能预算比较复用；比较要求两侧场景、存储及网络条件匹配。
+这些用例可表达不同的 S3 访问形状，实际对象分布、读写比例和并发度由使用方配置。
 
 ## 框架与真实 SDK 验证
 

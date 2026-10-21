@@ -49,7 +49,7 @@ class AlignmentTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             for profile in ("normal","complete"):
-                data=config(directory);data["workload"].update(profile=profile,performance_model="objbench")
+                data=config(directory);data["workload"].update(profile=profile,)
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
                 self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))

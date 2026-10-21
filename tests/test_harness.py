@@ -21,9 +21,12 @@ def config(directory):
         "id": "local", "provider": "filesystem", "language": "python", "api": "local",
         "sdk": "reference", "sdk_version": "1", "command": [sys.executable, str(ROOT/"drivers/reference.py")],
         "env": {"OSV_REFERENCE_ROOT": str(directory/"objects"), "OSV_REFERENCE_MIN_PART_SIZE":"128"}}],
-        "workload": {"mode":"all", "performance_model":"operations", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
+        "workload": {"mode":"all", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
                      "requests": 7, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
-                     "operations": ["get", "range", "put", "head", "list"]}}
+                     "operations": ["get", "range", "put", "head", "list"],
+                     "objbench": {"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8},
+                     "read": {"small_object_sizes":[3],"object_size":17,"objects":2,"range_sizes":[6],"patterns":["sequential","random","hot"]},
+                     "multipart": {"object_sizes":[17],"part_sizes":[5242880],"objects":1}}}
 
 
 class HarnessTest(unittest.TestCase):
@@ -59,8 +62,8 @@ class HarnessTest(unittest.TestCase):
             manifest.write_text(json.dumps(config(directory)))
             report = run(load_config(manifest), directory/"results")
             self.assertFalse([c for c in report["cases"] if c["status"] == "fail"])
-            self.assertEqual(len(report["summary"]), 5)
-            self.assertTrue(all(row["attempts"] == 14 for row in report["summary"]))
+            self.assertEqual(len(report["summary"]), 21)
+            self.assertTrue(all(row["attempts"] == 14 for row in report["summary"] if row["op"].startswith("repeat_")))
             self.assertTrue(all(row["failures"] == 0 for row in report["summary"]))
             self.assertEqual(report["comparisons"], [])
             persisted = json.loads((directory/"results/report.json").read_text())
@@ -190,13 +193,13 @@ class HarnessTest(unittest.TestCase):
             self.assertEqual(report["targets"][0]["language"], "python")
             self.assertFalse([c for c in report["cases"] if c["status"] == "fail"])
             self.assertTrue(any(c.get("suite") == "inventory_semantics" and c["status"] == "pass" for c in report["cases"]))
-            self.assertEqual(report["summary"][0]["attempts"], 14)
+            self.assertEqual(next(r for r in report["summary"] if r["op"]=="repeat_inventory")["attempts"],14)
             self.assertEqual(report["summary"][0]["failures"], 0)
-            self.assertEqual(report["operation_metrics"], {"inventory": "verified_ops_s"})
+            self.assertEqual(report["operation_metrics"]["repeat_inventory"], "verified_ops_s")
             self.assertEqual([p for p in (directory/"objects").rglob("*") if p.is_file()], [])
 
     def test_unsupported_extension_fails_before_measurement(self):
-        """Purpose: request a missing performance capability; expect a performance setup error, no samples and independent functional results."""
+        """Purpose: request a missing performance capability; expect a setup error for that group, other performance samples and independent functional results."""
         with tempfile.TemporaryDirectory() as temp:
             directory = Path(temp)
             data = config(directory)
@@ -208,7 +211,8 @@ class HarnessTest(unittest.TestCase):
             data["workload"]["operations"] = ["unsupported_probe"]
             with patch("osv.cli.build_registry", return_value=registry):
                 report = run(data, directory/"results")
-            self.assertEqual(report["samples"], [])
+            self.assertTrue(report["samples"])
+            self.assertFalse(any(r["op"]=="repeat_unsupported_probe" for r in report["samples"]))
             self.assertTrue(any(c["phase"] == "performance_setup" and "unimplemented_operation" in c["error"] for c in report["execution_errors"]))
 
     def test_extension_registration_and_configuration_boundaries(self):

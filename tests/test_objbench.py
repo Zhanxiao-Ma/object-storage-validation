@@ -14,7 +14,7 @@ class ObjbenchTest(unittest.TestCase):
     """Check dataset shape and end-to-end oracles rather than reproducing benchmark implementation in tests."""
     def manifest(self,directory):
         data=config(directory)
-        data["workload"].update(performance_model="objbench",requests=1,rounds=2,warmup_requests=0,
+        data["workload"].update(requests=1,rounds=2,warmup_requests=0,
             objbench={"small_object_size":5,"small_objects":3,"block_size":8,"big_object_size":25,
                       "list_requests_per_lane":2})
         path=directory/"manifest.json";path.write_text(json.dumps(data));return path
@@ -24,8 +24,8 @@ class ObjbenchTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary)
             report=run(load_config(self.manifest(directory)),directory/"results")
-            self.assertEqual(len(report["samples"]),72)
-            self.assertEqual({row["op"] for row in report["summary"]},{"smallput","smallget","put","get","range","head","list","delete"})
+            self.assertEqual(sum(r["op"] in {"smallput","smallget","put","get","range","head","list","delete"} for r in report["samples"]),72)
+            self.assertEqual({row["op"] for row in report["summary"] if not row["op"].startswith(("repeat_","read_","multipart_"))},{"smallput","smallget","put","get","range","head","list","delete"})
             self.assertFalse([row for row in report["cases"] if row["status"]=="fail"])
             self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertTrue(all(row["actual_bytes"]==47 and row["effective_lanes"]==2 for row in report["benchmark_datasets"]))
@@ -53,7 +53,7 @@ class ObjbenchTest(unittest.TestCase):
             data=json.loads(path.read_text());data["workload"]["objbench"]["warmup_rounds"]=1;path.write_text(json.dumps(data))
             report=run(load_config(path),directory/"results")
             self.assertEqual(sum(row["phase"]=="warmup" for row in report["samples"]),36)
-            self.assertEqual(sum(row["attempts"] for row in report["summary"]),72)
+            self.assertEqual(sum(row["attempts"] for row in report["summary"] if not row["op"].startswith(("repeat_","read_","multipart_"))),72)
 
     def test_other_object_response_cannot_pass_integrity(self):
         """Redirect benchmark GET to a different genuinely stored object; expect content failures and failed dataflow gates."""

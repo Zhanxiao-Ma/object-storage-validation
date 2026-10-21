@@ -29,7 +29,7 @@ class CaseCapabilityTest(unittest.TestCase):
             self.assertEqual(utility['evidence']['original_sizes'],[0,1,5242879,5242880,5242881])
             todo=rows['ceph_select_output_serial_expressions'];self.assertEqual(todo['status'],'not_run')
             self.assertEqual(todo['missing_requirements'],['upstream_todo'])
-            self.assertEqual(len(report['samples']),1);self.assertTrue(report['samples'][0]['ok'])
+            self.assertEqual(len([r for r in report['samples'] if r['op']=='repeat_head']),1);self.assertTrue(all(r['ok'] for r in report['samples']))
             self.assertFalse([r for r in report['cases'] if r['status']=='fail'])
 
     def test_missing_copy_does_not_block_unrelated_measurement(self):
@@ -80,7 +80,7 @@ class CaseCapabilityTest(unittest.TestCase):
             report=json.loads((directory/"results/report.json").read_text())
             row=next(row for row in report["cases"] if row["case"]=="optional_probe")
             self.assertEqual(row["status"],"not_run");self.assertNotIn("gate",row)
-            self.assertEqual(len(report["samples"]),1);self.assertTrue(report["samples"][0]["ok"])
+            self.assertEqual(len([r for r in report["samples"] if r["op"]=="repeat_head"]),1);self.assertTrue(all(r["ok"] for r in report["samples"]))
             self.assertIn("| local | 2 | 1 | 0 | 0 | 1 |",(directory/"results/report.md").read_text())
 
     def test_partial_capability_registration_requires_complete_operation_catalog(self):

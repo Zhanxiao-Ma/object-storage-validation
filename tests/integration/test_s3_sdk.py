@@ -8,10 +8,21 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from osv.cli import load_config, run
+from osv.cli import load_config as production_load_config, run
 from osv.worker import Worker
 
 ROOT = Path(__file__).resolve().parents[2]
+
+def load_config(path, **kwargs):
+    """Provide small raw test datasets to the real validator; every performance case still executes through real SDKs."""
+    raw=json.loads(Path(path).read_text())
+    workload=raw.setdefault("workload",{})
+    workload.setdefault("objbench",{"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8})
+    workload.setdefault("read",{"small_object_sizes":[3],"objects":2,"object_size":17,"range_sizes":[6],"patterns":["sequential","random","hot"]})
+    workload.setdefault("multipart",{"object_sizes":[17],"part_sizes":[5242880],"objects":1})
+    Path(path).write_text(json.dumps(raw))
+    return production_load_config(path,**kwargs)
+
 
 # Pinned Moto response/template discrepancies and actual typed SDK outputs are independent of the source case oracles.
 # Original Ceph expectations remain unchanged; these helpers only assert that the local regression report preserves known failures.
@@ -117,33 +128,32 @@ class SdkIntegrationTest(unittest.TestCase):
                 worker.close()
 
     def test_read_patterns_and_multipart_performance_use_real_sdks(self):
-        """Run new read and multipart models through actual Java/C++ SDKs and isolated Moto; expect independently verified small/range bytes and multipart hashes, separate SDK/upload timings, no functional rows and complete object/upload cleanup."""
-        for model, options in (("read", {"small_object_sizes":[3,8192], "objects":2,
-            "object_size":65537, "range_sizes":[1,4096,65536], "patterns":["sequential","random","hot"]}),
-            ("multipart", {"object_sizes":[5*1024**2+17,10*1024**2+1], "part_sizes":[5*1024**2,8*1024**2], "objects":2})):
-            with self.subTest(model=model), tempfile.TemporaryDirectory() as temporary:
-                directory=Path(temporary);path=directory/"manifest.json"
-                path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                    "mode":"performance","performance_model":model,model:options,"object_size":1024,
-                    "range_size":17,"concurrency":2,"requests":8,"rounds":1,"warmup_requests":0}}))
-                report=run(load_config(path),directory/"results")
-                self.assertEqual(report["execution_errors"],[])
-                self.assertEqual(report["cases"],[])
-                self.assertTrue(report["samples"])
-                self.assertTrue(all(row["ok"] for row in report["samples"]),[r for r in report["samples"] if not r["ok"]])
-                for target in self.targets:
-                    rows=[r for r in report["samples"] if r["target"]==target["id"]]
-                    if model=="read":
-                        self.assertEqual(len(rows),88)
-                        hot=[r for r in rows if r["op"]=="read_hot_4096"]
-                        self.assertEqual(len({r["key"] for r in hot}),1)
-                    else:
-                        totals=[r for r in rows if r["op"].startswith("multipart_total_")]
-                        self.assertEqual(len(totals),8)
-                        self.assertEqual(sum(r["bytes"] for r in totals),4*(15*1024**2+18))
-                        self.assertTrue(all(r["timing_scope"]=="upload_wall" for r in totals))
-                self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
-                self.assertEqual(self.client.list_multipart_uploads(Bucket="osv-sdk-integration").get("Uploads",[]),[])
+        """Run performance once with no selector through real Java/C++ SDKs and isolated Moto; expect all basic/repeated/read/multipart cases, exact independent hashes and counts, separate timings, no functional results and complete cleanup."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
+                "mode":"performance","object_size":1024,"range_size":17,"concurrency":2,"requests":8,"rounds":1,"warmup_requests":0,
+                "read":{"small_object_sizes":[3,8192],"objects":2,"object_size":65537,"range_sizes":[1,4096,65536],"patterns":["sequential","random","hot"]},
+                "multipart":{"object_sizes":[5*1024**2+17,10*1024**2+1],"part_sizes":[5*1024**2,8*1024**2],"objects":2}}}))
+            report=run(load_config(path),directory/"results")
+            self.assertEqual(report["execution_errors"],[])
+            self.assertEqual(report["cases"],[])
+            self.assertNotIn("performance_model",report["workload"])
+            self.assertTrue(all(r["ok"] for r in report["samples"]),[r for r in report["samples"] if not r["ok"]])
+            for target in self.targets:
+                rows=[r for r in report["samples"] if r["target"]==target["id"]]
+                self.assertEqual(len(rows),193)
+                self.assertEqual(sum(r["op"].startswith("read_") for r in rows),88)
+                self.assertEqual(sum(r["op"].startswith("repeat_") for r in rows),40)
+                self.assertTrue({"smallput","smallget","put","get","range","list","head","delete"} <= {r["op"] for r in rows})
+                hot=[r for r in rows if r["op"]=="read_hot_4096"]
+                self.assertEqual(len(hot),8);self.assertEqual(len({r["key"] for r in hot}),1)
+                totals=[r for r in rows if r["op"].startswith("multipart_total_")]
+                self.assertEqual(len(totals),8)
+                self.assertEqual(sum(r["bytes"] for r in totals),4*(15*1024**2+18))
+                self.assertTrue(all(r["timing_scope"]=="upload_wall" for r in totals))
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
+            self.assertEqual(self.client.list_multipart_uploads(Bucket="osv-sdk-integration").get("Uploads",[]),[])
 
     def test_real_sdk_requests_reach_production_harness_and_report(self):
         """Exercise the expanded 96-case normal profile with real Java/C++ SDKs; expect known pinned Moto/LIST/multipart/quiet diagnostics retained, verified measurements and owned-resource cleanup."""
@@ -151,7 +161,7 @@ class SdkIntegrationTest(unittest.TestCase):
             directory = Path(temporary)
             manifest = directory/"manifest.json"
             manifest.write_text(json.dumps({"schema_version": 1, "targets": self.targets,
-                "workload": {"mode":"all","performance_model":"operations", "large_object_size":65536, "object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
+                "workload": {"mode":"all","large_object_size":65536, "object_size": 8192, "range_size": 127, "part_size": 5*1024*1024,
                              "profile": "normal", "concurrency": 2, "requests": 5, "rounds": 2, "warmup_requests": 1,
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
@@ -162,8 +172,8 @@ class SdkIntegrationTest(unittest.TestCase):
                 expected |= {"ceph_delete_many_v2_limit", "ceph_exact_multipart_empty", "ceph_exact_multipart_missing_upload", "s3_delete_many_quiet"}
                 actual = {case["case"] for case in report["cases"] if case["target"] == target["id"] and case["status"] == "fail"}
                 self.assertEqual(actual, expected)
-            self.assertEqual(len(report["summary"]), 5*len(self.targets))
-            self.assertEqual(len(report["samples"]), 55*len(self.targets))
+            self.assertEqual(sum(r["op"].startswith("repeat_") for r in report["summary"]),5*len(self.targets))
+            self.assertEqual(sum(r["op"].startswith("repeat_") for r in report["samples"]),55*len(self.targets))
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
@@ -173,7 +183,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"all",
-                "compatibility_suites":["ceph_http_range","ceph_tags","ceph_headers"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "compatibility_suites":["ceph_http_range","ceph_tags","ceph_headers"],"object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual(len(report["coverage"]["catalog"]),19)
@@ -181,7 +191,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(failures,[(target["id"],"ceph_tags_excess") for target in self.targets])
             for row in report["cases"]:
                 if row["status"]=="fail":self.assertIn("BadRequest",row["error"])
-            self.assertEqual(len(report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
+            self.assertEqual(sum(r["op"]=="repeat_head" for r in report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_exact_ceph_listing_keeps_original_failures_and_cleans_every_bucket(self):
@@ -189,7 +199,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                "compatibility_suites":["ceph_exact_listing"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "compatibility_suites":["ceph_exact_listing"],"object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual(len(report["coverage"]["catalog"]),74)
@@ -204,7 +214,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                "compatibility_suites":["ceph_delete_many"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "compatibility_suites":["ceph_delete_many"],"object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
@@ -217,7 +227,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                "compatibility_suites":["ceph_exact_multipart"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "compatibility_suites":["ceph_exact_multipart"],"object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
@@ -502,7 +512,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"all",
-                "compatibility_suites":["ceph_buckets"],"performance_model":"operations","object_size":1024,"range_size":17,
+                "compatibility_suites":["ceph_buckets"],"object_size":1024,"range_size":17,
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual(len(report["coverage"]["catalog"]),7)
@@ -542,14 +552,14 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
-                "compatibility_suites":["core_objects"],"performance_model":"operations","operations":["put"],
+                "compatibility_suites":["core_objects"],"operations":["put"],
                 "object_size":2*1024*1024,"range_size":17,"large_object_size":65536,"part_size":5*1024*1024,
                 "concurrency":2,"requests":16,"rounds":2,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
-            self.assertEqual(len(report["samples"]),32*len(self.targets))
+            self.assertEqual(sum(r["op"]=="repeat_put" for r in report["samples"]),32*len(self.targets))
             self.assertTrue(all(sample["ok"] for sample in report["samples"]),[row for row in report["samples"] if not row["ok"]])
-            self.assertEqual({row["op"] for row in report["samples"]},{"put"})
+            self.assertEqual({r["op"] for r in report["samples"] if r["op"].startswith("repeat_")},{"repeat_get","repeat_range","repeat_put","repeat_head","repeat_list"})
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_real_sdk_multikey_objbench_model(self):
@@ -557,13 +567,13 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
-                "profile":"normal","performance_model":"objbench","object_size":1024,"range_size":17,
+                "profile":"normal","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":2,"requests":1,"rounds":1,
                 "objbench":{"small_object_size":128,"small_objects":3,"block_size":1024,"big_object_size":3072,"list_requests_per_lane":2}}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
-            self.assertEqual(len(report["samples"]),31*len(self.targets))
-            self.assertEqual(len(report["summary"]),8*len(self.targets))
+            self.assertEqual(sum(not r["op"].startswith(("read_","repeat_","multipart_")) for r in report["samples"]),31*len(self.targets))
+            self.assertEqual(sum(not r["op"].startswith(("read_","repeat_","multipart_")) for r in report["summary"]),8*len(self.targets))
             self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
@@ -572,7 +582,7 @@ class SdkIntegrationTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                "profile":"complete","performance_model":"operations","object_size":1024,"range_size":17,
+                "profile":"complete","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
             from osv.ceph_select_register import CASES as select_cases
@@ -837,7 +847,7 @@ class SdkIntegrationTest(unittest.TestCase):
                 targets.append({**target,"command":[sys.executable,str(proxy)]})
             path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":targets,"workload":{
-                "compatibility_suites":["ceph_copy"],"performance_model":"operations","operations":["head"],
+                "compatibility_suites":["ceph_copy"],"operations":["head"],
                 "object_size":1024,"range_size":17,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
             for target in targets:

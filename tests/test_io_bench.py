@@ -18,7 +18,7 @@ class IoBenchTest(unittest.TestCase):
 
     def manifest(self, directory, model, options, **overrides):
         data = config(directory)
-        data['workload'].update(mode='performance', performance_model=model, requests=8,
+        data['workload'].update(mode='performance',  requests=8,
             rounds=1, concurrency=2, warmup_requests=0, **{model: options})
         data['workload'].update(overrides)
         path = directory/'manifest.json'
@@ -47,9 +47,9 @@ class IoBenchTest(unittest.TestCase):
             report = run(load_config(path), directory/'results')
             self.assertEqual(report['cases'], [])
             self.assertEqual(report['execution_errors'], [])
-            self.assertEqual(len(report['summary']), 8)
+            self.assertEqual(len([r for r in report['summary'] if r['op'].startswith('read_')]), 8)
             self.assertTrue(all(row['ok'] for row in report['samples']))
-            self.assertEqual(sum(row['attempts'] for row in report['summary']), 64)
+            self.assertEqual(sum(row['attempts'] for row in report['summary'] if row['op'].startswith('read_')), 64)
             self.assertEqual(sum(row['phase']=='warmup' for row in report['samples']), 64)
             rows = [r for r in report['samples'] if r['phase']=='measure' and r['op']=='read_sequential_6']
             self.assertEqual([r['offset'] for r in rows], [0,0,6,6,12,12,0,0])
@@ -74,9 +74,9 @@ class IoBenchTest(unittest.TestCase):
             self.proxy(directory,path,'bytes')
             report = run(load_config(path),directory/'results')
             self.assertTrue(report['samples'])
-            self.assertTrue(all(not r['ok'] and r['bytes']==0 for r in report['samples']))
-            self.assertTrue(all(len(r['error']) < 512 for r in report['samples']))
-            self.assertTrue(all(r['successes']==0 and r['failures']==8 for r in report['summary']))
+            self.assertTrue(all(not r['ok'] and r['bytes']==0 for r in report['samples'] if r['op'].startswith('read_')))
+            self.assertTrue(all(len(r['error']) < 512 for r in report['samples'] if r['op'].startswith('read_')))
+            self.assertTrue(all(r['successes']==0 and r['failures']==8 for r in report['summary'] if r['op'].startswith('read_')))
             self.assertEqual([p for p in (directory/'objects').rglob('*') if p.is_file()], [])
 
     def test_real_multipart_verifies_short_last_part_and_separate_timing(self):
@@ -88,7 +88,7 @@ class IoBenchTest(unittest.TestCase):
             self.assertEqual(report['execution_errors'], [])
             self.assertEqual(report['cases'], [])
             self.assertTrue(all(r['ok'] for r in report['samples']))
-            measured = [r for r in report['samples'] if r['phase']=='measure']
+            measured = [r for r in report['samples'] if r['phase']=='measure' and r['op'].startswith('multipart_')]
             self.assertEqual(len(measured), 10)
             parts = [r for r in measured if r['op'].startswith('multipart_part_')]
             self.assertEqual(sorted(r['bytes'] for r in parts), [17,17,5*1024**2,5*1024**2])
@@ -136,7 +136,9 @@ class IoBenchTest(unittest.TestCase):
         def observe(worker, request):
             begin=time.monotonic_ns()
             result=original(worker,request)
-            events.append((request['op'],begin,time.monotonic_ns()))
+
+            if '/multipart/' in request.get('key','') or request['op'].startswith('mp_'):
+                events.append((request['op'],begin,time.monotonic_ns()))
             return result
         with tempfile.TemporaryDirectory() as temp, patch.object(Worker,'call',observe):
             directory=Path(temp)

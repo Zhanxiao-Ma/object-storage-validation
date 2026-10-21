@@ -75,30 +75,27 @@ python3 -m osv run local-s3.json --mode all --profile normal --output results/s3
 ```
 
 默认执行模式为 `functional`。CLI 的 `--mode`、`--profile` 覆盖 manifest 中的对应配置。
-`objbench` 多对象模型为默认性能负载；另有 `operations` 单对象操作、`read` 读取模式和 `multipart` 并发分片模型。
-负载大小、并发、轮次、预热及随机种子均可配置，具体口径见 [测试范围](docs/test-scope.md)。
+执行性能测试会自动运行全部性能用例，无需选择模型或档位。
+对象大小、并发度、轮次、预热及随机种子有默认值，可按需调整。
 
-## 性能负载
+## 性能测试
 
-| 模型 | 测量内容 | 示例 |
-|---|---|---|
-| `objbench`（默认） | 大小对象分阶段读写、Range、LIST、HEAD、逐对象 DELETE | [基础配置](examples/java-s3.json) |
-| `operations` | 对同一个对象重复 PUT/GET/Range/HEAD/LIST | [配置说明](docs/performance.md) |
-| `read` | 多档小对象完整读取，多档 Range 的连续/随机读取，以及同一对象并发读取 | [读取配置](examples/performance-read.json) |
-| `multipart` | 不同对象与分片大小，多对象/多分片并发上传，分别统计创建、分片、完成及整个上传流程 | [分片配置](examples/performance-multipart.json) |
+| 用例 | 测量内容 |
+|---|---|
+| 大小对象读写 | 多对象 PUT、GET、Range、LIST、HEAD、逐对象 DELETE |
+| 单对象重复访问 | 对同一对象重复 PUT、GET、Range、HEAD、LIST |
+| 不同读取方式 | 多档小对象完整读取，多档 Range 连续/随机读取，以及同一对象并发读取 |
+| 并发分片上传 | 不同对象与分片大小，多个对象及分片并发上传，分别统计创建、分片、完成和整个上传流程 |
 
 ```bash
-cp examples/performance-read.json local-read.json
-# 修改 endpoint、region、bucket 等实际参数后运行
-python3 -m osv run local-read.json --output results/read-001
-
-cp examples/performance-multipart.json local-multipart.json
-python3 -m osv run local-multipart.json --output results/multipart-001
+cp examples/performance.json local-performance.json
+# 修改 endpoint、region、bucket 等实际参数后，一次运行全部性能用例
+python3 -m osv run local-performance.json --mode performance --output results/performance-001
 ```
 
-两种新增模型都校验真实返回字节；Multipart 只有在完整读回与输入一致后才计入已校验上传量，失败时取消未完成上传。
-每个 lane 使用独立 SDK 客户端，同一对象并发读取不等同于共享客户端；并发度、对象大小、请求次数和预热可配置。
-分片单请求的 SDK 延迟与整个上传流程的 wall time 分开记录。详细参数、默认负载和吞吐口径见 [性能测试](docs/performance.md)。
+读取校验真实返回字节；分片完成后完整读回，内容一致才计入已校验上传量，失败时取消未完成上传。
+每个并发通道使用独立 SDK 客户端。分片单请求延迟与整个上传流程耗时分别记录。
+详细参数、默认负载和吞吐口径见 [性能测试说明](docs/performance.md)。
 
 ## 测试范围
 

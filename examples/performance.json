@@ -42,7 +42,6 @@
     ],
     "seed": 1729,
     "mode": "performance",
-    "performance_model": "read",
     "read": {
       "small_object_sizes": [
         4096,
@@ -61,6 +60,18 @@
         "random",
         "hot"
       ],
+      "warmup_rounds": 1
+    },
+    "multipart": {
+      "object_sizes": [
+        33554432,
+        134217728
+      ],
+      "part_sizes": [
+        5242880,
+        16777216
+      ],
+      "objects": 2,
       "warmup_rounds": 1
     }
   }
