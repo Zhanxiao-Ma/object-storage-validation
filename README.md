@@ -168,6 +168,7 @@ GitHub Actions 在 push 与 pull request 时执行已配置的框架、构建及
 - [本地 MinIO HTTPS 测试](docs/build-and-test.md#本地-minio-https-测试)：临时证书、真实 SDK 与 SSE-C 验证。
 - [性能测试](docs/performance.md)：读取/分片矩阵、计时和数据校验。
 - [测试范围](docs/test-scope.md)：逐项范围、负载参数、前置条件和覆盖边界。
+- [MinIO SDK 对比](docs/minio-sdk.md)：Java/C++ 官方 SDK 驱动、同端点性能测量。
 - [SDK 配置](docs/sdk-configuration.md)：各厂商端点、寻址、重试与动态库配置。
 - [驱动协议](docs/worker-protocol.md)：版本化 JSONL 请求、响应和能力声明。
 - [扩展说明](docs/extensions.md)：新增语言驱动、操作、测试组和档位。

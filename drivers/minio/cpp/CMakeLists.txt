@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.20)
+project(osv_minio_worker LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(miniocpp CONFIG REQUIRED)
+add_executable(osv-cpp-minio minio_worker.cpp)
+target_link_libraries(osv-cpp-minio PRIVATE miniocpp::miniocpp)
+target_compile_options(osv-cpp-minio PRIVATE -Wall -Wextra -Wpedantic)

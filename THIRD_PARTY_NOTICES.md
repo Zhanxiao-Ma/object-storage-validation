@@ -24,3 +24,5 @@ its license is preserved in
 
 All `osv/ceph_*.py` translations, including later bucket, multipart and versioning
 groups, retain the same pinned Ceph provenance and permission notice above.
+
+MinIO Java SDK and MinIO C++ SDK are obtained separately from [minio/minio-java](https://github.com/minio/minio-java) and [minio/minio-cpp](https://github.com/minio/minio-cpp), both under Apache-2.0. SDK artifacts retain their own license and notice files; no SDK implementation is vendored here.
