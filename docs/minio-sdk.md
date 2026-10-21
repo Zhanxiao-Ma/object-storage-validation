@@ -29,7 +29,7 @@ python3 scripts/build.py command -- cmake --build drivers/minio/cpp/build --para
 
 ## 测量
 
-查看 [本地 MinIO 实测报告](examples/minio-sdk-performance.md)：52,600 条正式样本，包含每轮一致性和全部用例结果。
+查看 [三次独立复测报告](examples/minio-sdk-performance-repeated.md)：共 157,800 条正式样本，包含每次和每轮结果、清理异常；[首次报告](examples/minio-sdk-performance.md) 保留初始测量明细。
 
 从 [四种 SDK 配置示例](../examples/minio-sdk-performance.json) 开始，设置同一个端点、桶、区域与寻址方式，凭据从环境变量继承。Java 两侧使用相同 JVM 参数；同一轮只测一个目标，轮次之间打乱目标顺序。
 
