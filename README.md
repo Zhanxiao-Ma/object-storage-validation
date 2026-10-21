@@ -157,19 +157,6 @@ SDK 延迟包含响应体完整消费，已校验吞吐包含调度与数据校�
 退出码：`0` 表示本次无失败；`1` 表示功能失败、执行错误或性能预算未满足；`2` 表示配置/命令错误。
 `warning`、`not_run` 不单独令命令失败，应同时查看报告中的执行范围。
 
-## 本地 MinIO HTTPS 测试
-
-使用已有 Java/C++ S3 manifest，启动独立 MinIO，自动设置测试端点和专用 CA 信任配置：
-
-```bash
-python3 scripts/run_minio_tls.py --manifest local-s3.json --output results/minio-tls-001
-```
-
-需要 Docker、OpenSSL、JDK keytool、Linux bwrap 和本地 MinIO 镜像。
-默认镜像为 `osv/minio:RELEASE.2025-02-03T21-03-04Z`，需事先准备；可用 `--image` 指定其它镜像。
-默认执行 `complete`；可通过 `--recheck-report path/to/report.json` 重跑因 SSE-C 要求 HTTPS 而失败的用例。
-TLS 证书链和主机名校验保持开启；脚本保存正反向验证结果，结束后停止容器。
-
 ## 开发与文档
 
 ```bash
@@ -181,6 +168,7 @@ python3 -m unittest discover -s tests -v
 GitHub Actions 在 push 与 pull request 时执行已配置的框架、构建及 SDK 集成检查。
 
 - [构建与验证](docs/build-and-test.md)：依赖、固定版本、资源限制及集成测试。
+- [本地 MinIO HTTPS 测试](docs/build-and-test.md#本地-minio-https-测试)：临时证书、真实 SDK 与 SSE-C 验证。
 - [性能测试](docs/performance.md)：读取/分片矩阵、计时和数据校验。
 - [测试范围](docs/test-scope.md)：逐项范围、负载参数、前置条件和覆盖边界。
 - [SDK 配置](docs/sdk-configuration.md)：各厂商端点、寻址、重试与动态库配置。

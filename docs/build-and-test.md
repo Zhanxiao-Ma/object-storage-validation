@@ -78,6 +78,19 @@ OSV_RUN_SDK_TESTS=1 .venv/bin/python -m unittest discover -s tests/integration -
 Moto 不验证所有签名、厂商语义或性能。上述通过只证明本地集成流程，
 不能证明 OSS/OBS/TOS 原生端点、S3 兼容端点及其鉴权通过。
 
+## 本地 MinIO HTTPS 测试
+
+使用已有 Java/C++ S3 manifest，启动独立 MinIO，自动设置测试端点和专用 CA 信任配置：
+
+```bash
+python3 scripts/run_minio_tls.py --manifest local-s3.json --output results/minio-tls-001
+```
+
+需要 Docker、OpenSSL、JDK keytool、Linux bwrap 和本地 MinIO 镜像。
+默认镜像为 `osv/minio:RELEASE.2025-02-03T21-03-04Z`，需事先准备；可用 `--image` 指定其它镜像。
+默认执行 `complete`；可通过 `--recheck-report path/to/report.json` 重跑因 SSE-C 要求 HTTPS 而失败的用例。
+TLS 证书链和主机名校验保持开启；脚本保存正反向验证结果，结束后停止容器。
+
 ## 实云对比
 
 选择 `examples/java-oss.json`、`java-obs.json`、`java-tos.json`、`cpp-oss.json` 、`cpp-tos.json`、`java-cos.json` 或 `cpp-cos.json`。
