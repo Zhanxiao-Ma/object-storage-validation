@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "targets": [
+    {
+      "id": "storage-java-s3",
+      "provider": "replace-provider",
+      "language": "java",
+      "api": "s3",
+      "sdk": "aws-sdk-java-v2",
+      "sdk_version": "2.20.162",
+      "command": [
+        "java",
+        "-Xmx512m",
+        "-jar",
+        "drivers/java/target/sdk-worker-0.1.0.jar",
+        "s3"
+      ],
+      "env": {
+        "OSV_ENDPOINT": "https://replace-endpoint",
+        "OSV_REGION": "replace-region",
+        "OSV_BUCKET": "replace-test-bucket",
+        "OSV_PATH_STYLE": "false",
+        "OSV_RETRIES": "0",
+        "OSV_CONNECTIONS": "16"
+      }
+    }
+  ],
+  "workload": {
+    "object_size": 8388608,
+    "range_size": 65536,
+    "part_size": 8388608,
+    "requests": 100,
+    "concurrency": 4,
+    "rounds": 3,
+    "warmup_requests": 4,
+    "operations": [
+      "get",
+      "range",
+      "put",
+      "head",
+      "list"
+    ],
+    "seed": 1729
+  }
+}

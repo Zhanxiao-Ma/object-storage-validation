@@ -31,7 +31,7 @@ class SourcePrerequisitesTest(unittest.TestCase):
             finally:worker.close()
 
     def test_explicit_source_skip_reaches_report_without_blocking_measurement(self):
-        """Feed an unmet prerequisite into the production case runner with a real worker; expect not_run with retained requirements alongside independent successful performance measurements."""
+        """Feed an unmet prerequisite into the production case runner with a real worker; expect not_run with retained requirements grouped before full details alongside independent successful performance measurements."""
         def missing(probe):raise CaseNotRun("independent missing source input","provided-source-input")
         check=case("needs_source_input","source prerequisite","required evidence cannot be skipped silently","head",missing,"independent source prerequisite")
         registry=build_registry({});registry.add_suite(Suite("source_prerequisite",check.operations,lambda ctx:run_cases(ctx,(check,)),(check.metadata(),),case_capabilities=True))
@@ -43,7 +43,12 @@ class SourcePrerequisitesTest(unittest.TestCase):
             self.assertEqual(row["status"],"not_run");self.assertNotIn("gate",row)
             self.assertEqual(row["reason"],"missing_prerequisites");self.assertEqual(row["missing_requirements"],["provided-source-input"])
             self.assertTrue(report["samples"]);self.assertTrue(all(s["ok"] for s in report["samples"]));self.assertTrue(report["summary"])
-            self.assertIn("independent missing source input",(directory/"results/report.md").read_text())
+            text = (directory/"results/report.md").read_text()
+            self.assertIn("independent missing source input", text)
+            reasons = text.split("## 未执行原因", 1)[1].split("## 兼容性", 1)[0]
+            self.assertIn("| local | 1 |", reasons)
+            self.assertIn("未满足前置条件：provided-source-input", reasons)
+            self.assertLess(text.index("## 未执行原因"), text.index("<details>"))
 
     def test_empty_prerequisite_reasons_cannot_silently_skip(self):
         """Construct incomplete skip signals; expect rejection rather than an unexplained skipped case."""

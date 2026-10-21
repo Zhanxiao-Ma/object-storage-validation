@@ -20,6 +20,7 @@ class Context:
     workload: dict
     round_index: int = 0
     index: int = 0
+    selected_cases: frozenset | None = None
 
 
 @dataclass(frozen=True)

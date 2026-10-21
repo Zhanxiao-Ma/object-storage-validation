@@ -117,7 +117,7 @@ class SdkIntegrationTest(unittest.TestCase):
                 worker.close()
 
     def test_real_sdk_requests_reach_production_harness_and_report(self):
-        """Exercise actual Java/C++ SDK IO, multipart and Range; expect all gates and measurements to pass with cleanup."""
+        """Exercise the expanded 96-case normal profile with real Java/C++ SDKs; expect known pinned Moto/LIST/multipart/quiet diagnostics retained, verified measurements and owned-resource cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             manifest = directory/"manifest.json"
@@ -127,11 +127,14 @@ class SdkIntegrationTest(unittest.TestCase):
                              "operations": ["get", "range", "put", "head", "list"]}}))
             report = run(load_config(manifest), directory/"results")
             self.assertEqual(report["coverage"]["profile"], "normal")
-            self.assertEqual(len(report["coverage"]["catalog"]), 24)
-            self.assertEqual([case for case in report["cases"] if case["status"] == "fail"], [])
+            self.assertEqual(len(report["coverage"]["catalog"]), 96)
+            for target in self.targets:
+                expected = {name for name in expected_exact_list_diagnostics(target["language"]) if name.startswith("ceph_exact_list_v2_")}
+                expected |= {"ceph_delete_many_v2_limit", "ceph_exact_multipart_empty", "ceph_exact_multipart_missing_upload", "s3_delete_many_quiet"}
+                actual = {case["case"] for case in report["cases"] if case["target"] == target["id"] and case["status"] == "fail"}
+                self.assertEqual(actual, expected)
             self.assertEqual(len(report["summary"]), 5*len(self.targets))
             self.assertEqual(len(report["samples"]), 55*len(self.targets))
-            self.assertEqual([case for case in report["cases"] if case["status"] == "fail"], [])
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
@@ -536,11 +539,11 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_complete_profile_preserves_moto_zero_maxkeys_incompatibility(self):
-        """Run the complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and no performance in functional mode."""
+        """Run the legacy-complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and no performance in functional mode."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
-                "profile":"complete","performance_model":"operations","object_size":1024,"range_size":17,
+                "profile":"legacy-complete","performance_model":"operations","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
             from osv.ceph_select_register import CASES as select_cases

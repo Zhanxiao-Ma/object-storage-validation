@@ -4,12 +4,13 @@ import unittest
 from urllib.parse import parse_qs,urlsplit
 from xml.etree import ElementTree as ET
 from sdk_fixtures import fixture_worker
+from osv.s3_delete_compatibility import check_result
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_DELETE_TESTS")=="1","enable after building actual AWS SDK workers")
 class DeleteManySdkTest(unittest.TestCase):
     """Keep actual SDK serialization, response acknowledgments and per-object errors authoritative."""
     def test_partial_result_versions_and_quiet_are_actual_sdk_data(self):
-        """Send special/versioned identifiers and consume independent mixed results; expect preserved errors/markers and actual quiet XML."""
+        """Send special/versioned identifiers and consume independent mixed results; expect the production scenario oracle to consume native errors/markers, reject unexpected acknowledgments/missing errors, and preserve actual quiet XML."""
         document=b"<DeleteResult><Deleted><Key>server-delete</Key><VersionId>server-version</VersionId><DeleteMarker>true</DeleteMarker><DeleteMarkerVersionId>server-marker</DeleteMarkerVersionId></Deleted><Error><Key>server-error</Key><VersionId>error-version</VersionId><Code>AccessDenied</Code><Message>denied &lt;field&gt;</Message></Error></DeleteResult>"
         identifiers=[{"key":"first <&?+","version_id":"v+1/=&"},{"key":"second"}]
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
@@ -18,6 +19,15 @@ class DeleteManySdkTest(unittest.TestCase):
                 self.assertTrue(result["ok"],result);self.assertEqual(result["status_code"],200);self.assertTrue(result["errors_present"])
                 self.assertEqual(result["deleted"],[{"key":"server-delete","version_id":"server-version","delete_marker":True,"delete_marker_version_id":"server-marker"}])
                 self.assertEqual(result["errors"],[{"key":"server-error","version_id":"error-version","code":"AccessDenied","message":"denied <field>"}])
+                check_result(result, [("server-delete", "server-version")], [("server-error", "error-version", "AccessDenied")])
+                with self.assertRaises(AssertionError):
+                    check_result(result, [], [("server-error", "error-version", "AccessDenied")])
+                with self.assertRaises(AssertionError):
+                    check_result(result, [("server-delete", "server-version")], [])
+                with self.assertRaises(AssertionError):
+                    check_result(result, [("server-delete", "server-version")], [("server-error", "error-version", "WrongCode")])
+                with self.assertRaises(AssertionError):
+                    check_result(result, [("wrong-key", "server-version")], [("server-error", "error-version", "AccessDenied")])
                 root=ET.fromstring(server.requests[0][3]);objects=[]
                 for node in root:
                     if node.tag.rsplit("}",1)[-1]=="Object":objects.append({child.tag.rsplit("}",1)[-1]:child.text for child in node})
@@ -26,6 +36,7 @@ class DeleteManySdkTest(unittest.TestCase):
                 self.assertTrue(result["ok"],result);self.assertFalse(result["errors_present"]);self.assertEqual(result["deleted"],[])
                 root=ET.fromstring(server.requests[1][3]);quiet=next(node.text for node in root if node.tag.rsplit("}",1)[-1]=="Quiet")
                 self.assertEqual(quiet,"true")
+                check_result(result, [])
                 self.assertEqual([row[0] for row in server.requests],["POST","POST"])
 
     def test_1001_identifiers_reach_service_as_one_request(self):
