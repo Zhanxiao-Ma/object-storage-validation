@@ -195,3 +195,10 @@ Ceph 清单包含八个测试文件、979 个定义，其中 4 个同名定义�
 正常档功能检查默认另上传 256 MiB 单对象，可设置 `large_object_size` 缩小自检，报告明确标记缩放。
 
 `examples/selftest.json` 使用缩小参数，只用于框架自检。`bucket_create` 对配置的桶执行“缺失则创建、已有则复用”，不删除桶。
+
+## 用例设计参考
+
+功能用例设计参考 [JuiceFS objbench](https://github.com/juicedata/juicefs/blob/main/cmd/objbench.go)
+和 [Ceph s3-tests](https://github.com/ceph/s3-tests)。工具通过自身的 Java/C++ 驱动执行用例。
+面向阅读的 `report.md` 使用中性的功能名称，展示预期、实际结果与差异，不展示来源项目名称或迁移进度。
+`report.json` 和 `alignment.json` 保留机器标识及来源映射，便于问题定位和开发审计。

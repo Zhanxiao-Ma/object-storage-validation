@@ -1,5 +1,6 @@
 """Report functional verdicts and performance measurements independently."""
 import math
+import re
 import statistics
 
 
@@ -74,8 +75,43 @@ def comparisons(config, cases, summary, operation_metrics=None):
     return result
 
 
+def display_text(value):
+    """Use neutral report wording while leaving machine evidence and source identities intact."""
+    text = str(value)
+    for old, new in (("JuiceFS 起点越界的 warning 预期", "Range 起点越界处理"),
+                     ("JuiceFS warning", "接口行为警告"), ("JuiceFS", "对象接口"),
+                     ("Ceph", "对象存储"), ("objbench", "多对象负载")):
+        text = re.sub(re.escape(old), lambda match, replacement=new: replacement, text, flags=re.IGNORECASE)
+    return text.replace("原版 ", "").replace("原版", "")
+
+
+def functional_detail(row):
+    """Explain observed results directly, rather than printing upstream-specific evidence dictionaries."""
+    if row.get("error"):
+        return row["error"]
+    evidence = row.get("evidence", {})
+    observed = evidence.get("observed") if isinstance(evidence, dict) else None
+    if isinstance(observed, dict):
+        parts = []
+        expectations = {"successful read with empty bytes": "成功读取且内容为空",
+                        "successful read with clipped bytes": "成功读取对象末端的截断内容"}
+        expected = evidence.get("source_expected")
+        if expected:
+            parts.append("接口预期：" + expectations.get(expected, expected))
+        if observed.get("status_code") is not None:
+            parts.append("实际 HTTP " + str(observed["status_code"]))
+        if observed.get("error_code"):
+            parts.append("错误码 " + str(observed["error_code"]))
+        if "bytes" in observed:
+            parts.append("返回 " + str(observed["bytes"]) + " 字节")
+        if evidence.get("source_matches") is False:
+            parts.append("实际行为与接口预期不同")
+        return "；".join(parts) or row.get("behavior", "—")
+    return row.get("behavior", "符合预期" if row["status"] == "pass" else row.get("reason", "—"))
+
+
 def markdown(report):
-    lines = ["# Object Storage Validation", "",
+    lines = ["# 对象存储测试报告", "",
              "结论仅适用于本次 SDK、配置和合成负载；不代表引擎实际链路已验证。",
              "未执行真实云测试时，不得将本地自检用于厂商接入结论。", "",
              "## 兼容性", "", "| Target | Case | Status | Detail |", "|---|---|---|---|"]
@@ -84,44 +120,55 @@ def markdown(report):
                   "|---|---|---|---|---|---|"]
     configuration = []
     def cell(value):
-        return str(value).replace("|", "\\|").replace("\n", " ")
+        return display_text(value).replace("|", "\\|").replace("\n", " ")
     for target in report.get("targets", []):
         info = target.get("worker_info", {})
         values = [target["id"], target["language"], target["sdk"],
                   info.get("sdk_language", info.get("language", "未记录")),
                   info.get("sdk_version", target["sdk_version"]), info.get("retries", "未记录")]
         configuration.append("| " + " | ".join(cell(value) for value in values) + " |")
-    lines[9:9] = configuration + ["", "完整驱动配置与源码版本见 report.json 的 worker_info。", ""]
+    lines[9:9] = configuration + ["", "完整驱动配置与原始结果见 report.json。", ""]
     coverage = report.get("coverage", {})
+    metadata = {(c["suite"], c["case"]): c for c in coverage.get("catalog", [])}
     if coverage and report["workload"].get("mode", "all") != "performance":
         position = lines.index("## 兼容性")
+        profile_description = {"normal": "覆盖对象读写、Range、列举、删除、特殊键名、大对象与分块上传。",
+                               "complete": "覆盖基础对象操作及版本控制、条件请求、权限、加密、生命周期等扩展功能。"}
         inventory = ["## 测试档位与覆盖", "", f"档位：**{cell(coverage['profile'])}**；目录版本：{coverage['catalog_version']}。",
-                     cell(coverage["description"]), "", "| Target | Planned | Pass | Fail | Warning | Not run |",
+                     profile_description.get(coverage["profile"], "按配置选择功能用例。"), "", "| Target | Planned | Pass | Fail | Warning | Not run |",
                      "|---|---|---|---|---|---|"]
         planned = {(c["suite"], c["case"]) for c in coverage["catalog"]}
         for target in report["targets"]:
             rows = [r for r in report["cases"] if r["target"] == target["id"] and (r.get("suite"), r["case"]) in planned]
             counts = [sum(r["status"] == status for r in rows) for status in ("pass", "fail", "warning")]
             inventory.append("| "+" | ".join(map(str, [target["id"], len(planned), *counts, len(planned)-len(rows)+sum(row["status"]=="not_run" for row in rows)]))+" |")
-        inventory += ["", "### 用例来源与预期", "", "| Suite / Case | 预期 | 参考场景 |", "|---|---|---|"]
-        for case in coverage["catalog"]:
-            inventory.append(f"| {cell(case['suite'])} / {cell(case['case'])} | {cell(case['expected'])} | [{cell(case['reference'])}]({case['source']}) |")
+
         if coverage["uncatalogued_suites"]:
-            inventory += ["", "未声明逐项目录的自定义 Suite："+", ".join(coverage["uncatalogued_suites"])]
+            inventory += ["", "部分自定义功能组未声明逐项目录，具体执行结果见下表。"]
         inventory += ["", "### 不在本档位覆盖范围", ""]
-        inventory += ["- "+cell(item) for item in coverage["exclusions"]]
-        inventory += ["", "档位控制兼容性用例范围；性能负载由 workload 单独配置。参考上游场景，不执行上游测试程序。", ""]
+        exclusions = ["文件系统 chmod/chown/mtime 等接口不在对象存储测试范围内。",
+                      "尚未覆盖基于旧版签名（Signature V2）的相关场景。"]
+        if coverage["profile"] == "normal":
+            exclusions.append("当前档位不包含版本控制、权限策略、加密、生命周期等高级场景。")
+        if coverage["profile"] == "custom":
+            exclusions = coverage["exclusions"]
+        inventory += ["- "+cell(item) for item in exclusions]
+        inventory += ["", "档位控制功能用例范围；性能负载单独配置。", ""]
         lines[position:position] = inventory
-    if report.get("upstream_alignment"):
-        position=lines.index("## 兼容性")
-        section=["## 上游能力对齐", "", "逐项映射见 [alignment.json](alignment.json)。partial 不计作已对齐，目录提取不代表用例已经迁移。", "",
-                 "| Upstream | Total functions/items | Aligned | Partial | Missing | N/A | Complete |", "|---|---|---|---|---|---|---|"]
-        for row in report["upstream_alignment"]["summary"]:
-            section.append("| "+" | ".join(map(str,[row["project"],row["total"],row["aligned"],row["partial"],row["not_migrated"]+row["not_selected"],row["not_applicable"],row["complete"]]))+" |")
-        section += ["", "以上是实现映射；实际执行数量见档位覆盖表。参数缩放、SDK 回调可观测字段差异及未迁移项目不能省略。", ""]
-        lines[position:position]=section
+    # Functional results use readable names and expectations; provenance belongs in README.
+    position = lines.index("| Target | Case | Status | Detail |")
+    lines[position:position+2] = ["| 测试目标 | 测试用例 | 状态 | 预期 | 实际结果 |", "|---|---|---|---|---|"]
     for row in report["cases"]:
-        lines.append(f'| {row["target"]} | {row["case"]} | {row["status"]} | {cell(row.get("error", row.get("behavior", "—")))} |')
+        item = metadata.get((row.get("suite"), row["case"]), {})
+        title = item.get("purpose", {"setup": "初始化", "cleanup": "资源清理"}.get(row["case"], row["case"]))
+        title = re.sub(r"(?i)(?:juicefs|ceph)_", "", title)
+        expected = item.get("expected", "—")
+        if row["case"] == "juicefs_range_start_overflow":
+            expected = "记录起点越界时是否返回空内容"
+        elif row["case"] == "range_end_overflow":
+            expected = "返回对象末端的截断内容"
+        lines.append("| " + " | ".join(cell(value) for value in
+                     (row["target"], title, row["status"], expected, functional_detail(row))) + " |")
     if not report["cases"]:
         lines += ["", "本次未执行功能用例。"]
     lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", ""]
@@ -140,9 +187,9 @@ def markdown(report):
         lines.append(f'| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | '
                      + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + " |")
     if report.get("benchmark_datasets"):
-        lines += ["", "### 性能数据集", "", "objbench 模型使用多对象与拆块数据集；Range 是额外阶段。POSIX chmod/chown/chtimes 对对象 SDK 不适用。", ""]
+        lines += ["", "### 性能数据集", "", "使用多对象与拆块数据集；Range 是额外阶段。", ""]
         for dataset in report["benchmark_datasets"]:
-            lines.append(f"- {dataset['target']}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, lanes={dataset['effective_lanes']}; parameters={dataset['reference_parameters']}")
+            lines.append(f"- {cell(dataset['target'])}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, lanes={dataset['effective_lanes']}; parameters={dataset['reference_parameters']}")
     warmup = [s for s in report["samples"] if s["phase"] == "warmup"]
     lines += ["", f"预热请求：{len(warmup)}；失败：{sum(not s['ok'] for s in warmup)}。预热不进入性能统计。"]
     lines += ["", "## 同厂商 SDK 对比", ""]
@@ -151,9 +198,9 @@ def markdown(report):
     elif not report["comparisons"]:
         lines.append("未配置成对的 S3/native SDK，本次没有 SDK 性能对比结论。")
     for row in report["comparisons"]:
-        lines.append(f'- {row["s3"]} / {row["native"]}, {row["op"]}: **{row["status"]}**; '
+        lines.append(f'- {cell(row["s3"])} / {cell(row["native"])}, {cell(row["op"])}: **{row["status"]}**; '
                      f'throughput ratio={fmt(row["s3_native_throughput_ratio"])}, '
-                     f'p95 ratio={fmt(row["s3_native_p95_ratio"])}; {row["reason"] or "observed budget check only; not a statistical equivalence claim"}')
+                     f'p95 ratio={fmt(row["s3_native_p95_ratio"])}; {cell(row["reason"] or "observed budget check only; not a statistical equivalence claim")}')
     lines += ["", "## 外部工具", "", "外部工具输出独立保存，不转换为 Java/C++ SDK 兼容性通过结果。"]
     for row in report["external"]:
         lines.append(f'- {row["id"]}: {row["tool"]}, exit={row["exit_code"]}; [{row["stdout"]}]({row["stdout"]})')

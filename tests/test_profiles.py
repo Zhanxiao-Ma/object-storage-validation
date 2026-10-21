@@ -53,8 +53,8 @@ class ProfileTest(unittest.TestCase):
                 self.assertIn(f"| local | {count} | {count-warnings-not_run-len(failures)} | {len(failures)} | {warnings} | {not_run} |", markdown)
                 self.assertIn("不在本档位覆盖范围", markdown)
                 if profile == "complete":
-                    self.assertIn("multipart_resend", markdown)
-                    self.assertIn("test_multipart_upload_resend_part", markdown)
+                    self.assertIn("相同编号分块重传", markdown)
+                    self.assertIn("完成对象使用最后一次上传的分块内容", markdown)
 
     def test_default_custom_override_and_invalid_selections(self):
         """Resolve default normal, legacy custom suites and CLI override; reject ambiguous or unbounded profiles before IO."""
