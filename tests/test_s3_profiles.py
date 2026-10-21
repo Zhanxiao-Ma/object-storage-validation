@@ -13,8 +13,8 @@ from test_harness import config
 
 
 class GenericProfileTest(unittest.TestCase):
-    def test_profile_scope_and_legacy_partition(self):
-        """Inspect real registered catalogs; expect no vendor/control operations in complete and lossless legacy partition."""
+    def test_only_generic_profiles_are_exposed(self):
+        """Inspect real registered catalogs; expect only normal/complete, no vendor/control operations in complete, and rejection of all three removed profile names before IO."""
         registry = build_registry({})
         def rows(profile):
             return [row for name in registry.profiles[profile].suites for row in registry.suites[name].catalog]
@@ -32,12 +32,16 @@ class GenericProfileTest(unittest.TestCase):
             self.assertFalse(any(op.startswith(("api.iam.", "api.sts.", "api.sns.", "api.s3control.", "api.ceph."))
                 or op in {"ceph_logging_wire_extensions", "ceph_bucket_logging_extensions", "api.PostBucketLogging"}
                 for op in row["operations"]), row)
-        partitions = [{row["case"] for row in rows(profile)} for profile in ("complete", "ceph-extensions", "identity-services")]
-        original = {row["case"] for row in rows("legacy-complete")}
-        self.assertEqual(set.union(*partitions) & original, original)
-        self.assertIn("ceph_body_account_usage", partitions[1])
-        for a, b in ((0, 1), (0, 2), (1, 2)):
-            self.assertFalse(partitions[a] & partitions[b])
+        self.assertEqual(set(registry.profiles), {"normal", "complete"})
+        for removed in ("legacy-complete", "ceph-extensions", "identity-services"):
+            with tempfile.TemporaryDirectory() as temp:
+                directory = Path(temp)
+                data = config(directory)
+                data["workload"]["profile"] = removed
+                path = directory/"manifest.json"
+                path.write_text(json.dumps(data))
+                with self.assertRaisesRegex(ValueError, "unknown profile"):
+                    load_config(path)
 
     def test_normal_includes_common_api_contracts_and_remains_complete_subset(self):
         """Inspect actual selected production catalogs; expect all original checks and independently named common API scenarios once in normal, exact complete metadata reuse, and advanced lock/version/Select cases excluded."""

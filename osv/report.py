@@ -27,7 +27,8 @@ def summarize(samples, batches):
                        "p50_ms": percentile(durations, .50),
                        "p95_ms": percentile(durations, .95),
                        "p99_ms": percentile(durations, .99),
-                       "sdk_mean_ms": statistics.mean(durations) if durations else None,
+                       "sdk_mean_ms": statistics.mean(durations) if durations and all(s.get("timing_scope", "sdk") == "sdk" for s in good) else None,
+                       "latency_scope": next(iter({s.get("timing_scope", "sdk") for s in rows})) if len({s.get("timing_scope", "sdk") for s in rows}) == 1 else "mixed",
                        "verified_ops_s": len(good) / sum(walls) if sum(walls) > 0 else None,
                        "verified_objects_s": sum(s.get("objects",0) for s in good)/sum(walls) if sum(walls)>0 else None,
                        "verified_mib_s": sum(s["bytes"] for s in good) / 2**20 / sum(walls)
@@ -225,7 +226,7 @@ def markdown(report):
         lines += ["", "</details>"]
     else:
         lines += ["", "本次未执行功能用例。"]
-    lines += ["", "## 性能", "", "SDK 延迟来自驱动计时；吞吐包含调度与数据校验开销。失败请求单独计数。", ""]
+    lines += ["", "## 性能", "", "单请求延迟来自 SDK 驱动计时；multipart_total 为创建至完成的上传流程耗时，不含输入生成和读回校验。读取吞吐包含调度与内容校验；multipart_total 吞吐使用完整上传阶段 wall time，读回校验和清理在测量外。失败请求单独计数。", ""]
     if report["workload"].get("mode") == "functional":
         lines.append("本次未执行性能测试。")
     lines += ["", "执行模式：" + report["workload"].get("mode", "all") + "；功能结果不阻断性能执行或 SDK 性能对比。", ""]
@@ -241,6 +242,10 @@ def markdown(report):
         lines += ["", "### 性能数据集", "", "使用多对象与拆块数据集；Range 是额外阶段。", ""]
         for dataset in report["benchmark_datasets"]:
             lines.append(f"- {cell(dataset['target'])}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, lanes={dataset['effective_lanes']}; parameters={dataset['reference_parameters']}")
+    if report.get("io_datasets"):
+        lines += ["", "### 读取与分片负载配置", "", "每个 lane 使用独立 SDK 进程/客户端；hot 读取并发访问同一对象。完整参数及每个请求的 offset/length、分片号和计时口径见 report.json。", ""]
+        for dataset in report["io_datasets"]:
+            lines.append(f"- {cell(dataset['target'])}: model={cell(dataset['model'])}, phase={cell(dataset['phase'])}, round={dataset['round']}, concurrency={dataset['concurrency']}; parameters={cell(dataset['parameters'])}")
     warmup = [s for s in report["samples"] if s["phase"] == "warmup"]
     if report["workload"].get("mode") != "functional":
         lines += ["", f"预热请求：{len(warmup)}；失败：{sum(not s['ok'] for s in warmup)}。预热不进入性能统计。"]

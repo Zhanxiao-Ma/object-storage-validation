@@ -62,7 +62,7 @@ def recheck_registry(report_path):
     def build(config):
         registry = original_build(config)
         suites = []
-        for name in registry.profiles['legacy-complete'].suites:
+        for name in registry.profiles['complete'].suites:
             original = registry.suites[name]
             rows = tuple(row for row in original.catalog if row['case'] in selected)
             if not rows:

@@ -75,8 +75,30 @@ python3 -m osv run local-s3.json --mode all --profile normal --output results/s3
 ```
 
 默认执行模式为 `functional`。CLI 的 `--mode`、`--profile` 覆盖 manifest 中的对应配置。
-`objbench` 多对象模型为默认性能负载；可选 `operations` 单对象操作模型。
+`objbench` 多对象模型为默认性能负载；另有 `operations` 单对象操作、`read` 读取模式和 `multipart` 并发分片模型。
 负载大小、并发、轮次、预热及随机种子均可配置，具体口径见 [测试范围](docs/test-scope.md)。
+
+## 性能负载
+
+| 模型 | 测量内容 | 示例 |
+|---|---|---|
+| `objbench`（默认） | 大小对象分阶段读写、Range、LIST、HEAD、逐对象 DELETE | [基础配置](examples/java-s3.json) |
+| `operations` | 对同一个对象重复 PUT/GET/Range/HEAD/LIST | [配置说明](docs/performance.md) |
+| `read` | 多档小对象完整读取，多档 Range 的连续/随机读取，以及同一对象并发读取 | [读取配置](examples/performance-read.json) |
+| `multipart` | 不同对象与分片大小，多对象/多分片并发上传，分别统计创建、分片、完成及整个上传流程 | [分片配置](examples/performance-multipart.json) |
+
+```bash
+cp examples/performance-read.json local-read.json
+# 修改 endpoint、region、bucket 等实际参数后运行
+python3 -m osv run local-read.json --output results/read-001
+
+cp examples/performance-multipart.json local-multipart.json
+python3 -m osv run local-multipart.json --output results/multipart-001
+```
+
+两种新增模型都校验真实返回字节；Multipart 只有在完整读回与输入一致后才计入已校验上传量，失败时取消未完成上传。
+每个 lane 使用独立 SDK 客户端，同一对象并发读取不等同于共享客户端；并发度、对象大小、请求次数和预热可配置。
+分片单请求的 SDK 延迟与整个上传流程的 wall time 分开记录。详细参数、默认负载和吞吐口径见 [性能测试](docs/performance.md)。
 
 ## 测试范围
 
@@ -84,9 +106,6 @@ python3 -m osv run local-s3.json --mode all --profile normal --output results/s3
 |---|---:|---|
 | **`normal`**（默认） | **96** | 读写、Range、复制、特殊 Key、批量及静默删除、桶、V2 分页、分片及未完成分片生命周期配置 |
 | **`complete`** | **780** | 包含普通档，扩展版本控制、条件请求、权限、加密、对象锁、生命周期及访问日志配置等通用 S3 场景 |
-| `ceph-extensions` | 149 | 显式选择的 RGW 专有协议、后台加速和内部实现相关场景 |
-| `identity-services` | 137 | IAM、STS、SNS、S3Control 独立服务 |
-| `legacy-complete` | 1047 | 原始迁移范围，供回归追溯，包含厂商特定场景 |
 
 `normal` 是 `complete` 的严格子集，复用相同实现和断言。通用两档不执行 Ceph/RGW 专有协议。
 生命周期和访问日志的标准配置测试检查配置写入、读回、更新及删除/停用；不据此认定后台对象处理或日志交付已完成。
@@ -162,6 +181,7 @@ python3 -m unittest discover -s tests -v
 GitHub Actions 在 push 与 pull request 时执行已配置的框架、构建及 SDK 集成检查。
 
 - [构建与验证](docs/build-and-test.md)：依赖、固定版本、资源限制及集成测试。
+- [性能测试](docs/performance.md)：读取/分片矩阵、计时和数据校验。
 - [测试范围](docs/test-scope.md)：逐项范围、负载参数、前置条件和覆盖边界。
 - [SDK 配置](docs/sdk-configuration.md)：各厂商端点、寻址、重试与动态库配置。
 - [驱动协议](docs/worker-protocol.md)：版本化 JSONL 请求、响应和能力声明。

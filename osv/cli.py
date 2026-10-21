@@ -73,10 +73,14 @@ def load_config(path, profile_override=None, mode_override=None):
         raise ValueError("warmup_requests must be nonnegative")
     if workload["range_size"] > workload["object_size"]:
         raise ValueError("range_size must not exceed object_size")
-    if workload["performance_model"] not in ("objbench", "operations"):
-        raise ValueError("performance_model must be objbench or operations")
+    if workload["performance_model"] not in ("objbench", "operations", "read", "multipart"):
+        raise ValueError("performance_model must be objbench, operations, read or multipart")
     from .objbench import normalize
     workload["objbench"] = normalize(workload.get("objbench", {}))
+    from .io_bench import normalize as normalize_io
+    for model in ("read", "multipart"):
+        if workload["performance_model"] == model or model in workload:
+            workload[model] = normalize_io(model, workload.get(model, {}))
     if "identities" in workload:
         if not isinstance(workload["identities"],dict):raise ValueError("identities must be a metadata object")
         for name,metadata in workload["identities"].items():
@@ -239,6 +243,8 @@ def _run(config, output_dir):
     if workload["performance_model"] == "objbench":
         from .objbench import METRICS
         report["operation_metrics"] = METRICS.copy()
+    if workload["performance_model"] in ("read", "multipart"):
+        report["operation_metrics"] = {}
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
     prefix = "osv/" + report["run_id"] + "/"
     functional = workload["mode"] in ("functional", "all")
@@ -308,10 +314,14 @@ def _run(config, output_dir):
                         report["execution_errors"].append({"target": ident, "phase": "functional_cleanup", "error": str(error)})
                 if performance:
                     try:
-                        required = {"put", "list", "delete"}  # performance data and cleanup
+                        required = {"list", "delete"}  # owned performance data cleanup
                         if workload["performance_model"] == "objbench":
                             required.update({"put", "get", "head", "list", "delete"})
+                        elif workload["performance_model"] in ("read", "multipart"):
+                            from .io_bench import required_operations
+                            required.update(required_operations(workload["performance_model"]))
                         else:
+                            required.add("put")
                             for name in workload["operations"]:
                                 required.update(registry.operations[name].required_operations)
                         for worker in workers:
@@ -325,7 +335,8 @@ def _run(config, output_dir):
                         report["execution_errors"].append({"target": ident, "phase": "performance_setup", "error": str(error)})
             active = [t for t in config.get("targets", []) if t["id"] in ready]
             for phase in ("warmup", "measure"):
-                rounds = (workload["objbench"]["warmup_rounds"] if workload["performance_model"] == "objbench" else 1) if phase == "warmup" else workload["rounds"]
+                model = workload["performance_model"]
+                rounds = (workload[model]["warmup_rounds"] if model in ("objbench", "read", "multipart") else 1) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
                 for round_index in range(rounds):
                     order = list(active)
@@ -337,6 +348,15 @@ def _run(config, output_dir):
                             ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
                                           root/ident/"read.bin", workload)
                             run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
+                            continue
+                        if model in ("read", "multipart"):
+                            from .io_bench import run_reads, run_multipart
+                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
+                                          root/ident/"read.bin", workload)
+                            try:
+                                (run_reads if model == "read" else run_multipart)(ctx, pools[ident], report, ident, phase, round_index)
+                            except Exception as error:
+                                report["execution_errors"].append({"target": ident, "phase": model+"_workload", "error": str(error)})
                             continue
                         for op in workload["operations"]:
                             workers = pools[ident]

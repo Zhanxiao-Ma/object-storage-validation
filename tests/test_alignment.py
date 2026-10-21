@@ -45,15 +45,15 @@ class AlignmentTest(unittest.TestCase):
         self.assertEqual(row["parameters"],[])
 
     def test_reference_matches_stay_partial_and_unmapped_items_remain_visible(self):
-        """Execute production audit for normal/legacy-complete selections; expect no invented Ceph alignment or dropped upstream gaps."""
+        """Execute production audit for normal/complete selections; expect no invented Ceph alignment or dropped upstream gaps."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            for profile in ("normal","legacy-complete"):
+            for profile in ("normal","complete"):
                 data=config(directory);data["workload"].update(profile=profile,performance_model="objbench")
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
                 self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))
-                self.assertEqual(ceph["aligned"],953 if profile=="legacy-complete" else 60)
+                self.assertEqual(ceph["aligned"],667 if profile=="complete" else 60)
                 self.assertFalse(ceph["complete"])
                 self.assertGreater(ceph["not_migrated"],0)
                 self.assertEqual(len(result["cases"]),1005)
@@ -65,7 +65,7 @@ class AlignmentTest(unittest.TestCase):
         target["sha256"]="0"*64
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
-            cfg=config(directory);cfg["workload"]["profile"]="legacy-complete";path.write_text(json.dumps(cfg))
+            cfg=config(directory);cfg["workload"]["profile"]="complete";path.write_text(json.dumps(cfg))
             cfg=load_config(path)
             with patch("osv.alignment.inventory",return_value=data):result=audit(cfg,build_registry(cfg))
         row=next(row for row in result["cases"] if row["id"]==target["id"])

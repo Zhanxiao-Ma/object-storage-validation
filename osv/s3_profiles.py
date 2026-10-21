@@ -16,15 +16,15 @@ def category(suite, row):
     """Classify audited executable contracts; source project names alone are not evidence of binding."""
     name, operations = row["case"], row["operations"]
     if any(op.startswith(("api.iam.", "api.sts.", "api.sns.", "api.s3control.")) for op in operations):
-        return "identity-services"
+        return "excluded"
     if (suite == "ceph_cloud_lifecycle" or name == "ceph_body_account_usage" or name in QUERY_EXTENSIONS | NAMESPACE_EXTENSIONS
             or any(op in {"ceph_logging_wire_extensions", "ceph_bucket_logging_extensions", "api.PostBucketLogging"}
                    or op.startswith("api.ceph.") for op in operations)):
-        return "ceph-extensions"
+        return "excluded"
     if (suite in LOG_DELIVERY_SUITES or name in LOG_DELIVERY_CASES
             or suite in {"ceph_lifecycle_transition", "ceph_lifecycle_marker_expiration", "ceph_utils"}
             or (suite == "ceph_lifecycle_expiration" and not name.endswith(STANDARD_EXPIRATION_SUFFIXES))):
-        return "ceph-extensions"
+        return "excluded"
     return "complete"
 
 
@@ -33,7 +33,7 @@ def subset(registry, original, rows, category_name):
     if len(rows) == len(original.catalog):
         return original.name
     selected = frozenset(row["case"] for row in rows)
-    prefix = {"complete": "s3_", "normal": "normal_", "identity-services": "identity_"}.get(category_name, "ext_")
+    prefix = {"complete": "s3_", "normal": "normal_"}[category_name]
     name = prefix + original.name.removeprefix("ceph_")
     registry.add_suite(Suite(name, frozenset(op for row in rows for op in row["operations"]),
         lambda ctx: original.execute(replace(ctx, selected_cases=selected)), tuple(rows), case_capabilities=True))
@@ -72,28 +72,23 @@ def register_normal_profile(registry):
          "生命周期只验证配置；缺少创建桶或配置权限会保留实际失败/未执行原因"))
 
 
-def register_profiles(registry):
-    """Keep legacy upstream reproduction explicit, and make complete mean generic S3."""
-    groups = {name: [] for name in ("complete", "ceph-extensions", "identity-services")}
-    for suite_name in registry.profiles["legacy-complete"].suites:
+def register_profiles(registry, original_suites):
+    """Expose only standard S3 profiles; excluded vendor/control cases have no built-in profile."""
+    suites = []
+    for suite_name in original_suites:
         suite = registry.suites[suite_name]
-        for group in groups:
-            rows = [row for row in suite.catalog if category(suite_name, row) == group]
-            if rows:
-                groups[group].append(subset(registry, suite, rows, group))
+        rows = [row for row in suite.catalog if category(suite_name, row) == "complete"]
+        if rows:
+            suites.append(subset(registry, suite, rows, "complete"))
     from .s3_configuration import register
     register(registry)
-    groups["complete"].append("s3_configuration")
+    suites.append("s3_configuration")
     from .s3_delete_compatibility import register as register_delete_compatibility
     register_delete_compatibility(registry)
-    groups["complete"].append("s3_delete_compatibility")
-    registry.add_profile(Profile("complete", tuple(groups["complete"]),
+    suites.append("s3_delete_compatibility")
+    registry.add_profile(Profile("complete", tuple(suites),
         "完整档：通用 S3 协议兼容性；独立身份可选，不依赖厂商扩展或外部控制服务",
-        ("Ceph/RGW 扩展、加速生命周期及原始日志交付假设另见 ceph-extensions",
-         "IAM、STS、SNS、S3Control 另见 identity-services",
+        ("不包含 Ceph/RGW 专有协议、加速生命周期及原始日志交付假设",
+         "不包含 IAM、STS、SNS、S3Control 独立服务",
          "生命周期验证配置与响应头，不推断后台执行完成；日志验证配置，不要求固定时间交付",)))
     register_normal_profile(registry)
-    registry.add_profile(Profile("ceph-extensions", tuple(groups["ceph-extensions"]),
-        "显式扩展档：Ceph/RGW 专有协议、后台加速、内部布局及原始实现行为；不计入通用 S3 结论"))
-    registry.add_profile(Profile("identity-services", tuple(groups["identity-services"]),
-        "独立控制服务档：IAM、STS、SNS、S3Control 原始场景；需要相应服务及身份配置，不计入通用 S3 结论"))
