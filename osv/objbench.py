@@ -8,6 +8,8 @@ import hashlib
 import math
 import random
 import time
+import tempfile
+from pathlib import Path
 
 from .scenarios import assert_equal, require_ok
 
@@ -43,7 +45,7 @@ def _payload(seed, key_index, size):
     return random.Random(seed+key_index).randbytes(size)
 
 
-def run_objbench(ctx, workers, report, target, round_plan=None):
+def iter_objbench(ctx, workers, report, target, round_plan=None):
     """Run real multi-key producer/consumer phases, preserve each request and verify exact returned data."""
     options = ctx.workload["objbench"]
     block_count = math.ceil(options["big_object_size"]/options["block_size"])
@@ -63,75 +65,102 @@ def run_objbench(ctx, workers, report, target, round_plan=None):
     for phase, round_index in rounds:
         prefix = ctx.prefix+f"objbench/{phase}-{round_index}/"
         expected_keys = {prefix+name for name, _, _ in all_objects}
-        current_failure = False
         phases = [("smallput",small), ("smallget",small), ("put",big), ("get",big), ("range",big),
                   ("list",[None]*(lanes*options["list_requests_per_lane"])),
                   ("head",all_objects), ("delete",all_objects)]
-        for operation, items in phases:
-            def lane(slot):
-                rows = []
-                worker = workers[slot]
-                body = ctx.directory/f"objbench-{slot}.body"
-                output = ctx.directory/f"objbench-{slot}.output"
-                for index in range(slot, len(items), lanes):
-                    row = {"target":target, "op":operation, "phase":phase, "round":round_index,
-                           "index":index, "ok":False, "elapsed_ns":0, "bytes":0}
-                    try:
-                        item = items[index]
-                        request = {"op":operation, "prefix":prefix}
-                        if item:
-                            name, size, identity = item
-                            request["key"] = prefix+name
-                            row["key"] = request["key"]
-                            if operation in ("smallput","put","smallget","get","range"):
-                                expected = _payload(ctx.workload["seed"],identity,size)
-                        if operation in ("smallput", "put"):
-                            body.write_bytes(expected)
-                            request.update(op="put", body_path=str(body))
-                        elif operation in ("smallget", "get", "range"):
-                            request.update(op="get", output_path=str(output))
-                            output.unlink(missing_ok=True)
-                            if operation == "range":
-                                length = min(ctx.workload["range_size"],size)
-                                offset = random.Random(ctx.workload["seed"]+index+round_index).randrange(size-length+1)
-                                request.update(offset=offset,length=length)
-                                expected = expected[offset:offset+length]
-                        row.update({name:request[name] for name in ("offset","length") if name in request})
-                        result = worker.call(request)
-                        row["elapsed_ns"] = result["elapsed_ns"]
-                        require_ok(result)
-                        if operation in ("smallget", "get", "range"):
-                            assert_equal(hashlib.sha256(output.read_bytes()).digest(),hashlib.sha256(expected).digest())
-                            row["bytes"] = len(expected)
-                        elif operation in ("smallput", "put"):
-                            row["bytes"] = len(expected)
-                        elif operation == "head":
-                            assert_equal(result["size"],size)
-                        elif operation == "list":
-                            actual = result.get("keys",[])
-                            assert_equal(set(actual),expected_keys)
-                            assert_equal(len(actual),len(expected_keys))
-                            row["objects"] = len(actual)
-                        row["ok"] = True
-                    except Exception as error:
-                        row["error"] = str(error)
-                    rows.append(row)
-                return rows
-            start = time.monotonic()
-            with ThreadPoolExecutor(max_workers=lanes) as executor:
-                batches = list(executor.map(lane,range(lanes)))
-            rows = [row for batch in batches for row in batch]
-            report["samples"].extend(rows)
-            report["batches"].append({"target":target,"op":operation,"phase":phase,"round":round_index,
-                                      "wall_seconds":time.monotonic()-start})
-            if any(not row["ok"] for row in rows):
-                current_failure = True
-        try:
-            assert_equal(require_ok(workers[0].call({"op":"list","prefix":prefix})).get("keys",[]),[])
-        except Exception as error:
+        with tempfile.TemporaryDirectory(prefix="objbench-input-", dir=ctx.directory) as staging:
+            sources = {}
+            for name, size, identity in all_objects:
+                path = Path(staging)/str(identity)
+                path.write_bytes(_payload(ctx.workload["seed"], identity, size))
+                sources[name] = path
+            yield from _phases(ctx, workers, report, target, phase, round_index, prefix,
+                               phases, lanes, sources, expected_keys)
+
+
+def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, lanes, sources, expected_keys):
+    current_failure = False
+    for operation, items in phases:
+        # Prepare independent expected lengths/digests before starting the batch clock.
+        oracles = {}
+        if operation in ("smallget", "get", "range"):
+            for index, (name, size, _) in enumerate(items):
+                offset = 0
+                length = size
+                if operation == "range":
+                    length = min(ctx.workload["range_size"], size)
+                    offset = random.Random(ctx.workload["seed"]+index+round_index).randrange(size-length+1)
+                with sources[name].open("rb") as stream:
+                    stream.seek(offset)
+                    digest = hashlib.sha256(stream.read(length)).digest()
+                oracles[name] = (offset, length, digest)
+        def lane(slot):
+            rows = []
+            worker = workers[slot]
+            output = ctx.directory/f"objbench-{slot}.output"
+            for index in range(slot, len(items), lanes):
+                row = {"target":target, "op":operation, "phase":phase, "round":round_index,
+                       "index":index, "ok":False, "elapsed_ns":0, "bytes":0}
+                try:
+                    item = items[index]
+                    request = {"op":operation, "prefix":prefix}
+                    if item:
+                        name, size, identity = item
+                        request["key"] = prefix+name
+                        row["key"] = request["key"]
+                    if operation in ("smallput", "put"):
+                        request.update(op="put", body_path=str(sources[name]))
+                    elif operation in ("smallget", "get", "range"):
+                        request.update(op="get", output_path=str(output))
+                        output.unlink(missing_ok=True)
+                        offset, length, expected_hash = oracles[name]
+                        if operation == "range":
+                            request.update(offset=offset,length=length)
+                    row.update({name:request[name] for name in ("offset","length") if name in request})
+                    result = worker.call(request)
+                    row["elapsed_ns"] = result["elapsed_ns"]
+                    require_ok(result)
+                    if operation in ("smallget", "get", "range"):
+                        actual = output.read_bytes()
+                        assert_equal(len(actual), length)
+                        assert_equal(hashlib.sha256(actual).digest(), expected_hash)
+                        row["bytes"] = length
+                    elif operation in ("smallput", "put"):
+                        row["bytes"] = size
+                    elif operation == "head":
+                        assert_equal(result["size"],size)
+                    elif operation == "list":
+                        actual = result.get("keys",[])
+                        assert_equal(set(actual),expected_keys)
+                        assert_equal(len(actual),len(expected_keys))
+                        row["objects"] = len(actual)
+                    row["ok"] = True
+                except Exception as error:
+                    row["error"] = str(error)
+                rows.append(row)
+            return rows
+        start = time.monotonic_ns()
+        with ThreadPoolExecutor(max_workers=lanes) as executor:
+            batches = list(executor.map(lane,range(lanes)))
+        rows = [row for batch in batches for row in batch]
+        report["samples"].extend(rows)
+        report["batches"].append({"target":target,"op":operation,"phase":phase,"round":round_index,
+                                  "wall_seconds":(time.monotonic_ns()-start)/1e9, "wall_start_ns": start})
+        if any(not row["ok"] for row in rows):
             current_failure = True
-            report["execution_errors"].append({"target":target,"phase":f"objbench_delete_{phase}_{round_index}",
-                                                "error":str(error)})
-        if current_failure:
-            report["execution_errors"].append({"target":target,"phase":f"objbench_dataflow_{phase}_{round_index}",
-                                                "error":"multi-object workload or its integrity check failed"})
+        yield operation
+    try:
+        assert_equal(require_ok(workers[0].call({"op":"list","prefix":prefix})).get("keys",[]),[])
+    except Exception as error:
+        current_failure = True
+        report["execution_errors"].append({"target":target,"phase":f"objbench_delete_{phase}_{round_index}",
+                                           "error":str(error)})
+    if current_failure:
+        report["execution_errors"].append({"target":target,"phase":f"objbench_dataflow_{phase}_{round_index}",
+                                           "error":"multi-object workload or its integrity check failed"})
+
+
+def run_objbench(*args, **kwargs):
+    """Execute every case; the CLI uses the same iterator to interleave targets."""
+    for _ in iter_objbench(*args, **kwargs):
+        pass

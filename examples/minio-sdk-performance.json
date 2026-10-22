@@ -91,10 +91,10 @@
     "object_size": 8388608,
     "range_size": 65536,
     "part_size": 8388608,
-    "requests": 100,
+    "requests": 1000,
     "concurrency": 4,
-    "rounds": 3,
-    "warmup_requests": 4,
+    "rounds": 8,
+    "warmup_requests": 100,
     "operations": [
       "get",
       "range",
@@ -133,7 +133,7 @@
         5242880,
         16777216
       ],
-      "objects": 2,
+      "objects": 16,
       "warmup_rounds": 1
     }
   }

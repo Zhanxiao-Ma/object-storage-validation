@@ -31,7 +31,7 @@ python3 scripts/build.py command -- cmake --build drivers/minio/cpp/build --para
 
 查看 [三次独立复测报告](examples/minio-sdk-performance-repeated.md)：共 157,800 条正式样本，包含每次和每轮结果、清理异常；[首次报告](examples/minio-sdk-performance.md) 保留初始测量明细。
 
-从 [四种 SDK 配置示例](../examples/minio-sdk-performance.json) 开始，设置同一个端点、桶、区域与寻址方式，凭据从环境变量继承。Java 两侧使用相同 JVM 参数；同一轮只测一个目标，轮次之间打乱目标顺序。
+从 [四种 SDK 配置示例](../examples/minio-sdk-performance.json) 开始，设置同一个端点、桶、区域与寻址方式，凭据从环境变量继承。Java 两侧使用相同 JVM 参数；各目标按相同用例交错执行，逐轮轮换先后顺序，同一时刻只压测一个目标。
 
 ```bash
 python3 -m osv run local-minio-sdk.json --mode performance --output results/minio-sdk-comparison
@@ -52,3 +52,7 @@ OSV_RUN_MINIO_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_mi
 ```
 
 回归执行真实 SDK 和生产性能调度、校验、报告，覆盖空对象、特殊 Key、Range 首末边界、完整分片读回、错误 ETag 拒绝与取消。
+
+计时修正后，输入生成与预期摘要不进入吞吐计时；分片子阶段只报告延迟，吞吐看 `multipart_total`。旧实测报告保留作历史记录，其中的分片子阶段吞吐不再有效，大文件吞吐排名也不作为修正后的结论。
+
+[计时修正后的 MinIO 验证](examples/minio-sdk-performance-corrected.md) 包含四种 SDK 的全部性能用例、逐轮 CV 及完整清理结果。

@@ -22,8 +22,20 @@ def summarize(samples, batches):
         durations = [s["elapsed_ns"] / 1e6 for s in good]
         walls = [b["wall_seconds"] for b in batches
                  if b["target"] == target and b["op"] == op and b["phase"] == "measure"]
+        round_results = []
+        for index in sorted({b["round"] for b in batches if b["target"] == target and b["op"] == op and b["phase"] == "measure"}):
+            seconds = sum(b["wall_seconds"] for b in batches if b["target"] == target and b["op"] == op and b["phase"] == "measure" and b["round"] == index)
+            selected = [s for s in good if s["round"] == index]
+            if seconds > 0:
+                round_results.append({"round": index, "wall_seconds": seconds,
+                    "verified_ops_s": len(selected)/seconds,
+                    "verified_objects_s": sum(s.get("objects", 0) for s in selected)/seconds,
+                    "verified_mib_s": sum(s["bytes"] for s in selected)/2**20/seconds})
         result.append({"target": target, "op": op, "attempts": len(rows),
                        "successes": len(good), "failures": len(rows) - len(good),
+                       "round_results": round_results,
+                       "measured_seconds": sum(walls),
+                       "percentile_sample_count": len(durations),
                        "p50_ms": percentile(durations, .50),
                        "p95_ms": percentile(durations, .95),
                        "p99_ms": percentile(durations, .99),
@@ -60,6 +72,8 @@ def comparisons(config, cases, summary, operation_metrics=None):
             if x and y and (x["failures"] or y["failures"]):
                 why = why or "performance requests failed"
             metric = (operation_metrics or {}).get(op, "verified_mib_s" if op in ("get", "range", "put") else "verified_ops_s")
+            if metric == "latency_only":
+                continue
             throughput = (x[metric] / y[metric] if x and y and y[metric] else None)
             latency = x["p95_ms"] / y["p95_ms"] if x and y and y["p95_ms"] else None
             if throughput is None or latency is None:
@@ -226,18 +240,26 @@ def markdown(report):
         lines += ["", "</details>"]
     else:
         lines += ["", "本次未执行功能用例。"]
-    lines += ["", "## 性能", "", "单请求延迟来自 SDK 驱动计时；multipart_total 为创建至完成的上传流程耗时，不含输入生成和读回校验。读取吞吐包含调度与内容校验；multipart_total 吞吐使用完整上传阶段 wall time，读回校验和清理在测量外。失败请求单独计数。", ""]
+    lines += ["", "## 性能", "", "单请求延迟来自 SDK 驱动计时；multipart_total 为创建至完成的上传流程耗时，不含输入生成和读回校验。输入生成与预期摘要计算位于计时之外；读取吞吐包含调度与返回内容校验；分片子阶段仅报告延迟与次数；multipart_total 吞吐使用完整上传阶段 wall time，读回校验和清理在测量外。失败请求单独计数。", ""]
     if report["workload"].get("mode") == "functional":
         lines.append("本次未执行性能测试。")
     lines += ["", "执行模式：" + report["workload"].get("mode", "all") + "；功能结果不阻断性能执行或 SDK 性能对比。", ""]
     def fmt(value):
         return "N/A" if value is None else f"{value:.3f}"
     if report["summary"]:
-        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s |",
-                  "|---|---|---|---|---|---|---|---|---|"]
+        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s | 逐轮吞吐 min–max / CV |",
+                  "|---|---|---|---|---|---|---|---|---|---|"]
     for row in report["summary"]:
-        lines.append(f'| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | '
-                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + " |")
+        metric = report["operation_metrics"].get(row["op"], "verified_ops_s")
+        rates = [r[metric] for r in row.get("round_results", [])] if metric != "latency_only" else []
+        variation = "N/A"
+        if rates:
+            cv = statistics.pstdev(rates)/statistics.mean(rates) if statistics.mean(rates) else 0
+            variation = f"{min(rates):.3f}–{max(rates):.3f} / {cv:.1%}" if len(rates) > 1 else "仅 1 轮"
+        lines.append(f"| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | "
+                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + f" | {variation} |")
+    if report["summary"]:
+        lines += ["", "逐轮吞吐单位与该用例主指标一致；CV 为各轮吞吐的标准差/均值，不表示置信区间。各轮耗时与有效样本数保留在 JSON；不足 100 个成功样本的 p99 仅作样本描述。"]
     if report.get("benchmark_datasets"):
         lines += ["", "### 性能数据集", "", "使用多对象与拆块数据集；Range 是额外阶段。", ""]
         for dataset in report["benchmark_datasets"]:

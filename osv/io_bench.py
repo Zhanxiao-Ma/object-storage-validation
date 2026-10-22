@@ -1,4 +1,5 @@
 """Generic read-pattern and concurrent multipart workloads over real SDK workers."""
+from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import hashlib
@@ -13,7 +14,7 @@ READ_DEFAULTS = {"small_object_sizes": [4096, 65536, 131072], "objects": 8,
                  "object_size": 64*1024**2, "range_sizes": [65536, 1024**2, 4*1024**2],
                  "patterns": ["sequential", "random", "hot"], "warmup_rounds": 0}
 MULTIPART_DEFAULTS = {"object_sizes": [32*1024**2, 128*1024**2],
-                      "part_sizes": [5*1024**2, 16*1024**2], "objects": 2, "warmup_rounds": 0}
+                      "part_sizes": [5*1024**2, 16*1024**2], "objects": 16, "warmup_rounds": 0}
 
 
 def normalize(model, parameters):
@@ -77,7 +78,9 @@ def sample_call(pool, request, target, op, phase, round_index, **metadata):
     start = time.monotonic()
     try:
         with loan(pool) as worker:
+            acquired = time.monotonic()
             result = worker.call(request)
+        row["queue_wait_ns"] = int((acquired-start)*1e9)
         row["elapsed_ns"] = result["elapsed_ns"]
         require_ok(result)
         row["ok"] = True
@@ -91,7 +94,7 @@ def fail(row, error):
     row.update(ok=False, bytes=0, error=str(error))
 
 
-def run_reads(ctx, workers, report, target, phase, round_index):
+def iter_reads(ctx, workers, report, target, phase, round_index):
     """Measure full small reads and sequential/random/hot-key ranges with exact byte oracles."""
     options = ctx.workload["read"]
     pool = pool_for(workers)
@@ -112,10 +115,10 @@ def run_reads(ctx, workers, report, target, phase, round_index):
                 key = prefix+op+f"/{index}"
                 require_ok(workers[0].call({"op": "put", "key": key, "body_path": str(source)}))
                 sources.append((key, source))
-            def read(index):
+            plans = []
+            for index in range(count):
                 key, source = sources[index % len(sources)]
-                output = ctx.directory/f"{op}-{index}.read"
-                request = {"op": "get", "key": key, "output_path": str(output)}
+                request = {"op": "get", "key": key, "output_path": str(ctx.directory/f"{op}-{index}.read")}
                 offset = 0
                 if length is not None:
                     if pattern == "sequential":
@@ -124,17 +127,22 @@ def run_reads(ctx, workers, report, target, phase, round_index):
                     else:
                         offset = random.Random(ctx.workload["seed"]+round_index*count+index).randrange(size-length+1)
                     request.update(offset=offset, length=min(length, size-offset))
+                expected_length = request.get("length", size)
+                with source.open("rb") as stream:
+                    stream.seek(offset)
+                    expected_hash = hashlib.sha256(stream.read(expected_length)).digest()
+                plans.append((key, request, offset, expected_length, expected_hash))
+            def read(index):
+                key, request, offset, expected_length, expected_hash = plans[index]
+                output = Path(request["output_path"])
                 row, _, _, _ = sample_call(pool, request, target, op, phase, round_index,
                     key=key, index=index, offset=offset, length=request.get("length", size), pattern=pattern)
                 try:
                     if row["ok"]:
-                        with source.open("rb") as stream:
-                            stream.seek(offset)
-                            expected = stream.read(row["length"])
                         actual = output.read_bytes()
-                        assert_equal(len(actual), len(expected))
-                        assert_equal(hashlib.sha256(actual).digest(), hashlib.sha256(expected).digest())
-                        row["bytes"] = len(expected)
+                        assert_equal(len(actual), expected_length)
+                        assert_equal(hashlib.sha256(actual).digest(), expected_hash)
+                        row["bytes"] = expected_length
                 except Exception as error:
                     fail(row, error)
                 finally:
@@ -153,9 +161,10 @@ def run_reads(ctx, workers, report, target, phase, round_index):
                     require_ok(workers[0].call({"op": "delete", "key": key}))
                 finally:
                     source.unlink(missing_ok=True)
+        yield op
 
 
-def run_multipart(ctx, workers, report, target, phase, round_index):
+def iter_multipart(ctx, workers, report, target, phase, round_index):
     """Measure parallel object/part uploads, verify final bytes, and abort every unfinished upload."""
     options = ctx.workload["multipart"]
     pool = pool_for(workers)
@@ -179,7 +188,6 @@ def run_multipart(ctx, workers, report, target, phase, round_index):
                     path.write_bytes(data)
                     paths.append(path)
                 inputs.append((prefix+str(index), paths, digest.digest()))
-            spans = {name: [] for name in ("create", "part", "complete")}
             pending_verification = []
             with ThreadPoolExecutor(max_workers=len(workers)) as parts_executor:
                 def upload(entry):
@@ -192,7 +200,7 @@ def run_multipart(ctx, workers, report, target, phase, round_index):
                     try:
                         row, result, begin, end = sample_call(pool, {"op": "mp_create", "key": key}, target,
                             "multipart_create_"+label, phase, round_index, key=key)
-                        report["samples"].append(row);spans["create"].append((begin, end))
+                        report["samples"].append(row)
                         if not row["ok"]:
                             raise RuntimeError(row["error"])
                         upload_id = result["upload_id"]
@@ -200,7 +208,6 @@ def run_multipart(ctx, workers, report, target, phase, round_index):
                             r, response, a, b = sample_call(pool, {"op": "mp_part", "key": key, "upload_id": upload_id,
                                 "part_number": number, "body_path": str(path)}, target, "multipart_part_"+label,
                                 phase, round_index, key=key, part_number=number)
-                            spans["part"].append((a, b))
                             r["bytes"] = path.stat().st_size if r["ok"] else 0
                             return r, response
                         futures = [parts_executor.submit(part, number, path) for number, path in enumerate(paths, 1)]
@@ -213,7 +220,7 @@ def run_multipart(ctx, workers, report, target, phase, round_index):
                                      for number, (_, response) in enumerate(outcomes, 1)]
                         row, _, begin, end = sample_call(pool, {"op": "mp_complete", "key": key, "upload_id": upload_id,
                             "parts": completed}, target, "multipart_complete_"+label, phase, round_index, key=key)
-                        report["samples"].append(row);spans["complete"].append((begin, end))
+                        report["samples"].append(row)
                         total["elapsed_ns"] = time.monotonic_ns()-started
                         if not row["ok"]:
                             raise RuntimeError(row["error"])
@@ -267,9 +274,20 @@ def run_multipart(ctx, workers, report, target, phase, round_index):
             report["batches"].append({"target": target, "op": "multipart_total_"+label, "phase": phase,
                 "round": round_index, "wall_seconds": upload_wall,
                 "wall_start_ns": started_ns, "wall_end_ns": finished_ns})
-            for name, values in spans.items():
-                op = "multipart_"+name+"_"+label
-                report["operation_metrics"][op] = "verified_mib_s" if name == "part" else "verified_ops_s"
-                if values:
-                    report["batches"].append({"target": target, "op": op, "phase": phase, "round": round_index,
-                        "wall_seconds": max(end for _, end in values)-min(begin for begin, _ in values)})
+            # Overlapping stages have no standalone throughput window.
+            # Preserve SDK latency/counts and report throughput for total only.
+            for name in ("create", "part", "complete"):
+                report["operation_metrics"]["multipart_"+name+"_"+label] = "latency_only"
+            yield label
+
+
+def run_reads(*args, **kwargs):
+    '''Execute all read cases through the production iterator.'''
+    for _ in iter_reads(*args, **kwargs):
+        pass
+
+
+def run_multipart(*args, **kwargs):
+    '''Execute all upload cases through the production iterator.'''
+    for _ in iter_multipart(*args, **kwargs):
+        pass

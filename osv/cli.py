@@ -60,8 +60,8 @@ def load_config(path, profile_override=None, mode_override=None):
     if mode_override is not None:
         workload = {**workload, "mode": mode_override}
     defaults = {"mode": "functional", "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
-                "requests": 100, "concurrency": 4, "warmup_requests": 4,
-                "rounds": 3, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
+                "requests": 1000, "concurrency": 4, "warmup_requests": 100,
+                "rounds": 8, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
                 "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "operations": ["get", "range", "put", "head", "list"]}
     workload = {**defaults, **workload}
     if workload["mode"] not in ("functional", "performance", "all"):
@@ -335,61 +335,43 @@ def _run(config, output_dir):
                 rounds = max(warmups.values()) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
                 for round_index in range(rounds):
+                    # Fixed shuffle plus rotation balances first/last positions across rounds.
                     order = list(config.get("targets", []))
-                    random.Random(workload["seed"] + round_index).shuffle(order)
-                    for target in order:
-                        ident = target["id"]
-                        for group in groups:
+                    random.Random(workload["seed"]).shuffle(order)
+                    offset = round_index % max(1, len(order))
+                    order = order[offset:]+order[:offset]
+                    for group in groups:
+                        active = []
+                        for target in order:
+                            ident = target["id"]
                             if (ident, group) not in ready or (phase == "warmup" and round_index >= warmups[group]):
                                 continue
                             ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
                                           root/ident/"read.bin", workload)
-                            if group != "operations":
-                                try:
-                                    if group == "objbench":
-                                        from .objbench import run_objbench
-                                        run_objbench(ctx,pools[ident],report,ident,[(phase,round_index)])
-                                    else:
-                                        from .io_bench import run_reads, run_multipart
-                                        (run_reads if group == "read" else run_multipart)(ctx,pools[ident],report,ident,phase,round_index)
-                                except Exception as error:
-                                    report["execution_errors"].append({"target": ident, "phase": group+"_workload", "error": str(error)})
-                                continue
-                            for op in workload["operations"]:
-                                workers = pools[ident]
-                                def lane(slot):
-                                    samples = []
-                                    worker = workers[slot]
-                                    output = root / ident / f"slot-{slot}.bin"
-                                    for index in range(slot, count, len(workers)):
-                                        operation = registry.operations[op]
-                                        ctx = Context(worker, prefix+ident+"/performance/", root/ident, payload, body,
-                                                      output, workload, round_index, index)
-                                        row = {"target": ident, "op": "repeat_"+op, "phase": phase,
-                                               "round": round_index, "index": index, "ok": False,
-                                               "elapsed_ns": 0, "bytes": 0}
-                                        try:
-                                            request = operation.prepare(ctx)
-                                            if request.get("op") not in operation.required_operations:
-                                                raise ValueError("operation sent an undeclared worker request")
-                                            result = worker.call(request)
-                                            row["elapsed_ns"] = result["elapsed_ns"]
-                                            require_ok(result)
-                                            verified_bytes = operation.verify(ctx, request, result)
-                                            if type(verified_bytes) is not int or verified_bytes < 0:
-                                                raise ValueError("verifier must return a nonnegative byte count")
-                                            row["bytes"] = verified_bytes
-                                            row["ok"] = True
-                                        except Exception as error:
-                                            row["error"] = str(error)
-                                        samples.append(row)
-                                    return samples
-                                started = time.monotonic()
-                                with ThreadPoolExecutor(max_workers=len(workers)) as executor:
-                                    for samples in executor.map(lane, range(len(workers))):
-                                        report["samples"].extend(samples)
-                                report["batches"].append({"target": ident, "op": "repeat_"+op, "phase": phase,
-                                                        "round": round_index, "wall_seconds": time.monotonic()-started})
+                            if group == "objbench":
+                                from .objbench import iter_objbench
+                                iterator = iter_objbench(ctx, pools[ident], report, ident, [(phase, round_index)])
+                            elif group == "operations":
+                                iterator = iter_operations(ctx, pools[ident], report, ident, registry, workload, phase, round_index, count)
+                            else:
+                                from .io_bench import iter_reads, iter_multipart
+                                iterator = (iter_reads if group == "read" else iter_multipart)(ctx, pools[ident], report, ident, phase, round_index)
+                            active.append((ident, iterator))
+                        try:
+                            while active:
+                                pending = []
+                                for ident, iterator in active:
+                                    try:
+                                        next(iterator)
+                                        pending.append((ident, iterator))
+                                    except StopIteration:
+                                        pass
+                                    except Exception as error:
+                                        report["execution_errors"].append({"target": ident, "phase": group+"_workload", "error": str(error)})
+                                active = pending
+                        finally:
+                            for _, iterator in active:
+                                iterator.close()
         finally:
             for ident, workers in pools.items():
                 if workers:
@@ -457,3 +439,42 @@ def main():
             sys.exit(1)
     except (OSError, ValueError, KeyError, RuntimeError) as error:
         parser.exit(2, f"error: {error}\n")
+
+def iter_operations(ctx, workers, report, ident, registry, workload, phase, round_index, count):
+    """Yield after each measured case to interleave targets."""
+    for op in workload["operations"]:
+        directory, perf_prefix, payload, body = ctx.directory, ctx.prefix, ctx.payload, ctx.body
+        def lane(slot):
+            samples = []
+            worker = workers[slot]
+            output = directory / f"slot-{slot}.bin"
+            for index in range(slot, count, len(workers)):
+                operation = registry.operations[op]
+                ctx = Context(worker, perf_prefix, directory, payload, body,
+                              output, workload, round_index, index)
+                row = {"target": ident, "op": "repeat_"+op, "phase": phase,
+                       "round": round_index, "index": index, "ok": False,
+                       "elapsed_ns": 0, "bytes": 0}
+                try:
+                    request = operation.prepare(ctx)
+                    if request.get("op") not in operation.required_operations:
+                        raise ValueError("operation sent an undeclared worker request")
+                    result = worker.call(request)
+                    row["elapsed_ns"] = result["elapsed_ns"]
+                    require_ok(result)
+                    verified_bytes = operation.verify(ctx, request, result)
+                    if type(verified_bytes) is not int or verified_bytes < 0:
+                        raise ValueError("verifier must return a nonnegative byte count")
+                    row["bytes"] = verified_bytes
+                    row["ok"] = True
+                except Exception as error:
+                    row["error"] = str(error)
+                samples.append(row)
+            return samples
+        started = time.monotonic()
+        with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+            for samples in executor.map(lane, range(len(workers))):
+                report["samples"].extend(samples)
+        report["batches"].append({"target": ident, "op": "repeat_"+op, "phase": phase,
+                                "round": round_index, "wall_seconds": time.monotonic()-started})
+        yield op
