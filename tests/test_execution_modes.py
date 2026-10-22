@@ -98,8 +98,9 @@ class ExecutionModesTest(unittest.TestCase):
             self.assertEqual(sum(r["op"].startswith("repeat_") for r in warm),15)
             self.assertEqual(sum(r["op"].startswith("read_") for r in warm),16)
             self.assertFalse(any(r["op"].startswith("multipart_") for r in warm))
-            self.assertEqual(len(warm),56)
-            self.assertEqual(sum(r["attempts"] for r in report["summary"]),47)
+            self.assertEqual(sum(r["op"]=="parallel_put" for r in warm),3)
+            self.assertEqual(len(warm),59)
+            self.assertEqual(sum(r["attempts"] for r in report["summary"]),49)
             self.assertTrue(all(r["ok"] for r in report["samples"]))
             self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
 

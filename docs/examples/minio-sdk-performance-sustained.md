@@ -1,5 +1,7 @@
 # 持续写入与有界分片调度验证
 
+最新定位与复测见[写入波动定位报告](minio-sdk-write-diagnosis.md)。
+
 ## 执行
 
 - 本地 MinIO RELEASE.2025-02-03T21-03-04Z；容器 4 CPU / 2 GiB，HTTP 回环。

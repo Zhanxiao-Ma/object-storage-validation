@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 import platform
 from concurrent.futures import ThreadPoolExecutor
 import json
+import hashlib
 import math
 import os
 from pathlib import Path
@@ -244,6 +245,7 @@ def _run(config, output_dir):
     from .objbench import METRICS
     report["operation_metrics"] = {"repeat_"+name: metric for name, metric in report["operation_metrics"].items()}
     report["operation_metrics"].update(METRICS)
+    report["operation_metrics"]["parallel_put"] = "verified_mib_s"
     payload = random.Random(workload["seed"]).randbytes(workload["object_size"])
     prefix = "osv/" + report["run_id"] + "/"
     functional = workload["mode"] in ("functional", "all")
@@ -324,7 +326,7 @@ def _run(config, output_dir):
                     from .io_bench import required_operations
                     requirements = {
                         "objbench": {"put", "get", "head", "list", "delete"},
-                        "operations": {"put", "list", "delete"}.union(*(registry.operations[name].required_operations for name in workload["operations"])),
+                        "operations": {"put", "list", "delete"}.union({"get"} if "put" in workload["operations"] else set(), *(registry.operations[name].required_operations for name in workload["operations"])),
                         "read": required_operations("read"),
                         "multipart": required_operations("multipart"),
                     }
@@ -449,10 +451,15 @@ def main():
 
 def iter_operations(ctx, workers, report, ident, registry, workload, phase, round_index, count):
     """Yield after each measured case to interleave targets."""
-    for op in workload["operations"]:
+    plan = [(op, "repeat_"+op, False) for op in workload["operations"]]
+    if "put" in workload["operations"]:
+        plan.insert(next(i for i, entry in enumerate(plan) if entry[0] == "put")+1,
+                    ("put", "parallel_put", True))
+    for op, case_name, independent in plan:
         directory, perf_prefix, payload, body = ctx.directory, ctx.prefix, ctx.payload, ctx.body
         from .benchmark import WriteWindow, write_seconds
         minimum = write_seconds(ctx, phase) if op == "put" else 0
+        expected_hash = hashlib.sha256(payload).digest() if op == "put" else None
         def lane(slot):
             samples = []
             worker = workers[slot]
@@ -462,14 +469,24 @@ def iter_operations(ctx, workers, report, ident, registry, workload, phase, roun
                 operation = registry.operations[op]
                 ctx = Context(worker, perf_prefix, directory, payload, body,
                               output, workload, round_index, index)
-                row = {"target": ident, "op": "repeat_"+op, "phase": phase,
+                row = {"target": ident, "op": case_name, "phase": phase,
                        "round": round_index, "index": index, "ok": False,
                        "elapsed_ns": 0, "bytes": 0}
                 try:
                     request = operation.prepare(ctx)
                     if request.get("op") not in operation.required_operations:
                         raise ValueError("operation sent an undeclared worker request")
-                    result = worker.call(request)
+                    if independent:
+                        request["key"] = perf_prefix+f"perf-lane-{slot}"
+                    if op == "put":
+                        row.update(key=request["key"], lane=slot,
+                                   key_mode="per_lane" if independent else "shared")
+                    row["request_start_ns"] = time.monotonic_ns()
+                    try:
+                        result = worker.call(request)
+                    finally:
+                        row["request_end_ns"] = time.monotonic_ns()
+                        row["rpc_wall_ns"] = row["request_end_ns"]-row["request_start_ns"]
                     row["elapsed_ns"] = result["elapsed_ns"]
                     require_ok(result)
                     verified_bytes = operation.verify(ctx, request, result)
@@ -484,9 +501,43 @@ def iter_operations(ctx, workers, report, ident, registry, workload, phase, roun
                 if not row["ok"] and index >= count:
                     break
             return samples
+        rows = []
         with WriteWindow(workers, minimum) as window:
             with ThreadPoolExecutor(max_workers=len(workers)) as executor:
                 for samples in executor.map(lane, range(len(workers))):
-                    report["samples"].extend(samples)
-        report["batches"].append(window.batch(target=ident, op="repeat_"+op, phase=phase, round=round_index))
-        yield op
+                    rows.extend(samples)
+        batch = window.batch(target=ident, op=case_name, phase=phase, round=round_index)
+        if op == "put":
+            # Overwrites retain only final state: verify each used key outside upload timing.
+            keys = {r["key"]: r["lane"] for r in rows if "key" in r}
+            failures = []
+            verified_at = time.monotonic_ns()
+            for key, slot in keys.items():
+                output = directory/f"overwrite-{slot}.verify"
+                try:
+                    require_ok(workers[slot].call({"op": "get", "key": key, "output_path": str(output)}))
+                    actual = output.read_bytes()
+                    if len(actual) != len(payload) or hashlib.sha256(actual).digest() != expected_hash:
+                        raise AssertionError("final overwrite length or SHA-256 differs from input")
+                except Exception as error:
+                    failures.append({"key": key, "error": str(error)})
+                    for row in rows:
+                        if row.get("key") == key:
+                            row.update(ok=False, bytes=0, error="final overwrite readback failed: "+str(error))
+                finally:
+                    output.unlink(missing_ok=True)
+            # Keep the existing shared-key GET/HEAD/LIST dataset unchanged.
+            if independent:
+                for key, slot in keys.items():
+                    try:
+                        require_ok(workers[slot].call({"op": "delete", "key": key}))
+                    except Exception as error:
+                        report.setdefault("execution_errors", []).append(
+                            {"target": ident, "phase": "parallel_put_cleanup", "error": str(error)})
+            batch.update(key_mode="per_lane" if independent else "shared", active_keys=len(keys),
+                         verification={"scope": "final_state_only", "keys": len(keys), "failures": failures,
+                                       "outside_upload_timing": True,
+                                       "wall_seconds": (time.monotonic_ns()-verified_at)/1e9})
+        report["samples"].extend(rows)
+        report["batches"].append(batch)
+        yield case_name

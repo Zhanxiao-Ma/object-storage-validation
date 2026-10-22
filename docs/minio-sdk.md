@@ -1,5 +1,7 @@
 # MinIO SDK 与 AWS SDK 对比
 
+最新定位与复测见[写入波动定位报告](examples/minio-sdk-write-diagnosis.md)。
+
 MinIO 官方 SDK 与 AWS SDK 都通过 S3 协议访问同一个端点。Java、C++ 分别对比，报告中的 API 均为 `s3`。
 MinIO 驱动当前提供全部性能用例所需的九种操作，不声明完整功能兼容性覆盖。
 

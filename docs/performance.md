@@ -14,9 +14,9 @@ python3 -m osv run local-performance.json --mode performance --output results/pe
 
 每轮依次执行多对象 PUT/GET、Range、LIST、HEAD、逐对象 DELETE。默认 100 个 128 KiB 小对象，以及总计 1 GiB、每个 4 MiB 的 256 个独立数据块对象。`workload.objbench` 用于调整这些数据量，详细字段见 [测试范围](test-scope.md#性能范围)。这些是独立对象，分片上传由后续用例单独测量。
 
-## 单对象重复访问
+## 重复访问与并发写入
 
-默认对同一个 Key 分别重复 PUT、GET、Range、HEAD、LIST，样本使用 `repeat_put`、`repeat_get`、`repeat_range`、`repeat_head`、`repeat_list` 名称，避免与多对象结果混合。大小使用 `object_size` 和 `range_size`；正式轮次与请求数使用 `rounds` 和 `requests`；预热请求数使用 `warmup_requests`。插件可通过 `operations` 添加自己的重复操作；该字段不会关闭任何内置用例。
+默认对同一个 Key 分别重复 PUT、GET、Range、HEAD、LIST。`repeat_put` 包含所有通道争用同一对象的覆盖写；同时自动执行 `parallel_put`，每个通道使用独立 Key，便于区分热点锁争用与独立对象写入，无需额外配置。原有重复访问样本使用 `repeat_put`、`repeat_get`、`repeat_range`、`repeat_head`、`repeat_list` 名称，避免与多对象结果混合。大小使用 `object_size` 和 `range_size`；正式轮次与请求数使用 `rounds` 和 `requests`；预热请求数使用 `warmup_requests`。插件可通过 `operations` 添加自己的重复操作；该字段不会关闭任何内置用例。
 
 ## 小对象、连续与随机读取
 
@@ -97,12 +97,12 @@ SDK 回归通过真实 Java/C++ AWS SDK 发请求，读取与分片最终结果�
 
 ### 持续写入与本地 I/O
 
-大块多对象 PUT、同 Key 重复 PUT、分片上传的正式测量窗口自动持续至少 5 秒，同时满足原配置的最低对象数或请求数，无需新增参数。多对象 PUT 和分片上传延长窗口时使用新 Key；原始输入文件复用，不在计时内生成新数据。所有新增对象在写计时之外进入真实 GET 校验及清理；额外对象不会混入后续固定数据集的 GET/Range/LIST/HEAD 测量；多对象上传读回失败时，其 PUT 有效字节也归零。同 Key 重复 PUT 仍单独表示覆盖争用。
+大块多对象 PUT、同 Key 重复 PUT、每通道独立 Key 写入、分片上传的正式测量窗口自动持续至少 5 秒，同时满足原配置的最低对象数或请求数，无需新增参数。多对象 PUT 和分片上传延长窗口时使用新 Key；原始输入文件复用，不在计时内生成新数据。所有新增对象在写计时之外进入真实 GET 校验及清理；额外对象不会混入后续固定数据集的 GET/Range/LIST/HEAD 测量；多对象上传读回失败时，其 PUT 有效字节也归零。同 Key 重复 PUT 仍单独表示覆盖争用；`parallel_put` 每通道一个 Key，复用相同磁盘输入。两种覆盖写均在窗口结束后真实 GET 各 Key，校验最终长度与完整 SHA-256；失败时对应 Key 的所有写样本记失败、有效字节归零。此处校验最终状态，不能逐个证明已被后续覆盖的历史版本。独立通道的 Key 在计时外删除，保持后续单对象读取、HEAD 和 LIST 的集合不变。
 
 自动扩展多对象/分片上传受 16 GiB 和 4096 个对象的上限约束；重复 PUT 最多自动扩展到 100000 次请求。配置的最低工作量仍会执行。触及上限而不足 5 秒时保留 `short_write_rounds`，预算结论记为 inconclusive。该窗口是最小采样时长，不保证后端已经进入稳态。
 
 临时文件继续使用系统普通临时目录，不默认放入 tmpfs，也不预留整套数据集的 RAM。输入生成后逐个 fsync 再开始上传计时；仅同步工具自身生成的文件，不调用全局 sync，不丢弃系统缓存。这只消除尚未完成的输入文件写入，不能保证本地磁盘完全没有争用。
 
-每个窗口保留开始/结束及周期性观测：主机 Dirty/Writeback、I/O pressure、分设备 I/O 计数，以及控制进程和 SDK 进程实际 read_bytes/write_bytes。分片请求记录调度等待、执行器派发等待、客户端等待、RPC wall 和 SDK 时间；报告展示排队 p95，原始证据在 JSON。设备指标不跨分区/LVM 重复相加，也不直接归因到远端存储。
+每个窗口保留开始/结束及周期性观测：主机 Dirty/Writeback、I/O pressure、分设备 I/O 计数，以及控制进程和 SDK 进程实际 read_bytes/write_bytes。多对象与重复访问保留每个请求的控制进程开始/结束时间和 RPC wall；报告同时展示 SDK 与 RPC p95，便于识别进程通信开销。分片请求记录调度等待、执行器派发等待、客户端等待、RPC wall 和 SDK 时间；报告展示排队 p95，原始证据在 JSON。设备指标不跨分区/LVM 重复相加，也不直接归因到远端存储。
 
 CV 超过 20% 时，预算对比自动标为 inconclusive，并保留原始比值。20% 是工程质量提示阈值，不是显著性检验或因果证明。本地 filesystem reference 自检仍按固定数量执行；真实 SDK 测量使用持续窗口。

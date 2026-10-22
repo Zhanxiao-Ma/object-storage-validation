@@ -62,7 +62,7 @@ class HarnessTest(unittest.TestCase):
             manifest.write_text(json.dumps(config(directory)))
             report = run(load_config(manifest), directory/"results")
             self.assertFalse([c for c in report["cases"] if c["status"] == "fail"])
-            self.assertEqual(len(report["summary"]), 21)
+            self.assertEqual(len(report["summary"]), 22)
             self.assertTrue(all(row["attempts"] == 14 for row in report["summary"] if row["op"].startswith("repeat_")))
             self.assertTrue(all(row["failures"] == 0 for row in report["summary"]))
             self.assertEqual(report["comparisons"], [])

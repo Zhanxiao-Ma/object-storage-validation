@@ -69,8 +69,12 @@ class MinioSdkTest(unittest.TestCase):
             self.assertTrue(all(r['ok'] for r in report['samples']),[r for r in report['samples'] if not r['ok']])
             for target in self.targets:
                 rows=[r for r in report['samples'] if r['target']==target['id']]
-                self.assertEqual(len(rows),163)
+                self.assertEqual(len(rows),171)
                 self.assertEqual(sum(r['op'].startswith('read_') for r in rows),88)
+                independent=[r for r in rows if r['op']=='parallel_put']
+                self.assertEqual(len(independent),8)
+                self.assertEqual(len({r['key'] for r in independent}),2)
+                self.assertTrue(all(r['rpc_wall_ns']>=r['elapsed_ns'] for r in independent))
                 self.assertEqual(sum(r['op'].startswith('multipart_total_') for r in rows),2)
                 worker=Worker(target,30)
                 try:
@@ -121,7 +125,7 @@ class MinioSdkTest(unittest.TestCase):
                 self.assertEqual(upload["verification"]["extra_objects"],len(puts)-1)
                 self.assertEqual(upload["verification"]["failures"],0)
                 windows=[b for b in report["batches"] if b["target"]==target["id"] and b.get("minimum_seconds",0)>0]
-                self.assertEqual(len(windows),3)
+                self.assertEqual(len(windows),4)
                 self.assertTrue(all(b["duration_satisfied"] and b["wall_seconds"]>=.1 for b in windows))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-minio-sdk-test").get("KeyCount"),0)
             self.assertFalse(self.client.list_multipart_uploads(Bucket="osv-minio-sdk-test").get("Uploads",[]))

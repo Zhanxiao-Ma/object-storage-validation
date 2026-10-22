@@ -83,7 +83,7 @@ python3 -m osv run local-s3.json --mode all --profile normal --output results/s3
 | 用例 | 测量内容 |
 |---|---|
 | 大小对象读写 | 多对象 PUT、GET、Range、LIST、HEAD、逐对象 DELETE |
-| 单对象重复访问 | 对同一对象重复 PUT、GET、Range、HEAD、LIST |
+| 重复访问与覆盖写 | 同 Key 覆盖写、每通道独立 Key 写入，以及 GET、Range、HEAD、LIST |
 | 不同读取方式 | 多档小对象完整读取，多档 Range 连续/随机读取，以及同一对象并发读取 |
 | 并发分片上传 | 不同对象与分片大小，多个对象及分片并发上传，分别统计创建、分片、完成和整个上传流程 |
 

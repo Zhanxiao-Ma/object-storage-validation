@@ -20,12 +20,12 @@ class ObjbenchTest(unittest.TestCase):
         path=directory/"manifest.json";path.write_text(json.dumps(data));return path
 
     def test_real_multikey_phase_counts_content_and_cleanup(self):
-        """Run a 3-small/4-block dataset twice; expect exact 72 requests, independent reads, 47 bytes/round and cleanup."""
+        """Run a 3-small/4-block dataset twice; expect exact 72 multi-object requests, independent reads, 47 bytes/round and cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary)
             report=run(load_config(self.manifest(directory)),directory/"results")
             self.assertEqual(sum(r["op"] in {"smallput","smallget","put","get","range","head","list","delete"} for r in report["samples"]),72)
-            self.assertEqual({row["op"] for row in report["summary"] if not row["op"].startswith(("repeat_","read_","multipart_"))},{"smallput","smallget","put","get","range","head","list","delete"})
+            self.assertEqual({row["op"] for row in report["summary"] if not row["op"].startswith(("repeat_","parallel_","read_","multipart_"))},{"smallput","smallget","put","get","range","head","list","delete"})
             self.assertFalse([row for row in report["cases"] if row["status"]=="fail"])
             self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertTrue(all(row["actual_bytes"]==47 and row["effective_lanes"]==2 for row in report["benchmark_datasets"]))
@@ -47,13 +47,13 @@ class ObjbenchTest(unittest.TestCase):
             self.assertEqual(report["workload"]["objbench"]["list_requests_per_lane"],1)
 
     def test_warmup_rounds_are_real_but_excluded_from_summary(self):
-        """Execute one additional complete warmup round; expect 36 warmup requests and only two measured rounds in summaries."""
+        """Execute one additional complete warmup round; expect 36 multi-object warmup requests and only two measured rounds in summaries."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=self.manifest(directory)
             data=json.loads(path.read_text());data["workload"]["objbench"]["warmup_rounds"]=1;path.write_text(json.dumps(data))
             report=run(load_config(path),directory/"results")
             self.assertEqual(sum(row["phase"]=="warmup" for row in report["samples"]),36)
-            self.assertEqual(sum(row["attempts"] for row in report["summary"] if not row["op"].startswith(("repeat_","read_","multipart_"))),72)
+            self.assertEqual(sum(row["attempts"] for row in report["summary"] if not row["op"].startswith(("repeat_","parallel_","read_","multipart_"))),72)
 
     def test_other_object_response_cannot_pass_integrity(self):
         """Redirect benchmark GET to a different genuinely stored object; expect content failures and failed dataflow gates."""

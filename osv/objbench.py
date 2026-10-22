@@ -135,7 +135,12 @@ def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, la
                         if operation == "range":
                             request.update(offset=offset,length=length)
                     row.update({name:request[name] for name in ("offset","length") if name in request})
-                    result = worker.call(request)
+                    row["request_start_ns"] = time.monotonic_ns()
+                    try:
+                        result = worker.call(request)
+                    finally:
+                        row["request_end_ns"] = time.monotonic_ns()
+                        row["rpc_wall_ns"] = row["request_end_ns"]-row["request_start_ns"]
                     row["elapsed_ns"] = result["elapsed_ns"]
                     require_ok(result)
                     if operation in ("smallget", "get", "range"):
