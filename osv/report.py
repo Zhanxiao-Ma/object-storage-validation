@@ -31,9 +31,18 @@ def summarize(samples, batches):
                     "verified_ops_s": len(selected)/seconds,
                     "verified_objects_s": sum(s.get("objects", 0) for s in selected)/seconds,
                     "verified_mib_s": sum(s["bytes"] for s in selected)/2**20/seconds})
+        cvs = {}
+        for metric in ("verified_ops_s", "verified_mib_s", "verified_objects_s"):
+            rates = [r[metric] for r in round_results]
+            cvs[metric] = statistics.pstdev(rates)/statistics.mean(rates) if len(rates) > 1 and statistics.mean(rates) else None
+        short = [b["round"] for b in batches if b["target"] == target and b["op"] == op and b["phase"] == "measure" and not b.get("duration_satisfied", True)]
+        queue_ms = [(r["scheduler_wait_ns"]+r.get("dispatch_wait_ns", 0)+r.get("queue_wait_ns", 0))/1e6 for r in good if "scheduler_wait_ns" in r]
+        rpc_ms = [r["rpc_wall_ns"]/1e6 for r in good if "rpc_wall_ns" in r]
         result.append({"target": target, "op": op, "attempts": len(rows),
                        "successes": len(good), "failures": len(rows) - len(good),
-                       "round_results": round_results,
+                       "round_results": round_results, "throughput_cv": cvs,
+                       "short_write_rounds": short, "queue_p95_ms": percentile(queue_ms, .95),
+                       "rpc_p95_ms": percentile(rpc_ms, .95),
                        "measured_seconds": sum(walls),
                        "percentile_sample_count": len(durations),
                        "p50_ms": percentile(durations, .50),
@@ -76,6 +85,11 @@ def comparisons(config, cases, summary, operation_metrics=None):
                 continue
             throughput = (x[metric] / y[metric] if x and y and y[metric] else None)
             latency = x["p95_ms"] / y["p95_ms"] if x and y and y["p95_ms"] else None
+            if x and y:
+                if x.get("short_write_rounds") or y.get("short_write_rounds"):
+                    why = why or "write measurement window too short"
+                if any((r.get("throughput_cv", {}).get(metric) or 0) > .20 for r in (x, y)):
+                    why = why or "high between-round throughput variation (CV > 20%)"
             if throughput is None or latency is None:
                 why = why or "comparison metrics unavailable"
             enough = bool(x and y and min(x["successes"], y["successes"]) >= pair["min_samples"])
@@ -246,9 +260,12 @@ def markdown(report):
     lines += ["", "执行模式：" + report["workload"].get("mode", "all") + "；功能结果不阻断性能执行或 SDK 性能对比。", ""]
     def fmt(value):
         return "N/A" if value is None else f"{value:.3f}"
+    workspace = report.get("performance_workspace")
+    if workspace:
+        lines += ["", "临时文件系统："+workspace["filesystem"]+"；输入文件在上传计时前逐个 fsync，不强制使用内存文件系统。大块 PUT、重复 PUT 和分片上传每轮自动测量至少 5 秒；达到安全上限仍不足时标记短窗口。", ""]
     if report["summary"]:
-        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s | 逐轮吞吐 min–max / CV |",
-                  "|---|---|---|---|---|---|---|---|---|---|"]
+        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s | 排队 p95 ms | 逐轮吞吐 min–max / CV |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|"]
     for row in report["summary"]:
         metric = report["operation_metrics"].get(row["op"], "verified_ops_s")
         rates = [r[metric] for r in row.get("round_results", [])] if metric != "latency_only" else []
@@ -257,9 +274,9 @@ def markdown(report):
             cv = statistics.pstdev(rates)/statistics.mean(rates) if statistics.mean(rates) else 0
             variation = f"{min(rates):.3f}–{max(rates):.3f} / {cv:.1%}" if len(rates) > 1 else "仅 1 轮"
         lines.append(f"| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | "
-                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + f" | {variation} |")
+                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + f" | {fmt(row.get("queue_p95_ms"))} | {variation} |")
     if report["summary"]:
-        lines += ["", "逐轮吞吐单位与该用例主指标一致；CV 为各轮吞吐的标准差/均值，不表示置信区间。各轮耗时与有效样本数保留在 JSON；不足 100 个成功样本的 p99 仅作样本描述。"]
+        lines += ["", "逐轮吞吐单位与该用例主指标一致；CV 为各轮吞吐的标准差/均值，不表示置信区间。CV 超过 20% 的预算对比记为 inconclusive，该阈值是质量提示而非统计显著性检验。排队包含调度器等待、执行器派发与客户端等待；RPC wall、SDK 时间、主机及进程 I/O 证据保留在 JSON。各轮耗时与有效样本数保留在 JSON；不足 100 个成功样本的 p99 仅作样本描述。"]
     if report.get("benchmark_datasets"):
         lines += ["", "### 性能数据集", "", "使用多对象与拆块数据集；Range 是额外阶段。", ""]
         for dataset in report["benchmark_datasets"]:

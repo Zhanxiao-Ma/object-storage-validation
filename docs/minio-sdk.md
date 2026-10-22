@@ -56,3 +56,7 @@ OSV_RUN_MINIO_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_mi
 计时修正后，输入生成与预期摘要不进入吞吐计时；分片子阶段只报告延迟，吞吐看 `multipart_total`。旧实测报告保留作历史记录，其中的分片子阶段吞吐不再有效，大文件吞吐排名也不作为修正后的结论。
 
 [计时修正后的 MinIO 验证](examples/minio-sdk-performance-corrected.md) 包含四种 SDK 的全部性能用例、逐轮 CV 及完整清理结果。
+
+持续写入使用普通磁盘临时目录，输入逐文件 fsync 后计时；没有默认使用 tmpfs。写窗口与排队证据见 [性能测试说明](performance.md#持续写入与本地-io)。
+
+[持续写入与有界调度验证](examples/minio-sdk-performance-sustained.md) 记录最终固定数据集版本的四轮测量、客户端 I/O 与本地资源对照。

@@ -9,6 +9,8 @@ import math
 import random
 import time
 import tempfile
+import threading
+from .benchmark import WriteWindow, write_seconds, MAX_WRITE_BYTES, sync_inputs
 from pathlib import Path
 
 from .scenarios import assert_equal, require_ok
@@ -64,8 +66,10 @@ def iter_objbench(ctx, workers, report, target, round_plan=None):
     rounds = round_plan if round_plan is not None else [("warmup", n) for n in range(options["warmup_rounds"])] + [("measure", n) for n in range(ctx.workload["rounds"])]
     for phase, round_index in rounds:
         prefix = ctx.prefix+f"objbench/{phase}-{round_index}/"
+        small_round, big_round = list(small), list(big)
+        all_objects = small_round+big_round
         expected_keys = {prefix+name for name, _, _ in all_objects}
-        phases = [("smallput",small), ("smallget",small), ("put",big), ("get",big), ("range",big),
+        phases = [("smallput",small_round), ("smallget",small_round), ("put",big_round), ("get",big_round), ("range",big_round),
                   ("list",[None]*(lanes*options["list_requests_per_lane"])),
                   ("head",all_objects), ("delete",all_objects)]
         with tempfile.TemporaryDirectory(prefix="objbench-input-", dir=ctx.directory) as staging:
@@ -74,12 +78,14 @@ def iter_objbench(ctx, workers, report, target, round_plan=None):
                 path = Path(staging)/str(identity)
                 path.write_bytes(_payload(ctx.workload["seed"], identity, size))
                 sources[name] = path
+            sync_inputs(sources.values())
             yield from _phases(ctx, workers, report, target, phase, round_index, prefix,
                                phases, lanes, sources, expected_keys)
 
 
 def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, lanes, sources, expected_keys):
     current_failure = False
+    writes = {}
     for operation, items in phases:
         # Prepare independent expected lengths/digests before starting the batch clock.
         oracles = {}
@@ -94,22 +100,34 @@ def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, la
                     stream.seek(offset)
                     digest = hashlib.sha256(stream.read(length)).digest()
                 oracles[name] = (offset, length, digest)
+        base_items = list(items)
+        upload_hashes = {}
+        if operation == "put":
+            upload_hashes = {sources[name]: hashlib.sha256(sources[name].read_bytes()).digest() for name, _, _ in base_items}
+        minimum = write_seconds(ctx, phase) if operation == "put" else 0
+        limit = max(len(items), min(4096, MAX_WRITE_BYTES//items[0][1])) if minimum else len(items)
+        stopped = threading.Event()
         def lane(slot):
-            rows = []
+            rows, added = [], []
             worker = workers[slot]
             output = ctx.directory/f"objbench-{slot}.output"
-            for index in range(slot, len(items), lanes):
+            index = slot
+            while index < len(base_items) or (minimum and not stopped.is_set() and index < limit and time.monotonic_ns() < window.deadline_ns):
                 row = {"target":target, "op":operation, "phase":phase, "round":round_index,
                        "index":index, "ok":False, "elapsed_ns":0, "bytes":0}
                 try:
-                    item = items[index]
+                    item = base_items[index % len(base_items)]
                     request = {"op":operation, "prefix":prefix}
                     if item:
                         name, size, identity = item
+                        source_name = name
+                        if index >= len(base_items):
+                            name += f"-write-{index:06d}"
+                            added.append(((name, size, identity), sources[source_name]))
                         request["key"] = prefix+name
                         row["key"] = request["key"]
                     if operation in ("smallput", "put"):
-                        request.update(op="put", body_path=str(sources[name]))
+                        request.update(op="put", body_path=str(sources[source_name]))
                     elif operation in ("smallget", "get", "range"):
                         request.update(op="get", output_path=str(output))
                         output.unlink(missing_ok=True)
@@ -138,14 +156,54 @@ def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, la
                 except Exception as error:
                     row["error"] = str(error)
                 rows.append(row)
-            return rows
-        start = time.monotonic_ns()
-        with ThreadPoolExecutor(max_workers=lanes) as executor:
-            batches = list(executor.map(lane,range(lanes)))
-        rows = [row for batch in batches for row in batch]
+                if not row["ok"]:
+                    stopped.set()
+                index += lanes
+            return rows, added
+        with WriteWindow(workers, minimum) as window:
+            with ThreadPoolExecutor(max_workers=lanes) as executor:
+                batches = list(executor.map(lane,range(lanes)))
+        rows = [row for batch, _ in batches for row in batch]
+        additions = [entry for _, extra in batches for entry in extra]
+        by_key = {r.get("key"): r for r in rows}
+        def verify_extra(slot):
+            worker = workers[slot]
+            output = ctx.directory/f"objbench-extra-{slot}.verify"
+            for (name, size, _), path in additions[slot::lanes]:
+                key = prefix+name
+                row = by_key[key]
+                try:
+                    if row["ok"]:
+                        require_ok(worker.call({"op": "get", "key": key, "output_path": str(output)}))
+                        actual = output.read_bytes()
+                        assert_equal(len(actual), size)
+                        assert_equal(hashlib.sha256(actual).digest(), upload_hashes[path])
+                except Exception as error:
+                    row.update(ok=False, bytes=0, error="uploaded object readback failed: "+str(error))
+                finally:
+                    output.unlink(missing_ok=True)
+                    try:
+                        require_ok(worker.call({"op": "delete", "key": key}))
+                    except Exception as error:
+                        report["execution_errors"].append({"target": target, "phase": "objbench_extra_cleanup", "error": str(error)})
+        verified_at = time.monotonic()
+        if additions:
+            with ThreadPoolExecutor(max_workers=lanes) as executor:
+                list(executor.map(verify_extra, range(lanes)))
+        verification = {"extra_objects": len(additions), "wall_seconds": time.monotonic()-verified_at,
+                        "failures": sum(not by_key[prefix+item[0]]["ok"] for item, _ in additions),
+                        "outside_upload_timing": True}
+        if operation in ("smallput", "put"):
+            writes.update({row["key"]: row for row in rows if "key" in row})
+        elif operation in ("smallget", "get"):
+            for row in rows:
+                if not row["ok"] and row.get("key") in writes:
+                    writes[row["key"]].update(ok=False, bytes=0, error="uploaded object readback failed: "+row["error"])
         report["samples"].extend(rows)
-        report["batches"].append({"target":target,"op":operation,"phase":phase,"round":round_index,
-                                  "wall_seconds":(time.monotonic_ns()-start)/1e9, "wall_start_ns": start})
+        batch = window.batch(target=target, op=operation, phase=phase, round=round_index)
+        if operation == "put":
+            batch["verification"] = verification
+        report["batches"].append(batch)
         if any(not row["ok"] for row in rows):
             current_failure = True
         yield operation

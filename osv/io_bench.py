@@ -9,6 +9,7 @@ import random
 import time
 
 from .scenarios import assert_equal, require_ok
+from .benchmark import sync_inputs
 
 READ_DEFAULTS = {"small_object_sizes": [4096, 65536, 131072], "objects": 8,
                  "object_size": 64*1024**2, "range_sizes": [65536, 1024**2, 4*1024**2],
@@ -75,19 +76,27 @@ def sample_call(pool, request, target, op, phase, round_index, **metadata):
     """Keep worker SDK timing distinct from client-side queueing and verification."""
     row = {"target": target, "op": op, "phase": phase, "round": round_index,
            "ok": False, "bytes": 0, "elapsed_ns": 0, "timing_scope": "sdk", **metadata}
-    start = time.monotonic()
+    start_ns = time.monotonic_ns()
+    submitted_ns = row.pop("submitted_ns", start_ns)
+    ready_ns = row.pop("ready_ns", submitted_ns)
+    row["scheduler_wait_ns"] = max(0, submitted_ns-ready_ns)
+    row["dispatch_wait_ns"] = max(0, start_ns-submitted_ns)
     try:
         with loan(pool) as worker:
-            acquired = time.monotonic()
-            result = worker.call(request)
-        row["queue_wait_ns"] = int((acquired-start)*1e9)
+            acquired_ns = time.monotonic_ns()
+            row["queue_wait_ns"] = acquired_ns-start_ns
+            rpc_start = time.monotonic_ns()
+            try:
+                result = worker.call(request)
+            finally:
+                row["rpc_wall_ns"] = time.monotonic_ns()-rpc_start
         row["elapsed_ns"] = result["elapsed_ns"]
         require_ok(result)
         row["ok"] = True
-        return row, result, start, time.monotonic()
+        return row, result, start_ns/1e9, time.monotonic_ns()/1e9
     except Exception as error:
         row["error"] = str(error)
-        return row, {}, start, time.monotonic()
+        return row, {}, start_ns/1e9, time.monotonic_ns()/1e9
 
 
 def fail(row, error):
@@ -112,6 +121,7 @@ def iter_reads(ctx, workers, report, target, phase, round_index):
             for index in range(1 if pattern == "hot" else options["objects"]):
                 source = ctx.directory/f"{op}-{index}.source"
                 source.write_bytes(random.Random(ctx.workload["seed"]+index).randbytes(size))
+                sync_inputs([source])
                 key = prefix+op+f"/{index}"
                 require_ok(workers[0].call({"op": "put", "key": key, "body_path": str(source)}))
                 sources.append((key, source))
@@ -188,63 +198,9 @@ def iter_multipart(ctx, workers, report, target, phase, round_index):
                     path.write_bytes(data)
                     paths.append(path)
                 inputs.append((prefix+str(index), paths, digest.digest()))
-            pending_verification = []
-            with ThreadPoolExecutor(max_workers=len(workers)) as parts_executor:
-                def upload(entry):
-                    key, paths, expected_hash = entry
-                    upload_id = None
-                    part_rows = []
-                    total = {"target": target, "op": "multipart_total_"+label, "phase": phase, "round": round_index,
-                             "key": key, "ok": False, "bytes": 0, "elapsed_ns": 0, "timing_scope": "upload_wall"}
-                    started = time.monotonic_ns()
-                    try:
-                        row, result, begin, end = sample_call(pool, {"op": "mp_create", "key": key}, target,
-                            "multipart_create_"+label, phase, round_index, key=key)
-                        report["samples"].append(row)
-                        if not row["ok"]:
-                            raise RuntimeError(row["error"])
-                        upload_id = result["upload_id"]
-                        def part(number, path):
-                            r, response, a, b = sample_call(pool, {"op": "mp_part", "key": key, "upload_id": upload_id,
-                                "part_number": number, "body_path": str(path)}, target, "multipart_part_"+label,
-                                phase, round_index, key=key, part_number=number)
-                            r["bytes"] = path.stat().st_size if r["ok"] else 0
-                            return r, response
-                        futures = [parts_executor.submit(part, number, path) for number, path in enumerate(paths, 1)]
-                        outcomes = [future.result() for future in futures]
-                        part_rows = [item[0] for item in outcomes]
-                        report["samples"].extend(part_rows)
-                        if any(not r["ok"] for r in part_rows):
-                            raise RuntimeError("one or more multipart parts failed")
-                        completed = [{"part_number": number, "etag": response["etag"]}
-                                     for number, (_, response) in enumerate(outcomes, 1)]
-                        row, _, begin, end = sample_call(pool, {"op": "mp_complete", "key": key, "upload_id": upload_id,
-                            "parts": completed}, target, "multipart_complete_"+label, phase, round_index, key=key)
-                        report["samples"].append(row)
-                        total["elapsed_ns"] = time.monotonic_ns()-started
-                        if not row["ok"]:
-                            raise RuntimeError(row["error"])
-                        upload_id = None
-                        pending_verification.append((key, expected_hash, total, part_rows))
-                    except Exception as error:
-                        fail(total, error)
-                        if not total["elapsed_ns"]:
-                            total["elapsed_ns"] = time.monotonic_ns()-started
-                        for row in part_rows:
-                            fail(row, "multipart object was not verified: "+str(error))
-                    finally:
-                        if upload_id is not None:
-                            try:
-                                with loan(pool) as worker:
-                                    require_ok(worker.call({"op": "mp_abort", "key": key, "upload_id": upload_id}))
-                            except Exception as error:
-                                report["execution_errors"].append({"target": target, "phase": "multipart_abort", "error": str(error)})
-                    report["samples"].append(total)
-                started_ns = time.monotonic_ns()
-                with ThreadPoolExecutor(max_workers=min(options["objects"], len(workers))) as executor:
-                    list(executor.map(upload, inputs))
-            finished_ns = time.monotonic_ns()
-            upload_wall = (finished_ns-started_ns)/1e9
+            sync_inputs(path for _, paths, _ in inputs for path in paths)
+            from .upload_scheduler import upload_group
+            pending_verification, uploaded_keys, batch = upload_group(ctx, workers, report, target, phase, round_index, size, label, inputs)
             # Readback must not consume upload clients or enter upload throughput timing.
             for key, expected_hash, total, part_rows in pending_verification:
                 output = ctx.directory/("multipart-"+key.rsplit("/", 1)[1]+".verify")
@@ -262,18 +218,17 @@ def iter_multipart(ctx, workers, report, target, phase, round_index):
                         fail(row, "multipart object was not verified: "+str(error))
                 finally:
                     output.unlink(missing_ok=True)
-            for key, paths, _ in inputs:
+            for key in uploaded_keys:
                 try:
                     with loan(pool) as worker:
                         require_ok(worker.call({"op": "delete", "key": key}))
                 except Exception as error:
                     report["execution_errors"].append({"target": target, "phase": "multipart_cleanup", "error": str(error)})
+            for _, paths, _ in inputs:
                 for path in paths:
                     path.unlink(missing_ok=True)
             report["operation_metrics"]["multipart_total_"+label] = "verified_mib_s"
-            report["batches"].append({"target": target, "op": "multipart_total_"+label, "phase": phase,
-                "round": round_index, "wall_seconds": upload_wall,
-                "wall_start_ns": started_ns, "wall_end_ns": finished_ns})
+            report["batches"].append(batch)
             # Overlapping stages have no standalone throughput window.
             # Preserve SDK latency/counts and report throughput for total only.
             for name in ("create", "part", "complete"):

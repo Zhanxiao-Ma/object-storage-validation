@@ -17,6 +17,9 @@ class MinioSdkTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import boto3
+        # Existing exact-count checks remain count-driven; a separate test exercises sustained windows.
+        cls.write_window = patch("osv.benchmark.MIN_WRITE_SECONDS", 0)
+        cls.write_window.start();cls.addClassCleanup(cls.write_window.stop)
         from local_moto import LocalMotoServer
         cls.server=LocalMotoServer();cls.server.start();cls.addClassCleanup(cls.server.stop)
         host,port=cls.server.get_host_and_port()
@@ -98,3 +101,27 @@ class MinioSdkTest(unittest.TestCase):
             for offset in range(0,len(keys),1000):
                 self.client.delete_objects(Bucket="osv-minio-sdk-test",Delete={"Objects":[{"Key":key} for key in keys[offset:offset+1000]]})
         self.assertEqual(self.client.list_objects_v2(Bucket="osv-minio-sdk-test").get("KeyCount"),0)
+
+    def test_real_minio_sustained_writes_verify_every_extra_key_and_part(self):
+        """Purpose: extend genuine MinIO Java/C++ PUT and multipart windows using prepared files; expect fresh extra keys, exact readbacks, bounded measured windows, successful cleanup, and no SDK/protocol simulation."""
+        with tempfile.TemporaryDirectory() as temporary, patch("osv.benchmark.MIN_WRITE_SECONDS", .1):
+            directory=Path(temporary);manifest=directory/"manifest.json"
+            manifest.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance","object_size":1024,"range_size":17,"concurrency":2,"requests":4,"rounds":1,"warmup_requests":0,
+                "objbench":{"small_objects":2,"small_object_size":5,"big_object_size":1024**2,"block_size":1024**2},
+                "read":{"small_object_sizes":[3],"objects":1,"object_size":65537,"range_sizes":[4096],"patterns":["hot"]},
+                "multipart":{"object_sizes":[5*1024**2+17],"part_sizes":[5*1024**2],"objects":1}}}))
+            report=run(load_config(manifest),directory/"results")
+            self.assertEqual(report["execution_errors"],[])
+            self.assertTrue(all(r["ok"] for r in report["samples"]),[r for r in report["samples"] if not r["ok"]])
+            for target in self.targets:
+                puts=[r for r in report["samples"] if r["target"]==target["id"] and r["op"]=="put"]
+                self.assertGreater(len(puts),1)
+                self.assertEqual(len([r for r in report["samples"] if r["target"]==target["id"] and r["op"]=="get"]),1)
+                upload=next(b for b in report["batches"] if b["target"]==target["id"] and b["op"]=="put")
+                self.assertEqual(upload["verification"]["extra_objects"],len(puts)-1)
+                self.assertEqual(upload["verification"]["failures"],0)
+                windows=[b for b in report["batches"] if b["target"]==target["id"] and b.get("minimum_seconds",0)>0]
+                self.assertEqual(len(windows),3)
+                self.assertTrue(all(b["duration_satisfied"] and b["wall_seconds"]>=.1 for b in windows))
+            self.assertEqual(self.client.list_objects_v2(Bucket="osv-minio-sdk-test").get("KeyCount"),0)
+            self.assertFalse(self.client.list_multipart_uploads(Bucket="osv-minio-sdk-test").get("Uploads",[]))

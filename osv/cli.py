@@ -1,5 +1,6 @@
 """One manifest, real SDK subprocesses, reproducible payloads and explicit evidence."""
 import argparse
+from contextlib import ExitStack
 from datetime import datetime, timezone
 import platform
 from concurrent.futures import ThreadPoolExecutor
@@ -250,10 +251,17 @@ def _run(config, output_dir):
     report["execution_errors"] = []
     pools = {}
     ready = set()
-    with tempfile.TemporaryDirectory(prefix="osv-payload-") as temporary:
-        root = Path(temporary)
-        body = root / "payload.bin"
-        body.write_bytes(payload)
+    with ExitStack() as stack:
+        root = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="osv-payload-")))
+        from .benchmark import performance_workspace, sync_inputs
+        perfroot = stack.enter_context(performance_workspace(workload, config.get("targets", []), report)) if performance else root
+        perfbody = perfroot / "payload.bin"
+        if performance:
+            perfbody.write_bytes(payload)
+            sync_inputs([perfbody])
+        body = root / "payload.bin" if functional else perfbody
+        if functional:
+            body.write_bytes(payload)
         try:
             for target in config.get("targets", []):
                 ident = target["id"]
@@ -266,6 +274,8 @@ def _run(config, output_dir):
                     report["targets"][-1]["worker_info"] = workers[0].info
                     directory = root / ident
                     directory.mkdir()
+                    if performance:
+                        (perfroot/ident).mkdir()
                 except Exception as error:
                     report["execution_errors"].append({"target": ident, "phase": "worker_setup", "error": str(error)})
                     if functional:
@@ -325,7 +335,7 @@ def _run(config, output_dir):
                                 if missing:
                                     raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
                             if group == "operations":
-                                require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(body)}))
+                                require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(perfbody)}))
                             ready.add((ident, group))
                         except Exception as error:
                             report["execution_errors"].append({"target": ident, "phase": "performance_setup", "workload": group, "error": str(error)})
@@ -335,19 +345,16 @@ def _run(config, output_dir):
                 rounds = max(warmups.values()) if phase == "warmup" else workload["rounds"]
                 count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
                 for round_index in range(rounds):
-                    # Fixed shuffle plus rotation balances first/last positions across rounds.
-                    order = list(config.get("targets", []))
-                    random.Random(workload["seed"]).shuffle(order)
-                    offset = round_index % max(1, len(order))
-                    order = order[offset:]+order[:offset]
+                    from .benchmark import target_order
+                    order = target_order(config.get("targets", []), workload["seed"], round_index)
                     for group in groups:
                         active = []
                         for target in order:
                             ident = target["id"]
                             if (ident, group) not in ready or (phase == "warmup" and round_index >= warmups[group]):
                                 continue
-                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", root/ident, payload, body,
-                                          root/ident/"read.bin", workload)
+                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", perfroot/ident, payload, perfbody,
+                                          perfroot/ident/"read.bin", workload)
                             if group == "objbench":
                                 from .objbench import iter_objbench
                                 iterator = iter_objbench(ctx, pools[ident], report, ident, [(phase, round_index)])
@@ -444,11 +451,14 @@ def iter_operations(ctx, workers, report, ident, registry, workload, phase, roun
     """Yield after each measured case to interleave targets."""
     for op in workload["operations"]:
         directory, perf_prefix, payload, body = ctx.directory, ctx.prefix, ctx.payload, ctx.body
+        from .benchmark import WriteWindow, write_seconds
+        minimum = write_seconds(ctx, phase) if op == "put" else 0
         def lane(slot):
             samples = []
             worker = workers[slot]
             output = directory / f"slot-{slot}.bin"
-            for index in range(slot, count, len(workers)):
+            index = slot
+            while index < count or (minimum and time.monotonic_ns() < window.deadline_ns and index < 100000):
                 operation = registry.operations[op]
                 ctx = Context(worker, perf_prefix, directory, payload, body,
                               output, workload, round_index, index)
@@ -470,11 +480,13 @@ def iter_operations(ctx, workers, report, ident, registry, workload, phase, roun
                 except Exception as error:
                     row["error"] = str(error)
                 samples.append(row)
+                index += len(workers)
+                if not row["ok"] and index >= count:
+                    break
             return samples
-        started = time.monotonic()
-        with ThreadPoolExecutor(max_workers=len(workers)) as executor:
-            for samples in executor.map(lane, range(len(workers))):
-                report["samples"].extend(samples)
-        report["batches"].append({"target": ident, "op": "repeat_"+op, "phase": phase,
-                                "round": round_index, "wall_seconds": time.monotonic()-started})
+        with WriteWindow(workers, minimum) as window:
+            with ThreadPoolExecutor(max_workers=len(workers)) as executor:
+                for samples in executor.map(lane, range(len(workers))):
+                    report["samples"].extend(samples)
+        report["batches"].append(window.batch(target=ident, op="repeat_"+op, phase=phase, round=round_index))
         yield op
