@@ -109,7 +109,7 @@ class FileOperationsTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d,patch.object(Worker,'call',delay):
             report=self.execute(Path(d))
             heads=[b for b in report['batches'] if b['op'].startswith('head_')]
-            self.assertGreaterEqual(delayed[0],.16)
+            self.assertGreaterEqual(delayed[0],.12)
             self.assertLess(sum(b['wall_seconds'] for b in heads),delayed[0]/2)
 
     def test_warmup_excluded_and_targets_interleaved(self):
@@ -125,6 +125,23 @@ class FileOperationsTest(unittest.TestCase):
             first=[b['target'] for b in batches if b['op']=='head_17_c1' and b['round']==0]
             second=[b['target'] for b in batches if b['op']=='head_17_c1' and b['round']==1]
             self.assertEqual(first,second[::-1])
+
+    def test_read_sources_prepared_once_per_lane(self):
+        """Purpose: perform repeated genuine reads/copies; expect one source per lane, exact results, and complete cleanup."""
+        original=Worker.call;prepared=[]
+        def observe(worker,q):
+            if q['op']=='put' and '/source/' in q.get('key',''):
+                prepared.append(q['key'])
+            return original(worker,q)
+        def change(data):data['workload'].update(requests=7)
+        with tempfile.TemporaryDirectory() as d,patch.object(Worker,'call',observe):
+            report=self.execute(Path(d),change)
+            self.assertEqual(report['execution_errors'],[])
+            self.assertTrue(all(s['ok'] for s in report['samples']))
+            # HEAD, GET, COPY and three Range positions, each with 1+2 sources.
+            self.assertEqual(len(prepared),18)
+            self.assertEqual(len(set(prepared)),18)
+            self.assertFalse(list((Path(d)/'objects').rglob('*.bin')))
 
     def test_same_protocol_sdk_comparison(self):
         """Purpose: compare two S3-speaking SDK identities; expect a valid budget result rather than a native-protocol rejection."""

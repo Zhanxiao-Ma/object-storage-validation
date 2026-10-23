@@ -108,10 +108,16 @@ def iter_files(ctx, workers, report, target, phase, round_index):
         window_count = max(1,max(case['concurrency'], min(128, MAX_WINDOW_BYTES//max(1,p['size']), count)))
         rows = []
         listing_keys=[]
+        source_keys=[]
         try:
+            if action in ('get','range','head','copy'):
+                for slot in range(case['concurrency']):
+                    key=prefix+f'source/{slot}'
+                    require_ok(workers[slot].call({'op':'put','key':key,'body_path':str(source)}))
+                    source_keys.append(key)
             if action=='list':
                 listing_keys=[prefix+f'listing/{j}' for j in range(p['count'])]
-                for key in listing_keys:require_ok(workers[0].call({'op':'put','key':key,'body_path':str(source)}))
+                for key in listing_keys+source_keys:require_ok(workers[0].call({'op':'put','key':key,'body_path':str(source)}))
             with ThreadPoolExecutor(max_workers=case['concurrency']) as executor:
                 while done < count or (measured < minimum and done < limit):
                     n = min(window_count, (count-done) if done<count else limit-done)
@@ -121,12 +127,12 @@ def iter_files(ctx, workers, report, target, phase, round_index):
                         q={'op':action,'key':key}
                         expected_keys=[]
                         if action in ('get','range','head','copy'):
-                            original=key+'/source' if action=='copy' else key
-                            require_ok(workers[0].call({'op':'put','key':original,'body_path':str(source)}));cleanup.append(original)
+                            original=source_keys[i % case['concurrency']]
+                            if action!='copy':q['key']=original
                         if action in ('put','multipart'):
                             q.update(body_path=str(source));cleanup.append(key)
                         if action=='multipart':q.update(op='multipart_upload',part_paths=part_paths)
-                        if action=='copy':q.update(source_key=key+'/source');cleanup.append(key)
+                        if action=='copy':q.update(source_key=original);cleanup.append(key)
                         if action in ('get','range'):
                             q.update(op='get',output_path=str(out))
                             if action=='range':q.update(offset=offset,length=p['length'])
@@ -200,5 +206,5 @@ def iter_files(ctx, workers, report, target, phase, round_index):
                 'verification_outside_timing':True})
             for path in directory.iterdir():path.unlink()
             directory.rmdir()
-            for key in listing_keys:require_ok(workers[0].call({'op':'delete','key':key}))
+            for key in listing_keys+source_keys:require_ok(workers[0].call({'op':'delete','key':key}))
         yield name
