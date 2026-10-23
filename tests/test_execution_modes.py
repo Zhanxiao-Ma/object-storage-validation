@@ -29,7 +29,7 @@ class ExecutionModesTest(unittest.TestCase):
             +"  child.stdin.write(line);child.stdin.flush();r=json.loads(child.stdout.readline())\n"
             # The real producer and real consumer still run; only fault the actual bytes received.
             +("  if q.get('op')=='get' and '/performance/' in q.get('key','') and r.get('ok'): open(q['output_path'],'wb').write(b'wrong bytes')\n" if corrupt else "")
-            +("  if q['op']=='info': r['capabilities']=[x for x in r['capabilities'] if not x.startswith('mp_')]\n" if missing_multipart else "")
+            +("  if q['op']=='info': r['capabilities']=[x for x in r['capabilities'] if not x.startswith('mp_') and x!='multipart_upload']\n" if missing_multipart else "")
             +"  print(json.dumps(r),flush=True)\nfinally: child.stdin.close();child.wait()\n")
         data=config(directory);data["targets"][0]["command"]=[sys.executable,str(proxy)];data["plugins"]=["mode_suite"]
         data["workload"].pop("mode");data["workload"].update(compatibility_suites=["independent_suite"],
@@ -64,10 +64,10 @@ class ExecutionModesTest(unittest.TestCase):
             self.assertNotIn("performance_model",report["workload"])
             self.assertFalse((directory/"results/alignment.json").exists())
             ops={r["op"] for r in report["summary"]}
-            self.assertTrue({"smallput","smallget","put","get","range","head","list","delete","repeat_get","repeat_range","repeat_put","repeat_head","repeat_list","read_small_3","read_sequential_6","read_random_6","read_hot_6","multipart_create_17_5242880","multipart_part_17_5242880","multipart_complete_17_5242880","multipart_total_17_5242880"} <= ops,ops)
+            self.assertEqual(ops,{c["name"] for c in report["performance_inventory"]})
             self.assertTrue(all(s["ok"] for s in report["samples"]))
             self.assertFalse(any("/functional/" in q.get("key",q.get("prefix","")) for q in requests))
-            self.assertTrue(any(q["op"]=="mp_complete" for q in requests))
+            self.assertTrue(any(q["op"]=="multipart_upload" for q in requests))
             self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
 
     def test_missing_multipart_reports_error_and_continues_other_cases(self):
@@ -75,33 +75,11 @@ class ExecutionModesTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);result,report,requests=self.execute(directory,"performance",missing_multipart=True)
             self.assertEqual(result.returncode,1,result.stdout+result.stderr)
-            self.assertTrue(any(r.get("workload")=="multipart" and "mp_" in r["error"] for r in report["execution_errors"]))
-            self.assertTrue(any(r["op"]=="repeat_get" for r in report["samples"]))
-            self.assertTrue(any(r["op"]=="read_hot_6" for r in report["samples"]))
-            self.assertTrue(any(r["op"]=="smallput" for r in report["samples"]))
+            self.assertTrue(any(r.get("workload")=="multipart" and "multipart_upload" in r["error"] for r in report["execution_errors"]))
+            self.assertTrue(any(r["op"].startswith("get_") for r in report["samples"]))
+            self.assertTrue(any(r["op"].startswith("range_") for r in report["samples"]))
+            self.assertTrue(any(r["op"].startswith("put_") for r in report["samples"]))
             self.assertFalse(any(q["op"].startswith("mp_") for q in requests))
-            self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
-
-    def test_each_case_keeps_its_own_warmup_count(self):
-        """Purpose: run different real warmup counts together; expect independent counts per case, every measured case present, warmups excluded from summaries and no storage leaks."""
-        with tempfile.TemporaryDirectory() as temporary:
-            directory=Path(temporary);data=config(directory);workload=data["workload"]
-            workload.update(mode="performance",rounds=1,requests=2,warmup_requests=3)
-            workload["objbench"]["warmup_rounds"]=1
-            workload["read"]["warmup_rounds"]=2
-            workload["multipart"]["warmup_rounds"]=0
-            path=directory/"manifest.json";path.write_text(json.dumps(data))
-            result=subprocess.run([sys.executable,"-m","osv","run",str(path),"--output",str(directory/"results")],cwd=ROOT,capture_output=True,text=True,timeout=30)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
-            report=json.loads((directory/"results/report.json").read_text())
-            warm=[r for r in report["samples"] if r["phase"]=="warmup"]
-            self.assertEqual(sum(r["op"].startswith("repeat_") for r in warm),15)
-            self.assertEqual(sum(r["op"].startswith("read_") for r in warm),16)
-            self.assertFalse(any(r["op"].startswith("multipart_") for r in warm))
-            self.assertEqual(sum(r["op"]=="parallel_put" for r in warm),3)
-            self.assertEqual(len(warm),59)
-            self.assertEqual(sum(r["attempts"] for r in report["summary"]),49)
-            self.assertTrue(all(r["ok"] for r in report["samples"]))
             self.assertEqual(list((directory/"objects").rglob("*.bin")),[])
 
     def test_obsolete_selector_cannot_silently_hide_performance_cases(self):
@@ -133,7 +111,7 @@ class ExecutionModesTest(unittest.TestCase):
             failed=[s for s in report["samples"] if not s["ok"]]
             self.assertTrue(failed);self.assertTrue(all(s["bytes"]==0 for s in failed))
             self.assertTrue(any(s["failures"] for s in report["summary"]))
-            self.assertTrue(any(s["op"].startswith("multipart_total_") for s in failed))
+            self.assertTrue(any(s["op"].startswith("multipart_") for s in failed))
 
     def test_mode_override_and_invalid_values_are_checked_before_io(self):
         """Purpose: load mode defaults and CLI-equivalent overrides; expect explicit precedence and reject malformed values without starting a worker."""

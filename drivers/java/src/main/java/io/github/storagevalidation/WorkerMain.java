@@ -73,6 +73,8 @@ public final class WorkerMain {
                         if("s3".equals(provider)) capabilities.addAll(Arrays.asList("tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"));
                         if("s3".equals(provider)) { result.put("async_jobs_limit",512);capabilities.add("async_requests");capabilities.addAll(AuxiliaryApis.capabilities());capabilities.addAll(CephLogging.capabilities());capabilities.add("select");capabilities.addAll(S3Identities.capabilities());capabilities.add("response_body_capture");capabilities.add("sdk_request_id");capabilities.addAll(S3Presigning.capabilities());capabilities.addAll(S3AtomicStreams.capabilities());capabilities.addAll(ControlApiModels.capabilities());capabilities.addAll(Arrays.asList("copy_source_version","copy_acl","mp_copy_version","sdk_error_message","concurrent_requests","mp_create_tagging","versions_storage_class"));capabilities.addAll(S3Checksums.capabilities());if(S3Versioning.supportsDeleteConditions())capabilities.add("delete_many_conditions");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LoggingEnabled.builder(),"TargetObjectKeyFormat"))capabilities.add("logging_target_key_format");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.LifecycleRule.builder(),"Prefix"))capabilities.add("lifecycle_legacy_prefix");if(S3Checksums.has(software.amazon.awssdk.services.s3.model.ListBucketsResponse.builder(),"ContinuationToken"))capabilities.add("list_buckets_pagination"); }
                         if("s3".equals(provider)) for(String api:S3ApiModels.APIS)capabilities.add("api."+api);
+                        capabilities.add("multipart_upload");
+                        if(capabilities.contains("delete_many"))capabilities.add("delete_files");
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
                         result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
@@ -82,7 +84,8 @@ public final class WorkerMain {
                         result.put("cname",Boolean.parseBoolean(env("CNAME","false")));
                         if("obs".equals(provider)) result.put("auth_mode","OBS; negotiation disabled");
                         result.put("measurement", "operation including local payload IO; excludes JSONL serialization");
-                    } else result.putAll(store.execute(request));
+                    } else if (Arrays.asList("multipart_upload","delete_files").contains(text(request,"op"))) result.putAll(FileOperations.execute(request,store::execute));
+                    else result.putAll(store.execute(request));
                     result.put("ok", true);
                 } catch (Exception error) {
                     result.putAll(failure(error));

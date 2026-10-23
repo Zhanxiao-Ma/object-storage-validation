@@ -209,24 +209,7 @@ Profile 只组合 Suite，不含语言或厂商分支。插件扩展见 [扩展�
 
 ## 性能范围
 
-性能测试自动运行全部用例，不选择模型或档位。其中多对象读写对齐以下负载形态：
-
-1. 100 个 128 KiB 小对象并发 PUT，再 GET 并逐字节散列校验。
-2. 1 GiB 数据按 4 MiB 拆成 256 个独立对象并发 PUT/GET；不是单对象 Multipart 性能。
-3. 额外执行随机 Range 阶段，用 seed 固定偏移并校验准确字节。
-4. 每个有效 lane 一次 LIST，再对全部对象 HEAD、DELETE，最后验证数据集已删除。
-
-`workload.objbench` 可以配置 small_objects、small_object_size、big_object_size、block_size、
-list_requests_per_lane、warmup_rounds。块数向上取整，最后一块保持完整块大小；报告记录实际字节数。
-有效并发取配置并发、小对象数和块数的最小值；每 lane 独立持久 SDK 进程/client。
-读取完整校验，失败数据流不能生成正常的 S3/native 性能比较结论。LIST 同时报告 SDK 调用次数/s 与列举对象数/s。
-
-每次还会执行单对象重复 GET/Range/PUT/HEAD/LIST、每通道独立 Key 的并发覆盖写（`parallel_put`）、不同大小的小对象读取、连续/随机/同对象并发 Range 读取，以及并发分片上传。重复访问样本使用 `repeat_` 前缀，防止同名操作结果混合。详细参数和计时见 [性能测试说明](performance.md)。
-兼容性数据在性能前清理，避免扩大 LIST 数据集。性能按相同用例交错执行各目标，逐轮轮换目标顺序，预热不进入测量统计。
-输入文件 IO、进程调度和完整校验开销与 Go objbench 的内存路径不同；不能把数据量/阶段对齐说成计时实现完全相同。
-
-尚未内置：冷读控制、混合读写、Polars 生产轨迹回放、CPU/RSS 或长期稳定性。
-未按 Polars 生产采样校准，不能从合成负载直接推出引擎生产性能。
+八类独立文件操作自动覆盖单并发和多并发：HEAD、整文件读取、Range、写入、分片上传、列举、复制、删除（单个及批量）。大小矩阵、计时与校验见[性能测试说明](performance.md)。
 
 ## 报告
 

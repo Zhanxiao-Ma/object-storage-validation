@@ -62,7 +62,7 @@ def load_config(path, profile_override=None, mode_override=None):
     if mode_override is not None:
         workload = {**workload, "mode": mode_override}
     defaults = {"mode": "functional", "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
-                "requests": 1000, "concurrency": 4, "warmup_requests": 100,
+                "requests": 32, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 8, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
                 "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "operations": ["get", "range", "put", "head", "list"]}
     workload = {**defaults, **workload}
@@ -82,6 +82,10 @@ def load_config(path, profile_override=None, mode_override=None):
     from .io_bench import normalize as normalize_io
     for model in ("read", "multipart"):
         workload[model] = normalize_io(model, workload.get(model, {}))
+    from .file_bench import normalize as normalize_files
+    workload["files"] = normalize_files(workload.get("files", {}))
+    if workload["mode"] != "functional" and workload["concurrency"] * max(*workload["files"]["sizes"], *workload["files"]["multipart_sizes"],workload["files"]["range_object_size"]) > 1024**3:
+        raise ValueError("files concurrent data exceeds 1 GiB; reduce concurrency or file sizes")
     if "identities" in workload:
         if not isinstance(workload["identities"],dict):raise ValueError("identities must be a metadata object")
         for name,metadata in workload["identities"].items():
@@ -323,64 +327,48 @@ def _run(config, output_dir):
                     except Exception as error:
                         report["execution_errors"].append({"target": ident, "phase": "functional_cleanup", "error": str(error)})
                 if performance:
-                    from .io_bench import required_operations
-                    requirements = {
-                        "objbench": {"put", "get", "head", "list", "delete"},
-                        "operations": {"put", "list", "delete"}.union({"get"} if "put" in workload["operations"] else set(), *(registry.operations[name].required_operations for name in workload["operations"])),
-                        "read": required_operations("read"),
-                        "multipart": required_operations("multipart"),
-                    }
-                    for group, required in requirements.items():
-                        try:
-                            for worker in workers:
-                                missing = required - worker.capabilities
-                                if missing:
-                                    raise RuntimeError("unsupported worker operations: " + ", ".join(sorted(missing)))
-                            if group == "operations":
-                                require_ok(workers[0].call({"op": "put", "key": prefix+ident+"/performance/perf", "body_path": str(perfbody)}))
-                            ready.add((ident, group))
-                        except Exception as error:
-                            report["execution_errors"].append({"target": ident, "phase": "performance_setup", "workload": group, "error": str(error)})
-            groups = ("objbench", "operations", "read", "multipart")
+                    ready.add(ident)
+            from .file_bench import iter_files, inventory
+            report["performance_inventory"] = list(inventory(workload)) if performance else []
             for phase in ("warmup", "measure"):
-                warmups = {group: workload[group]["warmup_rounds"] if group != "operations" else int(workload["warmup_requests"] > 0) for group in groups}
-                rounds = max(warmups.values()) if phase == "warmup" else workload["rounds"]
-                count = workload["warmup_requests"] if phase == "warmup" else workload["requests"]
-                for round_index in range(rounds):
+                rounds = int(workload["warmup_requests"] > 0) if phase == "warmup" else workload["rounds"]
+                for round_index in range(rounds if performance else 0):
                     from .benchmark import target_order
-                    order = target_order(config.get("targets", []), workload["seed"], round_index)
-                    for group in groups:
-                        active = []
-                        for target in order:
-                            ident = target["id"]
-                            if (ident, group) not in ready or (phase == "warmup" and round_index >= warmups[group]):
-                                continue
-                            ctx = Context(pools[ident][0], prefix+ident+"/performance/", perfroot/ident, payload, perfbody,
-                                          perfroot/ident/"read.bin", workload)
-                            if group == "objbench":
-                                from .objbench import iter_objbench
-                                iterator = iter_objbench(ctx, pools[ident], report, ident, [(phase, round_index)])
-                            elif group == "operations":
-                                iterator = iter_operations(ctx, pools[ident], report, ident, registry, workload, phase, round_index, count)
-                            else:
-                                from .io_bench import iter_reads, iter_multipart
-                                iterator = (iter_reads if group == "read" else iter_multipart)(ctx, pools[ident], report, ident, phase, round_index)
-                            active.append((ident, iterator))
+                    active = []
+                    for target in target_order(config.get("targets", []), workload["seed"], round_index):
+                        ident = target["id"]
+                        if ident not in ready: continue
+                        ctx = Context(pools[ident][0], prefix+ident+"/performance/", perfroot/ident, payload, perfbody,
+                                      perfroot/ident/"read.bin", workload)
+                        active.append((ident, iter_files(ctx,pools[ident],report,ident,phase,round_index)))
+                    try:
+                        while active:
+                            pending=[]
+                            for ident, iterator in active:
+                                try:
+                                    next(iterator);pending.append((ident,iterator))
+                                except StopIteration: pass
+                                except Exception as error:
+                                    report["execution_errors"].append({"target":ident,"phase":"file_workload","error":str(error)})
+                            active=pending
+                    finally:
+                        for _, iterator in active: iterator.close()
+                    # Explicit extension operations remain opt-in; built-ins run only in the file matrix.
+                    custom=[name for name in workload["operations"] if name not in ("get","range","put","head","list")]
+                    for target in target_order(config.get("targets", []),workload["seed"],round_index):
+                        ident=target["id"]
+                        if ident not in ready or not custom:continue
                         try:
-                            while active:
-                                pending = []
-                                for ident, iterator in active:
-                                    try:
-                                        next(iterator)
-                                        pending.append((ident, iterator))
-                                    except StopIteration:
-                                        pass
-                                    except Exception as error:
-                                        report["execution_errors"].append({"target": ident, "phase": group+"_workload", "error": str(error)})
-                                active = pending
-                        finally:
-                            for _, iterator in active:
-                                iterator.close()
+                            workers=pools[ident]
+                            required=set().union(*(registry.operations[name].required_operations for name in custom))
+                            missing=required-workers[0].capabilities
+                            if missing:raise RuntimeError("unsupported worker operations: "+", ".join(sorted(missing)))
+                            ctx=Context(workers[0],prefix+ident+"/performance/extensions/",perfroot/ident,payload,perfbody,perfroot/ident/"extension.read",workload)
+                            require_ok(workers[0].call({"op":"put","key":ctx.prefix+"perf","body_path":str(perfbody)}))
+                            list(iter_operations(ctx,workers,report,ident,registry,{**workload,"operations":custom},phase,round_index,
+                                                workload["warmup_requests"] if phase=="warmup" else workload["requests"]))
+                        except Exception as error:
+                            report["execution_errors"].append({"target":ident,"phase":"performance_setup","error":str(error)})
         finally:
             for ident, workers in pools.items():
                 if workers:

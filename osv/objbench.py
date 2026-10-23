@@ -51,14 +51,14 @@ def iter_objbench(ctx, workers, report, target, round_plan=None):
     """Run real multi-key producer/consumer phases, preserve each request and verify exact returned data."""
     options = ctx.workload["objbench"]
     block_count = math.ceil(options["big_object_size"]/options["block_size"])
-    lanes = min(len(workers), block_count, options["small_objects"])
+    lanes = len(workers)
     small = [(f"small/{n:06d}", options["small_object_size"], n) for n in range(options["small_objects"])]
     big = [(f"block/{n:06d}", options["block_size"], n+options["small_objects"]) for n in range(block_count)]
     # Like objbench, the last block is a full block, so actual bytes round up.
     all_objects = small+big
     expected_keys = None
     report.setdefault("benchmark_datasets", []).append({"target": target, "model":"objbench",
-        "small_objects":len(small), "block_objects":len(big), "effective_lanes":lanes,
+        "small_objects":len(small), "block_objects":len(big), "available_lanes":lanes,
         "actual_bytes":sum(size for _, size, _ in all_objects),
         "reference_parameters":options, "round_plan":round_plan, "additional_phases":["range"],
         "not_applicable":["chmod", "chown", "chtimes"],
@@ -85,6 +85,7 @@ def iter_objbench(ctx, workers, report, target, round_plan=None):
 
 def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, lanes, sources, expected_keys):
     current_failure = False
+    available_lanes = lanes
     writes = {}
     for operation, items in phases:
         # Prepare independent expected lengths/digests before starting the batch clock.
@@ -106,6 +107,7 @@ def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, la
             upload_hashes = {sources[name]: hashlib.sha256(sources[name].read_bytes()).digest() for name, _, _ in base_items}
         minimum = write_seconds(ctx, phase) if operation == "put" else 0
         limit = max(len(items), min(4096, MAX_WRITE_BYTES//items[0][1])) if minimum else len(items)
+        lanes = min(available_lanes, limit)
         stopped = threading.Event()
         def lane(slot):
             rows, added = [], []
@@ -205,7 +207,7 @@ def _phases(ctx, workers, report, target, phase, round_index, prefix, phases, la
                 if not row["ok"] and row.get("key") in writes:
                     writes[row["key"]].update(ok=False, bytes=0, error="uploaded object readback failed: "+row["error"])
         report["samples"].extend(rows)
-        batch = window.batch(target=target, op=operation, phase=phase, round=round_index)
+        batch = window.batch(target=target, op=operation, phase=phase, round=round_index, effective_lanes=lanes)
         if operation == "put":
             batch["verification"] = verification
         report["batches"].append(batch)

@@ -1,3 +1,4 @@
+#include "file_operations.h"
 #include "stream_io.h"
 #include "object_metadata.h"
 #include <nlohmann/json.hpp>
@@ -259,10 +260,10 @@ int main() {
         NativeWorker worker;
         for(std::string line;std::getline(std::cin,line);) {
             auto start=std::chrono::steady_clock::now(); json response;
-            try { auto request=json::parse(line); start=std::chrono::steady_clock::now(); response=worker.execute(request);
+            try { auto request=json::parse(line); start=std::chrono::steady_clock::now(); response=file_operation(request,[&](const json& request){return worker.execute(request);});
                 if(request.at("op")=="info") {
                     response["protocol_version"]=1;
-                    response["capabilities"]={"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"};
+                    response["capabilities"]={"multipart_upload","put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"};
 #ifndef OSV_OSS
                     response["capabilities"].push_back("get_http");
 #endif

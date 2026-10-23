@@ -1,9 +1,9 @@
 # MinIO SDK 与 AWS SDK 对比
 
-最新定位与复测见[写入波动定位报告](examples/minio-sdk-write-diagnosis.md)。
+旧版调度的定位与复测见[写入波动定位报告](examples/minio-sdk-write-diagnosis.md)。
 
 MinIO 官方 SDK 与 AWS SDK 都通过 S3 协议访问同一个端点。Java、C++ 分别对比，报告中的 API 均为 `s3`。
-MinIO 驱动当前提供全部性能用例所需的九种操作，不声明完整功能兼容性覆盖。
+MinIO 驱动当前提供全部性能用例所需的文件操作，不声明完整功能兼容性覆盖。
 
 | SDK | 固定版本 | 驱动 |
 |---|---|---|
@@ -40,7 +40,7 @@ python3 -m osv run local-minio-sdk.json --mode performance --output results/mini
 ```
 
 一次执行全部性能用例，分别查看各 SDK 的吞吐和 p50/p95/p99 延迟。比较同一语言、同一用例和参数，不能将跨语言差异归因于 SDK。
-MinIO 与 AWS 都使用 S3；现有 `comparisons` 字段面向 S3/厂商原生协议，因此本示例保留四个目标的独立结果，不伪造原生协议身份。
+MinIO 与 AWS 都使用 S3，`comparisons` 允许两者直接配对；协议标签不再限制 SDK 对比。
 
 两侧重试均要求为 0，TLS 验证保持默认开启。Java MinIO 配置连接池；C++ MinIO 连接复用由 SDK 默认实现管理，每个 worker 同时只发一个同步请求。
 PUT 与 UploadPart 都使用公开的单请求 API，完整读取消费实际响应流。MinIO 两种驱动使用公开的内存数据 API，适配层采用整块文件读取；AWS 使用文件流，计时均包含实际输入/输出文件 IO。Java 9.0.3 低层文件输入路径在本地验证中出现 EOF，因此使用其公开字节数组 API。C++ 部分成功模型不保留 HTTP 状态，适配层按 SDK Result 判断，不构造状态码。
@@ -55,10 +55,6 @@ OSV_RUN_MINIO_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_mi
 
 回归执行真实 SDK 和生产性能调度、校验、报告，覆盖空对象、特殊 Key、Range 首末边界、完整分片读回、错误 ETag 拒绝与取消。
 
-计时修正后，输入生成与预期摘要不进入吞吐计时；分片子阶段只报告延迟，吞吐看 `multipart_total`。旧实测报告保留作历史记录，其中的分片子阶段吞吐不再有效，大文件吞吐排名也不作为修正后的结论。
+当前版本按八类独立文件操作测量，分片上传只报告整个文件的完成耗时。准备、读回校验与清理在计时外；输入和输出的文件 I/O 属于文件操作耗时。具体矩阵见[性能测试说明](performance.md)。
 
-[计时修正后的 MinIO 验证](examples/minio-sdk-performance-corrected.md) 包含四种 SDK 的全部性能用例、逐轮 CV 及完整清理结果。
-
-持续写入使用普通磁盘临时目录，输入逐文件 fsync 后计时；没有默认使用 tmpfs。写窗口与排队证据见 [性能测试说明](performance.md#持续写入与本地-io)。
-
-[持续写入与有界调度验证](examples/minio-sdk-performance-sustained.md) 记录最终固定数据集版本的四轮测量、客户端 I/O 与本地资源对照。
+上述历史报告使用旧版调度，其数值不作为当前文件操作实现的性能结论。

@@ -17,6 +17,7 @@ def load_config(path, **kwargs):
     """Provide small raw test datasets to the real validator; every performance case still executes through real SDKs."""
     raw=json.loads(Path(path).read_text())
     workload=raw.setdefault("workload",{})
+    workload.setdefault("files",{"sizes":[17],"range_sizes":[6],"range_object_size":17,"list_counts":[3],"delete_counts":[2],"multipart_sizes":[17],"part_sizes":[5242880]})
     workload.setdefault("objbench",{"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8})
     workload.setdefault("read",{"small_object_sizes":[3],"objects":2,"object_size":17,"range_sizes":[6],"patterns":["sequential","random","hot"]})
     workload.setdefault("multipart",{"object_sizes":[17],"part_sizes":[5242880],"objects":1})
@@ -92,6 +93,8 @@ class SdkIntegrationTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        cls.file_window=patch("osv.file_bench.MIN_SECONDS",0)
+        cls.file_window.start();cls.addClassCleanup(cls.file_window.stop)
         """Start an isolated loopback service; use dummy credentials and require both real worker binaries."""
         import boto3
         from local_moto import LocalMotoServer
@@ -128,7 +131,7 @@ class SdkIntegrationTest(unittest.TestCase):
                 worker.close()
 
     def test_read_patterns_and_multipart_performance_use_real_sdks(self):
-        """Run performance once with no selector through real Java/C++ SDKs and isolated Moto; expect all basic/repeated/read/multipart cases, exact independent hashes and counts, separate timings, no functional results and complete cleanup."""
+        """Run performance once with no selector through real Java/C++ SDKs and isolated Moto; expect all eight independent file operations, exact hashes and counts, separate concurrency results, no functional results and complete cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
@@ -142,16 +145,10 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertTrue(all(r["ok"] for r in report["samples"]),[r for r in report["samples"] if not r["ok"]])
             for target in self.targets:
                 rows=[r for r in report["samples"] if r["target"]==target["id"]]
-                self.assertEqual(len(rows),193)
-                self.assertEqual(sum(r["op"].startswith("read_") for r in rows),88)
-                self.assertEqual(sum(r["op"].startswith("repeat_") for r in rows),40)
-                self.assertTrue({"smallput","smallget","put","get","range","list","head","delete"} <= {r["op"] for r in rows})
-                hot=[r for r in rows if r["op"]=="read_hot_4096"]
-                self.assertEqual(len(hot),8);self.assertEqual(len({r["key"] for r in hot}),1)
-                totals=[r for r in rows if r["op"].startswith("multipart_total_")]
-                self.assertEqual(len(totals),8)
-                self.assertEqual(sum(r["bytes"] for r in totals),4*(15*1024**2+18))
-                self.assertTrue(all(r["timing_scope"]=="upload_wall" for r in totals))
+                self.assertEqual(len(rows),176)
+                self.assertEqual({r['op'].split('_')[0] for r in rows},{'head','get','range','put','multipart','list','copy','delete'})
+                self.assertEqual({r['concurrency'] for r in rows},{1,2})
+                self.assertTrue(all(r['timing_scope']=='file_operation' for r in rows))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
             self.assertEqual(self.client.list_multipart_uploads(Bucket="osv-sdk-integration").get("Uploads",[]),[])
 
@@ -172,8 +169,8 @@ class SdkIntegrationTest(unittest.TestCase):
                 expected |= {"ceph_delete_many_v2_limit", "ceph_exact_multipart_empty", "ceph_exact_multipart_missing_upload", "s3_delete_many_quiet"}
                 actual = {case["case"] for case in report["cases"] if case["target"] == target["id"] and case["status"] == "fail"}
                 self.assertEqual(actual, expected)
-            self.assertEqual(sum(r["op"].startswith("repeat_") for r in report["summary"]),5*len(self.targets))
-            self.assertEqual(sum(r["op"].startswith("repeat_") for r in report["samples"]),55*len(self.targets))
+            self.assertEqual(len(report["summary"]),22*len(self.targets))
+            self.assertEqual(len(report["samples"]),220*len(self.targets))
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
@@ -191,7 +188,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(failures,[(target["id"],"ceph_tags_excess") for target in self.targets])
             for row in report["cases"]:
                 if row["status"]=="fail":self.assertIn("BadRequest",row["error"])
-            self.assertEqual(sum(r["op"]=="repeat_head" for r in report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
+            self.assertEqual(sum(r["op"]=="head_17_c1" for r in report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
     def test_exact_ceph_listing_keeps_original_failures_and_cleans_every_bucket(self):
@@ -547,8 +544,8 @@ class SdkIntegrationTest(unittest.TestCase):
                     finally:worker.close()
         finally:self.client.delete_object(Bucket="osv-sdk-integration",Key="scope-sentinel")
 
-    def test_concurrent_overwrites_keep_genuine_requests_without_moto_buffer_race(self):
-        """Run two real SDK lanes overwriting the same 2-MiB object through the production runner; expect all 32 measurements per SDK to succeed and actual object cleanup."""
+    def test_concurrent_independent_files_keep_genuine_requests(self):
+        """Run independent files through two real SDK lanes; expect 32 PUT measurements per concurrency and SDK, verified content and cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
@@ -557,13 +554,13 @@ class SdkIntegrationTest(unittest.TestCase):
                 "concurrency":2,"requests":16,"rounds":2,"warmup_requests":0}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
-            self.assertEqual(sum(r["op"]=="repeat_put" for r in report["samples"]),32*len(self.targets))
+            self.assertEqual(sum(r["op"]=="put_17_c2" for r in report["samples"]),32*len(self.targets))
             self.assertTrue(all(sample["ok"] for sample in report["samples"]),[row for row in report["samples"] if not row["ok"]])
-            self.assertEqual({r["op"] for r in report["samples"] if r["op"].startswith("repeat_")},{"repeat_get","repeat_range","repeat_put","repeat_head","repeat_list"})
+            self.assertEqual({r["concurrency"] for r in report["samples"]},{1,2})
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
-    def test_real_sdk_multikey_objbench_model(self):
-        """Run the new multi-object model through real Java/C++ AWS SDKs; expect 31 verified requests per target and no leftover objects."""
+    def test_real_sdk_all_independent_operations(self):
+        """Run every independent file operation through real Java/C++ AWS SDKs; expect one sample per serial case, two per concurrent case and no leftover objects."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
@@ -572,8 +569,8 @@ class SdkIntegrationTest(unittest.TestCase):
                 "objbench":{"small_object_size":128,"small_objects":3,"block_size":1024,"big_object_size":3072,"list_requests_per_lane":2}}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
-            self.assertEqual(sum(not r["op"].startswith(("read_","repeat_","multipart_")) for r in report["samples"]),31*len(self.targets))
-            self.assertEqual(sum(not r["op"].startswith(("read_","repeat_","multipart_")) for r in report["summary"]),8*len(self.targets))
+            self.assertEqual(len(report["samples"]),33*len(self.targets))
+            self.assertEqual(len(report["summary"]),22*len(self.targets))
             self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 

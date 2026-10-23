@@ -168,3 +168,9 @@ AWS S3 Java/C++ 的 `put_storage_class` 支持普通 `put`、`put_sse_c`/`put_en
 
 
 新增 `api.CopyObject`、`api.CreateMultipartUpload`、`api.UploadPartCopy`、`api.CompleteMultipartUpload` 为官方typed模型入口，响应 `data.CopyObjectResult`/`data.CopyPartResult` 保留真实ETag和日期，后续完成请求直接消费真实UploadId/ETag。C++公有类 CopyObjectResultDetails 与协议字段 CopyObjectResult 的绑定由带溯源的模型映射表达；Expires按官方DateTime/Instant使用毫秒。输入HTTP编码/签名及SSE字段均仍由SDK处理。
+
+## 完整文件操作
+
+`multipart_upload` 接收 `key` 与预先生成的 `part_paths`（按分片顺序）。驱动内部执行创建、上传和完成；失败尝试取消上传并保留取消错误。耗时涵盖完整操作，输入生成与读回校验由运行器在窗口外执行。
+
+`delete_files` 接收 `objects: [{"key":"..."}]`，以 SDK 批量接口拆批执行，返回合并后的 `errors`。它与逐对象 `delete` 独立测试，不以循环单删代替批量删除。只有实现对应操作的驱动才声明能力。

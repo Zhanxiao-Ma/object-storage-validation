@@ -60,12 +60,29 @@ def inventory(prefix):
 
 
 def execute(q):
+    if q["op"]=="multipart_upload":
+        if not q.get("part_paths"):raise ValueError("multipart_upload requires parts")
+        key=q["key"];upload=execute({"op":"mp_create","key":key})["upload_id"]
+        try:
+            parts=[]
+            for i,part_path in enumerate(q["part_paths"],1):
+                part=execute({"op":"mp_part","key":key,"upload_id":upload,"part_number":i,"body_path":part_path})
+                parts.append({"part_number":i,"etag":part["etag"]})
+            return execute({"op":"mp_complete","key":key,"upload_id":upload,"parts":parts})
+        except Exception:
+            execute({"op":"mp_abort","key":key,"upload_id":upload});raise
+    if q["op"]=="delete_files":
+        errors=[]
+        for start in range(0,len(q["objects"]),1000):
+            errors.extend(execute({"op":"delete_many","objects":q["objects"][start:start+1000],"quiet":True}).get("errors",[]))
+        return {"errors":errors}
+
     global root
     root=base_root if "bucket" not in q else base_root/".buckets"/hashlib.sha256(q["bucket"].encode()).hexdigest()
     op = q["op"]
     if op == "info":
         return {"language": "python", "api": "local", "backend": "local-reference", "sdk_version": "1", "protocol_version": 1,
-                "capabilities": ["put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"]}
+                "capabilities": ["multipart_upload", "delete_files", "put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional", "put_metadata", "get_metadata", "head_metadata", "copy", "copy_replace", "get_http", "tags_put", "tags_get", "tags_delete", "put_http", "head_http", "bucket_create_raw", "bucket_head", "bucket_delete", "bucket_location", "list_v1_page", "list_v2_observed", "delete_many","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part"]}
     if op=="bucket_create_raw":
         if "bucket" not in q:raise ValueError("raw bucket creation requires explicit bucket")
         if root.exists():return {"status_code":200}

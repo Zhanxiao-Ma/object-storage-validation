@@ -29,11 +29,11 @@ class CaseCapabilityTest(unittest.TestCase):
             self.assertEqual(utility['evidence']['original_sizes'],[0,1,5242879,5242880,5242881])
             todo=rows['ceph_select_output_serial_expressions'];self.assertEqual(todo['status'],'not_run')
             self.assertEqual(todo['missing_requirements'],['upstream_todo'])
-            self.assertEqual(len([r for r in report['samples'] if r['op']=='repeat_head']),1);self.assertTrue(all(r['ok'] for r in report['samples']))
+            self.assertEqual(len([r for r in report['samples'] if r['op'].startswith('head_')]),1);self.assertTrue(all(r['ok'] for r in report['samples']))
             self.assertFalse([r for r in report['cases'] if r['status']=='fail'])
 
     def test_missing_copy_does_not_block_unrelated_measurement(self):
-        """Hide only copy in a real worker handshake; expect seven explicit not_run cases, real unrelated passes, valid HEAD measurements and exit 0."""
+        """Hide only copy in a real worker handshake; expect seven explicit not_run cases, real unrelated passes, valid HEAD measurements and a nonzero exit for missing requested performance coverage."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);proxy=directory/"limited-worker.py";audit=directory/"requests.jsonl"
             proxy.write_text("import json,subprocess,sys\n"
@@ -47,7 +47,7 @@ class CaseCapabilityTest(unittest.TestCase):
             data["workload"].update(compatibility_suites=["core_objects","ceph_copy"],operations=["head"],requests=1,rounds=1,concurrency=1,warmup_requests=0)
             path=directory/"manifest.json";path.write_text(json.dumps(data))
             result=subprocess.run([sys.executable,"-m","osv","run",str(path),"--output",str(directory/"results")],cwd=ROOT,capture_output=True,text=True,timeout=30)
-            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+            self.assertEqual(result.returncode,1,result.stdout+result.stderr)
             report=json.loads((directory/"results/report.json").read_text())
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             self.assertEqual({row["case"] for row in missing},{"ceph_copy_zero","ceph_copy_16m","ceph_copy_same_bucket","ceph_copy_content_type","ceph_copy_self_rejected","ceph_copy_keep_metadata","ceph_copy_missing_key"})
@@ -80,7 +80,7 @@ class CaseCapabilityTest(unittest.TestCase):
             report=json.loads((directory/"results/report.json").read_text())
             row=next(row for row in report["cases"] if row["case"]=="optional_probe")
             self.assertEqual(row["status"],"not_run");self.assertNotIn("gate",row)
-            self.assertEqual(len([r for r in report["samples"] if r["op"]=="repeat_head"]),1);self.assertTrue(all(r["ok"] for r in report["samples"]))
+            self.assertEqual(len([r for r in report["samples"] if r["op"].startswith("head_")]),1);self.assertTrue(all(r["ok"] for r in report["samples"]))
             self.assertIn("| local | 2 | 1 | 0 | 0 | 1 |",(directory/"results/report.md").read_text())
 
     def test_partial_capability_registration_requires_complete_operation_catalog(self):

@@ -48,7 +48,7 @@ class ReportPresentationTest(unittest.TestCase):
             self.assertEqual(warning["evidence"]["observed"]["error_code"],"InvalidRange")
 
     def test_performance_report_retains_measurements_without_source_model_names(self):
-        """Purpose: execute the real multi-object workload; expect exact measured successes and performance dataset descriptions without upstream model branding or fabricated functional results."""
+        """Purpose: execute the real atomic file workload; expect exact measured successes and independent operation descriptions without upstream model branding or fabricated functional results."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);data=config(directory)
             data["workload"].update(mode="performance",rounds=1,
@@ -58,7 +58,7 @@ class ReportPresentationTest(unittest.TestCase):
             self.assertEqual(report["cases"],[])
             self.assertTrue(report["samples"]);self.assertTrue(all(s["ok"] for s in report["samples"]))
             self.assertIsNone(re.search(r"juicefs|ceph|objbench",text,re.IGNORECASE))
-            self.assertIn("使用多对象与拆块数据集",text)
+            self.assertIn("独立测量 HEAD",text)
             self.assertIn("本次未执行功能用例",text)
             for row in report["summary"]:
                 self.assertIn(str(row["successes"])+"/"+str(row["attempts"]),text)

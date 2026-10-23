@@ -44,10 +44,11 @@ public final class MinioWorker {
     }
     private Map<String,Object> execute(JsonNode q) throws Exception {
         String op=text(q,"op"),key=text(q,"key");Map<String,Object> out=new LinkedHashMap<>();
+        if(op.equals("multipart_upload") || op.equals("delete_files"))return FileOperations.execute(q,this::execute);
         switch(op) {
             case "info":
                 out.put("language","java");out.put("api","s3");out.put("backend","minio");out.put("sdk_version",Utils.MinioProperties.INSTANCE.getVersion());
-                out.put("protocol_version",1);out.put("capabilities",Arrays.asList("put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"));
+                out.put("protocol_version",1);out.put("capabilities",Arrays.asList("multipart_upload","delete_files","copy","delete_many","put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"));
                 out.put("endpoint",env("ENDPOINT",""));out.put("region",region);out.put("bucket",bucket);out.put("retries","0");out.put("connections_per_worker",env("CONNECTIONS","16"));
                 out.put("measurement","SDK operation and payload file IO; full response consumed; excludes JSONL");break;
             case "put":
@@ -64,6 +65,17 @@ public final class MinioWorker {
                 List<String> keys=new ArrayList<>();
                 for(Result<io.minio.messages.Item> result:client.listObjects(ListObjectsArgs.builder().bucket(bucket).prefix(text(q,"prefix")).recursive(true).maxKeys(1000).build()))keys.add(result.get().objectName());
                 Collections.sort(keys);out.put("keys",keys);break;
+            case "copy":
+                out.put("etag",client.copyObject(CopyObjectArgs.builder().bucket(bucket).object(key)
+                    .source(SourceObject.builder().bucket(bucket).object(text(q,"source_key")).build()).build()).join().etag());break;
+            case "delete_many": {
+                List<io.minio.messages.DeleteRequest.Object> objects=new ArrayList<>();
+                for(JsonNode item:q.path("objects"))objects.add(new io.minio.messages.DeleteRequest.Object(text(item,"key")));
+                var response=client.deleteObjects(DeleteObjectsArgs.builder().bucket(bucket).objects(objects).quiet(true).build()).join();
+                List<Map<String,Object>> errors=new ArrayList<>();
+                for(var error:response.result().errors())errors.add(Map.of("key",error.objectName(),"code",error.code(),"message",error.message()));
+                out.put("errors",errors);break;
+            }
             case "delete":client.removeObject(RemoveObjectArgs.builder().bucket(bucket).object(key).build()).join();break;
             case "mp_create":out.put("upload_id",client.createMultipartUpload(CreateMultipartUploadArgs.builder().bucket(bucket).object(key).build()).join().result().uploadId());break;
             case "mp_part":

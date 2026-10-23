@@ -1,3 +1,4 @@
+#include "../../cpp/file_operations.h"
 #include <miniocpp/client.h>
 #include <miniocpp/config.h>
 #include <nlohmann/json.hpp>
@@ -52,8 +53,9 @@ public:
     }
     json execute(const json& q) {
         auto op=q.at("op").get<std::string>();json out=json::object();
+        if(op=="multipart_upload" || op=="delete_files")return file_operation(q,[&](const json& request){return execute(request);});
         if(op=="info")return {{"language","cpp"},{"api","s3"},{"backend","minio"},{"sdk_version",MINIO_CPP_VERSION},{"protocol_version",1},
-            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"}},
+            {"capabilities",{"multipart_upload","delete_files","copy","delete_many","put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort"}},
             {"endpoint",env("ENDPOINT")},{"region",region},{"bucket",bucket},{"retries","0"},{"connections_per_worker","SDK default; one synchronous request per worker"},
             {"measurement","SDK operation and payload file IO; full response consumed; excludes JSONL"}};
         if(op=="put") {
@@ -65,7 +67,15 @@ public:
             a.datafunc=[&](minio::http::DataFunctionArgs chunk){output.write(chunk.datachunk.data(),chunk.datachunk.size());return static_cast<bool>(output);};
             checked(client.GetObject(a));output.close();if(!output)throw std::runtime_error("output write failed");
         } else if(op=="head")out["size"]=checked(client.StatObject(args<minio::s3::StatObjectArgs>(q))).size;
-        else if(op=="delete")checked(client.RemoveObject(args<minio::s3::RemoveObjectArgs>(q)));
+        else if(op=="copy") {
+            auto a=args<minio::s3::CopyObjectArgs>(q);a.source.bucket=bucket;a.source.region=region;a.source.object=q.at("source_key").get<std::string>();
+            out["etag"]=checked(client.CopyObject(a)).etag;
+        } else if(op=="delete_many") {
+            minio::s3::RemoveObjectsApiArgs a;a.bucket=bucket;a.region=region;a.quiet=true;
+            for(const auto& item:q.at("objects"))a.objects.emplace_back(item.at("key").get<std::string>());
+            auto response=checked(client.BaseClient::RemoveObjects(a));out["errors"]=json::array();
+            for(const auto& error:response.errors)out["errors"].push_back({{"key",error.object_name},{"code",error.code},{"message",error.message}});
+        } else if(op=="delete")checked(client.RemoveObject(args<minio::s3::RemoveObjectArgs>(q)));
         else if(op=="list") {
             minio::s3::ListObjectsV2Args a;a.bucket=bucket;a.region=region;a.prefix=q.value("prefix","");a.max_keys=1000;
             std::vector<std::string> keys;std::string previous;

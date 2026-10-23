@@ -1,3 +1,4 @@
+#include "file_operations.h"
 // The upstream C header has one member with the same name as its typedef.
 // Scope GCC's compatibility diagnostic to that header, keeping our code strict.
 #if defined(__GNUC__) && !defined(__clang__) && __GNUC__ >= 13
@@ -192,7 +193,7 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","obs"},{"language","cpp"},{"sdk_language","c"},{"api","native"},
             {"sdk","huaweicloud-sdk-c-obs"},{"sdk_version",OSV_OBS_SDK_VERSION},{"sdk_source_revision",OSV_OBS_SOURCE_REVISION},
-            {"protocol_version",1},{"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"}},
+            {"protocol_version",1},{"capabilities",{"multipart_upload","put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace"}},
             {"endpoint",endpoint},{"bucket",bucket},{"region",env("OSV_REGION")},{"auth_mode","OBS_OBS_TYPE"},
             {"path_style",false},{"cname",options.bucket_options.useCname},{"retries","sdk-default; not configurable"},
             {"sdk_retry_loop_budget",OSV_OBS_ATTEMPTS},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
@@ -316,7 +317,7 @@ int main() {
         ObsRuntime runtime; ObsWorker worker;
         for(std::string line;std::getline(std::cin,line);) {
             auto start=std::chrono::steady_clock::now(); json result;
-            try { result=worker.execute(json::parse(line)); result["ok"]=true; }
+            try { result=file_operation(json::parse(line),[&](const json& request){return worker.execute(request);}); result["ok"]=true; }
             catch(const ObsError& error) { result={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"},{"error_code",error.error_code}}; }
             catch(const std::exception& error) { result={{"ok",false},{"error",error.what()},{"error_kind","worker_error"}}; }
             result["elapsed_ns"]=std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-start).count();

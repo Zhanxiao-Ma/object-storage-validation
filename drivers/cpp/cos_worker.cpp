@@ -1,3 +1,4 @@
+#include "file_operations.h"
 #include "object_metadata.h"
 #include <util/codec_util.h>
 #include <cos_api.h>
@@ -70,7 +71,7 @@ public:
         std::string op=q.at("op"),key=q.value("key","");
         if(op=="info") return {{"backend","cos"},{"api","native"},{"language","cpp"},
             {"sdk_version",COS_CPP_SDK_VERSON},{"protocol_version",1},
-            {"capabilities",{"put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http"}},
+            {"capabilities",{"multipart_upload","put","get","head","list","delete","mp_create","mp_part","mp_complete","mp_abort","bucket_create","list_page","get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http"}},
             {"endpoint",env("OSV_ENDPOINT")},{"region",env("OSV_REGION")},{"bucket",bucket},
             {"retries",env("OSV_RETRIES","0")},{"connections_per_worker",env("OSV_CONNECTIONS","16")},
             {"range_integrity","whole-object ETag MD5 check disabled for ranges; harness verifies returned bytes"},
@@ -173,7 +174,7 @@ int main() {
         CosWorker worker;
         for(std::string line;std::getline(std::cin,line);) {
             auto start=std::chrono::steady_clock::now(); json response;
-            try { response=worker.execute(json::parse(line)); response["ok"]=true; }
+            try { response=file_operation(json::parse(line),[&](const json& request){return worker.execute(request);}); response["ok"]=true; }
             catch(const CosError& error) { response={{"ok",false},{"error",error.what()},{"error_kind",error.missing?"not_found":"sdk_error"},{"status_code",error.status},{"error_code",error.error_code}}; }
             catch(const std::exception& error) { response={{"ok",false},{"error",error.what()},{"error_kind","worker_error"}}; }
             response["elapsed_ns"]=std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now()-start).count();

@@ -29,10 +29,10 @@
     "object_size": 8388608,
     "range_size": 65536,
     "part_size": 8388608,
-    "requests": 1000,
+    "requests": 32,
     "concurrency": 4,
     "rounds": 8,
-    "warmup_requests": 100,
+    "warmup_requests": 4,
     "operations": [
       "get",
       "range",
@@ -41,38 +41,6 @@
       "list"
     ],
     "seed": 1729,
-    "mode": "performance",
-    "read": {
-      "small_object_sizes": [
-        4096,
-        65536,
-        131072
-      ],
-      "objects": 8,
-      "object_size": 67108864,
-      "range_sizes": [
-        65536,
-        1048576,
-        4194304
-      ],
-      "patterns": [
-        "sequential",
-        "random",
-        "hot"
-      ],
-      "warmup_rounds": 1
-    },
-    "multipart": {
-      "object_sizes": [
-        33554432,
-        134217728
-      ],
-      "part_sizes": [
-        5242880,
-        16777216
-      ],
-      "objects": 16,
-      "warmup_rounds": 1
-    }
+    "mode": "performance"
   }
 }

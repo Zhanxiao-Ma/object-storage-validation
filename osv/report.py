@@ -67,8 +67,8 @@ def comparisons(config, cases, summary, operation_metrics=None):
         reason = None
         if a["provider"] != b["provider"] or a["language"] != b["language"]:
             reason = "provider/language mismatch"
-        elif a["api"] != "s3" or b["api"] != "native":
-            reason = "comparison requires S3 and native SDKs"
+        elif left == right:
+            reason = "comparison requires two distinct SDK targets"
         elif not pair.get("same_storage_and_network_confirmed", False):
             reason = "same storage, storage class, region and network not confirmed"
         ar = {r["op"]: r for r in summary if r["target"] == left}
@@ -87,7 +87,7 @@ def comparisons(config, cases, summary, operation_metrics=None):
             latency = x["p95_ms"] / y["p95_ms"] if x and y and y["p95_ms"] else None
             if x and y:
                 if x.get("short_write_rounds") or y.get("short_write_rounds"):
-                    why = why or "write measurement window too short"
+                    why = why or "measurement window too short"
                 if any((r.get("throughput_cv", {}).get(metric) or 0) > .20 for r in (x, y)):
                     why = why or "high between-round throughput variation (CV > 20%)"
             if throughput is None or latency is None:
@@ -254,7 +254,11 @@ def markdown(report):
         lines += ["", "</details>"]
     else:
         lines += ["", "本次未执行功能用例。"]
-    lines += ["", "## 性能", "", "单请求延迟来自 SDK 驱动计时；multipart_total 为创建至完成的上传流程耗时，不含输入生成和读回校验。输入生成与预期摘要计算位于计时之外；读取吞吐包含调度与返回内容校验；分片子阶段仅报告延迟与次数；multipart_total 吞吐使用完整上传阶段 wall time，读回校验和清理在测量外。失败请求单独计数。", ""]
+    lines += ["", "## 性能", "", "独立测量 HEAD、整文件读取、Range、写入、分片上传、列举、复制及删除。准备、内容校验和清理在计时外；文件操作包含实际输入/输出文件 I/O，吞吐包含调度及进程通信。分片上传按整个文件完成计时。", ""]
+    if report.get("performance_not_run"):
+        lines += ["### 未执行的性能用例", "", "| Target | Operation | 原因 |", "|---|---|---|"]
+        for row in report["performance_not_run"]:
+            lines.append("| "+" | ".join(cell(row[k]) for k in ("target","op","reason"))+" |")
     if report["workload"].get("mode") == "functional":
         lines.append("本次未执行性能测试。")
     lines += ["", "执行模式：" + report["workload"].get("mode", "all") + "；功能结果不阻断性能执行或 SDK 性能对比。", ""]
@@ -262,12 +266,10 @@ def markdown(report):
         return "N/A" if value is None else f"{value:.3f}"
     workspace = report.get("performance_workspace")
     if workspace:
-        lines += ["", "临时文件系统："+workspace["filesystem"]+"；输入文件在上传计时前逐个 fsync，不强制使用内存文件系统。大块 PUT、重复 PUT 和分片上传每轮自动测量至少 5 秒；达到安全上限仍不足时标记短窗口。", ""]
+        lines += ["", "临时文件系统："+workspace["filesystem"]+"；输入文件在上传计时前逐个 fsync，不强制使用内存文件系统。读写、复制和分片上传按独立窗口累计至少 5 秒；触及上限仍不足时标记短窗口。", ""]
     if report["summary"]:
-        lines += ["", "写入场景：put 使用不同对象；parallel_put 每通道独立 Key；repeat_put 为所有通道覆盖同一 Key，包含热点锁争用。覆盖写仅校验每个 Key 的最终长度与 SHA-256，校验失败时对应写入全部记失败；历史覆盖版本不逐个读回。", ""]
-    if report["summary"]:
-        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s | 排队 p95 ms | RPC p95 ms | 逐轮吞吐 min–max / CV |",
-                  "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+        lines += ["", "| Target | Operation | OK / attempts | p50 ms | p95 ms | p99 ms | Verified MiB/s | Verified ops/s | Objects/s | RPC p95 ms | 逐轮吞吐 min–max / CV |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|"]
     for row in report["summary"]:
         metric = report["operation_metrics"].get(row["op"], "verified_ops_s")
         rates = [r[metric] for r in row.get("round_results", [])] if metric != "latency_only" else []
@@ -276,13 +278,13 @@ def markdown(report):
             cv = statistics.pstdev(rates)/statistics.mean(rates) if statistics.mean(rates) else 0
             variation = f"{min(rates):.3f}–{max(rates):.3f} / {cv:.1%}" if len(rates) > 1 else "仅 1 轮"
         lines.append(f"| {row["target"]} | {row["op"]} | {row["successes"]}/{row["attempts"]} | "
-                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + f" | {fmt(row.get("queue_p95_ms"))} | {fmt(row.get("rpc_p95_ms"))} | {variation} |")
+                     + " | ".join(fmt(row[k]) for k in ("p50_ms", "p95_ms", "p99_ms", "verified_mib_s", "verified_ops_s", "verified_objects_s")) + f" | {fmt(row.get("rpc_p95_ms"))} | {variation} |")
     if report["summary"]:
-        lines += ["", "逐轮吞吐单位与该用例主指标一致；CV 为各轮吞吐的标准差/均值，不表示置信区间。CV 超过 20% 的预算对比记为 inconclusive，该阈值是质量提示而非统计显著性检验。排队包含调度器等待、执行器派发与客户端等待；RPC wall、SDK 时间、主机及进程 I/O 证据保留在 JSON。各轮耗时与有效样本数保留在 JSON；不足 100 个成功样本的 p99 仅作样本描述。"]
+        lines += ["", "逐轮吞吐单位与该用例主指标一致；CV 为各轮吞吐的标准差/均值，不表示置信区间。CV 超过 20% 的预算对比记为 inconclusive，该阈值是质量提示而非统计显著性检验。RPC wall 和文件操作耗时保留在 JSON。各轮耗时与有效样本数保留在 JSON；不足 100 个成功样本的 p99 仅作样本描述。"]
     if report.get("benchmark_datasets"):
         lines += ["", "### 性能数据集", "", "使用多对象与拆块数据集；Range 是额外阶段。", ""]
         for dataset in report["benchmark_datasets"]:
-            lines.append(f"- {cell(dataset['target'])}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, lanes={dataset['effective_lanes']}; parameters={dataset['reference_parameters']}")
+            lines.append(f"- {cell(dataset['target'])}: small={dataset['small_objects']}, blocks={dataset['block_objects']}, bytes={dataset['actual_bytes']}, available lanes={dataset.get('available_lanes', dataset.get('effective_lanes'))}; parameters={dataset['reference_parameters']}")
     if report.get("io_datasets"):
         lines += ["", "### 读取与分片负载配置", "", "每个 lane 使用独立 SDK 进程/客户端；hot 读取并发访问同一对象。完整参数及每个请求的 offset/length、分片号和计时口径见 report.json。", ""]
         for dataset in report["io_datasets"]:
@@ -294,7 +296,7 @@ def markdown(report):
     if report["workload"].get("mode") == "functional":
         lines.append("本次仅执行功能测试，未执行 SDK 性能对比。")
     elif not report["comparisons"]:
-        lines.append("未配置成对的 S3/native SDK，本次没有 SDK 性能对比结论。")
+        lines.append("未配置成对的 SDK，本次没有 SDK 性能对比结论。")
     for row in report["comparisons"]:
         lines.append(f'- {cell(row["s3"])} / {cell(row["native"])}, {cell(row["op"])}: **{row["status"]}**; '
                      f'throughput ratio={fmt(row["s3_native_throughput_ratio"])}, '

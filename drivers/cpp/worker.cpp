@@ -1,3 +1,4 @@
+#include "file_operations.h"
 #include "stream_io.h"
 #include "protocol_input.h"
 #include "object_metadata.h"
@@ -483,10 +484,10 @@ int main() {
             json response;
             osv_response_body::reset();
             try {
-                auto request = json::parse(line);osv_response_body::begin(request); start=std::chrono::steady_clock::now(); response = worker.execute(request);
+                auto request = json::parse(line);osv_response_body::begin(request); start=std::chrono::steady_clock::now(); response = file_operation(request,[&](const json& request){return worker.execute(request);});
                 if (request.at("op") == "info") {
                     response["protocol_version"] = 1;
-                    response["capabilities"] = {"put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
+                    response["capabilities"] = {"multipart_upload", "delete_files", "put", "get", "head", "list", "delete", "mp_create", "mp_part", "mp_complete", "mp_abort", "bucket_create", "list_page", "get_conditional","put_metadata","get_metadata","head_metadata","copy","copy_replace","get_http","tags_put","tags_get","tags_delete","put_http","head_http","put_sse_c","get_sse_c","head_sse_c","put_encryption","get_encryption","head_encryption","mp_create_sse_c","mp_part_sse_c","mp_complete_sse_c","bucket_create_raw","bucket_create_locked","bucket_create_acl","put_acl","bucket_head","bucket_delete","bucket_location","list_v1_page","list_v2_observed","delete_many","delete_many_versions","delete_many_conditions","mp_create_metadata","mp_complete_observed","mp_complete_empty","mp_abort_raw","mp_copy","mp_list","get_part","head_part","versioning_get","versioning_put","versions_list","put_version","get_version","head_version","delete_version"};
                     for(const auto& capability:osv_atomic_streams::capabilities())response["capabilities"].push_back(capability);
                     response["capabilities"].push_back("response_body_capture");response["capabilities"].push_back("sdk_request_id");
                     response["async_jobs_limit"]=512;response["capabilities"].push_back("async_requests");response["capabilities"].push_back("select");for(const auto& capability:osv_ceph_logging::capabilities())response["capabilities"].push_back(capability);

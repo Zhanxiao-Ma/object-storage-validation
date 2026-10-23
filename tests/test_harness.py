@@ -23,6 +23,7 @@ def config(directory):
         "env": {"OSV_REFERENCE_ROOT": str(directory/"objects"), "OSV_REFERENCE_MIN_PART_SIZE":"128"}}],
         "workload": {"mode":"all", "large_object_size":512, "object_size": 256, "range_size": 17, "part_size": 128,
                      "requests": 7, "concurrency": 2, "rounds": 2, "warmup_requests": 2,
+                     "files": {"sizes":[17],"range_sizes":[6],"range_object_size":17,"list_counts":[3],"delete_counts":[2],"multipart_sizes":[17],"part_sizes":[5242880]},
                      "operations": ["get", "range", "put", "head", "list"],
                      "objbench": {"small_objects":2,"small_object_size":5,"big_object_size":17,"block_size":8},
                      "read": {"small_object_sizes":[3],"object_size":17,"objects":2,"range_sizes":[6],"patterns":["sequential","random","hot"]},
@@ -63,7 +64,7 @@ class HarnessTest(unittest.TestCase):
             report = run(load_config(manifest), directory/"results")
             self.assertFalse([c for c in report["cases"] if c["status"] == "fail"])
             self.assertEqual(len(report["summary"]), 22)
-            self.assertTrue(all(row["attempts"] == 14 for row in report["summary"] if row["op"].startswith("repeat_")))
+            self.assertTrue(all(row["attempts"] == 14 for row in report["summary"]))
             self.assertTrue(all(row["failures"] == 0 for row in report["summary"]))
             self.assertEqual(report["comparisons"], [])
             persisted = json.loads((directory/"results/report.json").read_text())
