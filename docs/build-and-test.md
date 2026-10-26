@@ -338,3 +338,7 @@ CreateBucket 已提交但响应丢失时，原 SDK 错误仍使源失败。候�
 Ceph 日志扩展要求显式启用 `workload.ceph_logging_wire_extensions`，表示使用官方 SDK 公共 hook 的协议适配，不代表 stock AWS SDK 原生提供这些字段。并行源使用同一实际 SDK client 的异步请求，原300次PUT与30次flush源要求真实连接池至少100，以及实际握手 `async_jobs_limit>=330`；当前驱动声明512。旧驱动未声明时按64处理，该源保持 `not_run`，避免降低原交错空间。SNS 与账号级 S3Control 源要求独立端点、身份及隔离授权；不能回退到 S3 主身份或修改共享账号。
 
 这些组均使用独立测试开关，OBS 原生 SDK 的 discover 不会因此启动 Java/C++ S3 或辅助服务测试。普通 CI 明确设置 `OSV_RUN_STS_EXPIRY_TESTS=0`；原900秒过期源仅在显式启用时等待真实900秒，不能缩短时间作为替代证据。
+
+## 本地性能验证
+
+本地性能测试使用 [性能说明](performance.md#本地-minio-对比) 中的 `scripts/run_minio_performance.py`。不要直接套用上面的 HTTPS 功能验证容器端口映射进行大量短连接性能测试。

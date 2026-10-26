@@ -8,6 +8,7 @@ import threading
 
 from .scenarios import require_ok
 from .benchmark import sync_inputs
+from .worker import WorkerUnavailable
 
 MIB = 1024**2
 MIN_SECONDS = 5.0
@@ -66,11 +67,17 @@ def digest(path):
 def iter_files(ctx, workers, report, target, phase, round_index):
     """Run one independent case at a time, retaining failed and unsupported evidence."""
     workload = ctx.workload
+    if target in report.get('performance_stopped', {}):return
     count = workload['warmup_requests'] if phase == 'warmup' else workload['requests']
     if count == 0:
         return
     for case in inventory(workload):
         name, action, p = case['name'], case['action'], case['parameters']
+        try:
+            for worker in workers:worker.ensure_alive()
+        except WorkerUnavailable as error:
+            stop_target(report,target,str(error),workload)
+            return
         count=max(count,case['concurrency'])
         missing = set(case['required']) - set.intersection(*(set(w.capabilities) for w in workers))
         if missing:
@@ -104,11 +111,14 @@ def iter_files(ctx, workers, report, target, phase, round_index):
         done, measured = 0, 0.0
         minimum = MIN_SECONDS if phase == 'measure' and workers[0].info.get('api') != 'local' and action in ('get','range','put','copy','multipart') else 0
         # Every stored write/read result is verified; bound both temporary storage and auto-extension.
-        limit = max(count, min(max(1,4096//p.get('count',1)), MAX_ROUND_BYTES//max(1,p['size'])))
-        window_count = max(1,max(case['concurrency'], min(128, MAX_WINDOW_BYTES//max(1,p['size']), count)))
+        transfer_size=p.get('length',p['size'])
+        request_limit=65536 if action in ('get','range') else 4096
+        limit = max(count, min(max(1,request_limit//p.get('count',1)), MAX_ROUND_BYTES//max(1,transfer_size)))
+        window_count = max(1,max(case['concurrency'], min(128, MAX_WINDOW_BYTES//max(1,transfer_size), count)))
         rows = []
         listing_keys=[]
         source_keys=[]
+        terminal_reason=None
         try:
             if action in ('get','range','head','copy'):
                 for slot in range(case['concurrency']):
@@ -117,7 +127,7 @@ def iter_files(ctx, workers, report, target, phase, round_index):
                     source_keys.append(key)
             if action=='list':
                 listing_keys=[prefix+f'listing/{j}' for j in range(p['count'])]
-                for key in listing_keys+source_keys:require_ok(workers[0].call({'op':'put','key':key,'body_path':str(source)}))
+                for key in listing_keys:require_ok(workers[0].call({'op':'put','key':key,'body_path':str(source)}))
             with ThreadPoolExecutor(max_workers=case['concurrency']) as executor:
                 while done < count or (measured < minimum and done < limit):
                     n = min(window_count, (count-done) if done<count else limit-done)
@@ -163,6 +173,7 @@ def iter_files(ctx, workers, report, target, phase, round_index):
                                 response={};row['error']=str(error)
                             row['rpc_wall_ns']=time.monotonic_ns()-started
                             results.append((i,row,response))
+                            if workers[slot].process.poll() is not None or workers[slot]._terminal_error is not None:break
                         return results
                     futures=[executor.submit(lane,slot) for slot in range(case['concurrency'])]
                     ready.wait()
@@ -197,14 +208,37 @@ def iter_files(ctx, workers, report, target, phase, round_index):
                     for key in cleanup:require_ok(workers[0].call({'op':'delete','key':key}))
                     done+=n
                     if any(not row['ok'] for _,row,_ in observed):break
+        except WorkerUnavailable as error:
+            terminal_reason=str(error)
         except Exception as error:
             report['execution_errors'].append({'target':target,'phase':'file_case','workload':name,'error':str(error)})
         finally:
             report['samples'].extend(rows)
+            if terminal_reason:stop_target(report,target,terminal_reason,workload)
             report['batches'].append({'target':target,'op':name,'phase':phase,'round':round_index,
                 'wall_seconds':measured,'duration_satisfied':measured>=minimum,'effective_lanes':case['concurrency'],
+                'minimum_seconds':minimum,'sample_limit':limit,'operation_bytes':transfer_size,
                 'verification_outside_timing':True})
             for path in directory.iterdir():path.unlink()
             directory.rmdir()
-            for key in listing_keys+source_keys:require_ok(workers[0].call({'op':'delete','key':key}))
+            try:
+                for worker in workers:worker.ensure_alive()
+                for key in listing_keys+source_keys:require_ok(workers[0].call({'op':'delete','key':key}))
+            except WorkerUnavailable as error:
+                stop_target(report,target,str(error),workload)
+            except Exception as error:
+                report['execution_errors'].append({'target':target,'phase':'file_cleanup','workload':name,'error':str(error)})
+        if target in report.get('performance_stopped',{}):return
         yield name
+
+
+def stop_target(report,target,reason,workload):
+    """Record one terminal failure and explicitly account for unexecuted operations."""
+    stopped=report.setdefault('performance_stopped',{})
+    if target in stopped:return
+    stopped[target]=reason
+    report['execution_errors'].append({'target':target,'phase':'worker_exit','error':reason})
+    measured={s['op'] for s in report['samples'] if s['target']==target and s['phase']=='measure'}
+    for case in inventory(workload):
+        if case['name'] not in measured:
+            report.setdefault('performance_not_run',[]).append({'target':target,'op':case['name'],'reason':'SDK 驱动失效：'+reason})

@@ -177,6 +177,63 @@ class FileOperationsTest(unittest.TestCase):
             self.assertEqual(len(rows),2)
             self.assertTrue(all(s['ok'] and s['objects']==1001 for s in rows))
 
+    def test_range_budget_uses_transferred_bytes(self):
+        """Purpose: read real 6-byte ranges of 17-byte objects under a 256-byte round budget; expect the measured minimum to be reached beyond the old full-object cap."""
+        original=Worker.call
+        def delay(worker,q):
+            result=original(worker,q)
+            if q['op']=='get' and 'offset' in q:
+                worker.info['api']='duration-test'
+                time.sleep(.003)
+            return result
+        def change(data):data['workload'].update(concurrency=1)
+        with tempfile.TemporaryDirectory() as d,patch.object(Worker,'call',delay),patch('osv.file_bench.MAX_ROUND_BYTES',256),patch('osv.file_bench.MIN_SECONDS',.06):
+            report=self.execute(Path(d),change)
+            # The first Range activates the duration rule for the remaining cases.
+            rows=[b for b in report['batches'] if b['op'].startswith('range_')][1:]
+            self.assertEqual(len(rows),2)
+            self.assertTrue(all(b['duration_satisfied'] and b['wall_seconds']>=.06 for b in rows))
+            self.assertTrue(all(s['ok'] for s in report['samples']))
+
+    def test_dead_target_stops_while_other_targets_continue_and_cleanup(self):
+        """Purpose: kill a real reference driver during measured HEAD; expect one terminal diagnosis, no later requests to it, another target finishing all operations and fresh-client cleanup."""
+        original=Worker.call;killed=[];after=[]
+        def terminate(worker,q):
+            if worker.target['id']=='local' and q['op']=='head' and '/measure/' in q.get('key','') and not killed:
+                killed.append(worker);worker.process.kill();worker.process.wait()
+            elif killed and worker is killed[0]:after.append(q['op'])
+            return original(worker,q)
+        def change(data):
+            data['targets'][0]['id']='local'
+            other=json.loads(json.dumps(data['targets'][0]));other['id']='healthy';data['targets'].append(other)
+            data['workload'].update(rounds=2,warmup_requests=1)
+        with tempfile.TemporaryDirectory() as d,patch.object(Worker,'call',terminate):
+            report=self.execute(Path(d),change)
+            self.assertEqual(set(report['performance_stopped']),{'local'})
+            self.assertEqual(sum(e['phase']=='worker_exit' for e in report['execution_errors']),1)
+            self.assertFalse(after)
+            self.assertEqual(len([s for s in report['summary'] if s['target']=='healthy']),22)
+            self.assertTrue(all(s['ok'] for s in report['samples'] if s['target']=='healthy'))
+            self.assertTrue(report['performance_not_run'])
+            self.assertFalse(list((Path(d)/'objects').rglob('*.bin')))
+
+    def test_death_during_write_verification_retains_attempted_case(self):
+        """Purpose: kill the real producer after its measured PUT; expect a failed verified sample, stopped target and no false not-run label for that attempted operation."""
+        original=Worker.call;dead=[]
+        def terminate(worker,q):
+            result=original(worker,q)
+            if q['op']=='put' and '/measure/' in q.get('key','') and '/put_' in q['key'] and not dead:
+                dead.append(True);worker.process.kill();worker.process.wait()
+            return result
+        with tempfile.TemporaryDirectory() as d,patch.object(Worker,'call',terminate):
+            report=self.execute(Path(d))
+            attempts={s['op'] for s in report['samples'] if s['phase']=='measure'}
+            skipped={s['op'] for s in report['performance_not_run']}
+            self.assertFalse(attempts & skipped)
+            self.assertTrue(any(not s['ok'] and s['op'].startswith('put_') for s in report['samples']))
+            self.assertEqual(len(report['performance_stopped']),1)
+            self.assertFalse(list((Path(d)/'objects').rglob('*.bin')))
+
     def test_invalid_matrix_rejected(self):
         """Purpose: reject malformed/unbounded sizes before any storage IO; expect explicit validation failures."""
         for value in ({'sizes':[]},{'sizes':[True]},{'sizes':[[1]]},{'sizes':[1,1]}, {'part_sizes':[1]},

@@ -357,7 +357,7 @@ def _run(config, output_dir):
                     custom=[name for name in workload["operations"] if name not in ("get","range","put","head","list")]
                     for target in target_order(config.get("targets", []),workload["seed"],round_index):
                         ident=target["id"]
-                        if ident not in ready or not custom:continue
+                        if ident not in ready or not custom or ident in report.get("performance_stopped",{}):continue
                         try:
                             workers=pools[ident]
                             required=set().union(*(registry.operations[name].required_operations for name in custom))
@@ -373,7 +373,12 @@ def _run(config, output_dir):
             for ident, workers in pools.items():
                 if workers:
                     try:
-                        cleanup_objects(workers[0], prefix+ident+"/")
+                        if ident in report.get("performance_stopped",{}):
+                            # A fresh client is used only for cleanup, never to hide failed measurements.
+                            with_cleanup=Worker(workers[0].target,workload['timeout_seconds'])
+                            try:cleanup_objects(with_cleanup,prefix+ident+"/")
+                            finally:with_cleanup.close()
+                        else:cleanup_objects(workers[0], prefix+ident+"/")
                     except Exception as error:
                         report["execution_errors"].append({"target": ident, "phase": "cleanup", "error": str(error)})
                 for worker in workers:
@@ -391,6 +396,9 @@ def _run(config, output_dir):
         (output_dir/"alignment.json").write_text(json.dumps(alignment,indent=2,ensure_ascii=False)+"\n")
     report["summary"] = summarize(report["samples"], report["batches"])
     report["comparisons"] = comparisons(config, report["cases"], report["summary"], report["operation_metrics"]) if performance else []
+    for pair in report['comparisons']:
+        if any(t in report.get('performance_stopped',{}) for t in (pair.get('s3'),pair.get('native'))):
+            pair.update(status='inconclusive',reason='SDK worker terminated; performance run incomplete')
     report["finished_at"] = datetime.now(timezone.utc).isoformat()
     report = json.loads(redact(json.dumps(report)))
     (output_dir / "report.json").write_text(json.dumps(report, indent=2, ensure_ascii=False)+"\n")

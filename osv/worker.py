@@ -54,10 +54,19 @@ def normalize_control_result(request,result):
                 normalize_control_result(child,response)
 
 
+class WorkerUnavailable(RuntimeError):
+    """A terminated or desynchronized SDK process cannot accept further requests."""
+
+
+class WorkerTimeout(WorkerUnavailable, TimeoutError):
+    """A request deadline invalidates the process and all later responses."""
+
+
 class Worker:
     """Run a real SDK process; protocol and startup costs stay outside SDK timing."""
 
     def __init__(self, target, timeout=60, secret_registry=None):
+        self._terminal_error = None
         self._call_lock=threading.RLock()
         self._async_slots=threading.BoundedSemaphore(64)
         self.timeout = timeout
@@ -121,13 +130,16 @@ class Worker:
                 line = self.process.stdout.readline(1024 * 1024 + 1)
                 if not line:
                     detail=self._diagnostic()
-                    raise RuntimeError("worker exited before sending a response"+(": "+detail if detail else ""))
+                    try:code=self.process.wait(timeout=.2)
+                    except subprocess.TimeoutExpired:code=self.process.poll()
+                    raise WorkerUnavailable(f"worker exited before sending a response (exit_code={code})"+(": "+detail if detail else ""))
                 if len(line) > 1024 * 1024:
                     raise RuntimeError("worker response exceeds 1 MiB")
                 result=json.loads(line)
                 self.secret_registry.payload(result)
                 self.responses.put(result)
         except Exception as error:
+            self._terminal_error = error
             self.responses.put(error)
 
     def call(self, request):
@@ -158,18 +170,35 @@ class Worker:
                     normalize_control_result(request,result)
                     return result
                 time.sleep(.005)
-            self.process.kill()
-            raise TimeoutError('asynchronous SDK worker exceeded request deadline')
+            self.process.kill();self.process.wait()
+            self._terminal_error=WorkerTimeout('asynchronous SDK worker exceeded request deadline')
+            raise self._terminal_error
+
+    def ensure_alive(self):
+        """Reject future RPCs after EOF/death without writing into a broken pipe."""
+        if self._terminal_error is not None:
+            raise WorkerUnavailable(str(self._terminal_error))
+        code=self.process.poll()
+        if code is not None:
+            self._terminal_error=WorkerUnavailable(f"SDK worker exited (exit_code={code}): "+self._diagnostic())
+            raise self._terminal_error
 
     def _call_locked(self, request):
+        self.ensure_alive()
         self.secret_registry.payload(request)
-        self.process.stdin.write(json.dumps(request) + "\n")
-        self.process.stdin.flush()
+        try:
+            self.process.stdin.write(json.dumps(request) + "\n")
+            self.process.stdin.flush()
+        except (BrokenPipeError, OSError) as error:
+            self._terminal_error=WorkerUnavailable(f"SDK worker pipe closed (exit_code={self.process.poll()}): {error}; "+self._diagnostic())
+            raise self._terminal_error from error
         try:
             result = self.responses.get(timeout=self.timeout)
         except queue.Empty:
             self.process.kill()
-            raise TimeoutError("SDK worker exceeded request deadline") from None
+            self.process.wait()
+            self._terminal_error=WorkerTimeout("SDK worker exceeded request deadline")
+            raise self._terminal_error from None
         if isinstance(result, Exception):
             raise result
         if not isinstance(result, dict) or type(result.get("ok")) is not bool:

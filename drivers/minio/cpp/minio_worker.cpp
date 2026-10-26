@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <csignal>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -97,6 +98,10 @@ public:
     }
 };
 int main() {
+#ifndef _WIN32
+    // A disconnected HTTP peer must become an SDK error, not terminate JSONL RPC.
+    std::signal(SIGPIPE, SIG_IGN);
+#endif
     try {
         MinioWorker worker;std::string line;
         while(std::getline(std::cin,line)) {
