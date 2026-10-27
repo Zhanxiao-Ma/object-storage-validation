@@ -21,6 +21,8 @@ class Context:
     round_index: int = 0
     index: int = 0
     selected_cases: frozenset | None = None
+    object_namespace: bool = False
+    scope_state: dict | None = None
 
 
 @dataclass(frozen=True)

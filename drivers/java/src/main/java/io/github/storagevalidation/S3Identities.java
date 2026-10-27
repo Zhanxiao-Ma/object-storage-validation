@@ -55,6 +55,16 @@ final class S3Identities implements AutoCloseable {
         }
         long requestTimeout=timeout("REQUEST_TIMEOUT_MS",30000);
         long connectTimeout=timeout("CONNECT_TIMEOUT_MS",2000);
+        software.amazon.awssdk.http.apache.ApacheHttpClient.Builder http=software.amazon.awssdk.http.apache.ApacheHttpClient.builder()
+            .maxConnections(Integer.parseInt(env("CONNECTIONS","16")))
+            .connectionTimeout(java.time.Duration.ofMillis(connectTimeout)).socketTimeout(java.time.Duration.ofMillis(requestTimeout));
+        String proxy=env("HTTP_PROXY","");
+        if(!proxy.isEmpty()) {
+            java.net.URI uri=java.net.URI.create(proxy);
+            if(!"http".equals(uri.getScheme()) || uri.getHost()==null || uri.getUserInfo()!=null || uri.getQuery()!=null || uri.getFragment()!=null || !Arrays.asList("","/").contains(uri.getPath()) || uri.getPort()==0 || uri.getPort()>65535)
+                throw new IllegalArgumentException("OSV_HTTP_PROXY must be an HTTP proxy URL without credentials or path");
+            http.proxyConfiguration(software.amazon.awssdk.http.apache.ProxyConfiguration.builder().endpoint(uri).useSystemPropertyValues(false).build());
+        }
         return S3Client.builder()
             .endpointOverride(java.net.URI.create(required("ENDPOINT")))
             .region(software.amazon.awssdk.regions.Region.of(required("REGION")))
@@ -67,7 +77,7 @@ final class S3Identities implements AutoCloseable {
                 c.addExecutionInterceptor(new ResponseBodyCapture());c.addExecutionInterceptor(new CephLogging());
                 if(headers){c.addExecutionInterceptor(new WireHeaders());c.addExecutionInterceptor(new WireQuery());}
             })
-            .httpClientBuilder(software.amazon.awssdk.http.apache.ApacheHttpClient.builder().maxConnections(Integer.parseInt(env("CONNECTIONS","16"))).connectionTimeout(java.time.Duration.ofMillis(connectTimeout)).socketTimeout(java.time.Duration.ofMillis(requestTimeout)))
+            .httpClientBuilder(http)
             .build();
     }
 

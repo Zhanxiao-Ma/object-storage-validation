@@ -9,9 +9,12 @@ from .suites import case, run_cases
 SOURCE = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/__init__.py"
 
 
-def check_result(result, deleted, errors=()):
+def check_result(result, deleted, errors=(),bucket=None):
     """Require actual HTTP success, exact acknowledgments and complete per-object failures."""
     assert_equal(result["status_code"], 200)
+    if bucket is not None:
+        deleted=[(bucket.key(key),version) for key,version in deleted]
+        errors=[(bucket.key(key),version,code) for key,version,code in errors]
     assert_equal(sorted((r["key"], r.get("version_id")) for r in result["deleted"]), sorted(deleted))
     assert_equal(sorted((r["key"], r.get("version_id"), r["code"]) for r in result["errors"]), sorted(errors))
     assert_equal(result["errors_present"], bool(errors))
@@ -28,7 +31,7 @@ def ordinary(p, quiet):
             for name in names + ["never-created"]:
                 assert_equal(bucket.raw("head", key=name).get("status_code"), 404)
             assert_equal(bucket.call("list", prefix="")["keys"], [])
-            check_result(result, [] if quiet else [(r["key"], None) for r in identifiers])
+            check_result(result, [] if quiet else [(r["key"], None) for r in identifiers],bucket=bucket)
 
 
 def versions(p):

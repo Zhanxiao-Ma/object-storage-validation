@@ -24,8 +24,8 @@ class ProfileTest(unittest.TestCase):
         return path
 
     def test_both_profiles_run_real_producer_consumer_and_report(self):
-        """Run real local IO and generic complete CLI; expect 96/780 rows, unsupported advanced APIs not_run, exact source URI diagnostic, no metrics in functional mode and exit 1 and clean actual files."""
-        for profile, count, warnings,not_run in (("normal", 96, 1,1), ("complete", 780, 1,524)):
+        """Run real local IO and generic complete CLI; expect 96/780 rows, six cross-bucket contracts unexecuted with one configured namespace, unchanged source URI diagnostics and clean actual files."""
+        for profile, count, warnings,not_run in (("normal", 96, 1,1), ("complete", 780, 1,530)):
             with self.subTest(profile=profile), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
                 manifest=self.manifest(directory,{"profile":profile,"mode":"functional"})
@@ -48,7 +48,11 @@ class ProfileTest(unittest.TestCase):
                     self.assertEqual([c["case"] for c in unsupported], ["s3_lifecycle_configuration_abort_multipart"])
                     self.assertEqual(unsupported[0]["reason"], "unsupported_operations")
                 else:
-                    self.assertTrue(all(c["case"].startswith(("s3_", "ceph_version_","ceph_config_","ceph_sse_c_","ceph_public_block_","ceph_ownership_","ceph_lock_config_","ceph_sse_multipart_","ceph_encryption_","ceph_policy_","ceph_acl_","ceph_inventory_","ceph_header_","ceph_put_condition_","ceph_copy_condition_","ceph_access_","ceph_interop_","ceph_metadata_edges_","ceph_attributes_","ceph_checksum_","ceph_conditional_versions_","ceph_public_","ceph_copy_contract_","ceph_state_","ceph_basic_","ceph_remaining_policy_","ceph_logging_","ceph_raw_","ceph_query_","ceph_lc_","ceph_object_lock_","ceph_names_","ceph_cloud_lc_","ceph_tail_","ceph_encrypted_form_","ceph_encrypted_copy_","ceph_encrypted_part_copy_","ceph_presigned_","ceph_atomic_","ceph_iam_","ceph_sts_","ceph_body_","ceph_root_","ceph_s3_tail_","ceph_select_","ceph_sns_","ceph_s3control_")) and ((c["reason"]=="unsupported_operations" and c["missing_operations"]) or (c["case"].startswith("ceph_raw_") and c["reason"]=="missing_prerequisites" and c["missing_requirements"]==["workload.ceph_http"]) or (c["case"]=="ceph_select_output_serial_expressions" and c["reason"]=="missing_prerequisites" and c["missing_requirements"]==["upstream_todo"])) for c in unsupported))
+                    prerequisites=[c for c in unsupported if c['reason']=='missing_prerequisites']
+                    cross_bucket=[c for c in prerequisites if c['missing_requirements']==['second independently configured test bucket']]
+                    self.assertEqual({c['case'] for c in cross_bucket},{'ceph_exact_list_v1_bucket_distinct','ceph_exact_multipart_copy_small','ceph_exact_multipart_copy_without_range','ceph_exact_multipart_copy_special','ceph_exact_multipart_copy_sizes','ceph_interop_copy_cross_bucket'})
+                    self.assertTrue(all(c['reason']=='unsupported_operations' and c['missing_operations'] or
+                        c in cross_bucket or c['reason']=='missing_prerequisites' and c['missing_requirements'] in (['workload.ceph_http'],['upstream_todo']) for c in unsupported))
                 self.assertTrue(all(s["ok"] for s in report["samples"]))
                 self.assertEqual([p for p in (directory/"objects").rglob("*") if p.is_file()], [])
                 self.assertTrue(report["coverage"]["exclusions"])

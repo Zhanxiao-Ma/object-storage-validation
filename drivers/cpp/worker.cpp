@@ -506,6 +506,8 @@ int main() {
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");
+                    response["explicit_http_proxy"] = !env("OSV_HTTP_PROXY", "").empty();
+                    response["request_checksum_calculation"] = env("OSV_REQUEST_CHECKSUM_CALCULATION", "when_supported");
                 }
                 response["ok"] = true;
             } catch (const SdkError& error) {

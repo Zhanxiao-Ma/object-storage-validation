@@ -24,14 +24,14 @@ def encrypted_form(p,mode):
             rule={"SSEAlgorithm":"aws:kms" if kms else "AES256"}
             if kms:rule["KMSMasterKeyID"]=ident
             assert_equal(api(bucket,"PutBucketEncryption",ServerSideEncryptionConfiguration={"Rules":[{"ApplyServerSideEncryptionByDefault":rule}]})["status_code"],200)
-        conditions=[{"bucket":bucket.name},["starts-with","$key","foo"],{"acl":"private"},["starts-with","$Content-Type","text/plain"]]
+        conditions=[{"bucket":bucket.name},["starts-with","$key",bucket.key("foo")],{"acl":"private"},["starts-with","$Content-Type","text/plain"]]
         encryption=SSE_C if mode=="customer" else {ALGORITHM:"aws:kms",KMS_KEY:ident} if mode=="kms" else {}
         for field in encryption or {ALGORITHM:""}:conditions.append(["starts-with","$"+field,""])
         conditions.append(["content-length-range",0,1024])
         policy_document={"expiration":(datetime.now(timezone.utc)+timedelta(seconds=6000)).strftime("%Y-%m-%dT%H:%M:%SZ"),"conditions":conditions}
         policy=base64.b64encode(json.JSONEncoder().encode(policy_document).encode("utf-8"))
         signature=base64.b64encode(hmac.new(transport.secret.encode("utf-8"),policy,hashlib.sha1).digest())
-        fields=OrderedDict([("key","foo.txt"),("AWSAccessKeyId",transport.access),("acl","private"),("signature",signature),("policy",policy),("Content-Type","text/plain"),*encryption.items(),("file","bar")])
+        fields=OrderedDict([("key",bucket.key("foo.txt")),("AWSAccessKeyId",transport.access),("acl","private"),("signature",signature),("policy",policy),("Content-Type","text/plain"),*encryption.items(),("file","bar")])
         bucket.written_keys.add("foo.txt")
         response=transport.request("POST",transport.url(bucket.name),files=fields)
         assert_equal(response.status_code,204)

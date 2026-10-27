@@ -59,8 +59,15 @@ python3 -m osv run local-s3.json --profile complete --output results/s3-complete
 python3 -m osv catalog local-s3.json --profile complete
 ```
 
-使用专用测试桶。基础检查可能创建配置中尚不存在的桶；桶级及高级场景会创建独立测试桶，并清理本次创建的资源。
-相应权限、第二身份、KMS 等前置条件不足时，会在报告中列明具体原因。
+配置已有测试桶即可执行对象级检查。对象用例默认使用独有前缀，测试后只清理该前缀的对象、版本和未完成上传，不要求建桶或删桶权限。
+
+只有桶级配置和桶生命周期用例会创建独立临时桶。账号没有桶管理权限时，在 manifest 中设置：
+
+```json
+"workload": {"object_scope": "prefix", "bucket_management": false}
+```
+
+这不会跳过普通读写、分页、批量删除、分片、对象元数据及加密等对象用例。跨桶用例仍需要第二个独立桶；精确的根键名长度边界需要专用桶，不会用前缀代替原始语义。第二身份、KMS 等前置条件不足时，报告列明具体原因。
 
 C++ 从 [examples/cpp-s3.json](examples/cpp-s3.json) 开始，构建及运行库设置见 [构建指南](docs/build-and-test.md)。
 

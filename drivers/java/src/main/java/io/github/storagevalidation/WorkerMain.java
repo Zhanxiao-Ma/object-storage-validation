@@ -81,6 +81,7 @@ public final class WorkerMain {
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
                         result.put("connections_per_worker",env("CONNECTIONS","16"));
                         result.put("runtime", System.getProperty("java.version"));
+                        if("s3".equals(provider)) result.put("explicit_http_proxy",!env("HTTP_PROXY","").isEmpty());
                         result.put("cname",Boolean.parseBoolean(env("CNAME","false")));
                         if("obs".equals(provider)) result.put("auth_mode","OBS; negotiation disabled");
                         result.put("measurement", "operation including local payload IO; excludes JSONL serialization");

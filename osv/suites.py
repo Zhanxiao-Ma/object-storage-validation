@@ -12,7 +12,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 30
+CATALOG_VERSION = 31
 
 
 @dataclass(frozen=True)
@@ -28,9 +28,11 @@ class Case:
     severity: str = "error"
 
     def metadata(self):
+        from .isolation import bucket_required
         return {"case": self.name, "purpose": self.purpose, "expected": self.expected,
                 "operations": sorted(self.operations), "source": self.source,
-                "reference": self.reference, "severity": self.severity}
+                "reference": self.reference, "severity": self.severity,
+                "bucket_management_required": bucket_required(self.name, self.operations)}
 
 
 class Probe:
@@ -127,11 +129,20 @@ class CaseNotRun(RuntimeError):
 
 
 def run_cases(ctx, cases):
+    from .isolation import bucket_required, FIXTURE_OPERATIONS
     results = []
     for case in cases:
         if ctx.selected_cases is not None and case.name not in ctx.selected_cases:
             continue
-        missing=case.operations-ctx.worker.capabilities
+        requires_bucket=bucket_required(case.name,case.operations)
+        prefix_mode=ctx.workload.get('object_scope','bucket')=='prefix' and not requires_bucket
+        if requires_bucket and ctx.workload.get('bucket_management',True) is False:
+            results.append({'case':case.name,'status':'not_run','severity':case.severity,
+                            'reason':'missing_prerequisites','missing_requirements':['bucket management permission for this bucket-state contract'],
+                            'error':'This case tests bucket state/configuration; bucket_management=false protects the configured bucket'})
+            continue
+        required=case.operations-FIXTURE_OPERATIONS if prefix_mode else case.operations
+        missing=required-ctx.worker.capabilities
         if missing:
             results.append({"case":case.name,"status":"not_run","severity":case.severity,
                             "reason":"unsupported_operations","missing_operations":sorted(missing),
@@ -139,7 +150,7 @@ def run_cases(ctx, cases):
             continue
         prefix = ctx.prefix+case.name+"/"
         scoped = replace(ctx, prefix=prefix, body=ctx.directory/(case.name+".body"),
-                         output=ctx.directory/(case.name+".output"))
+                         output=ctx.directory/(case.name+".output"),object_namespace=prefix_mode,scope_state={})
         try:
             behavior = case.execute(Probe(scoped))
             result = {"case": case.name, "status": "warning" if isinstance(behavior, dict) and behavior.get("source_matches") is False and case.severity == "warning" else "pass"}
@@ -151,6 +162,9 @@ def run_cases(ctx, cases):
         except Exception as error:
             result = {"case": case.name, "status": "warning" if case.severity == "warning" else "fail", "error": str(error)}
         result["severity"]=case.severity
+        if prefix_mode:
+            result['isolation']={'kind':'object_prefix','bucket':ctx.worker.info.get('bucket'),
+                                 'case_prefix':prefix,'fresh_bucket_created':False}
         results.append(result)
     return results
 

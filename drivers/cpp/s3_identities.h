@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <regex>
 
 /**
  * Runs authorization scenarios with distinct real SDK credential contexts.
@@ -32,7 +33,19 @@ class S3Identities {
         configuration.scheme = configuration.endpointOverride.find("http://") == 0
             ? Aws::Http::Scheme::HTTP : Aws::Http::Scheme::HTTPS;
         configuration.maxConnections = std::stoul(env("OSV_CONNECTIONS", "16"));
-        if(required_checksum)configuration.checksumConfig.requestChecksumCalculation=Aws::Client::RequestChecksumCalculation::WHEN_REQUIRED;
+        auto checksum_mode=env("OSV_REQUEST_CHECKSUM_CALCULATION","when_supported");
+        if(checksum_mode!="when_required" && checksum_mode!="when_supported")throw std::runtime_error("invalid OSV_REQUEST_CHECKSUM_CALCULATION");
+        if(required_checksum || checksum_mode=="when_required")configuration.checksumConfig.requestChecksumCalculation=Aws::Client::RequestChecksumCalculation::WHEN_REQUIRED;
+        auto proxy=env("OSV_HTTP_PROXY","");
+        if(!proxy.empty()) {
+            std::smatch parts;
+            if(!std::regex_match(proxy,parts,std::regex(R"(^http://([A-Za-z0-9.-]+|\[[0-9a-fA-F:]+\])(?::([0-9]{1,5}))?/?$)")))throw std::runtime_error("OSV_HTTP_PROXY must be an HTTP proxy URL without credentials or path");
+            auto port=parts[2].matched?std::stoul(parts[2].str()):80;
+            if(port<1 || port>65535)throw std::runtime_error("invalid OSV_HTTP_PROXY port");
+            auto host=parts[1].str();if(host.front()=='[')host=host.substr(1,host.size()-2);
+            configuration.proxyScheme=Aws::Http::Scheme::HTTP;
+            configuration.proxyHost=host.c_str();configuration.proxyPort=static_cast<unsigned>(port);
+        }
         auto request_timeout=timeout("OSV_REQUEST_TIMEOUT_MS",30000);
         configuration.requestTimeoutMs = headers?timeout("OSV_HEADER_REQUEST_TIMEOUT_MS",request_timeout):request_timeout;
         if(headers || !env("OSV_REQUEST_TIMEOUT_MS","").empty())configuration.httpRequestTimeoutMs=configuration.requestTimeoutMs;

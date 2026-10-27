@@ -17,11 +17,31 @@ class BucketScope:
         self.probe=probe
         self.name="osv-"+uuid.uuid4().hex if name is None else name
         if not isinstance(self.name,str) or not re.fullmatch(r"osv-[0-9a-f]{32}",self.name):raise ValueError("isolated bucket must use the generated osv UUID namespace")
+        self.generated_name=self.name
         self.created=False
         self.cleanup_completed=False
         self.written_keys=set()
+        self.object_namespace=bool(probe.ctx.object_namespace)
+        if self.object_namespace:
+            if name is not None or create_operation!='bucket_create_raw':
+                from .suites import CaseNotRun
+                raise CaseNotRun('This source contract requires a separately configured bucket or bucket creation options','independent test bucket')
+            self.prefix=probe.ctx.prefix+'scope-'+uuid.uuid4().hex+'/'
+            self.name=probe.ctx.worker.info.get('bucket') or probe.ctx.worker.target.get('env',{}).get('OSV_BUCKET')
+            self.version_keys={}
+            self.uploads={}
+            self.versioned=False
+
+    def key(self,value):
+        """Return the actual SDK key so assertions compare real producer/consumer values."""
+        if not self.object_namespace:return value
+        from .object_namespace import physical_key
+        return physical_key(self,value)
 
     def raw(self,op,**options):
+        if self.object_namespace:
+            from .object_namespace import request
+            return request(self,op,options)
         if "bucket" in options:raise ValueError("cannot override the owned bucket scope")
         # Retain the real producer's opaque keys before a possibly ambiguous request.
         # Typed XML list parsers can trim whitespace keys; they are still valid objects.
@@ -37,6 +57,9 @@ class BucketScope:
         return self.call("put",key=key,body_path=str(self.probe.ctx.body))
 
     def __enter__(self):
+        if self.object_namespace:
+            from .object_namespace import enter
+            return enter(self)
         existing=self.raw("bucket_head")
         if existing["ok"]:raise RuntimeError("generated test bucket already exists; refusing reuse: "+self.name)
         if (existing.get("error_kind"),existing.get("status_code"))!=("not_found",404):raise RuntimeError("cannot establish test bucket absence: "+str(existing))
@@ -49,6 +72,9 @@ class BucketScope:
         return self
 
     def __exit__(self,error_type,error,traceback):
+        if self.object_namespace:
+            from .object_namespace import exit_scope
+            return exit_scope(self,error)
         if not self.created:return False
         try:
             exists=self.raw("bucket_head")
@@ -66,6 +92,9 @@ class BucketScope:
 
     def cleanup_objects(self):
         """Delete actual known/current objects; specialized scopes can purge history without creating new delete markers."""
+        if self.object_namespace:
+            from .object_namespace import cleanup_objects
+            return cleanup_objects(self)
         failures=[]
         for key in sorted(self.written_keys):
             result=self.raw("delete",key=key)

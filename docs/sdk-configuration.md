@@ -2,6 +2,24 @@
 
 按厂商配置 S3 与原生 SDK 的端点、版本和运行库。基础用法见 [README](../README.md)。
 
+## 已有桶与对象权限
+
+功能用例默认使用 `workload.object_scope="prefix"`，在配置桶的独有前缀下验证对象操作。
+没有建桶、删桶或桶配置权限时，设置 `workload.bucket_management=false`；仅真正测试桶状态的用例会因此未执行。
+前缀模式保留真实 SDK 响应键、分页 token 和版本 ID，预期键名使用对应物理前缀；清理只删除本次前缀内的资源。
+已有桶启用版本控制时会清理该前缀的实际历史版本，不改变版本控制开关。
+需要不同桶或精确根键名长度的原始用例保留前提条件，不会以单桶前缀测试冒充跨桶或根键边界通过。
+专用桶环境可使用 `object_scope="bucket"` 保留原始每用例独立建桶的方式。
+
+## S3 代理与请求校验
+
+Java、C++ S3 驱动均支持显式 `OSV_HTTP_PROXY=http://host:port`，HTTPS 请求通过该 HTTP 代理建立隧道。
+代理地址不接受用户名、密码、路径、查询或 fragment；报告中的 `explicit_http_proxy` 记录是否启用。
+不要仅凭 shell 的 `HTTPS_PROXY` 已设置就认为这两个固定版本 SDK 已使用代理。
+
+C++ 可用 `OSV_REQUEST_CHECKSUM_CALCULATION=when_required` 仅自动附加协议要求的请求校验；默认值为 `when_supported`。
+显式指定算法的校验用例仍发送其原始校验要求。报告记录该配置，便于区分存储能力与 SDK 默认请求编码差异。
+
 ## Java SDK 对照
 
 ```bash

@@ -40,9 +40,11 @@ def populate(bucket,names):
 
 def checked_page(bucket,version,options,keys=None,prefixes=None,checks=None,absent=()):
     result=bucket.call(OPS[version],**options)
-    if keys is not None:assert_equal(("keys",result["keys"]),("keys",keys))
-    if prefixes is not None:assert_equal(("common_prefixes",result["common_prefixes"]),("common_prefixes",prefixes))
-    for name,value in (checks or {}).items():assert_equal((name,result.get(name)),(name,value))
+    if keys is not None:assert_equal(("keys",result["keys"]),("keys",[bucket.key(key) for key in keys]))
+    if prefixes is not None:assert_equal(("common_prefixes",result["common_prefixes"]),("common_prefixes",[bucket.key(key) for key in prefixes]))
+    for name,value in (checks or {}).items():
+        if name=='prefix' or name in ('marker','start_after') and value:value=bucket.key(value)
+        assert_equal((name,result.get(name)),(name,value))
     for name in absent:assert_equal((name,name in result["fields"]),(name,False))
     return result
 
@@ -83,7 +85,7 @@ def delimiter_walk(p,version,underscore=False,trailing=False):
                 elif cursor is None:options["start_after"]=""
                 else:options["token"]=cursor
                 result=checked_page(bucket,version,options,keys,groups,{"truncated":truncated})
-                if version==1:assert_equal(result["next_marker"],next_marker);cursor=result["next_marker"]
+                if version==1:assert_equal(result["next_marker"],bucket.key(next_marker) if next_marker is not None else None);cursor=result["next_marker"]
                 else:
                     if not truncated:assert_equal(result["next_token"],None)
                     cursor=result["next_token"]
@@ -115,7 +117,7 @@ def token_vector(p,mode):
         options={"token":first["next_token"]}
         if mode=="both":options["start_after"]="bar"
         result=checked_page(bucket,2,options,["foo","quxx"] if mode=="both" else ["baz","foo","quxx"],checks={"token":first["next_token"],"truncated":False})
-        if mode=="both":assert_equal(result["start_after"],"bar")
+        if mode=="both":assert_equal(result["start_after"],bucket.key("bar"))
 
 def owner(p,mode):
     """Assert actual decoded Owner presence for true, false and omitted FetchOwner requests."""

@@ -53,6 +53,8 @@ class SourceHttp:
         try:import requests
         except ImportError:raise CaseNotRun("source raw HTTP transport requires optional requests","optional dependency requests") from None
         self.requests=requests;self.timeout=p.ctx.worker.timeout
+        proxy=environment.get('OSV_HTTP_PROXY','')
+        self.proxies={'http':proxy,'https':proxy}
     def url(self,bucket,key=None):
         if self.style=="path":base=self.endpoint+"/"+quote(bucket,safe="")
         else:
@@ -62,6 +64,7 @@ class SourceHttp:
             base=urlunsplit((self.parts.scheme,authority,self.parts.path.rstrip("/"),"",""))
         return base+("/"+quote(key,safe="/") if key is not None else "")
     def request(self,method,url,**options):
+        options.setdefault('proxies',self.proxies)
         return self.requests.request(method,url,timeout=self.timeout,verify=True,**options)
     @staticmethod
     def evidence():return {"request_transport":"raw_http","sdk_role":"bucket configuration, readback and cleanup only","sdk_performance_sample":False}
@@ -81,7 +84,7 @@ def post_vector(p,mode):
         if mode=="chunk_bug":assert_equal(len(content)>minimum,True);assert_equal(len(content)<maximum,True)
         expires=datetime.now(timezone.utc)+timedelta(seconds=-6000 if mode=="expired" else 6000)
         condition_key=r"\$foo" if mode in {"escaped","invalid_signature","invalid_access_key","invalid_date","missing_signature","missing_bucket_condition"} else "foo_cksum_test" if mode=="checksum" else "foo"
-        conditions=[{"bucket":bucket.name},["starts-with","$key",condition_key],{"acl":"private"}]
+        conditions=[{"bucket":bucket.name},["starts-with","$key",bucket.key(condition_key)],{"acl":"private"}]
         if mode!="no_content_type":conditions.append(["starts-with","$Content-Type","text/plain"])
         conditions.append(["content-length-range",minimum] if mode=="missing_length" else ["content-length-range",minimum,maximum])
         if mode=="no_key":conditions.pop(1)
@@ -90,7 +93,7 @@ def post_vector(p,mode):
         if mode=="invalid_metadata":conditions.append(["eq","$x-amz-meta-foo",""])
         if mode=="tags_authenticated":conditions.append(["starts-with","$tagging",""])
         if mode=="redirect":conditions.insert(-1,["eq","$success_action_redirect",transport.url(bucket.name)])
-        if mode=="case_insensitive":conditions=[{"bUcKeT":bucket.name},["StArTs-WiTh","$KeY","foo"],{"AcL":"private"},["StArTs-WiTh","$CoNtEnT-TyPe","text/plain"],["content-length-range",0,1024]]
+        if mode=="case_insensitive":conditions=[{"bUcKeT":bucket.name},["StArTs-WiTh","$KeY",bucket.key("foo")],{"AcL":"private"},["StArTs-WiTh","$CoNtEnT-TyPe","text/plain"],["content-length-range",0,1024]]
         if mode=="empty_conditions":conditions=[{}]
         policy_document={"EXPIRATION" if mode=="expiration_case" else "expiration":str(expires) if mode=="invalid_date" else expires.strftime("%Y-%m-%dT%H:%M:%SZ")}
         if mode!="no_conditions":policy_document["CONDITIONS" if mode=="conditions_case" else "conditions"]=conditions
@@ -99,7 +102,7 @@ def post_vector(p,mode):
         signature=base64.b64encode(hmac.new(transport.secret.encode("utf-8"),policy,hashlib.sha1).digest())
         if mode=="invalid_signature":signature=signature[::-1]
         fields=OrderedDict()
-        if mode!="no_key":fields["kEy" if mode=="case_insensitive" else "key"]="${filename}" if mode in {"filename","wrong_bucket"} else key
+        if mode!="no_key":fields["kEy" if mode=="case_insensitive" else "key"]=bucket.key("${filename}" if mode in {"filename","wrong_bucket"} else key)
         if mode=="wrong_bucket":fields["bucket"]=bucket.name
         if not anonymous:fields["AWSAccessKeyId"]="foo" if mode=="bad_access_key" else transport.access[::-1] if mode=="invalid_access_key" else transport.access
         fields["aCl" if mode=="case_insensitive" else "acl"]="public-read" if anonymous else "private"
@@ -123,7 +126,7 @@ def post_vector(p,mode):
         malformed={"invalid_date","no_key","missing_signature","conditions_case","expiration_case","no_expiration","no_conditions","above_maximum","missing_length","negative_length","below_minimum","empty_conditions"}
         expected=403 if mode in forbidden else 400 if mode in malformed else 201 if mode=="success" else 200 if mode=="redirect" else 204
         assert_equal(response.status_code,expected)
-        if mode=="success":assert_equal(ET.fromstring(response.content).find("Key").text,"foo.txt")
+        if mode=="success":assert_equal(ET.fromstring(response.content).find("Key").text,bucket.key("foo.txt"))
         if mode=="invalid_success":assert_equal(response.content.decode(),"")
         reads={"anonymous","authenticated","no_content_type","large","filename","escaped","redirect","metadata","tags_anonymous","tags_authenticated"}
         if mode in reads:

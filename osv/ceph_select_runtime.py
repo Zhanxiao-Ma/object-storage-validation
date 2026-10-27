@@ -56,6 +56,11 @@ class Client:
         if scope is None:
             if name not in self.r.literals:raise RuntimeError('Source bucket was not generated or authorized by this scenario')
             scope=NamingScope(self.r.p,name);self.r.buckets[name]=scope
+        if scope.object_namespace:
+            if not getattr(scope,'namespace_entered',False):
+                scope.__enter__();scope.namespace_entered=True
+            # Creation is fixture setup, not the Select oracle; check the real configured bucket instead.
+            return checked(self.r.p.ctx.worker.call({'op':'bucket_head','bucket':scope.name}))
         if not scope.created:
             head=scope.raw('bucket_head')
             if head.get('ok') or (head.get('error_kind'),head.get('status_code'))!=('not_found',404):
@@ -75,8 +80,8 @@ class Client:
         scope=self.r.owned(values['Bucket']);path=self.r.p.ctx.output;checked(scope.raw('get_http',key=values['Key'],output_path=str(path)))
         return {'Body':io.BytesIO(path.read_bytes())}
     def select_object_content(self,**values):
-        self.r.owned(values['Bucket']);path=self.r.p.ctx.output
-        result=checked(self.r.p.ctx.worker.call({'op':'select','input':values,'output_path':str(path)}))
+        scope=self.r.owned(values['Bucket']);path=self.r.p.ctx.output
+        result=checked(scope.raw('select',input=values,output_path=str(path)))
         return {'Payload':payload(result,path)}
 
 
@@ -117,10 +122,13 @@ class Runtime:
 
     def owned(self,name):
         scope=self.buckets.get(name)
-        if scope is None or not scope.created:raise RuntimeError('Refusing operation outside a successfully created Select bucket')
+        if scope is None or not (scope.created or getattr(scope,'namespace_entered',False)):raise RuntimeError('Refusing operation outside a successfully established Select scope')
         return scope
     def name(self):
-        scope=BucketScope(self.p);self.buckets[scope.name]=scope;return scope.name
+        scope=BucketScope(self.p)
+        if scope.name in self.buckets:
+            raise CaseNotRun('Original source needs another distinct bucket','second independently configured test bucket')
+        self.buckets[scope.name]=scope;return scope.name
 
 
 def get_client():return Client(_ACTIVE.get())

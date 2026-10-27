@@ -27,9 +27,9 @@ def list_relationship(p,versioned=False):
         for key in ("bar","baz","foo"):
             head=bucket.call("head_http",key=key)
             owner=api(bucket,"GetObjectAcl",Key=key)["data"]["Owner"]
-            data[key]={"etag":head["etag"],"size":head["size"],"last_modified_ms":head["last_modified_ms"],
+            data[bucket.key(key)]={"etag":head["etag"],"size":head["size"],"last_modified_ms":head["last_modified_ms"],
                 "owner":{"id":owner["ID"],"display_name":owner["DisplayName"]}}
-            if versioned:data[key]["version_id"]=head["http_headers"]["x-amz-version-id"]
+            if versioned:data[bucket.key(key)]["version_id"]=head["http_headers"]["x-amz-version-id"]
         listing=bucket.call("versions_list" if versioned else "list_v1_page")
         assert_equal(("Versions" if versioned else "Contents") in listing["fields"],True)
         rows=listing["versions" if versioned else "objects"]
@@ -211,9 +211,9 @@ def special_keys(p):
     with BucketScope(p) as bucket:
         for key in keys:bucket.put(key,key.encode())
         observed=bucket.call("list_v1_page")["keys"]
-        assert_equal(observed,keys)
+        assert_equal(observed,[bucket.key(key) for key in keys])
         for key in keys:
-            assert_equal(key in observed,True)
+            assert_equal(bucket.key(key) in observed,True)
             bucket.call("get",key=key,output_path=str(p.ctx.output));assert_equal(p.ctx.output.read_bytes().decode(),key)
             api(bucket,"PutObjectAcl",Key=key,ACL="private")
 

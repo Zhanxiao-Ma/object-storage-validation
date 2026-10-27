@@ -61,11 +61,16 @@ def load_config(path, profile_override=None, mode_override=None):
         raise ValueError("choose profile or compatibility_suites, not both")
     if mode_override is not None:
         workload = {**workload, "mode": mode_override}
-    defaults = {"mode": "functional", "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
+    defaults = {"mode": "functional", "object_scope": "prefix", "bucket_management": True,
+                "object_size": 8 * 1024 * 1024, "range_size": 64 * 1024,
                 "requests": 32, "concurrency": 4, "warmup_requests": 4,
                 "rounds": 8, "part_size": 5 * 1024 * 1024, "timeout_seconds": 60,
                 "seed": 1729, "list_objects": 1001, "large_object_size": 256*1024*1024, "operations": ["get", "range", "put", "head", "list"]}
     workload = {**defaults, **workload}
+    if workload['object_scope'] not in ('prefix', 'bucket'):
+        raise ValueError('object_scope must be prefix or bucket')
+    if type(workload['bucket_management']) is not bool:
+        raise ValueError('bucket_management must be boolean')
     if workload["mode"] not in ("functional", "performance", "all"):
         raise ValueError("mode must be functional, performance or all")
     for key in ("object_size", "range_size", "requests", "concurrency", "rounds", "part_size", "timeout_seconds", "large_object_size"):

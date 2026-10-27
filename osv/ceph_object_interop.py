@@ -75,7 +75,7 @@ def cross_copy(p,missing):
     """Keep source foo123bar/bar321foo, literal foo, two buckets or the absent -fake source bucket, with actual source HEAD and SDK CopyObject."""
     with BucketScope(p) as destination:
         if missing:
-            source=destination.name+"-fake"
+            source=destination.generated_name+"-fake"
             before=p.ctx.worker.call({"op":"bucket_head","bucket":source})
             if (before.get("error_kind"),before.get("status_code"))!=("not_found",404):raise RuntimeError("cannot establish absent copy source bucket")
             # The source client.copy is a managed transfer: an absent source fails
