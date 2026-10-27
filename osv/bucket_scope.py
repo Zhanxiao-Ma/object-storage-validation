@@ -31,6 +31,7 @@ class BucketScope:
             self.version_keys={}
             self.uploads={}
             self.versioned=False
+            self.absent_keys=set()
 
     def key(self,value):
         """Return the actual SDK key so assertions compare real producer/consumer values."""

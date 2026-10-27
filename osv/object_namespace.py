@@ -10,6 +10,35 @@ WRITES={'put','put_acl','put_encryption','put_sse_c','put_http','put_metadata','
         'mp_complete','mp_complete_observed','atomic_stream'}
 
 
+def observe_version(scope,response):
+    """Use actual object response metadata instead of requiring bucket configuration permission."""
+    version=response.get('version_id')
+    marker=False
+    for name,value in response.get('http_headers',{}).items():
+        value=','.join(value) if isinstance(value,list) else str(value)
+        if name.lower()=='x-amz-version-id':version=value
+        if name.lower()=='x-amz-delete-marker' and value.lower()=='true':marker=True
+    if version is not None or marker:scope.versioned=True
+    elif response.get('ok'):scope.versioned=False
+    return response
+
+
+def inspect_object_version(scope,key,options=None):
+    options=options or {}
+    worker=scope.probe.ctx.worker
+    if 'sse_headers' in options and 'head_sse_c' in worker.capabilities:
+        request={'op':'head_sse_c','key':key,'sse_headers':options['sse_headers']}
+    elif 'head_version' in worker.capabilities:
+        request={'op':'head_version','key':key}
+    else:return
+    if scope.name is not None:request['bucket']=scope.name
+    result=worker.call(request)
+    observe_version(scope,result)
+    if result.get('status_code')==404 and scope.versioned is None:
+        scope.absent_keys.add(key)
+    return result
+
+
 def physical_key(scope,value):
     if not isinstance(value,str):raise ValueError('object key must be a string')
     if value.startswith(scope.prefix):return value
@@ -80,6 +109,9 @@ def request(scope,op,options):
     """Send the validated physical request and return the SDK result unchanged."""
     q=_prepare_request(scope,op,options)
     result=scope.probe.ctx.worker.call(q)
+    if scope.versioned is None and result.get('ok') and op in WRITES and 'key' in q and not op.startswith('mp_create'):
+        # A plain PUT may omit VersionId in the adapter result; HEAD uses object-read permission only.
+        observe_version(scope,result) if 'version_id' in result else inspect_object_version(scope,q['key'],q)
     if result.get('ok') and 'key' in q:
         if result.get('upload_id'):scope.uploads[result['upload_id']]=q['key']
         if 'version_id' in result:scope.version_keys.setdefault(result['version_id'],set()).add(q['key'])
@@ -95,8 +127,8 @@ def enter(scope):
     if initial:raise RuntimeError('generated object prefix is not empty; refusing reuse')
     worker=scope.probe.ctx.worker
     if 'versioning_get' in worker.capabilities:
-        status=scope.call('versioning_get').get('versioning_status')
-        scope.versioned=status in ('Enabled','Suspended')
+        configured=scope.raw('versioning_get')
+        scope.versioned=configured.get('versioning_status') in ('Enabled','Suspended') if configured.get('ok') else None
         if scope.versioned and not {'versions_list','delete_version'}<=worker.capabilities:
             raise CaseNotRun('Versioned existing bucket requires prefix-scoped history cleanup','versions_list and delete_version')
     if state is not None:state['active_object_scopes']=state.get('active_object_scopes',0)+1
@@ -104,6 +136,23 @@ def enter(scope):
 
 
 def cleanup_objects(scope):
+    if scope.versioned is None:
+        for key in scope.written_keys:
+            inspect_object_version(scope,physical_key(scope,key))
+            if scope.versioned is not None:break
+        if scope.versioned is None and scope.written_keys:
+            if all(physical_key(scope,key) in scope.absent_keys for key in scope.written_keys):
+                # HEAD without a delete-marker/version header confirms absence. Do not create markers by deleting absent keys.
+                remaining=scope.call('list',prefix='')['keys']
+                if not remaining:return []
+                if any(not key.startswith(scope.prefix) for key in remaining):raise RuntimeError('refusing cleanup outside object scope')
+                inspect_object_version(scope,remaining[0])
+            # No current object metadata is available; only actual version listing can rule out historical resources.
+            if scope.versioned is None:
+                history=scope.raw('versions_list')
+                if history.get('ok'):
+                    scope.versioned=bool(history.get('versions') or history.get('delete_markers'))
+                else:raise RuntimeError('Cannot establish version-history cleanup for this prefix: '+str(history))
     if scope.versioned:
         from .version_scope import VersionScope
         return VersionScope.cleanup_objects(scope)
@@ -148,6 +197,10 @@ def exit_scope(scope,error):
             if not response.get('ok') and response.get('status_code')!=404:
                 raise RuntimeError('object-scope multipart cleanup failed: '+str(response))
         failures=scope.cleanup_objects()
+        if scope.versioned:
+            history=scope.call('versions_list')
+            if history.get('versions') or history.get('delete_markers') or history.get('truncated') is not False:
+                raise RuntimeError('object version history cleanup not confirmed: '+str(history)+'; '+str(failures))
         remaining=scope.call('list',prefix='')['keys']
         if remaining:raise RuntimeError('object prefix cleanup not confirmed: '+str(remaining)+'; '+str(failures))
         scope.cleanup_completed=True
