@@ -162,3 +162,25 @@ class PrefixScopeSdkTest(unittest.TestCase):
                     for key in original({'op':'list','prefix':''}).get('keys',[]):original({'op':'delete','key':key})
                     original({'op':'bucket_delete'})
                     worker.close()
+
+    def test_authenticated_post_forms_feed_real_prefixed_objects_into_sdk_readback(self):
+        """Send actual signed POST forms with prefixed policy/key fields; expect real SDK byte verification and no object left outside the run prefix."""
+        from osv.ceph_raw_http import CASES
+        for language in ('java','cpp'):
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary:
+                directory=Path(temporary);bucket='osv-'+uuid.uuid4().hex
+                worker=Worker(self.target(language,bucket),30)
+                try:
+                    self.assertTrue(worker.call({'op':'bucket_create_raw'})['ok'])
+                    ctx=Context(worker,'osv/'+uuid.uuid4().hex+'/',directory,b'payload',directory/'body',directory/'read',
+                        {'object_scope':'prefix','bucket_management':False,
+                         'ceph_http':{'endpoint':self.endpoint,'addressing_style':'path'}})
+                    names={'ceph_raw_post_authenticated','ceph_raw_post_filename','ceph_raw_post_metadata'}
+                    rows=run_cases(ctx,[c for c in CASES if c.name in names])
+                    self.assertEqual(len(rows),3)
+                    self.assertTrue(all(row['status']=='pass' for row in rows),rows)
+                    self.assertEqual(worker.call({'op':'list','prefix':''})['keys'],[])
+                finally:
+                    for key in worker.call({'op':'list','prefix':''}).get('keys',[]):worker.call({'op':'delete','key':key})
+                    worker.call({'op':'bucket_delete'})
+                    worker.close()
