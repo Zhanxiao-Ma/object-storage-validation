@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import patch
 from xml.etree import ElementTree as ET
 from sdk_fixtures import fixture_worker,FixtureHandler
+from osv.worker import Worker
 from osv.scenarios import Context
 from osv.suites import Probe,CaseNotRun,run_cases
 from osv.ceph_select_runtime import Runtime,Client,ClientError,EventStreamError,execute,payload
@@ -44,6 +45,13 @@ class DroppedCreateHandler(FixtureHandler):
         super().respond()
 
 
+class SelectProxyHandler(FixtureHandler):
+    """Acknowledge real Netty CONNECT handshakes, then feed independent HTTP fixtures to the SDK without implementing storage behavior."""
+    def do_CONNECT(self):
+        self.server.proxy_tunnels.append(self.path)
+        self.send_response(200,'Connection established');self.end_headers()
+
+
 class ProducerReplay(deque):
     """Feed a captured actual PUT body directly to the official GET consumer; implement no object map, query evaluator, or Select decoder."""
     def __init__(self,values,server):super().__init__(values);self.server=server
@@ -61,6 +69,28 @@ def request():return {'Bucket':'osv-fixture','Key':'input.csv','ExpressionType':
 class SelectSdkTest(unittest.TestCase):
     """Use only actual SDK requests/events and raw input frames; assert native bytes, event order and source error timing."""
     def languages(self):return os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(',')
+    def test_select_uses_explicit_proxy_for_event_stream_and_service_rejection(self):
+        """Send Select to an unresolvable origin through the configured loopback proxy; expect actual SDK-decoded bytes, native 403 and both requests observed at the proxy."""
+        fixtures=[stream(frame('Records',b'proxy actual bytes'),frame('End')),(403,{'Content-Type':'application/xml'},b'<Error><Code>AccessDenied</Code><Message>proxy rejection</Message></Error>')]
+        for language in self.languages():
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,'s3',handler=SelectProxyHandler) as (unused,server):
+                server.proxy_tunnels=[]
+                target={**unused.target,'env':{**unused.target.get('env',{}),'OSV_ENDPOINT':'http://select.fixture.invalid',
+                    'OSV_HTTP_PROXY':f'http://127.0.0.1:{server.server_port}','OSV_CONNECT_TIMEOUT_MS':'1000','OSV_REQUEST_TIMEOUT_MS':'3000'}}
+                worker=Worker(target,10)
+                try:
+                    path=Path(temporary)/'records';result=worker.call({'op':'select','input':request(),'output_path':str(path)})
+                    self.assertTrue(result['ok'],result);self.assertEqual(path.read_bytes(),b'proxy actual bytes')
+                    self.assertEqual([e['type'] for e in result['events']],['Records','End'])
+                    denied=worker.call({'op':'select','input':request(),'output_path':str(path)})
+                    self.assertFalse(denied['ok']);self.assertEqual(denied['status_code'],403);self.assertEqual(denied['error_code'],'AccessDenied')
+                    self.assertEqual(len(server.requests),2)
+                    if server.proxy_tunnels:self.assertEqual(server.proxy_tunnels,['select.fixture.invalid:80']*2)
+                    else:self.assertTrue(all(url.startswith('http://select.fixture.invalid/') for method,url,headers,body in server.requests))
+                    self.assertTrue(all(headers['Host'].startswith('select.fixture.invalid') for method,url,headers,body in server.requests))
+                    self.assertFalse(server.fixtures)
+                finally:worker.close()
+
     def test_actual_events_preserve_records_offsets_progress_stats_cont_and_end(self):
         """Send independent Records/Progress/Stats/Cont/End wire frames; expect actual SDK callbacks to preserve bytes and event boundaries without concatenating UTF-8 first."""
         wire=[frame('Records',b'a,\n'),details('Progress',12,3),frame('Records',b'\xe4'),frame('Records',b'\xb8\xad'),frame('Cont'),details('Stats',12,6),frame('End')]

@@ -15,7 +15,7 @@
 
 ## S3 代理与请求校验
 
-Java、C++ S3 驱动均支持显式 `OSV_HTTP_PROXY=http://host:port`，HTTPS 请求通过该 HTTP 代理建立隧道。
+Java、C++ S3 驱动均支持显式 `OSV_HTTP_PROXY=http://host:port`，HTTPS 请求通过该 HTTP 代理建立隧道。Java Select 的独立异步客户端也使用此代理和连接、读写超时配置。
 代理地址不接受用户名、密码、路径、查询或 fragment；报告中的 `explicit_http_proxy` 记录是否启用。
 不要仅凭 shell 的 `HTTPS_PROXY` 已设置就认为这两个固定版本 SDK 已使用代理。
 

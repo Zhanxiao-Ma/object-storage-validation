@@ -58,13 +58,8 @@ final class S3Identities implements AutoCloseable {
         software.amazon.awssdk.http.apache.ApacheHttpClient.Builder http=software.amazon.awssdk.http.apache.ApacheHttpClient.builder()
             .maxConnections(Integer.parseInt(env("CONNECTIONS","16")))
             .connectionTimeout(java.time.Duration.ofMillis(connectTimeout)).socketTimeout(java.time.Duration.ofMillis(requestTimeout));
-        String proxy=env("HTTP_PROXY","");
-        if(!proxy.isEmpty()) {
-            java.net.URI uri=java.net.URI.create(proxy);
-            if(!"http".equals(uri.getScheme()) || uri.getHost()==null || uri.getUserInfo()!=null || uri.getQuery()!=null || uri.getFragment()!=null || !Arrays.asList("","/").contains(uri.getPath()) || uri.getPort()==0 || uri.getPort()>65535)
-                throw new IllegalArgumentException("OSV_HTTP_PROXY must be an HTTP proxy URL without credentials or path");
-            http.proxyConfiguration(software.amazon.awssdk.http.apache.ProxyConfiguration.builder().endpoint(uri).useSystemPropertyValues(false).build());
-        }
+        java.net.URI proxy=httpProxy();
+        if(proxy!=null)http.proxyConfiguration(software.amazon.awssdk.http.apache.ProxyConfiguration.builder().endpoint(proxy).useSystemPropertyValues(false).build());
         return S3Client.builder()
             .endpointOverride(java.net.URI.create(required("ENDPOINT")))
             .region(software.amazon.awssdk.regions.Region.of(required("REGION")))
@@ -81,7 +76,17 @@ final class S3Identities implements AutoCloseable {
             .build();
     }
 
-    private static long timeout(String name,long fallback) {
+    /** Share explicit proxy validation between synchronous object IO and asynchronous Select transport. */
+    static java.net.URI httpProxy() {
+        String value=env("HTTP_PROXY","");
+        if(value.isEmpty())return null;
+        java.net.URI uri=java.net.URI.create(value);
+        if(!"http".equals(uri.getScheme()) || uri.getHost()==null || uri.getUserInfo()!=null || uri.getQuery()!=null || uri.getFragment()!=null || !Arrays.asList("","/").contains(uri.getPath()) || uri.getPort()==0 || uri.getPort()>65535)
+            throw new IllegalArgumentException("OSV_HTTP_PROXY must be an HTTP proxy URL without credentials or path");
+        return uri;
+    }
+
+    static long timeout(String name,long fallback) {
         String value=env(name,Long.toString(fallback));
         if(!value.matches("[0-9]+"))throw new IllegalArgumentException(name+" must be a positive millisecond integer");
         long parsed=Long.parseLong(value);

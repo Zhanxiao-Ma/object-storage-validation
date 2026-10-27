@@ -29,13 +29,23 @@ final class S3Select {
         AtomicLong offset=new AtomicLong();
         String token=env("SESSION_TOKEN","");
         AwsCredentials credentials=token.isEmpty()?AwsBasicCredentials.create(required("ACCESS_KEY"),required("SECRET_KEY")):AwsSessionCredentials.create(required("ACCESS_KEY"),required("SECRET_KEY"),token);
+        long requestTimeout=S3Identities.timeout("REQUEST_TIMEOUT_MS",30000);
+        long connectTimeout=S3Identities.timeout("CONNECT_TIMEOUT_MS",2000);
+        software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient.Builder http=software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient.builder()
+                .maxConcurrency(Integer.parseInt(env("CONNECTIONS","16")))
+                .connectionTimeout(java.time.Duration.ofMillis(connectTimeout))
+                .readTimeout(java.time.Duration.ofMillis(requestTimeout)).writeTimeout(java.time.Duration.ofMillis(requestTimeout));
+        java.net.URI proxy=S3Identities.httpProxy();
+        if(proxy!=null)http.proxyConfiguration(software.amazon.awssdk.http.nio.netty.ProxyConfiguration.builder()
+                .scheme("http").host(proxy.getHost()).port(proxy.getPort()<0?80:proxy.getPort())
+                .nonProxyHosts(Collections.emptySet()).useSystemPropertyValues(false).build());
         try(OutputStream output=Files.newOutputStream(path);S3AsyncClient client=S3AsyncClient.builder()
                 .endpointOverride(java.net.URI.create(required("ENDPOINT")))
                 .region(software.amazon.awssdk.regions.Region.of(required("REGION")))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(Boolean.parseBoolean(env("PATH_STYLE","false"))).build())
-                .overrideConfiguration(c->c.apiCallTimeout(java.time.Duration.ofMillis(Long.parseLong(env("REQUEST_TIMEOUT_MS","30000")))).retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build()))
-                .httpClientBuilder(software.amazon.awssdk.http.nio.netty.NettyNioAsyncHttpClient.builder().maxConcurrency(Integer.parseInt(env("CONNECTIONS","16"))).connectionTimeout(java.time.Duration.ofMillis(Long.parseLong(env("CONNECT_TIMEOUT_MS","2000")))))
+                .overrideConfiguration(c->c.apiCallTimeout(java.time.Duration.ofMillis(requestTimeout)).retryPolicy(software.amazon.awssdk.core.retry.RetryPolicy.builder().numRetries(Integer.parseInt(env("RETRIES","0"))).build()))
+                .httpClientBuilder(http)
                 .build()) {
             SelectObjectContentResponseHandler handler=SelectObjectContentResponseHandler.builder()
                 .onResponse(response::set)
