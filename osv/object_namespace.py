@@ -19,7 +19,7 @@ def observe_version(scope,response):
         if name.lower()=='x-amz-version-id':version=value
         if name.lower()=='x-amz-delete-marker' and value.lower()=='true':marker=True
     if version is not None or marker:scope.versioned=True
-    elif response.get('ok'):scope.versioned=False
+    # Missing VersionId cannot distinguish never-versioned from suspended null versions.
     return response
 
 
@@ -98,6 +98,12 @@ def _prepare_request(scope,op,options):
     if 'requests' in q:q['requests']=nested
     q.update(op=op)
     if scope.name is not None:q['bucket']=scope.name
+    if op in {'delete','delete_many','delete_many_versions','delete_version'} or op.startswith('api.DeleteObject'):
+        scope.deletion_attempted=True
+        if 'key' in q:scope.written_keys.add(q['key'])
+        if 'Key' in q.get('input',{}):scope.written_keys.add(q['input']['Key'])
+        for item in q.get('objects',[]):scope.written_keys.add(item['key'])
+        for item in q.get('input',{}).get('Delete',{}).get('Objects',[]):scope.written_keys.add(item['Key'])
     if op in WRITES and 'key' in q:scope.written_keys.add(q['key'])
     if op.startswith(('api.Put','api.Copy')) and 'Key' in q.get('input',{}):scope.written_keys.add(q['input']['Key'])
     if op.startswith('mp_create') or op=='atomic_stream' and 'multipart' in q.get('mode',''):
@@ -142,11 +148,11 @@ def cleanup_objects(scope):
             if scope.versioned is not None:break
         if scope.versioned is None and scope.written_keys:
             if all(physical_key(scope,key) in scope.absent_keys for key in scope.written_keys):
-                # HEAD without a delete-marker/version header confirms absence. Do not create markers by deleting absent keys.
+                # Failed writes with confirmed absent keys need no DELETE. A measured DELETE may have created a marker and requires history inventory.
                 remaining=scope.call('list',prefix='')['keys']
-                if not remaining:return []
+                if not remaining and not getattr(scope,'deletion_attempted',False):return []
                 if any(not key.startswith(scope.prefix) for key in remaining):raise RuntimeError('refusing cleanup outside object scope')
-                inspect_object_version(scope,remaining[0])
+                if remaining:inspect_object_version(scope,remaining[0])
             # No current object metadata is available; only actual version listing can rule out historical resources.
             if scope.versioned is None:
                 history=scope.raw('versions_list')

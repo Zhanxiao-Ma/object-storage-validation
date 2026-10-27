@@ -186,15 +186,16 @@ class PrefixScopeSdkTest(unittest.TestCase):
                     worker.close()
 
     def test_denied_bucket_versioning_read_does_not_gate_object_cases_or_leak_markers(self):
-        """Deny only the optional config probe; expect real object HEAD metadata to select cleanup for unversioned/versioned buckets, including rejected writes without marker creation."""
+        """Deny only the optional config probe; expect real object HEAD metadata to select cleanup for disabled/enabled/suspended versioning, including real null versions and rejected writes without marker creation."""
         for language in ('java','cpp'):
-            for enabled in (False,True):
+            for enabled in (False,True,"Suspended"):
                 with self.subTest(language=language,versioning=enabled),tempfile.TemporaryDirectory() as temporary:
                     directory=Path(temporary);bucket='osv-'+uuid.uuid4().hex
                     worker=Worker(self.target(language,bucket),30);original=worker.call
                     try:
                         self.assertTrue(original({'op':'bucket_create_raw'})['ok'])
                         if enabled:self.assertTrue(original({'op':'versioning_put','status':'Enabled'})['ok'])
+                        if enabled=='Suspended':self.assertTrue(original({'op':'versioning_put','status':'Suspended'})['ok'])
                         def deny_config(request):
                             if request['op']=='versioning_get':
                                 return {'ok':False,'status_code':403,'error_code':'AccessDenied','error':'optional bucket-config permission denied'}
@@ -207,11 +208,14 @@ class PrefixScopeSdkTest(unittest.TestCase):
                             scope.put('object',b'actual replacement producer')
                             scope.call('get',key='object',output_path=str(ctx.output))
                             self.assertEqual(ctx.output.read_bytes(),b'actual replacement producer')
-                            self.assertEqual(scope.versioned,enabled)
+                            if enabled is True:self.assertTrue(scope.versioned)
                         with BucketScope(Probe(ctx)) as rejected:
                             ctx.body.write_bytes(b'actual independent bytes')
                             response=rejected.raw('put_http',key='bad',body_path=str(ctx.body),wire_headers={'Content-MD5':'invalid-md5'})
                             self.assertFalse(response['ok'])
+                        with BucketScope(Probe(ctx)) as deleted_missing:
+                            deleted_missing.call('delete',key='never-created')
+                        self.assertTrue(deleted_missing.cleanup_completed)
                         self.assertTrue(scope.cleanup_completed);self.assertTrue(rejected.cleanup_completed)
                         versions=original({'op':'versions_list','prefix':ctx.prefix})
                         self.assertEqual(versions['versions'],[]);self.assertEqual(versions['delete_markers'],[])
@@ -228,7 +232,8 @@ class PrefixScopeSdkTest(unittest.TestCase):
                                     blocked.call('delete',key='only-history')
                             self.assertFalse(blocked.cleanup_completed)
                             retained=original({'op':'versions_list','prefix':blocked.prefix})
-                            self.assertTrue(retained['versions']);self.assertTrue(retained['delete_markers'])
+                            if enabled is True:self.assertTrue(retained['versions'])
+                            self.assertTrue(retained['delete_markers'])
                             worker.call=deny_config
                             blocked.__exit__(None,None,None)
                             self.assertTrue(blocked.cleanup_completed)
