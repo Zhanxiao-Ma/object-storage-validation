@@ -4,7 +4,7 @@ from copy import deepcopy
 import json
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import api,raw
-from .ceph_acl import actor
+from .ceph_acl import owner_document,actor
 from .scenarios import Suite,assert_equal,require_ok
 from .suites import case,run_cases,CaseNotRun,CEPH
 
@@ -60,7 +60,7 @@ def roundtrip(p):
     metadata=actor(p)
     with resources(p,2) as (source,target):
         set_policy(target,document(p,source,target))
-        configurations=[({"TargetBucket":target.name,"TargetPrefix":PREFIX},True),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"SimplePrefix":{}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"PartitionedPrefix":{"PartitionDateSource":"DeliveryTime"}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetGrants":[{"Grantee":{"DisplayName":metadata["display_name"],"ID":metadata["canonical_id"],"Type":"CanonicalUser"},"Permission":"FULL_CONTROL"}]},True)]
+        configurations=[({"TargetBucket":target.name,"TargetPrefix":PREFIX},True),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"SimplePrefix":{}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetObjectKeyFormat":{"PartitionedPrefix":{"PartitionDateSource":"DeliveryTime"}}},False),({"TargetBucket":target.name,"TargetPrefix":PREFIX,"TargetGrants":[{"Grantee":{**owner_document(metadata),"Type":"CanonicalUser"},"Permission":"FULL_CONTROL"}]},True)]
         # Pinned _has_target_object_key_format() returns True in finally even when
         # validation fails. Preserve that source branch; suite capability gating rejects
         # SDKs unable to represent the required model before executing the source.

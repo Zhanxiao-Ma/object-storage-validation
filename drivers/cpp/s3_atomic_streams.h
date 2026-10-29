@@ -3,6 +3,7 @@
 #include <aws/s3/model/GetObjectRequest.h>
 #include <aws/s3/model/PutObjectRequest.h>
 #include <aws/s3/model/UploadPartRequest.h>
+#include <aws/s3/model/ListPartsRequest.h>
 #include <aws/s3/model/CreateMultipartUploadRequest.h>
 #include <aws/s3/model/CompleteMultipartUploadRequest.h>
 #include <aws/s3/model/AbortMultipartUploadRequest.h>
@@ -77,10 +78,10 @@ inline json capabilities(){
     return out;
 }
 inline std::string text(const json& q,const char* name){if(!q.contains(name)||!q.at(name).is_string()||q.at(name).get<std::string>().empty())throw std::runtime_error(std::string(name)+" must be nonempty string");return q.at(name).get<std::string>();}
-inline void put(Aws::S3::S3Client& client,const std::string& bucket,const std::string& key,long long size,char byte){
+inline Aws::String put(Aws::S3::S3Client& client,const std::string& bucket,const std::string& key,long long size,char byte){
     ConstantBuffer buffer(size,byte);auto body=Aws::MakeShared<Aws::IOStream>("osv-atomic",&buffer);
     Aws::S3::Model::PutObjectRequest request;request.SetBucket(bucket.c_str());request.SetKey(key.c_str());request.SetContentLength(size);request.SetBody(body);
-    auto outcome=client.PutObject(request);if(buffer.error)std::rethrow_exception(buffer.error);checked(outcome);
+    auto outcome=client.PutObject(request);if(buffer.error)std::rethrow_exception(buffer.error);checked(outcome);return outcome.GetResult().GetETag();
 }
 inline void verify(Aws::S3::S3Client& client,const std::string& bucket,const std::string& key,VerifyingBuffer& buffer){
     Aws::S3::Model::GetObjectRequest request;request.SetBucket(bucket.c_str());request.SetKey(key.c_str());
@@ -94,13 +95,14 @@ inline long long independent_verify(const std::string& bucket,const std::string&
 }
 inline json upload(Aws::S3::S3Client& original,const std::string& bucket,const std::string& key,long long size,const std::string& mode){
     bool dual=mode=="dual_write",conditional=mode=="conditional_write";
-    put(original,bucket,key,dual?0:size,'A');
+    auto initial_etag=put(original,bucket,key,dual?0:size,'A');
+    if(conditional && initial_etag.empty())throw std::runtime_error("initial PUT returned no ETag for conditional upload");
     if(!dual && !conditional)independent_verify(bucket,key,size,'A');
     long long callbacks=0;
     ConstantBuffer buffer(size,'B',[&](){++callbacks;if(dual)put(original,bucket,key,size,'A');else independent_verify(bucket,key,size,'A');});
     auto body=Aws::MakeShared<Aws::IOStream>("osv-atomic-upload",&buffer);
     Aws::S3::Model::PutObjectRequest request;request.SetBucket(bucket.c_str());request.SetKey(key.c_str());request.SetContentLength(size);request.SetBody(body);
-    if(conditional)request.SetAdditionalCustomHeaderValue("If-Match","*");
+    if(conditional)request.SetAdditionalCustomHeaderValue("If-Match",initial_etag);
     auto outcome=original.PutObject(request);if(buffer.error)std::rethrow_exception(buffer.error);checked(outcome);
     auto final_size=independent_verify(bucket,key,size,'B');
     return {{"mode",mode},{"eof_callbacks",callbacks},{"final_size",final_size}};
@@ -152,17 +154,27 @@ inline Aws::String create(Aws::S3::S3Client& client,const std::string& bucket,co
     auto upload=outcome.GetResult().GetUploadId();if(upload.empty())throw std::runtime_error("actual CreateMultipartUpload UploadId is missing");pending.push_back(upload);return upload;
 }
 inline json multipart(Aws::S3::S3Client& client,const std::string& bucket,const std::string& key){
-    Aws::Vector<Aws::String> pending;std::exception_ptr primary,cleanup;json result;
+    Aws::Vector<Aws::String> pending;std::exception_ptr primary,cleanup;json result;std::string stage="dry_create";
     try {
         auto dry=create(client,bucket,key,pending);long long dry_eof=0;
-        auto dry_tag=part(client,bucket,key,dry,'C',dry_eof);complete(client,bucket,key,dry,{completed_part(dry_tag)});pending.erase(std::find(pending.begin(),pending.end(),dry));
+        stage="dry_upload";auto dry_tag=part(client,bucket,key,dry,'C',dry_eof);stage="dry_complete";complete(client,bucket,key,dry,{completed_part(dry_tag)});pending.erase(std::find(pending.begin(),pending.end(),dry));
         Aws::S3::Model::DeleteObjectRequest remove;remove.SetBucket(bucket.c_str());remove.SetKey(key.c_str());checked(client.DeleteObject(remove));
-        auto actual=create(client,bucket,key,pending);long long outer_eof=0,nested_eof=0,triggered=0;Aws::Vector<Aws::S3::Model::CompletedPart> parts;
-        auto outer=part(client,bucket,key,actual,'A',outer_eof,[&](){if(outer_eof==dry_eof){auto nested=part(client,bucket,key,actual,'B',nested_eof);parts.push_back(completed_part(nested));++triggered;}});
-        parts.push_back(completed_part(outer));complete(client,bucket,key,actual,parts);pending.erase(std::find(pending.begin(),pending.end(),actual));
-        auto final_size=independent_verify(bucket,key,8,'A');
-        result={{"mode","multipart_resend"},{"dry_eof_reads",dry_eof},{"outer_eof_reads",outer_eof},{"nested_eof_reads",nested_eof},{"nested_actions",triggered},{"completed_entries",parts.size()},{"final_size",final_size}};
-    }catch(...){primary=std::current_exception();}
+        stage="actual_create";auto actual=create(client,bucket,key,pending);long long outer_eof=0,nested_eof=0,triggered=0;Aws::Vector<Aws::S3::Model::CompletedPart> parts;
+        stage="actual_upload";auto outer=part(client,bucket,key,actual,'A',outer_eof,[&](){if(outer_eof==dry_eof){auto nested=part(client,bucket,key,actual,'B',nested_eof);parts.push_back(completed_part(nested));++triggered;}});
+        stage="actual_list_parts";
+        Aws::S3::Model::ListPartsRequest inspect;inspect.SetBucket(bucket.c_str());inspect.SetKey(key.c_str());inspect.SetUploadId(actual);inspect.SetMaxParts(2);
+        auto listed=client.ListParts(inspect);checked(listed);const auto& observed=listed.GetResult().GetParts();
+        if(listed.GetResult().GetIsTruncated() || observed.size()!=1 || observed.front().GetPartNumber()!=1 || observed.front().GetSize()!=8)throw std::runtime_error("actual overwritten part must be one complete eight-byte PartNumber1");
+        auto actual_tag=strip_quotes(observed.front().GetETag());char winner='A';Aws::String selected=outer;
+        if(actual_tag!=strip_quotes(outer)){
+            if(parts.empty() || actual_tag!=strip_quotes(parts.front().GetETag()))throw std::runtime_error("actual overwritten part ETag matches neither acknowledged upload");
+            winner='B';selected=parts.front().GetETag();
+        }
+        stage="actual_complete winner="+std::string(1,winner);parts.clear();parts.push_back(completed_part(selected));complete(client,bucket,key,actual,parts);pending.erase(std::find(pending.begin(),pending.end(),actual));
+        stage="readback";auto final_size=independent_verify(bucket,key,8,winner);
+        result={{"mode","multipart_resend"},{"dry_eof_reads",dry_eof},{"outer_eof_reads",outer_eof},{"nested_eof_reads",nested_eof},{"nested_actions",triggered},{"completed_entries",parts.size()},{"winner",std::string(1,winner)},{"final_size",final_size}};
+    }catch(const SdkError& error){primary=std::make_exception_ptr(SdkError(error.status,std::string(error.what())+"; multipart_stage="+stage,error.error_code,error.headers));}
+    catch(...){primary=std::current_exception();}
     for(const auto& upload:pending)try{
         Aws::S3::Model::AbortMultipartUploadRequest request;request.SetBucket(bucket.c_str());request.SetKey(key.c_str());request.SetUploadId(upload);auto outcome=client.AbortMultipartUpload(request);
         if(!outcome.IsSuccess() && static_cast<int>(outcome.GetError().GetResponseCode())!=404)checked(outcome);

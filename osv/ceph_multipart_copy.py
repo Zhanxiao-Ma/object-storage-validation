@@ -1,6 +1,7 @@
 """Translate actual cross-bucket multipart copy, malformed ranges and opaque source keys."""
 from contextlib import ExitStack
 import random
+from .rejected_mutation import check_rejected_mutation
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_multipart import uploading,complete,prepare,read,assert_error,source_data,MIB
 from .scenarios import Suite,assert_equal
@@ -20,19 +21,40 @@ def copied(source,destination,p,ident,key,size,part_size=5*MIB,range_enabled=Tru
     response=source.call("get",key=key,offset=0,length=size,output_path=str(p.ctx.output))
     assert_equal(body,p.ctx.output.read_bytes())
 
+def invalid_range(p):
+    """Isolate range bounds on a valid >5MiB source, prove a valid control copy, and reject both start/end overflow without publishing an object."""
+    size=5*MIB+1
+    with BucketScope(p) as bucket:
+        bucket.put("source",b"A"*size)
+        with uploading(bucket,p,key="range-control") as ident:
+            part=bucket.call("mp_copy",key="range-control",source_bucket=bucket.name,source_key="source",upload_id=ident,part_number=1,range_header="bytes=0-4")
+            bucket.call("mp_complete_observed",key="range-control",upload_id=ident,parts=[{"part_number":1,"etag":part["etag"]}])
+            p.ctx.output.unlink(missing_ok=True)
+            bucket.call("get_metadata",key="range-control",output_path=str(p.ctx.output))
+            assert_equal(p.ctx.output.read_bytes(),b"AAAAA")
+        for value in (f"bytes={size}-{size+5}",f"bytes=0-{size+5}"):
+            with uploading(bucket,p,key="dest") as ident:
+                response=bucket.raw("mp_copy",key="dest",source_bucket=bucket.name,source_key="source",upload_id=ident,part_number=1,range_header=value)
+                # S3 invalid-argument and unsatisfiable-range errors are distinct
+                # permitted rejection forms; unrelated errors and 200 still fail.
+                status,code=(416,"InvalidRange") if response.get("status_code")==416 else (400,"InvalidArgument")
+                try:
+                    check_rejected_mutation(bucket,"dest",response,status,code,operation="UploadPartCopy",get_operation="get_metadata")
+                except AssertionError as error:
+                    error.evidence.update(request_range=value,source_size=size)
+                    raise
+
+
 def copy(p,mode):
-    if mode in ("invalid","improper"):
+    if mode=="invalid":return invalid_range(p)
+    if mode=="improper":
         with BucketScope(p) as bucket:
             bucket.put("source",b"ABCDE")
             with uploading(bucket,p,key="dest") as ident:
-                ranges=("bytes=0-21",) if mode=="invalid" else ("0-2","bytes=0","bytes=hello-world","bytes=0-bar","bytes=hello-","bytes=0-2,3-5")
+                ranges=("0-2","bytes=0","bytes=hello-world","bytes=0-bar","bytes=hello-","bytes=0-2,3-5")
                 for value in ranges:
                     result=bucket.raw("mp_copy",key="dest",source_bucket=bucket.name,source_key="source",upload_id=ident,part_number=1,range_header=value)
-                    if mode=="invalid":
-                        assert_equal(result["ok"],False)
-                        assert_equal(result.get("status_code") in (400,416),True)
-                        assert_equal(result.get("error_code"),"InvalidRange")
-                    else:assert_error(result,400,"InvalidArgument")
+                    assert_error(result,400,"InvalidArgument")
         return
     with BucketScope(p) as source,BucketScope(p) as destination:
         size=12*MIB if mode=="sizes" else 10 if mode=="without_range" else 7*MIB

@@ -37,6 +37,18 @@ def content_type(p):
     assert_equal(p.ctx.output.read_bytes(),b"foo")
 
 
+def check_self_copy(response,before,after,body,expected):
+    """Verify unchanged data/metadata for successful no-op copy or exact InvalidRequest denial."""
+    assert_equal(body,expected)
+    assert_equal(after["size"],len(expected))
+    assert_equal(after["metadata"],before["metadata"])
+    assert_equal(after["content_type"],before["content_type"])
+    if response["ok"]:
+        assert_equal(bool(response["etag"]),True)
+        assert_equal(response["etag"].strip('"'),after["etag"].strip('"'))
+    else:
+        assert_equal((response.get("status_code"),response.get("error_code")),(400,"InvalidRequest"))
+
 def self_copy(p,replacing):
     p.put(b"foo")
     args={"source_key":p.ctx.prefix+"object"}
@@ -46,11 +58,11 @@ def self_copy(p,replacing):
         assert_equal(response["metadata"],{"foo":"bar"})
         assert_equal(p.ctx.output.read_bytes(),b"foo")
     else:
+        before=p.call("get_metadata",output_path=str(p.ctx.output))
+        assert_equal(p.ctx.output.read_bytes(),b"foo")
         response=p.raw("copy",**args)
-        assert_equal(response["ok"],False)
-        assert_equal(response.get("error_code"),"InvalidRequest")
-        if "status_code" in response:assert_equal(response["status_code"],400)
-        assert_equal(p.read(),b"foo")
+        after=p.call("get_metadata",output_path=str(p.ctx.output))
+        check_self_copy(response,before,after,p.ctx.output.read_bytes(),b"foo")
 
 
 def missing_source(p):
@@ -66,7 +78,7 @@ CASES=(
  case("ceph_copy_16m","复制 16 MiB 对象","目的对象长度正确且全部字节一致","put copy get head",lambda p:copied_bytes(p,bytes(16*1024*1024)),"test_object_copy_16m",CEPH),
  case("ceph_copy_same_bucket","同桶复制","复制后的完整内容为 foo","put copy get head",lambda p:copied_bytes(p,b"foo"),"test_object_copy_same_bucket",CEPH),
  case("ceph_copy_content_type","复制保留 Content-Type","text/bla 与原始 foo 内容均准确","put_metadata copy get_metadata",content_type,"test_object_copy_verify_contenttype",CEPH),
- case("ceph_copy_self_rejected","无元数据变更的原地复制","实际拒绝 InvalidRequest，可观测状态为 400，原对象不变","put copy get",lambda p:self_copy(p,False),"test_object_copy_to_itself",CEPH),
+ case("ceph_copy_self_rejected","无元数据变更的原地复制","成功或400/InvalidRequest时均核实原内容和元数据不变；成功ETag须匹配读回","put copy get get_metadata",lambda p:self_copy(p,False),"test_object_copy_to_itself",CEPH),
  case("ceph_copy_self_metadata","原地复制替换元数据","元数据为 foo=bar 且对象内容不变","put copy_replace get_metadata",lambda p:self_copy(p,True),"test_object_copy_to_itself_with_metadata",CEPH),
  case("ceph_copy_keep_metadata","复制保留元数据","3 字节和 1 MiB 两组均保留类型、元数据与长度","put_metadata copy get_metadata",copy_metadata,"test_object_copy_retaining_metadata",CEPH),
  case("ceph_copy_replace_metadata","复制替换元数据","两组大小均得到新 metadata 和 audio/mpeg，不混入旧字段","put_metadata copy_replace get_metadata",lambda p:copy_metadata(p,True),"test_object_copy_replacing_metadata",CEPH),

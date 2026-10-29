@@ -102,6 +102,7 @@ def execute(q):
         for ident in [ident for ident in completed_uploads if ident[0]==str(root)]:del completed_uploads[ident]
         return {"status_code":204}
     if op in ("list_v1_page","list_v2_observed"):
+        if op=="list_v2_observed" and q.get("token") == "":raise OperationError("InvalidArgument",400)
         options={**q,"op":"list_page"}
         if "start_after" in q:options["marker"]=q["start_after"]
         page=execute(options);v2=op=="list_v2_observed"
@@ -308,6 +309,7 @@ def execute(q):
     elif op in ("mp_abort","mp_abort_raw"):
         parts = root/".uploads"/q["upload_id"]
         if not parts.exists() and op=="mp_abort_raw":raise OperationError("NoSuchUpload",404)
+        if parts.exists() and json.loads((parts/"metadata.json").read_text())["key"]!=q["key"]:raise OperationError("NoSuchUpload",404)
         if parts.exists():
             for part in parts.iterdir():
                 part.unlink()

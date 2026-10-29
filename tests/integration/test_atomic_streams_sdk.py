@@ -77,6 +77,9 @@ class AtomicUploadHandler(FixtureHandler):
                 self.server.events.append("A_put_before_outer_finished" if not self.server.outer_finished else "LATE_A_put")
             else:self.server.events.append("empty_put")
         elif self.command=="DELETE":status=204
+        if self.command=="PUT":
+            etag=getattr(self.server,"initial_etag",'"'+hashlib.md5(body).hexdigest()+'"') if body.startswith(b"A") else '"'+hashlib.md5(body).hexdigest()+'"'
+            if etag is not None:headers["ETag"]=etag
         self.send_response(status)
         for name,value in headers.items():self.send_header(name,value)
         self.send_header("Content-Length",str(len(payload)));self.end_headers()
@@ -125,12 +128,20 @@ class AtomicMultipartHandler(FixtureHandler):
             if fault=="part_missing_etag" and body==b"C"*8:return reply(self,200)
             return reply(self,200,{"ETag":etag})
         if self.command=="POST":return reply(self,200,{"Content-Type":"application/xml"},b"<CompleteMultipartUploadResult><ETag>unused-completion-etag</ETag></CompleteMultipartUploadResult>")
+        if self.command=="GET" and "uploadId" in query:
+            winner=getattr(self.server,"winner","A")
+            tag="outer-real-etag" if winner=="A" else "nested-real-etag" if winner=="B" else "unacknowledged"
+            size=7 if fault=="part_wrong_size" else 8
+            row="<Part><PartNumber>1</PartNumber><Size>"+str(size)+"</Size><ETag>&quot;"+tag+"&quot;</ETag></Part>"
+            if fault=="part_duplicate":row+=row
+            if fault=="part_missing":row=""
+            return reply(self,200,{"Content-Type":"application/xml"},("<ListPartsResult><IsTruncated>false</IsTruncated>"+row+"</ListPartsResult>").encode())
         if self.command=="GET" and "uploads" in query:
             self.server.cleanup=True
             self.server.mpu_lists+=1
             orphan=("<Upload><Key>mymultipart</Key><UploadId>orphan-real-%+/?=</UploadId></Upload>" if fault=="unknown_create" and self.server.mpu_lists==1 else "")
             return reply(self,200,{"Content-Type":"application/xml"},("<ListMultipartUploadsResult><IsTruncated>false</IsTruncated>"+orphan+"</ListMultipartUploadsResult>").encode())
-        if self.command=="GET":return reply(self,200,{},b"A"*8)
+        if self.command=="GET":return reply(self,200,{},(b"A" if getattr(self.server,"fault",None)=="wrong_winner_body" else getattr(self.server,"winner","A").encode())*8)
         return reply(self,204)
     do_GET=do_PUT=do_HEAD=do_POST=do_DELETE=respond
 
@@ -265,7 +276,7 @@ class AtomicStreamSdkTest(unittest.TestCase):
                     self.assertFalse(response["ok"],response);self.assertEqual(server.requests,[])
 
     def test_all_original_upload_eof_modes_preserve_nested_requests_and_conditions(self):
-        """Run original write1/4/8MiB, dual-write1/4/8MiB and conditional1MiB through real SDK EOF reads; expect every actual callback request before outer B body completes, fresh A verification or same-client A PUT, exact If-Match:* and final all-B verification."""
+        """Run original write1/4/8MiB, dual-write1/4/8MiB and conditional1MiB through real SDK EOF reads; expect every actual callback request before outer B body completes, fresh A verification or same-client A PUT, actual returned If-Match ETag and final all-B verification."""
         source_inputs=(("write",1024*1024),("write",4*1024*1024),("write",8*1024*1024),("dual_write",1024*1024),("dual_write",4*1024*1024),("dual_write",8*1024*1024),("conditional_write",1024*1024))
         for language in languages():
             for case,(mode,size) in zip(CASES[3:],source_inputs):
@@ -291,7 +302,24 @@ class AtomicStreamSdkTest(unittest.TestCase):
                         self.assertGreaterEqual(len(gets),1 if mode=="conditional_write" else 2)
                     for row in puts:
                         actual={key.lower():value for key,value in row[2].items()}
-                        self.assertEqual(actual.get("if-match"),"*" if mode=="conditional_write" and row[3].startswith(b"B") else None)
+                        self.assertEqual(actual.get("if-match"),'"e6065c4aa2ab1603008fc18410f579d4"' if mode=="conditional_write" and row[3].startswith(b"B") else None)
+
+    def test_conditional_upload_requires_and_consumes_initial_service_etag(self):
+        """Return independently pinned lower/upper-case ETags or omit one; expect the exact returned value on outer PUT, or failure before any outer upload when absent."""
+        case=next(c for c in CASES if c.name=='ceph_atomic_stream_conditional_write_1mb')
+        for language in languages():
+            for etag in ('"e6065c4aa2ab1603008fc18410f579d4"','"E6065C4AA2AB1603008FC18410F579D4"',None,''):
+                with self.subTest(language=language,etag=etag),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,scope_begin()+scope_end(('testobj',)),'s3',handler=AtomicUploadHandler) as (worker,server):
+                    server.expected_size=1024*1024;server.outer_finished=False;server.events=[];server.initial_etag=etag
+                    result=run_cases(context(worker,temporary),[case])[0]
+                    self.assertEqual(result['status'],'pass' if etag else 'fail',result)
+                    outer=[row for row in server.requests if row[0]=='PUT' and row[3].startswith(b'B')]
+                    if etag:
+                        self.assertEqual(len(outer),1)
+                        self.assertEqual({k.lower():v for k,v in outer[0][2].items()}['if-match'],etag)
+                    else:
+                        self.assertEqual(outer,[]);self.assertIn('initial PUT returned no ETag',result['error'])
+                    self.assertFalse(server.fixtures)
 
     def test_upload_eof_verifier_errors_are_not_hidden_by_sdk_body_wrapping(self):
         """Corrupt or deny the real GET invoked inside an upload EOF callback; expect the original byte/size/service error and owned cleanup, with no successful final-B verification claimed."""
@@ -315,8 +343,8 @@ class AtomicStreamSdkTest(unittest.TestCase):
                     response=worker.call({"op":"atomic_stream","mode":mode,"size":8 if mode=="multipart_resend" else 1024,"bucket":"literal-bucket","key":"testobj"})
                     self.assertFalse(response["ok"],response);self.assertIn("OSV_CONNECTIONS >= 2",str(response));self.assertEqual(server.requests,[])
 
-    def test_real_multipart_calibration_uses_new_ids_and_duplicate_original_parts(self):
-        """Run original eight-byte C calibration and A/B resend through both actual SDKs; expect real dry/new UploadIds, unchanged C/A/B bodies, actual B then A ETags stripped only at boundaries in two PartNumber1 completion entries, and actual final A verification."""
+    def test_real_multipart_calibration_completes_only_latest_part(self):
+        """Run original eight-byte C calibration and A/B resend through both actual SDKs; expect real dry/new UploadIds, unchanged C/A/B bodies, only the final A ETag in one PartNumber1 completion entry, and actual final A verification."""
         from xml.etree import ElementTree as ET
         case=next(c for c in CASES if c.name=="ceph_atomic_stream_multipart_resend")
         for language in languages():
@@ -328,12 +356,29 @@ class AtomicStreamSdkTest(unittest.TestCase):
                 for row in parts:self.assertEqual(parse_qs(urlsplit(row[1]).query)["uploadId"],["dry-real-%+/?=" if row[3]==b"C"*8 else "new-real-%+/?="])
                 completed=[row for row in server.requests if row[0]=="POST" and "uploadId=" in row[1]]
                 self.assertEqual(len(completed),2)
-                expected=(("dry-real-%+/?=",["dry-real-etag"]),("new-real-%+/?=",["nested-real-etag","outer-real-etag"]))
+                expected=(("dry-real-%+/?=",["dry-real-etag"]),("new-real-%+/?=",["outer-real-etag"]))
                 for row,(upload,tags) in zip(completed,expected):
                     self.assertEqual(parse_qs(urlsplit(row[1]).query)["uploadId"],[upload])
                     root=ET.fromstring(row[3]);actual=[{child.tag.rsplit("}",1)[-1]:child.text for child in part} for part in root]
                     self.assertEqual([item["ETag"] for item in actual],tags);self.assertEqual([item["PartNumber"] for item in actual],["1"]*len(tags))
                 self.assertEqual(server.creates,2);self.assertEqual(server.mpu_lists,1);self.assertEqual(len(server.fixtures),0)
+
+    def test_multipart_overlap_uses_acknowledged_winner_and_rejects_unknown_or_corrupt_parts(self):
+        """Feed independent A/B ListParts winners through both SDKs into real Complete and GET; accept either acknowledged full part, reject unknown tags, wrong size/count and wrong final body, and clean owned uploads."""
+        from xml.etree import ElementTree as ET
+        case=next(c for c in CASES if c.name=="ceph_atomic_stream_multipart_resend")
+        for language in languages():
+            for winner,fault,good in (("A",None,True),("B",None,True),("unknown",None,False),("B","wrong_winner_body",False),("A","part_wrong_size",False),("A","part_duplicate",False),("A","part_missing",False)):
+                with self.subTest(language=language,winner=winner,fault=fault),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,scope_begin()+scope_end(("mymultipart",)),"s3",handler=AtomicMultipartHandler) as (worker,server):
+                    server.events=[];server.creates=server.mpu_lists=0;server.winner=winner;server.fault=fault
+                    result=run_cases(context(worker,temporary),[case])[0]
+                    self.assertEqual(result["status"],"pass" if good else "fail",result)
+                    if good:self.assertEqual(result["evidence"]["winner"],winner)
+                    completed=[r for r in server.requests if r[0]=="POST" and "uploadId=" in r[1]]
+                    self.assertEqual(len(completed),2 if good or fault=="wrong_winner_body" else 1)
+                    if len(completed)==2:
+                        root=ET.fromstring(completed[-1][3]);self.assertEqual([n.text for n in root.findall('.//{*}ETag')],["outer-real-etag" if winner=="A" else "nested-real-etag"])
+                    self.assertFalse(server.fixtures)
 
     def test_multipart_missing_etag_and_unknown_create_clean_real_owned_upload_ids(self):
         """Omit a genuine dry UploadPart ETag or fail Create with unknown server outcome; expect original failure, actual known-ID abort or real ListMultipartUploads-produced orphan-ID abort, then scoped object/bucket cleanup."""
@@ -345,6 +390,7 @@ class AtomicStreamSdkTest(unittest.TestCase):
                     result=run_cases(context(worker,temporary),[case])[0];self.assertEqual(result["status"],"fail",result)
                     aborted=[parse_qs(urlsplit(row[1]).query)["uploadId"][0] for row in server.requests if row[0]=="DELETE" and "uploadId=" in row[1]]
                     self.assertEqual(aborted,["dry-real-%+/?=" if fault=="part_missing_etag" else "orphan-real-%+/?="])
+                    if fault=="unknown_create":self.assertIn("multipart_stage=dry_create",result["error"])
                     self.assertEqual(server.mpu_lists,1 if fault=="part_missing_etag" else 2);self.assertEqual(len(server.fixtures),0)
 
     def test_dual_conditional_b_and_c_use_actual_initial_etag_on_same_sdk_client(self):

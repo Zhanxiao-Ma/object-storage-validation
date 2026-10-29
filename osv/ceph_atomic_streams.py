@@ -22,7 +22,7 @@ def upload(p,size,mode):
         assert_equal(result["final_size"],size)
         return {"source_size":size,"actual_positive_eof_callbacks":result["eof_callbacks"],"callback_timing":"before returning final positive bytes, including real checksum/signing rereads","nested_client":"same original client" if mode=="dual_write" else "fresh verifier per callback"}
 
-CASES+=tuple(case("ceph_atomic_stream_"+mode+"_"+str(mib)+"mb","Ceph 原子EOF回调 "+mode+" "+str(mib)+"MiB","保留原A/空对象初始化、每次真实正EOF read返回前回调、同client nested A写入或fresh client A读校验、最终fresh全B校验；conditional保留If-Match:*且不添加原文没有的初次A读",SCOPE_OPERATIONS+" atomic_stream_"+mode,lambda p,size=mib*1024*1024,mode=mode:upload(p,size,mode),"test_atomic_"+mode+"_"+str(mib)+"mb",CEPH) for mode in ("write","dual_write","conditional_write") for mib in ((1,) if mode=="conditional_write" else (1,4,8)))
+CASES+=tuple(case("ceph_atomic_stream_"+mode+"_"+str(mib)+"mb","Ceph 原子EOF回调 "+mode+" "+str(mib)+"MiB","保留原A/空对象初始化、每次真实正EOF read返回前回调、同client nested A写入或fresh client A读校验、最终fresh全B校验；conditional使用初始PUT真实ETag作为If-Match，不额外添加初次A读",SCOPE_OPERATIONS+" atomic_stream_"+mode,lambda p,size=mib*1024*1024,mode=mode:upload(p,size,mode),"test_atomic_"+mode+"_"+str(mib)+"mb",CEPH) for mode in ("write","dual_write","conditional_write") for mib in ((1,) if mode=="conditional_write" else (1,4,8)))
 
 class AtomicMultipartScope(BucketScope):
     """Resolve even ambiguous internal Create outcomes with actual MPU listings confined to this proven owned UUID bucket, then abort real IDs before ordinary object cleanup."""
@@ -49,9 +49,9 @@ def multipart(p):
         assert_equal(result["final_size"],8)
         # Original source does not assert equal dry/A counts or that nested B
         # fired. Preserve that limit and report actual calibration as evidence.
-        return {key:result[key] for key in ("dry_eof_reads","outer_eof_reads","nested_eof_reads","nested_actions","completed_entries","final_size")}
+        return {key:result[key] for key in ("dry_eof_reads","outer_eof_reads","nested_eof_reads","nested_actions","completed_entries","winner","final_size")}
 
-CASES+=(case("ceph_atomic_stream_multipart_resend","Ceph 分块重传真实EOF校准","保留原8字节C dry-run并完成/删除、实际新UploadId、A正EOF次数等于dry校准时才同client上传B、真实B/A ETag strip外引号且PartNumber均1顺序保留、最终fresh全8字节A；不声称已知最后网络读取或额外要求B必触发",SCOPE_OPERATIONS+" atomic_stream_multipart_resend mp_list mp_abort_raw",multipart,"test_multipart_resend_first_finishes_last",CEPH),)
+CASES+=(case("ceph_atomic_stream_multipart_resend","Ceph 分块重传真实EOF校准","保留原8字节C dry-run并完成/删除、实际新UploadId、A正EOF次数等于dry校准时才同client上传B、两次上传结束后读取实际PartNumber1并核对A/B真实ETag；仅提交对应已确认ETag，最终fresh校验完整8字节胜出内容；不声称已知最后网络读取或额外要求B必触发",SCOPE_OPERATIONS+" atomic_stream_multipart_resend mp_list mp_abort_raw",multipart,"test_multipart_resend_first_finishes_last",CEPH),)
 
 def dual_conditional(p):
     with BucketScope(p) as bucket:

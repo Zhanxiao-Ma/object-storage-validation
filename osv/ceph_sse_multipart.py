@@ -2,7 +2,8 @@
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_buckets import rejected
 from .ceph_multipart import source_data,uploading,MIB
-from .ceph_sse_customer import HEADERS,OTHER,MD5
+from .ceph_sse_customer import HEADERS,OTHER,MD5,rejected_customer_key
+from .ceph_get_part import out_of_range
 from .scenarios import Suite,assert_equal,require_ok
 from .suites import case,run_cases,CEPH
 
@@ -55,14 +56,14 @@ def multipart(p,mode):
                         observed,body=read(bucket,p,key,HEADERS,part_number=part["part_number"])
                         assert_equal(observed["parts_count"],4);assert_equal(observed["etag"],result["etag"]);assert_equal(observed["size"],part_size)
                         assert_equal(body,data[offset:offset+part_size]);offset+=part_size
-                    # Original out-of-range request also has no SSE-C headers.
-                    rejected(p,bucket.raw("get_part",key=key,part_number=5,output_path=str(p.ctx.output)),400,"InvalidPart")
+                    # Keep the key valid so only PartNumber is out of range.
+                    out_of_range(bucket.raw("get_sse_c",key=key,sse_headers=HEADERS,part_number=5,output_path=str(p.ctx.output)))
                 else:
                     listing=bucket.call("list_v2_observed",prefix=key)
                     assert_equal(len(listing["objects"]),1);assert_equal(listing["objects"][0]["size"],size)
                     observed,body=read(bucket,p,key,init_headers)
                     assert_equal(observed["metadata"],metadata);assert_equal(observed["http_headers"]["content-type"],"text/plain")
-                    if mode=="bad_download":rejected(p,bucket.raw("get_sse_c",key=key,sse_headers=OTHER,output_path=str(p.ctx.output)),400)
+                    if mode=="bad_download":rejected_customer_key(bucket,p,key,OTHER,data)
                     else:
                         assert_equal(body,data);assert_equal(len(body),observed["size"])
                         for stride in (1000000,10000000,step-1,step,step+1):
@@ -77,7 +78,7 @@ def ordinary(p):
     with BucketScope(p) as bucket:
         p.ctx.body.write_bytes(b"body")
         etag=bucket.call("put_sse_c",key="singlepart",body_path=str(p.ctx.body),sse_headers=HEADERS)["etag"]
-        rejected(p,bucket.raw("get_sse_c",key="singlepart",sse_headers=HEADERS,part_number=2,output_path=str(p.ctx.output)),400,"InvalidPart")
+        out_of_range(bucket.raw("get_sse_c",key="singlepart",sse_headers=HEADERS,part_number=2,output_path=str(p.ctx.output)))
         observed,body=read(bucket,p,"singlepart",HEADERS,part_number=1)
         assert_equal(observed["etag"],etag);assert_equal(body,b"body")
     return {"isolated_bucket":bucket.name,"cleanup_confirmed":bucket.cleanup_completed}

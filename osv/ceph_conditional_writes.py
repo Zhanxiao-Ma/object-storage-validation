@@ -1,8 +1,9 @@
 """Preserve pinned Ceph conditional PUT and copy inputs, source ETags and strict rejection oracles."""
+from .rejected_mutation import check_rejected_mutation
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import rejected
 from .scenarios import Suite,assert_equal,require_ok
-from .suites import case,run_cases,CEPH
+from .suites import case,run_cases,CaseNotRun,CEPH
 
 def read(bucket,key="foo"):
     """Consume actual SDK GET output and its ETag; expected bytes remain independent literals from the source."""
@@ -12,26 +13,30 @@ def read(bucket,key="foo"):
 
 def put_condition(p,mode):
     """Keep all original bar/zar reads, bare versus quoted ETags, wildcard headers and the original 404 NoSuchKey expectation for missing If-Match."""
+    if mode in ("none_bad","none_etag"):
+        raise CaseNotRun("PutObject If-None-Match supports only '*'; this source vector has no general S3 acceptance contract", "nonstandard If-None-Match contract")
     with BucketScope(p) as bucket:
         missing=mode in ("match_absent","none_absent")
         if not missing:
             bucket.put("foo",b"bar")
             previous,body=read(bucket);assert_equal(body,b"bar")
-        if mode in ("match_etag","none_etag"):value=previous["etag"].replace('"','')
-        elif mode=="match_bad":value='"ABCORZ"'
+        if mode in ("match_etag","none_etag"):value=previous["etag"]
+        elif mode in ("match_bad","match_absent"):value='"00000000000000000000000000000000"'
+        elif mode=="match_existing":value=previous["etag"]
         elif mode=="none_bad":value="ABCORZ"
         else:value="*"
         header="If-Match" if mode.startswith("match_") else "If-None-Match"
         p.ctx.body.write_bytes(b"bar" if missing else b"zar")
         response=bucket.raw("put_http",key="foo",body_path=str(p.ctx.body),wire_headers={header:value})
         negative=mode in ("match_bad","match_absent","none_etag","none_existing")
-        if negative:rejected(response,404 if mode=="match_absent" else 412,"NoSuchKey" if mode=="match_absent" else "PreconditionFailed")
-        else:require_ok(response)
-        if mode=="match_absent":
-            rejected(bucket.raw("get_http",key="foo",output_path=str(p.ctx.output)),404,"NoSuchKey")
+        if negative:
+            check_rejected_mutation(bucket,"foo",response,404 if mode=="match_absent" else 412,
+                                    "NoSuchKey" if mode=="match_absent" else "PreconditionFailed",
+                                    None if missing else b"bar",operation="PutObject")
         else:
+            require_ok(response)
             _,body=read(bucket)
-            assert_equal(body,b"bar" if negative or missing else b"zar")
+            assert_equal(body,b"bar" if missing else b"zar")
 
 def copy_condition(p,mode):
     """Send the source PUT's actual quoted ETag or literal ABCORZ to the real CopyObject condition header, retaining exact 412 and successful destination-body assertions."""
@@ -41,7 +46,7 @@ def copy_condition(p,mode):
         value=previous["etag"] if mode.endswith("etag") else "ABCORZ"
         header="x-amz-copy-source-if-match" if mode.startswith("match_") else "x-amz-copy-source-if-none-match"
         response=bucket.raw("copy",key="bar",source_key="foo",wire_headers={header:value})
-        if mode in ("match_bad","none_etag"):rejected(response,412,"PreconditionFailed")
+        if mode in ("match_bad","none_etag"):check_rejected_mutation(bucket,"bar",response,412,"PreconditionFailed",operation="CopyObject")
         else:
             require_ok(response)
             _,body=read(bucket,"bar");assert_equal(body,b"bar")

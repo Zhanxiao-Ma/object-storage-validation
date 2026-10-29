@@ -111,29 +111,9 @@ def test_generate_projection():
         generate_s3select_expression_projection(bucket_name,obj_name)
 
 def s3select_assert_result(a,b):
-    if type(a) == str:
-        a_strip = a.strip()
-        b_strip = b.strip()
-        if a=="" and b=="":
-            warnings.warn(UserWarning("{}".format("both results are empty, it may indicates a wrong input, please check the test input")))
-            ## print the calling function that created the empty result.
-            stack = traceback.extract_stack(limit=2)
-            formatted_stack = traceback.format_list(stack)[0]
-            warnings.warn(UserWarning("{}".format(formatted_stack)))
-            return True
-        assert a_strip != ""
-        assert b_strip != ""
-    else:
-        if a=="" and b=="":
-            warnings.warn(UserWarning("{}".format("both results are empty, it may indicates a wrong input, please check the test input")))
-            ## print the calling function that created the empty result.
-            stack = traceback.extract_stack(limit=2)
-            formatted_stack = traceback.format_list(stack)[0]
-            warnings.warn(UserWarning("{}".format(formatted_stack)))
-            return True
-        assert a != ""
-        assert b != ""
-    assert True
+    """Compare complete results; empty equal results are valid, unequal data must fail."""
+    assert a == b, "Select result mismatch: actual={!r}, expected={!r}".format(a,b)
+
 
 def create_csv_object_for_datetime(rows,columns):
         result = ""
@@ -306,8 +286,7 @@ def run_s3select(bucket,key,query,column_delim=",",row_delim="\n",quot_char='"',
         RequestProgress = {"Enabled": progress})
 
     except ClientError as c:
-        result += str(c)
-        return result
+        raise
 
     if progress == False:
 
@@ -318,8 +297,7 @@ def run_s3select(bucket,key,query,column_delim=",",row_delim="\n",quot_char='"',
                     result += records
 
         except EventStreamError as c:
-            result = str(c)
-            return result
+            raise
         
     else:
             result = []
@@ -343,6 +321,16 @@ def run_s3select(bucket,key,query,column_delim=",",row_delim="\n",quot_char='"',
         return result
     else:
         return result,result_status
+
+def run_s3select_error(*args, **kwargs):
+    """Expose error text only to explicit negative scenarios; successful records must fail."""
+    try:
+        run_s3select(*args, **kwargs)
+    except (ClientError, EventStreamError) as error:
+        if error.response["Error"]["Code"] != "ProcessingTimeError":
+            raise
+        return str(error)
+    raise AssertionError("Expected Select service rejection, received successful records")
 
 def run_s3select_output(bucket,key,query, quot_field, op_column_delim = ",", op_row_delim = "\n",  column_delim=",", op_quot_char = '"', op_esc_char = '\\', row_delim="\n",quot_char='"',esc_char='\\',csv_header_info="NONE"):
 
@@ -967,7 +955,7 @@ def test_alias_cyclic_refernce():
 
     upload_object(bucket_name,csv_obj_name,csv_obj)
 
-    res_s3select_alias = remove_xml_tags_from_result(  run_s3select(bucket_name,csv_obj_name,"select int(_1) as a1,int(_2) as a2, a1+a4 as a3, a5+a1 as a4, int(_3)+a3 as a5 from s3object;")  )
+    res_s3select_alias = remove_xml_tags_from_result(  run_s3select_error(bucket_name,csv_obj_name,"select int(_1) as a1,int(_2) as a2, a1+a4 as a3, a5+a1 as a4, int(_3)+a3 as a5 from s3object;")  )
 
     find_res = res_s3select_alias.find("number of calls exceed maximum size, probably a cyclic reference to alias")
     
@@ -1124,7 +1112,7 @@ def test_schema_definition():
     s3select_assert_result( res_ignore, res_use)
 
     # using column-name not exist in schema
-    res_multiple_defintion = remove_xml_tags_from_result( run_s3select(bucket_name,csv_obj_name,"select c1,c10,int(c11) from s3object;",csv_header_info="USE") ).replace("\n","")
+    res_multiple_defintion = remove_xml_tags_from_result( run_s3select_error(bucket_name,csv_obj_name,"select c1,c10,int(c11) from s3object;",csv_header_info="USE") ).replace("\n","")
 
     assert ((res_multiple_defintion.find("alias {c11} or column not exist in schema")) >= 0)
 
@@ -1132,7 +1120,7 @@ def test_schema_definition():
     assert ((res_multiple_defintion.find("ProcessingTimeError")) >= 0)
 
     # alias-name is identical to column-name
-    res_multiple_defintion = remove_xml_tags_from_result( run_s3select(bucket_name,csv_obj_name,"select int(c1)+int(c2) as c4,c4 from s3object;",csv_header_info="USE") ).replace("\n","")
+    res_multiple_defintion = remove_xml_tags_from_result( run_s3select_error(bucket_name,csv_obj_name,"select int(c1)+int(c2) as c4,c4 from s3object;",csv_header_info="USE") ).replace("\n","")
 
     assert ((res_multiple_defintion.find("multiple definition of column {c4} as schema-column and alias"))  >= 0)
 

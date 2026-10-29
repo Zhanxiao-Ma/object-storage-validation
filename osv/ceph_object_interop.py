@@ -5,7 +5,7 @@ import string
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import api,raw,rejected
 from .ceph_bucket_policy import document
-from .ceph_tags import simple
+from .ceph_tags import simple,check_tags
 from .scenarios import Suite,assert_equal,require_ok
 from .suites import case,run_cases,CEPH
 
@@ -30,12 +30,12 @@ def conflict(p,mode):
         rejected(bucket.raw("put_http",key="testobj",body_path=str(p.ctx.body),wire_headers=headers),400,"InvalidArgument")
 
 def tags_on_upload(p):
-    """Keep source foo=bar&bar header, original A*100 content and strict bar-empty then foo-bar tag order."""
+    """Keep source foo=bar&bar header, original A*100 content and complete unordered bar-empty and foo-bar tags."""
     with BucketScope(p) as bucket:
         key="testtagobj1";p.ctx.body.write_bytes(b"A"*100)
         bucket.call("put_http",key=key,body_path=str(p.ctx.body),wire_headers={"x-amz-tagging":"foo=bar&bar"})
         bucket.call("get_http",key=key,output_path=str(p.ctx.output));assert_equal(p.ctx.output.read_bytes(),b"A"*100)
-        assert_equal(bucket.call("tags_get",key=key)["tags"],[{"key":"bar","value":""},{"key":"foo","value":"bar"}])
+        check_tags(bucket.call("tags_get",key=key)["tags"],[{"key":"bar","value":""},{"key":"foo","value":"bar"}])
 
 def tag_policy(p,mode):
     """Keep original seven-MiB repeated ASCII object, ten numeric tags and per-operation public policy; use a genuine alternate SDK identity for the authorized action."""
@@ -52,7 +52,7 @@ def tag_policy(p,mode):
             if mode=="delete":assert_equal(bucket.call("tags_delete",key=key,identity="alt")["status_code"],204)
             observed=bucket.call("tags_get",key=key,**({"identity":"alt"} if mode=="get" else {}))["tags"]
             if mode=="delete":assert_equal(len(observed),0)
-            else:assert_equal(observed,tags)
+            else:check_tags(observed,tags)
         finally:
             result=raw(bucket,"DeleteBucketPolicy")
             if not result["ok"] and result.get("status_code")!=404:raise RuntimeError("policy cleanup failed: "+str(result))
@@ -89,7 +89,7 @@ def cross_copy(p,missing):
 
 CASES=tuple(case("ceph_interop_put_"+mode,"Ceph 写入身份 "+mode,"保留原始空对象、创建 ACL、匿名/认证身份与精确状态",SCOPE_OPERATIONS+" put put_http"+(" identity_anonymous" if mode!="authenticated" else "")+(" bucket_create_acl" if mode=="anonymous_public" else ""),lambda p,mode=mode:put_identity(p,mode),reference,CEPH) for mode,reference in (("anonymous_private","test_object_anon_put"),("anonymous_public","test_object_anon_put_write_access"),("authenticated","test_object_put_authenticated")))
 CASES+=tuple(case("ceph_interop_conflict_"+mode,"Ceph 加密声明冲突 "+mode,"原始公开测试密钥/MD5、算法组合与空对象，精确 400/InvalidArgument；缺 KMS 配置按源 fool-me-once",SCOPE_OPERATIONS+" put_http wire_headers",lambda p,mode=mode:conflict(p,mode),"test_put_obj_enc_conflict_"+mode,CEPH) for mode in ("c_s3","c_kms","s3_kms","bad_enc_kms"))
-CASES+=(case("ceph_interop_upload_tags","Ceph 上传时标签头","原始 foo=bar&bar、A*100 和严格标签顺序",SCOPE_OPERATIONS+" put_http get_http tags_get wire_headers",tags_on_upload,"test_put_obj_with_tags",CEPH),)
+CASES+=(case("ceph_interop_upload_tags","Ceph 上传时标签头","原始 foo=bar&bar、A*100 和完整标签集合",SCOPE_OPERATIONS+" put_http get_http tags_get wire_headers",tags_on_upload,"test_put_obj_with_tags",CEPH),)
 CASES+=tuple(case("ceph_interop_tag_policy_"+mode,"Ceph 公开标签策略 "+mode,"另一真实身份执行仅授权的标签操作，十个原始标签及实际状态/完整列表",SCOPE_OPERATIONS+" put identity_alt tags_put tags_get api.PutBucketPolicy api.DeleteBucketPolicy"+(" tags_delete" if mode=="delete" else ""),lambda p,mode=mode:tag_policy(p,mode),reference,CEPH) for mode,reference in (("get","test_get_tags_acl_public"),("put","test_put_tags_acl_public"),("delete","test_delete_tags_obj_public")))
 CASES+=(case("ceph_interop_policy_roundtrip","Ceph 策略精确往返","实际策略字节一致，保留源删除后有异常时才检查错误码的规则",SCOPE_OPERATIONS+" put api.PutBucketPolicy api.GetBucketPolicy api.DeleteBucketPolicy",policy_roundtrip,"test_set_get_del_bucket_policy",CEPH),)
 CASES+=tuple(case("ceph_interop_copy_"+("missing_bucket" if missing else "cross_bucket"),"Ceph 跨桶复制"+(" 缺源桶" if missing else " 正常"),"保留托管复制的源 HEAD 预检；正常路径实际 SDK CopyObject 与 foo 完整读取，缺源路径预检 HTTP 404",SCOPE_OPERATIONS+" head_http"+(" put copy get_http" if not missing else ""),lambda p,missing=missing:cross_copy(p,missing),reference,CEPH) for missing,reference in ((False,"test_object_copy_diff_bucket"),(True,"test_object_copy_bucket_not_found")))

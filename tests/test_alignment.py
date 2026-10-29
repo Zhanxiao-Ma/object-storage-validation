@@ -52,8 +52,8 @@ class AlignmentTest(unittest.TestCase):
                 data=config(directory);data["workload"].update(profile=profile,)
                 path.write_text(json.dumps(data));cfg=load_config(path);result=audit(cfg,build_registry(cfg))
                 juice,ceph=result["summary"]
-                self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(20,6,True))
-                self.assertEqual(ceph["aligned"],667 if profile=="complete" else 60)
+                self.assertEqual((juice["aligned"],juice["not_applicable"],juice["complete"]),(19,6,False))
+                self.assertEqual(ceph["aligned"],553 if profile=="complete" else 54)
                 self.assertFalse(ceph["complete"])
                 self.assertGreater(ceph["not_migrated"],0)
                 self.assertEqual(len(result["cases"]),1005)
@@ -79,3 +79,17 @@ class AlignmentTest(unittest.TestCase):
         rows=extract_ceph(source,"test_duplicates.py","revision")
         self.assertEqual(len({row["id"] for row in rows}),3)
         self.assertEqual([row["active_definition"] for row in rows],[False,True,True])
+
+    def test_adjusted_protocol_contracts_are_not_claimed_exactly_aligned(self):
+        """Run the actual source auditor with the shipped contract adjustments; preserve both mappings but report partial and the precise adjustment instead of exact upstream alignment."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);path=directory/"manifest.json"
+            cfg=config(directory);cfg["workload"]["profile"]="complete";path.write_text(json.dumps(cfg));cfg=load_config(path)
+            result=audit(cfg,build_registry(cfg))
+        names={"ceph_atomic_stream_multipart_resend","ceph_checksum_attributes_multipart"}
+        rows=[r for r in result["cases"] if names.intersection(r["implementations"])]
+        self.assertEqual(len(rows),2)
+        for row in rows:
+            self.assertEqual(row["status"],"partial")
+            self.assertIn("通用协议修正",row["reason"])
+            self.assertIsNone(row["reviewed_implementation"])

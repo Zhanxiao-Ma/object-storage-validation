@@ -6,24 +6,32 @@ from .bucket_scope import BucketScope
 from .ceph_bucket_names import NamingScope
 from .ceph_request_headers import recover_creation
 from .suites import CaseNotRun
+from .scenarios import SDKOperationError
 
 _ACTIVE=ContextVar('ceph_select_runtime')
 LITERAL_SOURCES={'test_json_column_sum_min_max':('testbuck2',),'test_column_sum_min_max':('testbuck2',)}
 
-class ClientError(RuntimeError):
+class ClientError(SDKOperationError):
     """Preserve native service code/message and source call-phase exception handling."""
-    def __init__(self,result):
+    def __init__(self,result,operation="SelectObjectContent"):
+        SDKOperationError.__init__(self,result)
+        self.evidence["operation"]=operation
         self.response={'Error':{'Code':result.get('error_code'),'Message':result.get('error_message',result.get('error',''))},'ResponseMetadata':{'HTTPStatusCode':result.get('status_code')}}
-        super().__init__('An error occurred ('+str(self.response['Error']['Code'])+') when calling the SelectObjectContent operation: '+str(self.response['Error']['Message']))
+        self.args=('An error occurred ('+str(self.response['Error']['Code'])+') when calling the '+operation+' operation: '+str(self.response['Error']['Message']),)
 
 class EventStreamError(ClientError):
-    """Expose the actual official decoder's event failure only when the source iterates Payload."""
+    """Expose the actual official decoder's service event failure separately from HTTP/transport errors."""
+    def __init__(self, result):
+        super().__init__(result)
+        self.failure_category = "service_error"
+        self.evidence["failure_phase"] = "event_stream"
 
 
-def checked(result):
+
+def checked(result,operation="SelectObjectContent"):
     if not result.get('ok'):
-        if result.get('error_code') and isinstance(result.get('status_code'),int) and result['status_code']>0:raise ClientError(result)
-        raise RuntimeError('Actual Select SDK transport failure: '+str(result.get('error_message') or result.get('error') or result.get('error_kind')))
+        if result.get('error_code') and isinstance(result.get('status_code'),int) and result['status_code']>0:raise ClientError(result,operation)
+        raise SDKOperationError(result)
     return result
 
 
@@ -60,7 +68,7 @@ class Client:
             if not getattr(scope,'namespace_entered',False):
                 scope.__enter__();scope.namespace_entered=True
             # Creation is fixture setup, not the Select oracle; check the real configured bucket instead.
-            return checked(self.r.p.ctx.worker.call({'op':'bucket_head','bucket':scope.name}))
+            return checked(self.r.p.ctx.worker.call({'op':'bucket_head','bucket':scope.name}), 'HeadBucket')
         if not scope.created:
             head=scope.raw('bucket_head')
             if head.get('ok') or (head.get('error_kind'),head.get('status_code'))!=('not_found',404):
@@ -72,12 +80,12 @@ class Client:
             raise
         if result.get('ok'):scope.created=True
         elif not scope.created and not (isinstance(result.get('status_code'),int) and 400<=result['status_code']<500):self.r.ambiguous.add(name)
-        return checked(result)
+        return checked(result,"CreateBucket")
     def put_object(self,**values):
         scope=self.r.owned(values['Bucket']);body=values['Body'];self.r.p.ctx.body.write_bytes(body.encode() if isinstance(body,str) else body)
-        return checked(scope.raw('put_http',key=values['Key'],body_path=str(self.r.p.ctx.body)))
+        return checked(scope.raw('put_http',key=values['Key'],body_path=str(self.r.p.ctx.body)), 'PutObject')
     def get_object(self,**values):
-        scope=self.r.owned(values['Bucket']);path=self.r.p.ctx.output;checked(scope.raw('get_http',key=values['Key'],output_path=str(path)))
+        scope=self.r.owned(values['Bucket']);path=self.r.p.ctx.output;checked(scope.raw('get_http',key=values['Key'],output_path=str(path)), 'GetObject')
         return {'Body':io.BytesIO(path.read_bytes())}
     def select_object_content(self,**values):
         scope=self.r.owned(values['Bucket']);path=self.r.p.ctx.output
@@ -136,9 +144,9 @@ def get_new_bucket_name():return _ACTIVE.get().name()
 
 
 def execute(p,name):
-    if name=='test_output_serial_expressions':raise CaseNotRun('Original source immediately returns: TODO fix test; no operation or oracle is executed','upstream_todo')
+    if name in ('test_version','test_output_serial_expressions'):raise CaseNotRun('Original source immediately returns; no operation or oracle is executed','upstream_todo')
     literals=LITERAL_SOURCES.get(name,())
     if literals and p.ctx.workload.get('ceph_literal_bucket_names_authorized') is not True:raise CaseNotRun('Original Select source uses fixed testbuck2; dedicated literal namespace authorization is required','workload.ceph_literal_bucket_names_authorized=true')
     from . import ceph_select_sources as source
     with Runtime(p,literals):getattr(source,name)()
-    return {'source_function':name,'oracle_limitation':'upstream s3select_assert_result checks nonempty values; it does not compare result equality','decoder':'official SDK event stream; per-Records-event UTF-8 handling retained'}
+    return {'source_function':name,'oracle':'exact result equality; service and stream errors propagate','decoder':'official SDK event stream; per-Records-event UTF-8 handling retained'}

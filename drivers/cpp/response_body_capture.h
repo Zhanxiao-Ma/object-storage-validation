@@ -1,6 +1,9 @@
 #pragma once
 #include <nlohmann/json.hpp>
 #include <aws/core/http/HttpResponse.h>
+#include <aws/core/http/HttpRequest.h>
+#include <aws/core/utils/StringUtils.h>
+#include <set>
 #include <aws/core/utils/HashingUtils.h>
 #include <type_traits>
 #include <memory>
@@ -9,7 +12,7 @@
 
 namespace osv_response_body {
 /** Store actual bytes and typed metadata for one explicitly requested RPC; keep thread-local state so parallel workers never exchange response bodies. */
-struct State { std::string body,request_id,error;bool has_body=false,has_request_id=false; };
+struct State { nlohmann::json request_query=nlohmann::json::object();std::string body,request_id,error;bool has_body=false,has_request_id=false; };
 inline thread_local std::unique_ptr<State> active;
 inline void reset(){active.reset();}
 inline void begin(const nlohmann::json& request) {
@@ -18,6 +21,15 @@ inline void begin(const nlohmann::json& request) {
     if(request.at("capture_response_body").get<bool>()) {
         if(request.value("op",std::string())=="concurrent_requests")throw std::runtime_error("body capture requires an individual SDK request");
         active=std::make_unique<State>();
+    }
+}
+inline void capture_request(const Aws::Http::HttpRequest& request) {
+    if(!active)return;
+    active->request_query=nlohmann::json::object();
+    static const std::set<std::string> allowed={"list-type","prefix","delimiter","max-keys","continuation-token","start-after","fetch-owner","encoding-type"};
+    for(const auto& entry:request.GetUri().GetQueryStringParameters()) {
+        std::string key=Aws::Utils::StringUtils::URLDecode(entry.first.c_str()).c_str();
+        if(allowed.count(key))active->request_query[key]=std::string(Aws::Utils::StringUtils::URLDecode(entry.second.c_str()).c_str());
     }
 }
 inline void capture(const std::shared_ptr<Aws::Http::HttpResponse>& response) {
@@ -43,6 +55,7 @@ template<class T> inline void metadata(const T& result) {
 }
 inline void attach(nlohmann::json& result) {
     if(!active)return;
+    if(!active->request_query.empty())result["request_query"]=active->request_query;
     if(active->has_body) {
         Aws::Utils::ByteBuffer bytes(reinterpret_cast<const unsigned char*>(active->body.data()),active->body.size());
         result["response_body_b64"]=std::string(Aws::Utils::HashingUtils::Base64Encode(bytes).c_str());

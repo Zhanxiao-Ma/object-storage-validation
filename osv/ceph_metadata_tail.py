@@ -28,14 +28,19 @@ def header_grants(p):
 
 
 def unreadable(p):
-    """Retain the original Unicode literal, genuine SDK URI encoding and precise 400/message oracle, without introducing encryption or identity prerequisites."""
+    """Treat the Python Unicode literal as a valid UTF-8 key: missing GET fails, stored bytes round-trip unchanged."""
     with BucketScope(p) as bucket:
-        actual=bucket.raw('get_http',key='\xae\x8a-',output_path=str(p.ctx.output))
-        rejected(actual,400);assert_equal(actual['error_message'],"Couldn't parse the specified URI.")
+        key="\xae\x8a-"
+        rejected(bucket.raw('get_http',key=key,output_path=str(p.ctx.output)),404,"NoSuchKey")
+        bucket.put(key,b"unicode-key-content")
+        p.ctx.output.unlink(missing_ok=True)
+        bucket.call('get_http',key=key,output_path=str(p.ctx.output))
+        assert_equal(p.ctx.output.read_bytes(),b"unicode-key-content")
+
 
 
 CASES=(case('ceph_tail_bucket_header_grants','Ceph 原始桶grant请求头','五个原始id=值、完整ACL字段/原顺序、真实alt写foo/bar和恢复公开ACL',SCOPE_OPERATIONS+' wire_headers identity_alt put_http api.GetBucketAcl api.PutBucketAcl',header_grants,'test_bucket_header_acl_grants',CEPH),
- case('ceph_tail_unreadable','Ceph 原始不可读对象键','原Unicode字面键必须返回400和精确URI解析错误消息',SCOPE_OPERATIONS+' get_http',unreadable,'test_object_read_unreadable',CEPH))
+ case('ceph_tail_unreadable','Unicode 对象键读写','合法Unicode键不存在时404；写入后完整内容一致',SCOPE_OPERATIONS+' put get_http',unreadable,'test_object_read_unreadable',CEPH))
 
 
 def register(registry):

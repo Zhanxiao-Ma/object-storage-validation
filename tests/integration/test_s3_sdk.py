@@ -26,11 +26,11 @@ def load_config(path, **kwargs):
 
 
 # Pinned Moto response/template discrepancies and actual typed SDK outputs are independent of the source case oracles.
-# Original Ceph expectations remain unchanged; these helpers only assert that the local regression report preserves known failures.
+# These helpers assert independently reviewed Moto/SDK discrepancies, while production oracles follow the S3 contract.
 def expected_conditional_version_diagnostics(language):
-    writes={"ceph_conditional_versions_"+name for name in ("put_basic","put_current_match","put_current_none","put_marker","multipart_basic","multipart_current_match","multipart_current_none")}
-    deletes={"ceph_conditional_versions_delete_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
-    bulk={"ceph_conditional_versions_bulk_"+kind+suffix for kind in ("match","mtime","size") for suffix in ("","_current","_version")}
+    writes={"ceph_conditional_versions_"+name for name in ("multipart_basic","multipart_current_match")}
+    deletes={"ceph_conditional_versions_delete_"+kind+suffix for kind in ("match",) for suffix in ("","_current","_version")}
+    bulk={"ceph_conditional_versions_bulk_"+kind+suffix for kind in ("match",) for suffix in ("","_current","_version")}
     return writes|deletes|(bulk if language=="cpp" else set())
 
 
@@ -41,22 +41,22 @@ def expected_public_controls_diagnostics(language):
 
 
 def expected_request_header_diagnostics():
-    return {"ceph_header_object_"+name for name in ("md5_invalid_short","md5_bad","md5_empty","length_empty","length_negative","length_none","authorization_empty","authorization_none")}|{"ceph_header_bucket_"+name for name in ("length_empty","length_negative","authorization_empty","authorization_none")}|{"ceph_header_acl_bad_canned"}
+    return {"ceph_header_object_"+name for name in ("md5_invalid_short","md5_bad","md5_empty")}|{"ceph_header_acl_bad_canned"}
 
 
 def expected_exact_list_diagnostics(language):
     common={"ceph_exact_list_"+name for name in (
         "v1_maxkeys_zero","v2_maxkeys_zero","v1_delimiter_prefix","v1_delimiter_prefix_underscore",
         "v1_marker_none","v1_marker_empty","v1_marker_unreadable","v1_marker_not_in_list","v1_marker_after_list",
-        "v2_continuationtoken_empty","v2_continuationtoken_walk","v2_continuationtoken_both","v2_fetchowner_empty")}
-    if language=="java":common.update({"ceph_exact_list_v1_encoding_basic","ceph_exact_list_v2_encoding_basic"})
+        "v2_continuationtoken_walk","v2_continuationtoken_both","v2_fetchowner_empty")}
+    if language=="java":common.update({"ceph_exact_list_v1_encoding_basic"})
     else:
-        common.update("ceph_exact_list_v"+str(version)+"_"+name for version in (1,2) for name in ("delimiter_whitespace","delimiter_unreadable","prefix_unreadable"))
-        common.update({"ceph_exact_list_v1_encoding_basic","ceph_exact_list_v2_startafter_unreadable"})
+        common.update("ceph_exact_list_v"+str(version)+"_"+name for version in (1,2) for name in ("delimiter_whitespace","delimiter_unreadable"))
+        common.update({"ceph_exact_list_v1_encoding_basic"})
     return common
 
 def expected_version_diagnostics(language):
-    names={"ceph_version_"+name for name in ("suspend_versions","bulk_marker_create","multipart_id","marker_header_plain","marker_header_suspended")}
+    names={"ceph_version_"+name for name in ("suspend_versions","bulk_marker_create","multipart_id","marker_header_suspended")}
     if language=="cpp":names.add("ceph_version_special")
     return names
 
@@ -68,7 +68,7 @@ def expected_acl_identity_prerequisites():
     return {"ceph_acl_user_"+permission for permission in ("full_control","read","read_acp","write","write_acp")}
 
 def expected_object_encryption_diagnostics(configured=False):
-    return {"ceph_encryption_"+name for name in ("s3_head","no_key","not_declared","read_declare")}|({"ceph_encryption_kms_head"} if configured else set())
+    return {"ceph_encryption_"+name for name in ("s3_head","not_declared","read_declare")}|({"ceph_encryption_kms_head"} if configured else set())
 
 def expected_kms_prerequisites():
     return {"ceph_encryption_kms_"+name for name in ("default_1b","default_1kb","default_1mb","default_8mb","transfer_1b","transfer_1kb","transfer_1MB","transfer_13b","head","present")}
@@ -95,7 +95,7 @@ class SdkIntegrationTest(unittest.TestCase):
     def setUpClass(cls):
         cls.file_window=patch("osv.file_bench.MIN_SECONDS",0)
         cls.file_window.start();cls.addClassCleanup(cls.file_window.stop)
-        """Start an isolated loopback service; use dummy credentials and require both real worker binaries."""
+        """Start an isolated loopback service with dummy credentials and both workers; atomic callbacks use their own concurrent integration fixture."""
         import boto3
         from local_moto import LocalMotoServer
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
@@ -166,17 +166,18 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(len(report["coverage"]["catalog"]), 96)
             for target in self.targets:
                 expected = {name for name in expected_exact_list_diagnostics(target["language"]) if name.startswith("ceph_exact_list_v2_")}
-                expected |= {"ceph_delete_many_v2_limit", "ceph_exact_multipart_empty", "ceph_exact_multipart_missing_upload", "s3_delete_many_quiet"}
+                expected |= {"ceph_delete_many_v2_limit", "ceph_exact_multipart_abort_missing", "ceph_exact_multipart_missing_upload", "s3_delete_many_quiet"}
                 actual = {case["case"] for case in report["cases"] if case["target"] == target["id"] and case["status"] == "fail"}
                 self.assertEqual(actual, expected)
             self.assertEqual(len(report["summary"]),22*len(self.targets))
-            self.assertEqual(len(report["samples"]),220*len(self.targets))
+            self.assertEqual(sum(row["phase"]=="measure" for row in report["samples"]),220*len(self.targets))
+            self.assertEqual(sum(row["phase"]=="warmup" for row in report["samples"]),33*len(self.targets))
             self.assertTrue(all(sample["ok"] for sample in report["samples"]), report["samples"])
             self.assertEqual(report["comparisons"], [])  # cross-language results must not imply an SDK comparison
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"), 0)
 
     def test_ceph_http_ranges_and_tags_run_through_actual_sdk_storage(self):
-        """Run the real migrated producers and consumers against Moto; expect only Moto excess-tag BadRequest mismatch, independent valid HEAD measurements and complete cleanup."""
+        """Run the real migrated producers and consumers against Moto; expect only Moto excess-tag HTTP403 mismatch, independent valid HEAD measurements and complete cleanup."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"all",
@@ -187,7 +188,7 @@ class SdkIntegrationTest(unittest.TestCase):
             failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]!="pass"]
             self.assertEqual(failures,[(target["id"],"ceph_tags_excess") for target in self.targets])
             for row in report["cases"]:
-                if row["status"]=="fail":self.assertIn("BadRequest",row["error"])
+                if row["status"]=="fail":self.assertIn("403 != 400",row["error"])
             self.assertEqual(sum(r["op"]=="head_17_c1" for r in report["samples"]),len(self.targets));self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
@@ -202,7 +203,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(len(report["coverage"]["catalog"]),74)
             failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
             self.assertEqual(failures,{(target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"])})
-            self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
+            self.assertEqual({(row["target"],row["case"]) for row in report["cases"] if row["status"]=="not_run"},{(target["id"],"ceph_exact_list_v1_bucket_distinct") for target in self.targets})
             self.assertEqual(report["samples"],[])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
@@ -220,7 +221,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_exact_ceph_multipart_keeps_real_sizes_and_source_failures(self):
-        """Run 13 multipart translations through actual SDK IO; expect only Moto empty/missing-upload 500 mismatches and no remaining test buckets."""
+        """Run 13 multipart translations through actual SDK IO; expect Moto wrong-key Abort acceptance and missing-upload500 differences and no remaining test buckets."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
@@ -228,7 +229,7 @@ class SdkIntegrationTest(unittest.TestCase):
                 "part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0,"operations":["head"]}}))
             report=run(load_config(path),directory/"results")
             failures={(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail"}
-            self.assertEqual(failures,{(target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload")})
+            self.assertEqual(failures,{(target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("abort_missing","missing_upload")})
             self.assertEqual(len(report["coverage"]["catalog"]),13);self.assertEqual(report["samples"],[])
             self.assertFalse([row for row in report["cases"] if row["status"]=="not_run"])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
@@ -412,8 +413,11 @@ class SdkIntegrationTest(unittest.TestCase):
                     try:
                         ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"identities":{"main":identity,"alt":{"canonical_id":"independent-alt-user","display_name":"alternate","email":"alternate@example.invalid"}}})
                         rows=run_cases(ctx,CASES)
-                        self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{"ceph_acl_private_to_private","ceph_acl_revoke_all"})
-                        self.assertTrue(all(row["status"]=="fail" for row in rows if row["case"] not in {"ceph_acl_private_to_private","ceph_acl_revoke_all"}),rows)
+                        # Canonical ID/grants are authoritative; deprecated optional
+                        # DisplayName must not turn a correct ACL into a failure.
+                        passed={"ceph_acl_"+name for name in ("private_to_private","revoke_all","bucket_public","bucket_default","object_cycle","bucket_authenticated","object_public","user_full_control","object_default","bucket_cycle","explicit_group","permission_full_control","object_authenticated")}
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},passed)
+                        self.assertTrue(all(row["status"]=="fail" for row in rows if row["case"] not in passed),rows)
                         self.assertEqual(len(rows),26)
                         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                     finally:worker.close()
@@ -446,7 +450,9 @@ class SdkIntegrationTest(unittest.TestCase):
                         ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                         rows=run_cases(ctx,CASES)
                         self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected_request_header_diagnostics())
-                        self.assertTrue(all(row["status"] in ("pass","fail") for row in rows),rows)
+                        unavailable={"ceph_header_object_"+name for name in ("length_none","length_empty","length_negative","authorization_empty","authorization_none")}|{"ceph_header_bucket_"+name for name in ("length_empty","length_negative","authorization_empty","authorization_none")}
+                        self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},unavailable)
+                        self.assertTrue(all(row.get("reason")=="missing_prerequisites" for row in rows if row["status"]=="not_run"))
                         self.assertEqual(len(rows),27)
                         self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
                     finally:worker.close()
@@ -515,8 +521,10 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(len(report["coverage"]["catalog"]),7)
             self.assertEqual([row for row in report["cases"] if row["status"]!="pass"],[])
             self.assertTrue(report["samples"])
-            scopes=[row["evidence"] for row in report["cases"] if row.get("evidence")]
-            self.assertEqual(len(scopes),4*len(self.targets));self.assertTrue(all(row["cleanup_confirmed"] for row in scopes))
+            scopes=[row["evidence"] for row in report["cases"] if row.get("evidence") and row["case"]!="ceph_bucket_head"]
+            self.assertEqual(len(scopes),3*len(self.targets));self.assertTrue(all(row["cleanup_confirmed"] for row in scopes))
+            heads=[row["evidence"] for row in report["cases"] if row["case"]=="ceph_bucket_head"]
+            self.assertEqual(len(heads),len(self.targets));self.assertTrue(all(row["read_only"] for row in heads))
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_real_sdk_bucket_scope_cleans_after_failed_assertion(self):
@@ -565,7 +573,7 @@ class SdkIntegrationTest(unittest.TestCase):
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{"mode":"performance",
                 "profile":"normal","object_size":1024,"range_size":17,
-                "large_object_size":65536,"part_size":5*1024*1024,"concurrency":2,"requests":1,"rounds":1,
+                "large_object_size":65536,"part_size":5*1024*1024,"concurrency":2,"requests":1,"rounds":1,"warmup_requests":0,
                 "objbench":{"small_object_size":128,"small_objects":3,"block_size":1024,"big_object_size":3072,"list_requests_per_lane":2}}}))
             report=run(load_config(path),directory/"results")
             self.assertEqual([row for row in report["cases"] if row["status"]=="fail"],[])
@@ -574,21 +582,25 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertTrue(all(row["ok"] for row in report["samples"]))
             self.assertEqual(self.client.list_objects_v2(Bucket="osv-sdk-integration").get("KeyCount"),0)
 
-    def test_complete_profile_preserves_moto_zero_maxkeys_incompatibility(self):
-        """Run the complete catalog through real SDKs; expect the pinned Moto/SDK diagnostic set and no performance in functional mode."""
+    def test_complete_non_atomic_profile_preserves_moto_diagnostics(self):
+        """Run all non-atomic complete cases against serialized Moto; expect precise diagnostics and no performance. Atomic cases run independently in test_atomic_moto against a concurrent service."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);path=directory/"manifest.json"
             path.write_text(json.dumps({"schema_version":1,"targets":self.targets,"workload":{
                 "profile":"complete","object_size":1024,"range_size":17,
                 "large_object_size":65536,"part_size":5*1024*1024,"concurrency":1,"requests":1,"rounds":1,"warmup_requests":0}}))
-            report=run(load_config(path),directory/"results")
+            from osv.cli import build_registry
+            configuration=load_config(path)
+            registry=build_registry(configuration)
+            configuration["workload"]["compatibility_suites"]=[name for name in registry.profiles["complete"].suites if name!="ceph_atomic_streams"]
+            report=run(configuration,directory/"results")
             from osv.ceph_select_register import CASES as select_cases
             select_names={item.name for item in select_cases}
             # Original randomized SQL sources remain diagnostics. Their weak
             # helper and Moto SQL implementation do not certify SDK or SQL
             # compatibility; independent native eventstream tests do that.
             failures=[(row["target"],row["case"]) for row in report["cases"] if row["status"]=="fail" and row["case"] not in select_names]
-            select_not_run={"ceph_select_output_serial_expressions":["upstream_todo"],"ceph_select_json_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"],"ceph_select_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"]}
+            select_not_run={"ceph_select_version":["upstream_todo"],"ceph_select_output_serial_expressions":["upstream_todo"],"ceph_select_json_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"],"ceph_select_column_sum_min_max":["workload.ceph_literal_bucket_names_authorized=true"]}
             self.assertEqual(len(select_names),34)
             for target in self.targets:
                 select_rows=[row for row in report["cases"] if row["target"]==target["id"] and row["case"] in select_names]
@@ -599,7 +611,7 @@ class SdkIntegrationTest(unittest.TestCase):
                     else:
                         self.assertIn(row["status"],("pass","fail"))
                         if row["status"]=="pass":
-                            self.assertIn("does not compare result equality",row["evidence"]["oracle_limitation"])
+                            self.assertEqual(row["evidence"]["oracle"],"exact result equality; service and stream errors propagate")
                             self.assertEqual(row["evidence"]["decoder"],"official SDK event stream; per-Records-event UTF-8 handling retained")
                         else:
                             self.assertIsInstance(row["error"],str)
@@ -609,7 +621,7 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],"ceph_tags_excess") for target in self.targets)
             expected.extend((target["id"],name) for target in self.targets for name in expected_exact_list_diagnostics(target["language"]))
             expected.extend((target["id"],"ceph_delete_many_v"+str(version)+"_limit") for target in self.targets for version in (1,2))
-            expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("empty","missing_upload"))
+            expected.extend((target["id"],"ceph_exact_multipart_"+name) for target in self.targets for name in ("abort_missing","missing_upload"))
             expected.extend((target["id"],name) for target in self.targets for name in ("ceph_exact_multipart_copy_invalid","ceph_exact_multipart_copy_improper","ceph_get_part_multiple","ceph_get_part_single","ceph_get_part_ordinary"))
             expected.extend((target["id"],name) for target in self.targets for name in expected_version_diagnostics(target["language"]))
             expected.extend((target["id"],name) for target in self.targets for name in expected_config_diagnostics(target["language"]))
@@ -617,9 +629,9 @@ class SdkIntegrationTest(unittest.TestCase):
             expected.extend((target["id"],name) for target in self.targets for name in expected_control_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_encrypted_multipart_diagnostics())
             expected.extend((target["id"],name) for target in self.targets for name in expected_object_encryption_diagnostics())
-            expected.extend((target["id"],name) for target in self.targets for name in ("ceph_put_condition_match_existing","ceph_put_condition_none_etag","ceph_copy_condition_match_bad"))
+            expected.extend((target["id"],name) for target in self.targets for name in ("ceph_copy_condition_match_bad",))
             expected.extend((target["id"],name) for target in self.targets for name in expected_request_header_diagnostics())
-            expected.extend((target["id"],name) for target in self.targets for name in ({"ceph_access_anonymous_v1_private","ceph_access_anonymous_v2_private","ceph_interop_put_anonymous_private","ceph_interop_upload_tags"}|{"ceph_interop_conflict_"+mode for mode in ("c_s3","c_kms","s3_kms","bad_enc_kms")}|({"ceph_interop_policy_roundtrip"} if target["language"]=="cpp" else set())))
+            expected.extend((target["id"],name) for target in self.targets for name in ({"ceph_access_anonymous_v1_private","ceph_access_anonymous_v2_private","ceph_interop_put_anonymous_private"}|{"ceph_interop_conflict_"+mode for mode in ("c_s3","c_kms","s3_kms","bad_enc_kms")}|({"ceph_interop_policy_roundtrip"} if target["language"]=="cpp" else set())))
             expected.extend((target["id"],"ceph_inventory_anonymous") for target in self.targets)
             expected += [(target["id"],name) for target in self.targets if target["language"]=="cpp"
                          for name in ("ceph_list_delimiter_space","ceph_list_delimiter_newline")]
@@ -627,17 +639,17 @@ class SdkIntegrationTest(unittest.TestCase):
             policy_fail={"ceph_policy_condition_"+name for name in ("ssec_required","ssec_algorithm","s3_noenc","s3_incorrect_algo_sse_s3","ifexists","notprincipal")}
             checksum_missing={"ceph_checksum_object_crc64nvme"}|{"ceph_checksum_helper_"+name for name in ("sha256","crc64nvme","crc32","crc32c","sha1")}
             for target in self.targets:
-                extra=policy_fail|{"ceph_metadata_edges_content_encoding"}
+                extra=policy_fail
                 if target["language"]=="cpp":
-                    extra=extra|{"ceph_policy_condition_s3_kms","ceph_policy_condition_kms_s3"}|{"ceph_metadata_edges_"+name for name in ("special_keys",)}
+                    extra=extra|{"ceph_policy_condition_s3_kms","ceph_policy_condition_kms_s3"}
                     extra=extra|({item.name for item in checksum_cases}-{"ceph_attributes_object","ceph_attributes_versioned","ceph_checksum_attributes_sha256"})
                 else:extra=extra|({item.name for item in checksum_cases}-checksum_missing)
                 expected.extend((target["id"],name) for name in extra)
             expected.extend((target["id"],name) for target in self.targets for name in expected_conditional_version_diagnostics(target["language"])|expected_public_controls_diagnostics(target["language"]))
-            state_fail={"ceph_state_"+name for name in ("condition_not_match","condition_not_modified","access_raw_get_object_acl","recreate_acl_overwrite","recreate_acl_new")}
+            state_fail={"ceph_state_"+name for name in ("access_raw_get_object_acl","recreate_acl_overwrite","recreate_acl_new")}
             policy_tail_fail={"ceph_remaining_policy_bad_access_key","ceph_remaining_policy_bad_signature"}
             expected.extend((target["id"],name) for target in self.targets for name in state_fail|policy_tail_fail|({"ceph_remaining_policy_multipart_50mib"} if target["language"]=="cpp" else set()))
-            new_failure_common={"ceph_query_"+mode for mode in ("head_usage","unordered_v1","unordered_v2","invalid_maxkeys","head_extended","response_headers")}|{"ceph_object_lock_invalid_get_retention","ceph_object_lock_invalid_get_legal_hold","ceph_lc_expiration_header_tag","ceph_names_nonalpha","ceph_tail_unreadable","ceph_encryption_tail_torrent"}
+            new_failure_common={"ceph_query_"+mode for mode in ("head_usage","unordered_v1","unordered_v2","invalid_maxkeys","head_extended","response_headers")}|{"ceph_object_lock_invalid_get_retention","ceph_object_lock_invalid_get_legal_hold","ceph_lc_expiration_header_tag","ceph_names_nonalpha","ceph_encryption_tail_torrent"}
             for target in self.targets:
                 extra={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"} if target["language"]=="java" else set()
                 expected.extend((target["id"],name) for name in new_failure_common|extra)
@@ -650,14 +662,6 @@ class SdkIntegrationTest(unittest.TestCase):
             # The real response capture must expose those original oracle
             # failures rather than reconstructing either value from metadata.
             expected.extend((target["id"],name) for target in self.targets for name in ("ceph_body_account_usage","ceph_body_error_request_id"))
-            # This full-profile reference intentionally uses a serialized Moto
-            # handler. Larger atomic reads backpressure that handler while the
-            # callback waits for a nested PUT; independent threaded-service
-            # regressions prove genuine SDK/source behavior separately.
-            expected.extend((target["id"],"ceph_atomic_stream_read_"+size) for target in self.targets for size in ("4mb","8mb"))
-            from osv.ceph_atomic_streams import CASES as atomic_cases
-            expected.extend((target["id"],c.name) for target in self.targets for c in atomic_cases
-                            if c.name not in {"ceph_atomic_stream_read_1mb","ceph_atomic_stream_read_4mb","ceph_atomic_stream_read_8mb","ceph_atomic_versions_overlap"})
             selected_names = {row["case"] for row in report["coverage"]["catalog"]}
             expected = [(target, name) for target, name in expected if name in selected_names]
             expected.extend((target["id"], name) for target in self.targets for name in
@@ -665,12 +669,7 @@ class SdkIntegrationTest(unittest.TestCase):
                  "s3_lifecycle_configuration_noncurrent_expiration", "s3_logging_configuration_default"))
             expected.extend((target["id"], "s3_logging_configuration_"+name) for target in self.targets
                 if target["language"] == "cpp" for name in ("simple", "delivery_time", "event_time"))
-            # Serialized Moto can either complete or backpressure these nested
-            # read/write callbacks depending on scheduling. Threaded raw-SDK
-            # atomic regressions validate the actual source contract separately.
-            timing_dependent = {"ceph_atomic_stream_read_4mb", "ceph_atomic_stream_read_8mb"}
-            self.assertEqual({row for row in failures if row[1] not in timing_dependent},
-                             {row for row in expected if row[1] not in timing_dependent})
+            self.assertEqual(set(failures),set(expected))
             body_diagnostics={"ceph_body_account_usage":"'Summary'","ceph_body_error_request_id":"'NoneType' object has no attribute 'text'"}
             for row in report["cases"]:
                 if row["case"] in body_diagnostics:
@@ -678,7 +677,7 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual(row["error"],body_diagnostics[row["case"]])
             for target in self.targets:
                 observed=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="juicefs_range_start_overflow")
-                self.assertEqual(observed["status"],"warning")
+                self.assertEqual(observed["status"],"pass")
                 self.assertFalse(observed["evidence"]["source_matches"])
                 self.assertEqual(observed["evidence"]["observed"]["error_code"],"InvalidRange")
                 strict=next(row for row in report["cases"] if row["target"]==target["id"] and row["case"]=="ceph_range_invalid_start")
@@ -686,7 +685,7 @@ class SdkIntegrationTest(unittest.TestCase):
             self.assertEqual(report["samples"],[])
             self.assertEqual(report["summary"],[])
             self.assertFalse(next(row for row in report["upstream_alignment"]["summary"] if row["project"]=="ceph")["complete"])
-            self.assertEqual(len(report["coverage"]["catalog"]),780)
+            self.assertEqual(len(report["coverage"]["catalog"]),767)  # 781 complete minus 14 atomic cases exercised separately
             from osv.ceph_access import CASES as access_cases
             access_missing={item.name for item in access_cases if "_matrix_" in item.name}|{"ceph_interop_tag_policy_"+mode for mode in ("get","put","delete")}
             policy_missing={"ceph_policy_condition_"+name for name in ("kms_noenc","existing_get","existing_get_tagging","existing_put_tagging","existing_get_acl","request_tag","acl","grant","copy_source","copy_metadata","head_prefix","multipart")}
@@ -760,6 +759,23 @@ class SdkIntegrationTest(unittest.TestCase):
             protocol_missing["ceph_logging_remaining_tenant_j"]=("unsupported_operations",["identity_tenant"])
             protocol_missing["ceph_logging_remaining_object_meta"]=("missing_prerequisites",["workload.object_lock_cleanup_authorized=true"])
             cpp_expiration_missing={"ceph_lc_expiration_days_zero","ceph_lc_expiration_header_put","ceph_lc_expiration_header_head"}
+            # Explicit prerequisites introduced by protocol corrections: raw wire tests
+            # must not silently execute SDK-rewritten input; cross-bucket and directory
+            # semantics require independent fixtures, even when ordinary bucket IO works.
+            corrected_requirements={}
+            for name in ("ceph_exact_list_v1_bucket_distinct","ceph_interop_copy_cross_bucket","ceph_inventory_ctime","ceph_inventory_membership",*("ceph_exact_multipart_copy_"+mode for mode in ("sizes","small","special","without_range"))):
+                corrected_requirements[name]="second independently configured test bucket"
+            for scope,modes in (("object",("length_none","length_empty","length_negative")),("bucket",("length_empty","length_negative"))):
+                for mode in modes:corrected_requirements["ceph_header_"+scope+"_"+mode]="verified raw Content-Length transport"
+            for scope in ("object","bucket"):
+                for mode in ("authorization_empty","authorization_none"):corrected_requirements["ceph_header_"+scope+"_"+mode]="verified post-signing or anonymous request transport"
+            for mode in ("none_bad","none_etag"):corrected_requirements["ceph_put_condition_"+mode]="nonstandard If-None-Match contract"
+            corrected_requirements["ceph_metadata_edges_content_encoding"]="verified signed aws-chunked Content-Encoding transport"
+            for kind in ("mtime","size"):
+                for suffix in ("","_current","_version"):
+                    corrected_requirements["ceph_conditional_versions_delete_"+kind+suffix]="directory-bucket fixture and endpoint"
+                    if any(target["language"]=="cpp" for target in self.targets):
+                        corrected_requirements["ceph_conditional_versions_bulk_"+kind+suffix]="directory-bucket fixture and endpoint"
             missing=[row for row in report["cases"] if row["status"]=="not_run"]
             legacy_missing={"ceph_config_lifecycle_"+mode for mode in ("set","get","delete","no_id","id_long","same_id","invalid_status","date","invalid_date","transition_invalid_date","noncurrent","marker","multipart","noncurrent_transition")}
             expected_missing = {(target["id"],name) for target in self.targets for name in (new_missing|(legacy_missing|cpp_expiration_missing if target["language"]=="cpp" else set())|access_missing|policy_missing|metadata_missing|public_missing|copy_missing|state_missing|basic_missing|policy_tail_missing|logging_missing|(conditional_missing if target["language"]=="java" else set())|(checksum_missing if target["language"]=="java" else set())|{"ceph_config_lifecycle_noncurrent_transition"}|expected_kms_prerequisites()|expected_acl_metadata_prerequisites()|expected_acl_identity_prerequisites()|{"ceph_policy_deny_acl_v"+str(version) for version in (1,2)}|{"ceph_policy_list_v"+str(version)+suffix for version in (1,2) for suffix in ("","_another")})}
@@ -768,8 +784,13 @@ class SdkIntegrationTest(unittest.TestCase):
             format_missing = {"s3_logging_configuration_"+name for name in ("simple", "delivery_time", "event_time")}
             expected_missing.update((target["id"], name) for target in self.targets for name in helper_missing)
             expected_missing.update((target["id"], name) for target in self.targets if target["language"] == "java" for name in format_missing)
+            expected_missing.update((target["id"], name) for target in self.targets for name in corrected_requirements)
             self.assertEqual({(row["target"],row["case"]) for row in missing}, expected_missing)
             for row in missing:
+                if row["case"] in corrected_requirements and not (row["target"]=="java" and row["case"].startswith("ceph_conditional_versions_bulk_")):
+                    self.assertEqual(row["reason"],"missing_prerequisites")
+                    self.assertEqual(row["missing_requirements"],[corrected_requirements[row["case"]]])
+                    continue
                 if row["case"] in helper_missing:
                     self.assertEqual(row["reason"], "missing_prerequisites")
                     self.assertEqual(row["missing_requirements"], ["workload.object_lock_cleanup_authorized=true"])
@@ -827,7 +848,7 @@ class SdkIntegrationTest(unittest.TestCase):
                     self.assertEqual(row["reason"],"unsupported_operations");self.assertEqual(row["missing_operations"],["identity_alt"])
                 else:
                     self.assertEqual(row["reason"],"missing_prerequisites")
-                    self.assertEqual(row["missing_requirements"],["workload.identities.main.canonical_id","workload.identities.main.display_name"] if row["case"].startswith("ceph_acl_") else ["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"])
+                    self.assertEqual(row["missing_requirements"],["workload.identities.main.canonical_id"] if row["case"].startswith("ceph_acl_") else ["workload.storage_classes: at least 3"] if row["case"]=="ceph_config_lifecycle_noncurrent_transition" else ["workload.kms_key_id"])
             self.assertEqual([bucket["Name"] for bucket in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_partial_capabilities_keep_real_sdk_copy_replacement_checks(self):

@@ -1,7 +1,7 @@
 """Translate bucket lifecycle assertions in fresh owned buckets through genuine SDK operations."""
 import uuid
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
-from .scenarios import Suite,assert_equal
+from .scenarios import Suite,assert_equal,require_ok
 from .suites import case,run_cases,CEPH
 
 def rejected(p,response,status,code=None):
@@ -13,6 +13,10 @@ def rejected(p,response,status,code=None):
 
 def lifecycle(p,mode):
     """Provision a fresh bucket and exercise actual head, deletion or missing-key responses; always clean the owned scope."""
+    if mode=="head" and p.ctx.object_namespace:
+        result=require_ok(p.ctx.worker.call({"op":"bucket_head"}))
+        assert_equal(result["status_code"],200)
+        return {"configured_bucket":p.ctx.worker.info.get("bucket"),"read_only":True}
     with BucketScope(p) as bucket:
         if mode=="head":assert_equal(bucket.call("bucket_head")["status_code"],200)
         elif mode=="delete_nonempty":

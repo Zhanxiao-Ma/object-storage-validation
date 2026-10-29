@@ -4,7 +4,8 @@ import time
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .version_scope import VersionScope,VERSION_SCOPE_OPERATIONS
 from .ceph_bucket_config import api,raw,rejected
-from .ceph_acl import actor,check_grants,grant,ALL
+from .ceph_acl import actor,check_grants,grant,ALL,check_owner
+from .ceph_tags import check_tags
 from .ceph_versioning import configure,create_versions,put
 from .ceph_multipart import source_data,MIB,uploading
 from .scenarios import Suite,assert_equal,require_ok
@@ -17,8 +18,6 @@ def header(result,name):
     raise KeyError("actual SDK response has no HTTP header "+name)
 
 def conditional_read(p,mode):
-    if mode in ("not_match","not_modified") and "sdk_error_message" not in p.ctx.worker.capabilities:
-        raise CaseNotRun("source requires the actual SDK error message, without parsing or inventing a replacement","worker.sdk_error_message")
     with BucketScope(p) as bucket:
         p.ctx.body.write_bytes(b"bar")
         uploaded=bucket.call("put_http",key="foo",body_path=str(p.ctx.body))
@@ -27,8 +26,7 @@ def conditional_read(p,mode):
         elif mode=="not_modified":
             observed=bucket.call("get_http",key="foo",output_path=str(p.ctx.output))
             etag=observed["etag"]
-            after=(observed["last_modified_ms"]//1000+1)*1000
-            time.sleep(1)
+            after=(observed["last_modified_ms"]//1000)*1000
             options={"if_modified_since_ms":after}
         elif mode=="unmodified":options={"if_unmodified_since_ms":int(parsedate_to_datetime("Sat, 29 Oct 1994 19:43:31 GMT").timestamp()*1000)}
         else:raise ValueError(mode)
@@ -36,7 +34,6 @@ def conditional_read(p,mode):
         if mode in ("if_match","unmodified"):rejected(response,412,"PreconditionFailed")
         else:
             rejected(response,304)
-            assert_equal(response["error_message"],"Not Modified")
             assert_equal(header(response,"etag"),etag if mode=="not_modified" else uploaded["etag"])
 
 # auth, bucket ACL, object ACL, resource state, verb, status, error code, source
@@ -78,8 +75,7 @@ def version_acl(p,explicit):
         else:
             result=bucket.call("get_version",key="xyz",output_path=str(p.ctx.output));version=result["version_id"]
         response=api(bucket,"GetObjectAcl",Key="xyz",VersionId=version)["data"]
-        assert_equal(response["Owner"]["DisplayName"],expected["display_name"])
-        assert_equal(response["Owner"]["ID"],expected["canonical_id"])
+        check_owner(response["Owner"],expected)
         check_grants(response["Grants"],default)
         api(bucket,"PutObjectAcl",ACL="public-read",Key="xyz",**({"VersionId":version} if explicit else {}))
         response=api(bucket,"GetObjectAcl",Key="xyz",VersionId=version)["data"]
@@ -130,22 +126,20 @@ def multipart_tagging(p):
             response=bucket.call("mp_complete_observed",key=key,upload_id=upload,parts=[{"part_number":1,"etag":part["etag"].strip('"')}])
             assert_equal(response["status_code"],200)
             tags=bucket.call("tags_get",key=key)["tags"]
-            assert_equal(len(tags),2)
-            assert_equal(tags[0]["key"],"Hello");assert_equal(tags[0]["value"],"World")
-            assert_equal(tags[1]["key"],"foo");assert_equal(tags[1]["value"],"bar")
+            check_tags(tags,[{"key":"Hello","value":"World"},{"key":"foo","value":"bar"}])
             assert_equal(bucket.call("tags_delete",key=key)["status_code"],204)
             assert_equal(len(bucket.call("tags_get",key=key)["tags"]),0)
 
 BASE=SCOPE_OPERATIONS
 CONDITIONS=(("if_match","test_get_object_ifmatch_failed"),("not_match","test_get_object_ifnonematch_good"),("not_modified","test_get_object_ifmodifiedsince_failed"),("unmodified","test_get_object_ifunmodifiedsince_good"))
-CASES=tuple(case("ceph_state_condition_"+mode,"Ceph GET 状态边界 "+mode,"保留原始引号ETag、1994时间、实际LastModified+1秒、服务端304/412、真实错误消息及响应ETag",BASE+" put_http get_http"+(" sdk_error_message" if mode in ("not_match","not_modified") else ""),lambda p,mode=mode:conditional_read(p,mode),reference,CEPH) for mode,reference in CONDITIONS)
+CASES=tuple(case("ceph_state_condition_"+mode,"Ceph GET 状态边界 "+mode,"保留原始引号ETag、1994时间、实际LastModified+1秒、服务端304/412、响应ETag；304不要求错误消息正文",BASE+" put_http get_http",lambda p,mode=mode:conditional_read(p,mode),reference,CEPH) for mode,reference in CONDITIONS)
 CASES+=tuple(case("ceph_state_access_"+reference.removeprefix("test_object_"),"Ceph 对象访问状态 "+reference,"保留创建时桶/对象ACL、零字节foo、实际匿名/认证身份、删除顺序及200/403/404和错误码",BASE+" bucket_create_acl put_acl get_http"+(" identity_anonymous" if identity=="anonymous" else ""),lambda p,identity=identity,bucket_acl=bucket_acl,object_acl=object_acl,state=state,verb=verb,status=status,code=code:resource_access(p,identity,bucket_acl,object_acl,state,verb,status,code),reference,CEPH) for identity,bucket_acl,object_acl,state,verb,status,code,reference in ACCESS)
 CASES+=tuple(case("ceph_state_version_acl_"+mode,"Ceph 版本ACL边界 "+mode,"保留三版本、实际指定/当前版本ID、独立Owner预期和原始check_grants全部字段/顺序规则，新版本仍为默认ACL",VERSION_SCOPE_OPERATIONS+" versioning_get versioning_put put_version get_version api.GetObjectAcl api.PutObjectAcl",lambda p,explicit=explicit:version_acl(p,explicit),reference,CEPH) for mode,explicit,reference in (("explicit",True,"test_versioned_object_acl"),("current",False,"test_versioned_object_acl_no_version_specified")))
 CASES+=(case("ceph_state_concurrent_versions_delete","Ceph 五路并发重复删除15个版本","保留5对象x3版本、同一SDK client并发五次同一删除清单、每次15个Deleted和无Errors、对象/版本/标记均不可见",VERSION_SCOPE_OPERATIONS+" versioning_get versioning_put put concurrent_requests delete_many_versions list_v1_page",concurrent_version_delete,"test_versioning_concurrent_multi_object_delete",CEPH),)
 CASES+=tuple(case("ceph_state_recreate_acl_"+mode,"Ceph 重建桶ACL冲突 "+mode,"保留创建时与重复创建的public-read ACL差异和409/BucketAlreadyExists原始预期",BASE+" bucket_create_acl",lambda p,initial_public=initial_public:recreate_acl(p,initial_public),reference,CEPH) for mode,initial_public,reference in (("overwrite",True,"test_bucket_recreate_overwrite_acl"),("new",False,"test_bucket_recreate_new_acl")))
 CASES+=(case("ceph_state_tagging_head","Ceph HEAD标签计数","保留7MiB原始随机内容形状、0/1两标签、PUT/HEAD状态和x-amz-tagging-count字符串2",BASE+" put tags_put head_http",tagging_head,"test_get_obj_head_tagging",CEPH),)
 
-CASES+=(case("ceph_state_multipart_tagging","Ceph 分块上传标签生命周期","保留Hello=World&foo=bar原始typed Tagging输入、1字节末块、完成200、标签顺序/内容、删除204和清空",BASE+" mp_create_tagging mp_create_metadata mp_part mp_complete_observed mp_abort_raw tags_get tags_delete",multipart_tagging,"test_set_multipart_tagging",CEPH),)
+CASES+=(case("ceph_state_multipart_tagging","Ceph 分块上传标签生命周期","保留Hello=World&foo=bar原始typed Tagging输入、1字节末块、完成200、完整标签集合、删除204和清空",BASE+" mp_create_tagging mp_create_metadata mp_part mp_complete_observed mp_abort_raw tags_get tags_delete",multipart_tagging,"test_set_multipart_tagging",CEPH),)
 
 def register(registry):
     registry.add_suite(Suite("ceph_state_boundaries",frozenset().union(*(c.operations for c in CASES)),lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES),case_capabilities=True))

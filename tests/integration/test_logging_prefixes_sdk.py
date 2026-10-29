@@ -72,7 +72,8 @@ class RelatedNamespaceBoundaryTest(unittest.TestCase):
     """Validate internal ownership namespace inputs without substituting SDK/storage behavior."""
     def test_only_internal_uuid_base_and_original_five_indices_are_accepted(self):
         """Pass valid internal UUID bases and invalid external bases/out-of-range/bool indices; expect exactly five sibling names or rejection before any SDK request."""
-        p=None;base='osv-'+uuid.UUID(int=2).hex
+        from types import SimpleNamespace
+        p=SimpleNamespace(ctx=SimpleNamespace(object_namespace=False));base='osv-'+uuid.UUID(int=2).hex
         self.assertEqual([RelatedBucketScope(p,base,index).name for index in range(5)],SOURCES)
         for bad_base,index in [('production',0),(base+'0',0),(base,-1),(base,5),(base,True)]:
             with self.subTest(base=bad_base,index=index),self.assertRaises(ValueError):RelatedBucketScope(p,bad_base,index)

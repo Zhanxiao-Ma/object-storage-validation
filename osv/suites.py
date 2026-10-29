@@ -12,7 +12,7 @@ from .scenarios import Profile, Suite, assert_equal, require_ok
 
 JUICE = "https://github.com/juicedata/juicefs/blob/29c60bbbeea410c6c0cb7a49540044e0c099dffb/cmd/objbench.go"
 CEPH = "https://github.com/ceph/s3-tests/blob/5b3987116eca0b4b8fa57d6b10f3db57bab196b6/s3tests/functional/test_s3.py"
-CATALOG_VERSION = 31
+CATALOG_VERSION = 37
 
 
 @dataclass(frozen=True)
@@ -142,6 +142,7 @@ def run_cases(ctx, cases):
                             'error':'This case tests bucket state/configuration; bucket_management=false protects the configured bucket'})
             continue
         required=case.operations-FIXTURE_OPERATIONS if prefix_mode else case.operations
+        if prefix_mode and case.name=="ceph_bucket_head":required=frozenset({"bucket_head"})
         missing=required-ctx.worker.capabilities
         if missing:
             results.append({"case":case.name,"status":"not_run","severity":case.severity,
@@ -154,13 +155,22 @@ def run_cases(ctx, cases):
         try:
             behavior = case.execute(Probe(scoped))
             result = {"case": case.name, "status": "warning" if isinstance(behavior, dict) and behavior.get("source_matches") is False and case.severity == "warning" else "pass"}
+            if isinstance(behavior,dict) and "compatibility_matches" in behavior:
+                result["status"]="pass" if behavior["compatibility_matches"] is True else "fail"
             if behavior is not None:
                 result["behavior"] = str(behavior)
                 if isinstance(behavior,dict):result["evidence"]=behavior
         except CaseNotRun as error:
             result={"case":case.name,"status":"not_run","reason":"missing_prerequisites","missing_requirements":error.requirements,"error":str(error)}
         except Exception as error:
-            result = {"case": case.name, "status": "warning" if case.severity == "warning" else "fail", "error": str(error)}
+            result = {"case": case.name, "status": "warning" if case.severity == "warning" else "fail", "error": str(error), "failure_category":"assertion_mismatch" if isinstance(error,AssertionError) else "execution_error"}
+            observed=error
+            while observed is not None:
+                if hasattr(observed,"evidence"):result["evidence"]=observed.evidence
+                if hasattr(observed,"failure_category"):result["failure_category"]=observed.failure_category
+                observed=observed.__cause__
+        if result["status"] in ("fail","warning"):
+            result.setdefault("failure_category","assertion_mismatch")
         result["severity"]=case.severity
         if prefix_mode:
             result['isolation']={'kind':'object_prefix','bucket':ctx.worker.info.get('bucket'),

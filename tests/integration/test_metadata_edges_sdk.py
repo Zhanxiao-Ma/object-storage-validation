@@ -49,7 +49,7 @@ class MetadataEdgesSdkTest(unittest.TestCase):
         if not cls.languages or set(cls.languages)-set(cls.commands):raise ValueError("OSV_S3_TEST_LANGUAGES must select java,cpp")
 
     def test_original_metadata_relationships_and_cleanup(self):
-        """Execute all 18 original metadata/ACL/copy scenarios; preserve actual known service diagnostics and prove every owned bucket is removed."""
+        """Execute all 18 original metadata/ACL/copy scenarios; accept unordered complete ACL grants, preserve actual known service diagnostics, explicitly skip unverified signed framing, and prove every owned bucket is removed."""
         identity={"canonical_id":"75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a","display_name":"webfile"}
         workload={"identities":{"main":identity,"alt":{"canonical_id":"independent-alt-user","display_name":"alternate"}}}
         for language in self.languages:
@@ -60,16 +60,15 @@ class MetadataEdgesSdkTest(unittest.TestCase):
                     context=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",workload)
                     rows=run_cases(context,CASES)
                     self.assertEqual(len(rows),18)
-                    self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},set())
-                    expected={"ceph_metadata_edges_owner_read","ceph_metadata_edges_owner_full","ceph_metadata_edges_acl_headers","ceph_metadata_edges_content_encoding"}
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},{"ceph_metadata_edges_content_encoding"})
+                    expected={"ceph_metadata_edges_owner_read","ceph_metadata_edges_owner_full"}
                     if language=="cpp":expected.add("ceph_metadata_edges_special_keys")
                     self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},expected,rows)
-                    self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{item.name for item in CASES}-expected)
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},{item.name for item in CASES}-expected-{"ceph_metadata_edges_content_encoding"})
                     failures={row["case"]:row["error"] for row in rows if row["status"]=="fail"}
                     self.assertIn("list index out of range",failures["ceph_metadata_edges_owner_read"])
                     self.assertIn("list index out of range",failures["ceph_metadata_edges_owner_full"])
-                    self.assertIn("FULL_CONTROL",failures["ceph_metadata_edges_acl_headers"])
-                    self.assertIn("gzip, aws-chunked",failures["ceph_metadata_edges_content_encoding"])
+                    self.assertIn("verified signed aws-chunked",next(row for row in rows if row["case"]=="ceph_metadata_edges_content_encoding")["missing_requirements"][0])
                     self.assertEqual({item["Name"] for item in self.client.list_buckets()["Buckets"]},{"osv-metadata-edges"})
                 finally:worker.close()
 

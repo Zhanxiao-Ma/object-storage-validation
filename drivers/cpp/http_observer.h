@@ -23,6 +23,7 @@ public:
     std::shared_ptr<Aws::Http::HttpResponse> MakeRequest(const std::shared_ptr<Aws::Http::HttpRequest>& request,
         Aws::Utils::RateLimits::RateLimiterInterface* readLimiter=nullptr,
         Aws::Utils::RateLimits::RateLimiterInterface* writeLimiter=nullptr) const override {
+        osv_response_body::capture_request(*request);
         auto response=Aws::Http::CurlHttpClient::MakeRequest(request,readLimiter,writeLimiter);
         osv_response_body::capture(response);
         if(osv_http_destination && response && static_cast<int>(response->GetResponseCode())>0) {

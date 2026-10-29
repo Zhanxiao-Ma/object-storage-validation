@@ -1,3 +1,4 @@
+#include <aws/core/utils/HashingUtils.h>
 #include "file_operations.h"
 #include "stream_io.h"
 #include "protocol_input.h"
@@ -42,6 +43,21 @@
 #include <string>
 
 using json = nlohmann::json;
+
+/** Test an empty completion document rather than a missing HTTP body.
+ * Keep normal SDK serialization, signing and transport; emit an explicit XML root
+ * only for the empty-parts protocol vector that the generated model omits.
+ */
+class CompletionDocumentRequest : public Aws::S3::Model::CompleteMultipartUploadRequest {
+public:
+    explicit CompletionDocumentRequest(bool empty) : empty_(empty) {}
+    Aws::String SerializePayload() const override {
+        if (empty_) return "<CompleteMultipartUpload xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\"/>";
+        return Aws::S3::Model::CompleteMultipartUploadRequest::SerializePayload();
+    }
+private:
+    bool empty_;
+};
 
 /** Supply literal per-request encryption headers through the public SDK API, avoiding model MD5 autofill. */
 template<class Request> static void encryption_headers(Request& request,const json& q) {
@@ -186,6 +202,8 @@ public:
                 deletion.AddObjects(id);
             }
             if(q.contains("quiet"))deletion.SetQuiet(q.at("quiet").get<bool>());request.SetDelete(deletion);
+            // General-purpose S3 DeleteObjects requires MD5 of the final SDK XML payload.
+            request.SetAdditionalCustomHeaderValue("Content-MD5",Aws::Utils::HashingUtils::Base64Encode(Aws::Utils::HashingUtils::CalculateMD5(request.SerializePayload())));
             json observed;HttpObservationScope observation(&observed,true);
             auto outcome=client->DeleteObjects(request);checked(outcome);
             if(observed.value("xml_root",std::string())!="DeleteResult") throw std::runtime_error("actual response is not a valid DeleteResult");
@@ -443,7 +461,8 @@ public:
             auto outcome = client->UploadPart(request); checked(outcome);
             http["etag"]=std::string(outcome.GetResult().GetETag().c_str());return osv_checksums::observe(http,outcome.GetResult());
         } else if (op == "mp_complete" || op == "mp_complete_observed" || op == "mp_complete_empty" || op == "mp_complete_sse_c") {
-            Aws::S3::Model::CompleteMultipartUploadRequest request;
+            if(op=="mp_complete_empty" && !q.value("parts",json::array()).empty()) throw std::runtime_error("mp_complete_empty requires empty parts");
+            CompletionDocumentRequest request(op=="mp_complete_empty");
             request.SetBucket(bucket); request.SetKey(key);
             if(op=="mp_complete_sse_c") encryption_headers(request,q);
             request.SetUploadId(q.at("upload_id").get<std::string>());
@@ -503,6 +522,7 @@ int main() {
 #endif
                     for(const auto& api:osv_bucket_api::capabilities())response["capabilities"].push_back(api);
                     response["header_request_timeout_ms"]=env("OSV_HEADER_REQUEST_TIMEOUT_MS","30000");
+                    response["list_url_encoding"]="encoded";
                     response["endpoint"] = env("OSV_ENDPOINT"); response["bucket"] = env("OSV_BUCKET");
                     response["region"] = env("OSV_REGION", "us-east-1"); response["retries"] = env("OSV_RETRIES", "0");
                     response["connections_per_worker"] = env("OSV_CONNECTIONS", "16");

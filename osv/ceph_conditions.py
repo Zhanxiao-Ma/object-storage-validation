@@ -12,7 +12,7 @@ def conditional(p,field,succeeds):
     head=p.call("head")
     tag='"'+head["etag"].strip('"')+'"'
     value=tag if field=="if_match" and succeeds or field=="if_none_match" and not succeeds else '"ABCORZ"'
-    if field=="if_modified_since_ms":value=PAST if succeeds else (head["last_modified_ms"]//1000+1)*1000
+    if field=="if_modified_since_ms":value=PAST if succeeds else (head["last_modified_ms"]//1000)*1000
     if field=="if_unmodified_since_ms":value=FUTURE if succeeds else PAST
     p.ctx.output.unlink(missing_ok=True)
     response=p.raw("get_conditional",output_path=str(p.ctx.output),**{field:value})

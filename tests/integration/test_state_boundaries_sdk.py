@@ -66,7 +66,7 @@ class StateBoundariesSdkTest(unittest.TestCase):
                     ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                     results=run_cases(ctx,CASES)
                     self.assertEqual(len(results),22)
-                    expected_fail={"ceph_state_condition_not_match","ceph_state_condition_not_modified","ceph_state_access_raw_get_object_acl","ceph_state_recreate_acl_overwrite","ceph_state_recreate_acl_new"}
+                    expected_fail={"ceph_state_access_raw_get_object_acl","ceph_state_recreate_acl_overwrite","ceph_state_recreate_acl_new"}
                     expected_not_run={"ceph_state_version_acl_explicit","ceph_state_version_acl_current"}
                     self.assertEqual({row["case"] for row in results if row["status"]=="fail"},expected_fail,results)
                     self.assertEqual({row["case"] for row in results if row["status"]=="not_run"},expected_not_run,results)
@@ -75,7 +75,7 @@ class StateBoundariesSdkTest(unittest.TestCase):
                 self.assertEqual([row["Name"] for row in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 
     def test_version_acl_uses_independent_identity_expectations(self):
-        """Run both version ACL source functions with fixed independently configured identity metadata; expect original field/order differences surfaced and complete version cleanup."""
+        """Run both version ACL source functions with fixed independently configured identity metadata; expect current-version ACL success, explicit-version grant-count failure and complete version cleanup."""
         selected=[case for case in CASES if case.name.startswith("ceph_state_version_acl_")]
         identities={"main":{"canonical_id":"75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a","display_name":"webfile"}}
         for target in self.targets:
@@ -85,8 +85,9 @@ class StateBoundariesSdkTest(unittest.TestCase):
                     ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{"identities":identities})
                     results=run_cases(ctx,selected)
                     self.assertEqual(len(results),2)
-                    self.assertEqual({row["case"] for row in results if row["status"]=="fail"},{item.name for item in selected},results)
-                    self.assertTrue(all("webfile" in row["error"] for row in results),results)
+                    self.assertEqual({row["case"] for row in results if row["status"]=="fail"},{"ceph_state_version_acl_explicit"},results)
+                    self.assertEqual({row["case"] for row in results if row["status"]=="pass"},{"ceph_state_version_acl_current"})
+                    self.assertIn("1 != 2",next(row["error"] for row in results if row["status"]=="fail"))
                 finally:worker.close()
                 self.assertEqual([row["Name"] for row in self.client.list_buckets()["Buckets"]],["osv-sdk-integration"])
 

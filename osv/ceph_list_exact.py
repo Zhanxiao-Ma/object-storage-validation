@@ -1,6 +1,7 @@
 """Translate exact Ceph V1/V2 listing vectors in genuinely empty owned buckets."""
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .scenarios import Suite,assert_equal
+from .ceph_bucket_config import rejected
 from .suites import case,run_cases,CEPH
 
 OPS={1:"list_v1_page",2:"list_v2_observed"}
@@ -38,21 +39,87 @@ VECTORS=(
 def populate(bucket,names):
     for name in names:bucket.put(name,name.encode())
 
+class ListSdkBoundaryError(AssertionError):
+    """Separate a correct captured wire delimiter from an altered SDK getter without manufacturing a passing value."""
+    def __init__(self,wire,typed):
+        self.failure_category="sdk_response_decoding"
+        self.evidence={"wire_delimiter":wire,"sdk_delimiter":typed}
+        super().__init__("LIST delimiter preserved in XML but changed by SDK: "+repr(self.evidence))
+
+
+def check_wire_delimiter(result,expected):
+    if "response_body_b64" not in result:return
+    from xml.etree import ElementTree as ET
+    from .ceph_response_bodies import body
+    root=ET.fromstring(body(result));node=root.find("./{*}Delimiter")
+    wire=None if node is None else node.text or ""
+    if wire==expected and result.get("delimiter")!=expected:raise ListSdkBoundaryError(wire,result.get("delimiter"))
+
+class ListContractError(AssertionError):
+    """Keep LIST failures strict while separating payload content, wire fields and SDK decoding evidence."""
+    def __init__(self, stage, actual, expected, result):
+        self.failure_category = "assertion_mismatch"
+        self.evidence = {"assertion_stage": stage, "actual": actual, "expected": expected,
+                         **{key: result[key] for key in ("request_query", "response_body_b64", "response_body_capture_error", "status_code") if key in result}}
+        super().__init__(f"LIST {stage}: {actual!r} != {expected!r}")
+
+def check_list_field(result, name, expected):
+    """Require the documented response field; preserve wire evidence instead of tolerating absent values."""
+    actual = result.get(name)
+    if actual != expected:
+        raise ListContractError("response_field." + name, actual, expected, result)
+
 def checked_page(bucket,version,options,keys=None,prefixes=None,checks=None,absent=()):
-    result=bucket.call(OPS[version],**options)
+    capture="response_body_capture" in bucket.probe.ctx.worker.capabilities
+    result=bucket.call(OPS[version],**options,**({"capture_response_body":True} if capture else {}))
+    if capture and options.get("delimiter") in (" ","\n"):check_wire_delimiter(result,options["delimiter"])
     if keys is not None:assert_equal(("keys",result["keys"]),("keys",[bucket.key(key) for key in keys]))
     if prefixes is not None:assert_equal(("common_prefixes",result["common_prefixes"]),("common_prefixes",[bucket.key(key) for key in prefixes]))
     for name,value in (checks or {}).items():
         if name=='prefix' or name in ('marker','start_after') and value:value=bucket.key(value)
-        assert_equal((name,result.get(name)),(name,value))
+        check_list_field(result,name,value)
     for name in absent:assert_equal((name,name in result["fields"]),(name,False))
     return result
+
+
+def encoded_page(bucket,version,options,keys,prefixes,checks):
+    """Check captured URL-encoded XML against physical keys and independently check the declared SDK representation."""
+    import re
+    from urllib.parse import unquote,unquote_plus
+    from xml.etree import ElementTree as ET
+    from .ceph_response_bodies import body
+    from .suites import CaseNotRun
+    representation=bucket.probe.ctx.worker.info.get('list_url_encoding')
+    if representation not in ('decoded','encoded'):
+        raise CaseNotRun('SDK has not declared LIST URL decoding semantics','SDK list_url_encoding metadata')
+    result=bucket.call(OPS[version],**options,capture_response_body=True)
+    root=ET.fromstring(body(result))
+    assert_equal(root.tag.rsplit('}',1)[-1],'ListBucketResult')
+    def texts(path):return [node.text or '' for node in root.findall(path)]
+    def decode(value):
+        if re.search(r'[^A-Za-z0-9_.~/%+-]|%(?![0-9a-fA-F]{2})',value):
+            raise AssertionError('LIST XML contains an invalid URL-encoded value: '+repr(value))
+        return unquote_plus(value,encoding='utf-8',errors='strict')
+    assert_equal(texts('./{*}EncodingType'),['url'])
+    physical_keys=[bucket.key(unquote(value)) for value in keys]
+    physical_prefixes=[bucket.key(unquote(value)) for value in prefixes]
+    wire_keys=texts('./{*}Contents/{*}Key');wire_prefixes=texts('./{*}CommonPrefixes/{*}Prefix')
+    assert_equal([decode(value) for value in wire_keys],physical_keys)
+    assert_equal([decode(value) for value in wire_prefixes],physical_prefixes)
+    assert_equal([decode(value) for value in texts('./{*}Prefix')],[bucket.key(options.get('prefix',''))])
+    wire_delimiter=texts('./{*}Delimiter')
+    assert_equal([decode(value) for value in wire_delimiter],[checks['delimiter']])
+    assert_equal(result['keys'],physical_keys if representation=='decoded' else wire_keys)
+    assert_equal(result['common_prefixes'],physical_prefixes if representation=='decoded' else wire_prefixes)
+    assert_equal(result['delimiter'],checks['delimiter'] if representation=='decoded' else wire_delimiter[0])
+    return {'wire_encoding':'url','sdk_representation':representation,'keys':result['keys'],'common_prefixes':result['common_prefixes']}
 
 def vector(p,version,data):
     """Preserve source datasets and every explicit field assertion, without replacing empty request prefixes with a case namespace."""
     name,names,options,keys,prefixes,checks,absent=data
     with BucketScope(p) as bucket:
         populate(bucket,names)
+        if name=="encoding_basic":return encoded_page(bucket,version,options,keys,prefixes,checks)
         result=checked_page(bucket,version,options,keys,prefixes,checks,absent)
         if version==2 and name=="delimiter_basic":assert_equal(result["key_count"],3)
 
@@ -106,10 +173,14 @@ def marker_vector(p,data):
         populate(bucket,MARKERS);checked_page(bucket,version,options,keys,checks=checks)
 
 def token_vector(p,mode):
-    """Use real returned cursors, require exact echoed token and start-after fields, and preserve source empty-token behavior."""
+    """Use real returned cursors, require exact echoed token and start-after fields, and reject an explicitly empty cursor."""
     with BucketScope(p) as bucket:
         populate(bucket,MARKERS)
-        if mode=="empty":checked_page(bucket,2,{"token":""},MARKERS,checks={"token":"","truncated":False});return
+        if mode=="empty":
+            # A continuation token is an opaque service-issued cursor; the empty
+            # string is not equivalent to omitting it (AWS returns InvalidArgument).
+            rejected(bucket.raw(OPS[2],token=""),400,"InvalidArgument")
+            return
         options={"max_keys":1}
         if mode=="both":options["start_after"]="bar"
         first=bucket.call(OPS[2],**options)
@@ -117,14 +188,16 @@ def token_vector(p,mode):
         options={"token":first["next_token"]}
         if mode=="both":options["start_after"]="bar"
         result=checked_page(bucket,2,options,["foo","quxx"] if mode=="both" else ["baz","foo","quxx"],checks={"token":first["next_token"],"truncated":False})
-        if mode=="both":assert_equal(result["start_after"],bucket.key("bar"))
+        if mode=="both":check_list_field(result,"start_after",bucket.key("bar"))
 
 def owner(p,mode):
     """Assert actual decoded Owner presence for true, false and omitted FetchOwner requests."""
     with BucketScope(p) as bucket:
         populate(bucket,PREFIX);options={} if mode=="defaultempty" else {"fetch_owner":mode=="notempty"}
-        result=bucket.call(OPS[2],**options)
-        assert_equal(("owner_present","owner" in result["objects"][0]),("owner_present",mode=="notempty"))
+        result=bucket.call(OPS[2],**options,capture_response_body=True)
+        actual="owner" in result["objects"][0]
+        if actual != (mode=="notempty"):
+            raise ListContractError("response_field.Owner",actual,mode=="notempty",result)
 
 def basic_count(p):
     """Preserve the source five numeric object names and assert the actual KeyCount field."""
@@ -145,7 +218,7 @@ def boundary_special(p):
         checked_page(bucket,1,{"delimiter":"/"},["1999","1999#","1999+","2000"],["0/"],{"delimiter":"/"})
 
 def make_case(name,version,execute,reference,needs_put=True):
-    return case("ceph_exact_list_v"+str(version)+"_"+name,"Ceph 原始 LIST V"+str(version)+" "+name,"独立桶中的原始参数、键/公共前缀、字段存在性及源断言均准确",SCOPE_OPERATIONS+" "+OPS[version]+(" put" if needs_put else ""),execute,reference,CEPH)
+    return case("ceph_exact_list_v"+str(version)+"_"+name,"Ceph 原始 LIST V"+str(version)+" "+name,"独立桶中的原始参数、键/公共前缀、字段存在性及源断言均准确",SCOPE_OPERATIONS+" "+OPS[version]+(" put" if needs_put else "")+(" response_body_capture" if name=="encoding_basic" else ""),execute,reference,CEPH)
 
 CASES=tuple(make_case(data[0],version,lambda p,version=version,data=data:vector(p,version,data),"test_bucket_list"+("v2" if version==2 else "")+"_"+data[0]) for version in (1,2) for data in VECTORS)
 CASES+=tuple(make_case("maxkeys_one" if one else "many",version,lambda p,version=version,one=one:many(p,version,one),"test_bucket_list"+("v2" if version==2 else "")+"_"+("maxkeys_one" if one else "many")) for version in (1,2) for one in (False,True))

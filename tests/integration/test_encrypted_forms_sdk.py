@@ -18,7 +18,7 @@ from sdk_fixtures import fixture_worker
 class EncryptedFormsSdkTest(unittest.TestCase):
     """Bind independently specified form policy/header oracles to real HTTP and genuine Java/C++ SDK readback."""
     def test_original_four_forms_and_sdk_readback(self):
-        """Send all four real production forms; expect source ordered filenames/HMAC/encryption inputs, typed default configuration, actual GET bytes/headers and complete cleanup."""
+        """Send all four real production forms; expect scalar fields without filenames, ordered HMAC/encryption inputs, typed default configuration, actual GET bytes/headers and complete cleanup."""
         customer={"x-amz-server-side-encryption-customer-algorithm":"AES256","x-amz-server-side-encryption-customer-key":"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=","x-amz-server-side-encryption-customer-key-md5":"DWygnHRtgiJ77HCm+1rvHw=="}
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
             for mode in ("customer","kms","s3_default","kms_default"):
@@ -33,9 +33,9 @@ class EncryptedFormsSdkTest(unittest.TestCase):
                     post=next(x for x in server.requests if x[0]=="POST");http={k.lower():v for k,v in post[2].items()}
                     self.assertNotIn("authorization",http)
                     document=BytesParser(policy=default).parsebytes(("Content-Type: "+http["content-type"]+"\r\n\r\n").encode()+post[3]);parts=list(document.iter_parts());names=[x.get_param("name",header="content-disposition") for x in parts];fields={n:x.get_payload(decode=True) for n,x in zip(names,parts)}
-                    enc=customer if mode=="customer" else {"x-amz-server-side-encryption":"aws:kms","x-amz-server-side-encryption-aws-kms-key-id":"independent-kms"} if mode=="kms" else {}
+                    enc={k.removesuffix("-md5")+"-MD5" if k.endswith("-md5") else k:v for k,v in customer.items()} if mode=="customer" else {"x-amz-server-side-encryption":"aws:kms","x-amz-server-side-encryption-aws-kms-key-id":"independent-kms"} if mode=="kms" else {}
                     self.assertEqual(names,["key","AWSAccessKeyId","acl","signature","policy","Content-Type",*enc,"file"])
-                    self.assertEqual([x.get_filename() for x in parts],names)
+                    self.assertEqual([x.get_filename() for x in parts],[None]*(len(names)-1)+["file"])
                     for k,v in {"key":"foo.txt","AWSAccessKeyId":"local-test","acl":"private","Content-Type":"text/plain","file":"bar",**enc}.items():self.assertEqual(fields[k],v.encode())
                     self.assertEqual(fields["signature"],base64.b64encode(hmac.new(b"local-test",fields["policy"],hashlib.sha1).digest()))
                     conditions=json.loads(base64.b64decode(fields["policy"]))["conditions"]

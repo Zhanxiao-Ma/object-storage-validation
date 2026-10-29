@@ -15,7 +15,7 @@ class ReportPresentationTest(unittest.TestCase):
     """Read actual worker-to-report output rather than reconstructing result generation in tests."""
 
     def test_functional_report_keeps_verdicts_without_upstream_branding(self):
-        """Purpose: run genuine normal object IO; expect readable Chinese cases, 94 passes, one warning and one explicit unsupported lifecycle case, early warning/skip sections, folded complete results and the actual error code without upstream names, IDs or source links in Markdown."""
+        """Purpose: run genuine normal object IO; expect readable Chinese cases, 93 passes, one warning and two explicit unsupported cases (lifecycle and raw LIST capture), early warning/skip sections, folded complete results and the actual error code without upstream names, IDs or source links in Markdown."""
         with tempfile.TemporaryDirectory() as temporary:
             directory=Path(temporary);data=config(directory)
             data["workload"].update(mode="functional",profile="normal")
@@ -23,7 +23,7 @@ class ReportPresentationTest(unittest.TestCase):
             report=run(load_config(path),directory/"results")
             original=copy.deepcopy(report);text=markdown(report)
             self.assertEqual(report,original)
-            self.assertEqual(sum(r["status"]=="pass" for r in report["cases"]),94)
+            self.assertEqual(sum(r["status"]=="pass" for r in report["cases"]),93)
             self.assertEqual(sum(r["status"]=="warning" for r in report["cases"]),1)
             self.assertEqual(text,(directory/"results/report.md").read_text())
             self.assertIsNone(re.search(r"juicefs|ceph|objbench",text,re.IGNORECASE))
@@ -31,7 +31,7 @@ class ReportPresentationTest(unittest.TestCase):
             self.assertIn("Range 起点越界处理 | warning",text)
             self.assertIn("错误码 InvalidRange",text)
             self.assertIn("普通对象读写与元数据 | pass",text)
-            self.assertIn("| local | 96 | 94 | 0 | 1 | 1 |",text)
+            self.assertIn("| local | 96 | 93 | 0 | 1 | 2 |",text)
             self.assertNotIn("source_matches",text)
             self.assertLess(text.index("## 失败与警告"), text.index("<details>"))
             self.assertLess(text.index("## 未执行原因"), text.index("<details>"))

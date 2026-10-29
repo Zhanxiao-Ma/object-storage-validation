@@ -10,6 +10,18 @@ MD5="x-amz-server-side-encryption-customer-key-md5"
 HEADERS={ALGORITHM:"AES256",KEY:"pO3upElrwuEXSoFwCfnZPdSsmt/xWeFa0N9KgDijwVs=",MD5:"DWygnHRtgiJ77HCm+1rvHw=="}
 OTHER={ALGORITHM:"AES256",KEY:"6b+WOZ1T3cqZMxgThRcXAQBrS5mXKdDUphvpxptl9/4=",MD5:"arxBvwY2V4SiOne6yppVPQ=="}
 
+def rejected_customer_key(bucket,p,key,headers,expected):
+    """Require a real denial for a wrong key, with successful correct-key reads on both sides."""
+    bucket.call("get_sse_c",key=key,sse_headers=HEADERS,output_path=str(p.ctx.output))
+    assert_equal(p.ctx.output.read_bytes(),expected)
+    response=bucket.raw("get_sse_c",key=key,sse_headers=headers,output_path=str(p.ctx.output))
+    bucket.call("get_sse_c",key=key,sse_headers=HEADERS,output_path=str(p.ctx.output))
+    assert_equal(p.ctx.output.read_bytes(),expected)
+    assert_equal(response["ok"],False)
+    assert_equal(response.get("error_kind"),"sdk_error")
+    assert_equal((response.get("status_code"),response.get("error_code")) in
+                 {(400,"InvalidRequest"),(400,"InvalidArgument"),(400,"AccessDenied"),(403,"AccessDenied")},True)
+
 def encrypted(p,mode,size):
     """Use literal raw headers through genuine SDK signing/transport, then assert original bytes or actual service rejection; clean even failed assertions."""
     with BucketScope(p) as bucket:
@@ -35,7 +47,8 @@ def encrypted(p,mode,size):
                 operation="head_sse_c" if mode=="head" else "get_sse_c"
                 options={"key":"testobj","sse_headers":OTHER if mode=="other" else {}}
                 if mode!="head":options["output_path"]=str(p.ctx.output)
-                rejected(p,bucket.raw(operation,**options),400)
+                if mode=="other":rejected_customer_key(bucket,p,"testobj",OTHER,b"A"*size)
+                else:rejected(p,bucket.raw(operation,**options),400)
             if mode=="head":
                 assert_equal(bucket.call("head_sse_c",key="testobj",sse_headers=HEADERS)["status_code"],200)
             elif mode=="transfer":

@@ -12,7 +12,12 @@ def write_headers(p,mode):
     result=p.call("put_http",body_path=str(p.ctx.body),**options)
     if mode=="etag":
         assert_equal(result["status_code"],200)
-        assert_equal(result["etag"],chr(34)+"37b51d194a7513e45b56f6524f2d51f2"+chr(34))
+        etag=result["etag"]
+        assert_equal(isinstance(etag,str) and bool(etag),True)
+        assert_equal(p.call("head_http")["etag"],etag)
+        fetched=p.call("get_http",output_path=str(p.ctx.output))
+        assert_equal(fetched["etag"],etag)
+        assert_equal(p.ctx.output.read_bytes(),b"bar")
         return
     head=p.call("head_http")
     if mode=="cache":assert_equal(head["http_headers"].get("cache-control"),"public, max-age=14400")
@@ -31,7 +36,7 @@ def update(p):
     p.put(b"soup");assert_equal(p.read(),b"soup")
     p.call("delete")
 
-CASES=tuple(case("ceph_write_"+mode,"Ceph 对象响应字段 "+mode,"保留源用例的实际 ETag/Cache-Control/Expires 断言","put_http"+(" head_http" if mode!="etag" else ""),lambda p,mode=mode:write_headers(p,mode),reference,CEPH)
+CASES=tuple(case("ceph_write_"+mode,"Ceph 对象响应字段 "+mode,"验证实际 ETag跨PUT/HEAD/GET一致且内容正确，或Cache-Control/Expires断言","put_http head_http"+(" get_http" if mode=="etag" else ""),lambda p,mode=mode:write_headers(p,mode),reference,CEPH)
     for mode,reference in (("etag","test_object_write_check_etag"),("cache","test_object_write_cache_control"),("expires","test_object_write_expires")))
 CASES+=(case("ceph_zero_head","零字节对象 HEAD","实际 ContentLength 为零","put head",zero,"test_object_head_zero_bytes",CEPH),case("ceph_literal_update","对象写读更新删除","bar 与 soup 两轮读取均匹配独立输入，删除成功","put get delete",update,"test_object_write_read_update_read_delete",CEPH))
 

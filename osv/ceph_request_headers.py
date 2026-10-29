@@ -1,10 +1,11 @@
 """Translate pinned Ceph V4 before-call header vectors without replacing SDK signing or transport."""
 from contextlib import contextmanager
 from email.utils import formatdate
+from .rejected_mutation import check_rejected_mutation
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import rejected
-from .scenarios import Suite,require_ok
-from .suites import case,run_cases,CEPH
+from .scenarios import Suite,require_ok,assert_equal
+from .suites import case,run_cases,CaseNotRun,CEPH
 
 SOURCE=CEPH.rsplit("/",1)[0]+"/test_headers.py"
 
@@ -36,12 +37,26 @@ def creation(p,headers):
 
 def object_headers(p,headers,status=None,code=None,typed_length=False):
     """Use original empty successful helper PUT followed by plain bar PUT, or original bad bar PUT; retain genuine SDK/service errors."""
+    if "Authorization" in headers:
+        raise CaseNotRun("SDK signer replaces Authorization after this hook; an unsigned final request cannot be established", "verified post-signing or anonymous request transport")
+    if typed_length or "Content-Length" in headers:
+        raise CaseNotRun("SDK validates or reconstructs Content-Length; malformed final HTTP framing is not established", "verified raw Content-Length transport")
     with BucketScope(p) as bucket:
         p.ctx.body.write_bytes(b"" if status is None or typed_length else b"bar")
         options={"key":"foo","body_path":str(p.ctx.body),"wire_headers":headers}
         if typed_length:options.update(content_length=-1,checksum_when_required=True)
         response=bucket.raw("put_http",**options)
-        if status is None:
+        if status is None and headers.get("Expect")=="200":
+            # RFC 9110 permits rejecting an unknown expectation with 417.
+            # Both permitted responses must have the corresponding object state.
+            if response.get("ok"):
+                assert_equal(response.get("status_code"),200)
+                p.ctx.output.unlink(missing_ok=True)
+                bucket.call("get_http",key="foo",output_path=str(p.ctx.output))
+                assert_equal(p.ctx.output.read_bytes(),b"")
+            else:
+                check_rejected_mutation(bucket,"foo",response,417,None,operation="PutObject unknown Expect")
+        elif status is None:
             require_ok(response)
             bucket.put("foo",b"bar")
         else:rejected(response,status,code)
@@ -53,8 +68,17 @@ def ordinary_content_type(p,empty):
         bucket.call("put_metadata" if empty else "put",key="foo",body_path=str(p.ctx.body),**({"content_type":"","metadata":{}} if empty else {}))
 
 def bucket_headers(p,headers,status=None,code=None):
+    if "Authorization" in headers:
+        raise CaseNotRun("SDK signer replaces Authorization before transmission", "verified post-signing or anonymous request transport")
+    if status is not None and "Content-Length" in headers:
+        raise CaseNotRun("SDK does not establish the requested malformed HTTP length", "verified raw Content-Length transport")
     with creation(p,headers) as (bucket,response):
-        if status is None:require_ok(response)
+        if status is None and headers.get("Expect")=="200" and not response.get("ok"):
+            rejected(response,417)
+            gone=bucket.raw("bucket_head")
+            assert_equal(gone.get("ok"),False)
+            assert_equal(gone.get("status_code"),404)
+        elif status is None:require_ok(response)
         else:rejected(response,status,code)
 
 def acl_headers(p,bad):
@@ -98,7 +122,7 @@ BUCKET=(
  ("authorization_empty",{"Authorization":""},403,"AccessDenied","test_bucket_create_bad_authorization_empty"),
  ("authorization_none",{"Authorization":None},403,"AccessDenied","test_bucket_create_bad_authorization_none"),
 )
-CASES=tuple(case("ceph_header_object_"+name,"Ceph 原始对象请求头 "+name,"保留原始空对象/bar、请求头修改时机及实际 HTTP/错误码；SDK 后续重写保持可见",SCOPE_OPERATIONS+" put put_http wire_headers"+(" checksum_when_required" if name=="length_negative" else ""),lambda p,headers=headers,status=status,code=code,name=name:object_headers(p,headers,status,code,name=="length_negative"),reference,SOURCE) for name,headers,status,code,reference in OBJECT)
+CASES=tuple(case("ceph_header_object_"+name,"Ceph 原始对象请求头 "+name,"保留原始空对象/bar、请求头修改时机及实际 HTTP/错误码；SDK 后续重写保持可见",SCOPE_OPERATIONS+" put put_http wire_headers"+(" get_http" if name=="expect_mismatch" else "")+(" checksum_when_required" if name=="length_negative" else ""),lambda p,headers=headers,status=status,code=code,name=name:object_headers(p,headers,status,code,name=="length_negative"),reference,SOURCE) for name,headers,status,code,reference in OBJECT)
 CASES+=tuple(case("ceph_header_bucket_"+name,"Ceph 原始建桶请求头 "+name,"保留 Bucket-only 建桶、原始请求头及服务端预期，明确区分不确定创建结果",SCOPE_OPERATIONS+" api.GetBucketAcl wire_headers",lambda p,headers=headers,status=status,code=code:bucket_headers(p,headers,status,code),reference,SOURCE) for name,headers,status,code,reference in BUCKET)
 CASES+=tuple(case("ceph_header_type_"+mode,"Ceph ContentType "+mode,"保留原始单次 bar 写入及显式空字符串/未设置参数",SCOPE_OPERATIONS+(" put_metadata" if empty else " put"),lambda p,empty=empty:ordinary_content_type(p,empty),reference,SOURCE) for mode,empty,reference in (("empty",True,"test_object_create_bad_contenttype_empty"),("none",False,"test_object_create_bad_contenttype_none")))
 CASES+=tuple(case("ceph_header_dates_"+mode,"Ceph Date/X-Amz-Date "+mode,"保留源动态 HTTP 日期和空 Date 组合，仍使用官方 SDK 签名",SCOPE_OPERATIONS+" put put_http wire_headers",lambda p,empty=empty:dates(p,empty),reference,SOURCE) for mode,empty,reference in (("both",False,"test_object_create_date_and_amz_date"),("empty_date",True,"test_object_create_amz_date_and_no_date")))

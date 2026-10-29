@@ -157,9 +157,20 @@ def verify_builtin(ctx, name, request, result):
     return len(ctx.payload) if name == "put" else 0
 
 
+class SDKOperationError(RuntimeError):
+    """Preserve actual SDK status and error kind so reports separate access/transport failures from semantic assertions."""
+    def __init__(self,response):
+        super().__init__(str(response.get("error","SDK operation failed")))
+        self.evidence={k:response[k] for k in ("status_code","error_code","error_kind","request_id","http_headers","request_query","response_body_b64","response_body_capture_error") if k in response}
+        code=response.get("error_code");status=response.get("status_code")
+        self.failure_category=("access_rejected" if status==403 and code in ("AccessDenied","Forbidden","AllAccessDisabled") else
+            "throttled" if code in ("SlowDown","Throttling","TooManyRequests") else
+            "transport_or_sdk" if not status or status<200 else "service_error")
+
+
 def require_ok(response):
     if not response["ok"]:
-        raise RuntimeError(str(response.get("error", "SDK operation failed")))
+        raise SDKOperationError(response)
     return response
 
 

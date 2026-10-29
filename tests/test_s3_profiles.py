@@ -19,8 +19,8 @@ class GenericProfileTest(unittest.TestCase):
         def rows(profile):
             return [row for name in registry.profiles[profile].suites for row in registry.suites[name].catalog]
         generic = rows("complete")
-        self.assertEqual(len(generic), 780)
-        self.assertEqual(len({row["case"] for row in generic}), 780)
+        self.assertEqual(len(generic), 781)
+        self.assertEqual(len({row["case"] for row in generic}), 781)
         self.assertEqual(sum(row["case"].startswith("s3_lifecycle_configuration_") for row in generic), 9)
         self.assertEqual(sum(row["case"].startswith("s3_logging_configuration_") for row in generic), 4)
         names = {row["case"] for row in generic}
@@ -52,7 +52,7 @@ class GenericProfileTest(unittest.TestCase):
         names = {row["case"] for row in normal}
         self.assertEqual(len(normal), 96)
         self.assertEqual(len(names), 96)
-        self.assertEqual(len(complete), 780)
+        self.assertEqual(len(complete), 781)
         complete_by_name = {row["case"]: row for row in complete}
         self.assertTrue(names <= complete_by_name.keys())
         for row in normal:
@@ -100,7 +100,7 @@ class GenericProfileTest(unittest.TestCase):
             self.assertFalse([p for p in (directory / "objects").rglob("*") if p.is_file()])
 
     def test_generic_complete_real_runner_and_missing_worker(self):
-        """Run generic complete with actual local IO and then a missing executable; expect exact 780 catalog rows and explicit unavailable checks."""
+        """Run generic complete with actual local IO and then a missing executable; expect exact 781 catalog rows, explicit reference-worker metadata failures and unavailable checks."""
         for missing in (False, True):
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temp:
                 directory = Path(temp)
@@ -112,15 +112,15 @@ class GenericProfileTest(unittest.TestCase):
                 path.write_text(json.dumps(manifest))
                 report = run(load_config(path), directory / "results")
                 rows = [row for row in report["cases"] if row.get("suite")]
-                self.assertEqual(len(report["coverage"]["catalog"]), 780)
+                self.assertEqual(len(report["coverage"]["catalog"]), 781)
                 if missing:
                     self.assertEqual(rows, [])
                     self.assertEqual(report["cases"][0]["status"], "fail")
-                    self.assertIn("| local | 780 | 0 | 0 | 0 | 780 |", (directory / "results/report.md").read_text())
+                    self.assertIn("| local | 781 | 0 | 0 | 0 | 781 |", (directory / "results/report.md").read_text())
                 else:
-                    self.assertEqual(len(rows), 780)
+                    self.assertEqual(len(rows), 781)
                     self.assertEqual({row["case"] for row in rows}, {row["case"] for row in report["coverage"]["catalog"]})
-                    self.assertEqual([row["case"] for row in rows if row["status"] == "fail"], ["ceph_tail_unreadable"])
+                    self.assertEqual([row["case"] for row in rows if row["status"] == "fail"], ["ceph_write_etag","ceph_state_condition_not_match","ceph_state_condition_not_modified"])
                 self.assertEqual(report["samples"], [])
 
 

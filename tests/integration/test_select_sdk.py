@@ -163,7 +163,7 @@ class SelectSdkTest(unittest.TestCase):
                 self.assertTrue(result['ok'],result);self.assertFalse(any(event['type']=='End' for event in result['events']),result);self.assertEqual(path.read_bytes(),b'partial')
 
     def test_whole_original_csv_count_reads_its_actual_put_and_selects(self):
-        """Execute the unchanged 1234x10 source generator/upload/readback/count body; expect exact source SQL, real PUT bytes entering GET and owned cleanup, without claiming its defective helper checks count equality."""
+        """Execute the unchanged 1234x10 source generator/upload/readback/count body; expect exact source SQL, real PUT bytes entering GET and owned cleanup, with exact count equality enforced."""
         plan=[NO,OK,OK,(200,{},ECHO),stream(frame('Records',b'1234,\n'),frame('End')),OK,DEL,EMPTY,DEL,NO]
         for language in self.languages():
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,plan,'s3') as (worker,server):
@@ -205,11 +205,12 @@ class SelectSdkTest(unittest.TestCase):
         """Run both unchanged 10000x10 aggregate sources through actual SDKs; expect exact testbuck2 bucket/queries, actual upload→readback, both owned cleanups and no UUID substitution for the literal."""
         for language in self.languages():
             for name in ('test_column_sum_min_max','test_json_column_sum_min_max'):
-                responses=[stream(frame('Records',b'1,\n'),frame('End'))]*7+[stream(frame('Records',b'0,0,0\n'),frame('End'))]*2
+                responses=[stream(frame('Records',value),frame('End')) for value in (b'1,\n',b'1,\n',b'1,\n',b'1,\n',b'1,\n',b'10000,\n',b'10000,\n',b'0,0,0\n',b'0,0,0\n')]
                 plan=[NO,NO,OK,OK,(200,{},ECHO),NO,OK,OK,(200,{},ECHO)]+responses+[OK,DEL,EMPTY,DEL,NO]*2
                 with self.subTest(language=language,source=name),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,plan,'s3') as (worker,server):
                     server.fixtures=ProducerReplay(server.fixtures,server);p=context(worker,Path(temporary));p.ctx.workload['ceph_literal_bucket_names_authorized']=True
-                    execute(p,name);self.assertFalse(server.fixtures)
+                    with patch.object(source,'create_random_csv_object',return_value=('1,'*9+'1\n')*10000):execute(p,name)
+                    self.assertFalse(server.fixtures)
                     self.assertEqual(server.requests[0][:2],('HEAD','/testbuck2'))
                     writes=[(url,body) for method,url,headers,body in server.requests if method=='PUT' and url.split('?',1)[0].strip('/').count('/')==1]
                     self.assertEqual(len(writes),2);self.assertTrue(writes[1][0].startswith('/testbuck2/'));self.assertEqual(writes[0][1],writes[1][1])
@@ -266,14 +267,58 @@ class SelectSdkTest(unittest.TestCase):
                     candidate_deletes=[row for row in server.requests if row[0]=='DELETE' and row[1]==candidate]
                     self.assertEqual(len(candidate_deletes),1 if mode=='match' else 0)
                     if mode=='match':
-                        self.assertIn('Actual Select SDK transport failure',str(error.exception));self.assertNotIn('cleanup_pending',str(error.exception))
+                        self.assertEqual(error.exception.failure_category,'transport_or_sdk');self.assertTrue(error.exception.evidence.get('error_kind'));self.assertNotIn('cleanup_pending',str(error.exception))
                         acl_requests=[row[1] for row in server.requests if row[0]=='GET' and 'acl' in row[1]];self.assertEqual(len(acl_requests),2);self.assertNotEqual(acl_requests[0],acl_requests[1])
                     else:
                         self.assertIn(candidate.lstrip('/'),str(error.exception));self.assertIn('unknown bucket',str(error.exception));self.assertIn('cleanup_pending',str(error.exception))
 
-    def test_original_helpers_keep_non_equality_oracle_and_todo_not_run(self):
-        """Prove original unequal nonempty values still pass helper, empty nonempty fails, and immediate-return TODO cannot be counted as a service pass."""
-        source.s3select_assert_result('wrong','right')
+    def test_negative_query_requires_actual_rejection_not_error_shaped_records(self):
+        """Run the real cyclic-alias case through SDKs; expect the intended service rejection to pass and identical text in successful Records to fail."""
+        message='number of calls exceed maximum size, probably a cyclic reference to alias'
+        denied=(400,{'Content-Type':'application/xml'},('<Error><Code>ProcessingTimeError</Code><Message>'+message+'</Message></Error>').encode())
+        unavailable=(405,{'Content-Type':'application/xml'},('<Error><Code>MethodNotAllowed</Code><Message>'+message+'</Message></Error>').encode())
+        for language in self.languages():
+            for wire,expected in ((denied,'pass'),(stream(frame('Records',message.encode()),frame('End')),'fail'),(unavailable,'fail')):
+                plan=[NO,OK,OK,(200,{},ECHO),wire,OK,DEL,EMPTY,DEL,NO]
+                with self.subTest(language=language,expected=expected),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,plan,'s3') as (worker,server):
+                    server.fixtures=ProducerReplay(server.fixtures,server)
+                    result=run_cases(context(worker,Path(temporary)).ctx,[c for c in CASES if c.name=='ceph_select_alias_cyclic_refernce'])
+                    self.assertEqual(result[0]['status'],expected,result);self.assertFalse(server.fixtures)
+
+    def test_run_helper_preserves_real_service_and_stream_exceptions(self):
+        """Send genuine HTTP and eventstream errors through SDKs and the production helper; expect typed exceptions, never a string pretending to be query records."""
+        denied=(405,{'Content-Type':'application/xml'},b'<Error><Code>MethodNotAllowed</Code><Message>denied</Message></Error>')
+        broken=stream(frame('Records',b'partial'),frame('',message='error',extra={':error-code':'ProcessingTimeError',':error-message':'broken'}))
+        for language in self.languages():
+            for wire,error in ((denied,ClientError),(broken,EventStreamError)):
+                with self.subTest(language=language,error=error),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[NO,OK,wire,OK,EMPTY,DEL,NO],'s3') as (worker,server):
+                    with Runtime(context(worker,Path(temporary))) as runtime:
+                        name=runtime.name();Client(runtime).create_bucket(Bucket=name)
+                        with self.assertRaises(error) as raised:source.run_s3select(name,'input.csv','select _1 from s3object;')
+                        self.assertEqual(raised.exception.failure_category,'service_error')
+                        if error is EventStreamError:self.assertEqual(raised.exception.evidence['failure_phase'],'event_stream')
+                    self.assertFalse(server.fixtures)
+
+    def test_real_sdk_count_results_reach_the_case_verdict(self):
+        """Feed independent event records through real SDKs into the production count case; expect only 1234 to pass and wrong/empty/denied responses to fail with cleanup."""
+        denied=(405,{'Content-Type':'application/xml'},b'<Error><Code>MethodNotAllowed</Code><Message>select denied</Message></Error>')
+        vectors=[(stream(frame('Records',b'1234,\n'),frame('End')),'pass'),
+                 (stream(frame('Records',b'1233,\n'),frame('End')),'fail'),
+                 (stream(frame('End')),'fail'),(denied,'fail'),
+                 (stream(frame('Records',b'1234,\n'),frame('',message='error',extra={':error-code':'ProcessingTimeError',':error-message':'stream failed'})),'fail')]
+        for language in self.languages():
+            for wire,expected in vectors:
+                plan=[NO,OK,OK,(200,{},ECHO),wire,OK,DEL,EMPTY,DEL,NO]
+                with self.subTest(language=language,expected=expected,wire=wire[0]),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,plan,'s3') as (worker,server):
+                    server.fixtures=ProducerReplay(server.fixtures,server)
+                    result=run_cases(context(worker,Path(temporary)).ctx,[c for c in CASES if c.name=='ceph_select_count_operation'])
+                    self.assertEqual(result[0]['status'],expected,result)
+                    if wire is denied:self.assertIn('MethodNotAllowed',result[0]['error'])
+                    self.assertFalse(server.fixtures)
+
+    def test_helpers_reject_unequal_results_and_keep_todo_not_run(self):
+        """Reject unequal values and keep immediate-return TODO unexecuted; expect no fabricated service pass."""
+        with self.assertRaises(AssertionError):source.s3select_assert_result('wrong','right')
         with self.assertRaises(AssertionError):source.s3select_assert_result('','right')
         for language in self.languages():
             with fixture_worker(language,[],'s3') as (worker,server),tempfile.TemporaryDirectory() as temporary:
@@ -286,7 +331,7 @@ class SelectSdkTest(unittest.TestCase):
 class SelectSourceFidelityTest(unittest.TestCase):
     """Validate static migrated functions against pinned source fingerprints without invoking any upstream runner."""
     def test_all_34_active_original_function_bodies_match_inventory_and_static_copy(self):
-        """Compare exact source segments and SHA for all active bodies; expect duplicate shadows excluded and no edited source assertion or source input."""
+        """Compare source SHA with only three explicitly audited negative-helper substitutions; expect unchanged inputs/assertions and excluded duplicate shadows."""
         import hashlib
         root=Path(__file__).resolve().parents[2]
         inventory=json.loads((root/'osv/data/upstream.json').read_text())['ceph']['cases']
@@ -295,8 +340,29 @@ class SelectSourceFidelityTest(unittest.TestCase):
         self.assertEqual(len(SOURCES),34);self.assertEqual(set(original),{name for name,line,sha in SOURCES})
         for name,line,sha in SOURCES:
             self.assertEqual(original[name]['line'],line);self.assertEqual(original[name]['sha256'],sha)
-            self.assertEqual(hashlib.sha256(ast.get_source_segment(text,actual[name]).encode()).hexdigest(),sha)
-        self.assertTrue(all('没有结果相等oracle' in case.expected for case in CASES))
+            segment=ast.get_source_segment(text,actual[name])
+            # Only explicit negative-query calls differ; restore their original helper name for provenance comparison.
+            if name in ('test_alias_cyclic_refernce','test_schema_definition'):
+                self.assertEqual(segment.count('run_s3select_error('),1 if name=='test_alias_cyclic_refernce' else 2)
+                segment=segment.replace('run_s3select_error(','run_s3select(')
+            self.assertEqual(hashlib.sha256(segment.encode()).hexdigest(),sha)
+        self.assertTrue(all('严格比较完整结果' in case.expected for case in CASES))
+
+    def test_all_immediate_return_sources_are_not_run(self):
+        """Inspect actual source bodies and execute every immediate-return scenario; expect not_run without a runtime or any SDK request."""
+        text=Path(source.__file__).read_text()
+        names={node.name for node in ast.parse(text).body if isinstance(node,ast.FunctionDef) and node.name.startswith('test_') and isinstance(node.body[0],ast.Return)}
+        self.assertEqual(names,{'test_version','test_output_serial_expressions'})
+        for name in names:
+            with self.subTest(name=name),self.assertRaises(CaseNotRun):execute(None,name)
+
+    def test_exact_result_oracle_boundaries(self):
+        """Compare raw independent values using the production helper; expect equal empty/scalar/structured values to pass and any byte/value difference to fail."""
+        for value in ('', 'a,\n', 0, 1234, {}, {'End':{}}, [1,2]):
+            source.s3select_assert_result(value,value)
+        for actual,expected in [('wrong','right'),(1,999),('','row'),('row ', 'row'),('a\n','a'),([1],[2]),({'x':1},{'x':2}),('MethodNotAllowed','1234')]:
+            with self.subTest(actual=actual,expected=expected),self.assertRaises(AssertionError):
+                source.s3select_assert_result(actual,expected)
 
     def test_native_payload_consumer_rejects_bad_offsets_length_and_trailing_bytes(self):
         """Give the actual consumer independent malformed metadata or bytes; expect strict contiguous boundaries/truncation/remaining-data errors instead of accepting manufactured payloads."""

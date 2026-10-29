@@ -89,26 +89,14 @@ class ConditionalVersionsWireTest(unittest.TestCase):
                     self.assertNotIn("if-match",headers);self.assertNotIn("if-none-match",headers)
 
     def test_historical_last_modified_time_consumes_version_head(self):
-        """Execute the real version-mtime source case; actual version ID and HEAD date must reach both negative and positive conditional deletes, followed by cleanup."""
+        """Directory-only time conditions cannot be applied to versioned ordinary buckets; require explicit not-run before any HTTP request."""
         from sdk_fixtures import fixture_worker
-        failure=b'<Error><Code>PreconditionFailed</Code><Message>independent rejection</Message></Error>'
-        xml={"Content-Type":"application/xml"}
-        empty=b'<ListVersionsResult><IsTruncated>false</IsTruncated></ListVersionsResult>'
-        fixtures=[(404,{},b""),(200,{},b""),(200,{},b""),(200,xml,b'<VersioningConfiguration><Status>Enabled</Status></VersioningConfiguration>'),
-            (200,{"ETag":'"d41d8cd98f00b204e9800998ecf8427e"',"x-amz-version-id":"actual-version+source"},b""),
-            (200,{"Last-Modified":"Fri, 02 Jan 2015 00:00:00 GMT","x-amz-version-id":"actual-version+source"},b""),
-            (412,xml,failure),(204,{},b""),(204,{},b""),(200,{},b""),(200,xml,empty),(204,{},b""),(404,{},b"")]
+        from osv.suites import CaseNotRun
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
-            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,"s3") as (worker,server):
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3") as (worker,server):
                 directory=Path(temporary)
-                delete_attribute(Probe(Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})),"mtime","version")
-                self.assertEqual(len(server.requests),13)
-                for index,expected in ((6,"Thu, 01 Jan 2015 00:00:00 GMT"),(7,"Fri, 02 Jan 2015 00:00:00 GMT"),(8,"Thu, 01 Jan 2015 00:00:00 GMT")):
-                    request=server.requests[index];headers={name.lower():value for name,value in request[2].items()}
-                    self.assertEqual(headers["x-amz-if-match-last-modified-time"],expected)
-                    self.assertEqual(parse_qs(urlsplit(request[1]).query)["versionId"],["actual-version+source"])
-                self.assertEqual(server.requests[5][0],"HEAD")
-                self.assertEqual(parse_qs(urlsplit(server.requests[5][1]).query)["versionId"],["actual-version+source"])
+                with self.assertRaises(CaseNotRun):delete_attribute(Probe(Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})),"mtime","version")
+                self.assertEqual(server.requests,[])
 
 
     def test_invalid_bulk_condition_fields_never_reach_http(self):
@@ -158,37 +146,19 @@ class ConditionalVersionsWireTest(unittest.TestCase):
                 self.assertEqual(ET.fromstring(server.requests[4][3]).find(".//{*}Object/{*}Size").text,"9999")
 
     def test_bulk_historical_condition_uses_actual_version_and_time(self):
-        """Run the real historical bulk-mtime case through supported typed SDK models; the original HEAD date and historical ID must survive a newer current PUT and cleanup."""
+        """Directory-only time conditions cannot be applied to versioned ordinary buckets; require explicit not-run before any HTTP request."""
         from sdk_fixtures import fixture_worker
-        xml={"Content-Type":"application/xml"}
-        empty=b'<ListVersionsResult><IsTruncated>false</IsTruncated></ListVersionsResult>'
-        remaining=b'<ListVersionsResult><IsTruncated>false</IsTruncated><Version><Key>obj</Key><VersionId>new-current+id</VersionId></Version></ListVersionsResult>'
-        error=b'<DeleteResult><Error><Key>obj</Key><Code>PreconditionFailed</Code></Error></DeleteResult>'
-        success=b'<DeleteResult><Deleted><Key>obj</Key><VersionId>historical+id</VersionId></Deleted></DeleteResult>'
-        fixtures=[(404,{},b""),(200,{},b""),(200,{},b""),(200,xml,b'<VersioningConfiguration><Status>Enabled</Status></VersioningConfiguration>'),
-            (200,{"ETag":'"d41d8cd98f00b204e9800998ecf8427e"',"x-amz-version-id":"historical+id"},b""),
-            (200,{"Last-Modified":"Mon, 02 Jan 2017 00:00:00 GMT","x-amz-version-id":"historical+id"},b""),
-            (200,{"ETag":'"d41d8cd98f00b204e9800998ecf8427e"',"x-amz-version-id":"new-current+id"},b""),
-            (200,xml,error),(200,xml,success),(200,xml,success),(200,{},b""),(200,xml,remaining),(204,{},b""),(200,xml,empty),(204,{},b""),(404,{},b"")]
+        from osv.suites import CaseNotRun
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
-            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,"s3") as (worker,server):
-                if "delete_many_conditions" not in worker.capabilities:
-                    self.assertEqual(language,"java");self.assertEqual(server.requests,[]);continue
+            with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3") as (worker,server):
                 directory=Path(temporary)
-                delete_many_attribute(Probe(Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})),"mtime","version")
-                self.assertEqual(len(server.requests),16)
-                for index,expected in ((7,"Thu, 01 Jan 2015 00:00:00 GMT"),(8,"Mon, 02 Jan 2017 00:00:00 GMT"),(9,"Thu, 01 Jan 2015 00:00:00 GMT")):
-                    document=ET.fromstring(server.requests[index][3])
-                    self.assertEqual(document.find(".//{*}Object/{*}Key").text,"obj")
-                    self.assertEqual(document.find(".//{*}Object/{*}VersionId").text,"historical+id")
-                    timestamp=document.find(".//{*}Object/{*}LastModifiedTime").text
-                    self.assertEqual(timestamp,expected)
-                self.assertEqual(server.requests[6][0],"PUT")
-                self.assertEqual(parse_qs(urlsplit(server.requests[12][1]).query)["versionId"],["new-current+id"])
+                with self.assertRaises(CaseNotRun):delete_many_attribute(Probe(Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})),"mtime","version")
+                self.assertEqual(server.requests,[])
+
 
 @unittest.skipUnless(os.environ.get("OSV_RUN_CONDITIONAL_VERSIONS_TESTS")=="1","enable after building real SDK workers")
 class ConditionalVersionsSdkTest(unittest.TestCase):
-    """Keep actual local service incompatibilities visible while exercising production SDKs and confirming all owned resources are cleaned."""
+    """Run production conditional cases against an independent local service and verify actual outcomes and cleanup."""
     @classmethod
     def setUpClass(cls):
         """Use a serial local Moto service with fixed dummy credentials; cloud certification and timing are outside this regression."""
@@ -206,7 +176,7 @@ class ConditionalVersionsSdkTest(unittest.TestCase):
         cls.commands={"java":["java","-Xmx256m","-jar",str(ROOT/"drivers/java/target/sdk-worker-0.1.0.jar"),"s3"],"cpp":[str(ROOT/"drivers/cpp/build/osv-cpp-s3")]}
 
     def test_source_condition_matrices_keep_actual_outcomes_and_cleanup(self):
-        """Run all 25 original source matrices; retain genuine unsupported per-object SDK conditions and exact local diagnostics with no remaining test buckets or uploads."""
+        """Run all 25 original source matrices; expect five valid standard matrices to pass, directory-only scenarios to remain unexecuted and unsupported service semantics to fail with no remaining test buckets or uploads."""
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
             with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary:
                 worker=Worker({"command":self.commands[language],"language":language,"api":"s3"},30)
@@ -215,11 +185,13 @@ class ConditionalVersionsSdkTest(unittest.TestCase):
                     rows=run_cases(Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{}),CASES)
                     self.assertEqual(len(rows),25)
                     missing={item.name for item in CASES if "delete_many_conditions" in item.operations} if language=="java" else set()
+                    missing |= {"ceph_conditional_versions_"+op+kind+suffix for op in ("delete_","bulk_") for kind in ("mtime","size") for suffix in ("","_current","_version")}
+                    passed={"ceph_conditional_versions_"+name for name in ("put_basic","put_current_none","put_current_match","put_marker","multipart_current_none")}
                     self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},missing,rows)
-                    self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{item.name for item in CASES}-missing,rows)
-                    self.assertFalse(any(row["status"]=="pass" for row in rows))
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{item.name for item in CASES}-missing-passed,rows)
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="pass"},passed)
                     for row in rows:
-                        if row["status"]=="not_run":self.assertEqual(row["missing_operations"],["delete_many_conditions"])
+                        if row["status"]=="not_run":self.assertTrue(row.get("missing_operations")==["delete_many_conditions"] or row.get("missing_requirements")==["directory-bucket fixture and endpoint"])
                         else:self.assertNotEqual(row.get("error"),"'last_modified_ms'",row)
                     self.assertEqual({item["Name"] for item in self.client.list_buckets()["Buckets"]},{"osv-conditional-versions"})
                 finally:worker.close()

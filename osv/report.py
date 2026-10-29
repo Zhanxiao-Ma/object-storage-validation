@@ -219,6 +219,9 @@ def markdown(report):
     skipped = [r for r in report["cases"] if r["status"] == "not_run"]
     focus = []
     if attention:
+        labels={"response_field_missing":"SDK响应缺少必需字段（保留失败，需核对原始响应）", "execution_error":"执行异常（不直接判协议缺陷）", "sdk_response_decoding":"SDK响应解码差异", "access_rejected":"权限或策略拒绝（不能据此判协议不支持）","transport_or_sdk":"传输或SDK执行失败","throttled":"服务限流","service_error":"服务返回错误，需结合具体错误码判断","assertion_mismatch":"断言不匹配，需结合请求和响应判断"}
+        categories=Counter(r.get("failure_category","assertion_mismatch") for r in attention)
+        focus += ["## 失败分类", ""]+[f"- {labels.get(k,k)}：{v} 条" for k,v in sorted(categories.items())]+[""]
         focus += ["## 失败与警告", "", "| 测试目标 | 测试用例 | 状态 | 预期 | 实际结果 |", "|---|---|---|---|---|"]
         for row in attention:
             item = metadata.get((row.get("suite"), row["case"]), {})

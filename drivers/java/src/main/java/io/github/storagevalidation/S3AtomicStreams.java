@@ -93,7 +93,8 @@ final class S3AtomicStreams {
     }
     static Map<String,Object> upload(S3Client original,String bucket,String key,long size,String mode) {
         boolean dual=mode.equals("dual_write"),conditional=mode.equals("conditional_write");
-        put(original,bucket,key,dual?0:size,'A');
+        String initialEtag=put(original,bucket,key,dual?0:size,'A').eTag();
+        if(conditional && (initialEtag==null || initialEtag.isEmpty()))throw new IllegalStateException("initial PUT returned no ETag for conditional upload");
         if(!dual && !conditional)independentVerify(bucket,key,size,'A');
         final long[] callbacks={0};final RuntimeException[] failure={null};
         Runnable interrupt=()->{
@@ -102,7 +103,7 @@ final class S3AtomicStreams {
             catch(RuntimeException error){failure[0]=error;throw error;}
         };
         PutObjectRequest.Builder request=PutObjectRequest.builder().bucket(bucket).key(key).contentLength(size);
-        if(conditional)request.overrideConfiguration(c->c.putHeader("If-Match","*"));
+        if(conditional)request.overrideConfiguration(c->c.putHeader("If-Match",initialEtag));
         // Each new provider stream is an actual SDK pass over the same repeatable
         // logical file. Count/actions are shared across checksum/signing/retry reads;
         // never suppress prehash callbacks or hardcode a last network pass.
@@ -162,23 +163,31 @@ final class S3AtomicStreams {
         if(upload==null || upload.isEmpty())throw new IllegalStateException("actual CreateMultipartUpload UploadId is missing");pending.add(upload);return upload;
     }
     static Map<String,Object> multipart(S3Client client,String bucket,String key){
-        List<String> pending=new ArrayList<>();RuntimeException primary=null;
+        List<String> pending=new ArrayList<>();RuntimeException primary=null;String stage="dry_create";
         try {
             String dry=create(client,bucket,key,pending);long[] dryEof={0};
-            String dryTag=part(client,bucket,key,dry,'C',dryEof,null);
-            complete(client,bucket,key,dry,Arrays.asList(CompletedPart.builder().partNumber(1).eTag(stripQuotes(dryTag)).build()));pending.remove(dry);
+            stage="dry_upload";String dryTag=part(client,bucket,key,dry,'C',dryEof,null);
+            stage="dry_complete";complete(client,bucket,key,dry,Arrays.asList(CompletedPart.builder().partNumber(1).eTag(stripQuotes(dryTag)).build()));pending.remove(dry);
             client.deleteObject(DeleteObjectRequest.builder().bucket(bucket).key(key).build());
-            String actual=create(client,bucket,key,pending);long[] outerEof={0},nestedEof={0},triggered={0};List<CompletedPart> parts=new ArrayList<>();
+            stage="actual_create";String actual=create(client,bucket,key,pending);long[] outerEof={0},nestedEof={0},triggered={0};List<CompletedPart> parts=new ArrayList<>();
             Runnable action=()->{
                 if(outerEof[0]==dryEof[0]){
                     String nested=part(client,bucket,key,actual,'B',nestedEof,null);parts.add(CompletedPart.builder().partNumber(1).eTag(stripQuotes(nested)).build());triggered[0]++;
                 }
             };
-            String outer=part(client,bucket,key,actual,'A',outerEof,action);parts.add(CompletedPart.builder().partNumber(1).eTag(stripQuotes(outer)).build());
+            stage="actual_upload";String outer=part(client,bucket,key,actual,'A',outerEof,action);stage="actual_list_parts";
+            ListPartsResponse listed=client.listParts(ListPartsRequest.builder().bucket(bucket).key(key).uploadId(actual).maxParts(2).build());
+            if(Boolean.TRUE.equals(listed.isTruncated()) || listed.parts().size()!=1 || !Integer.valueOf(1).equals(listed.parts().get(0).partNumber()) || !Long.valueOf(8).equals(listed.parts().get(0).size()))throw new IllegalStateException("actual overwritten part must be one complete eight-byte PartNumber1");
+            String actualTag=stripQuotes(listed.parts().get(0).eTag());char winner='A';String selected=outer;
+            if(!actualTag.equals(stripQuotes(outer))){
+                if(parts.isEmpty() || !actualTag.equals(stripQuotes(parts.get(0).eTag())))throw new IllegalStateException("actual overwritten part ETag matches neither acknowledged upload");
+                winner='B';selected=parts.get(0).eTag();
+            }
+            stage="actual_complete winner="+winner;parts.clear();parts.add(CompletedPart.builder().partNumber(1).eTag(stripQuotes(selected)).build());
             complete(client,bucket,key,actual,parts);pending.remove(actual);
-            long finalSize=independentVerify(bucket,key,8,'A');
-            Map<String,Object> out=new LinkedHashMap<>();out.put("mode","multipart_resend");out.put("dry_eof_reads",dryEof[0]);out.put("outer_eof_reads",outerEof[0]);out.put("nested_eof_reads",nestedEof[0]);out.put("nested_actions",triggered[0]);out.put("completed_entries",parts.size());out.put("final_size",finalSize);return out;
-        }catch(RuntimeException error){primary=error;throw error;}
+            stage="readback";long finalSize=independentVerify(bucket,key,8,winner);
+            Map<String,Object> out=new LinkedHashMap<>();out.put("mode","multipart_resend");out.put("dry_eof_reads",dryEof[0]);out.put("outer_eof_reads",outerEof[0]);out.put("nested_eof_reads",nestedEof[0]);out.put("nested_actions",triggered[0]);out.put("completed_entries",parts.size());out.put("winner",String.valueOf(winner));out.put("final_size",finalSize);return out;
+        }catch(RuntimeException error){primary=error instanceof S3Exception?(S3Exception)((S3Exception)error).toBuilder().message(error.getMessage()+"; multipart_stage="+stage).build():error;throw primary;}
         finally {
             RuntimeException cleanup=null;
             for(String upload:pending)try{client.abortMultipartUpload(AbortMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(upload).build());}

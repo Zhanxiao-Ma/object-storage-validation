@@ -91,9 +91,9 @@ def alternate_api(bucket,name,**parameters):
     return bucket.raw("api."+name,input=parameters,identity="alt")
 
 def ownership_actions(p,bucket,mode,expected):
-    """Run every original ownership helper PUT/multipart/COPY/ACL branch, compare raw owner ID/name tuples, and abort all returned multipart IDs even after source assertions fail."""
+    """Run every original ownership helper PUT/multipart/COPY/ACL branch, compare canonical owner IDs, and abort all returned multipart IDs even after source assertions fail."""
     uploads=[]
-    def owner(data):return data["Owner"]["ID"],data["Owner"]["DisplayName"]
+    def owner(data):return data["Owner"]["ID"]
     def compare(data,equal):
         if equal:assert_equal(owner(data),expected)
         else:assert_equal(owner(data)!=expected,True)
@@ -130,7 +130,7 @@ def ownership_actions(p,bucket,mode,expected):
 
 def ownership(p,mode,creation):
     """Keep creation-time vs later ownership changes, public ACL rejection before enforcement, raw one-rule GetOwnership assertion and full alternate-user helper oracles."""
-    configured=actor(p);expected=(configured["canonical_id"],configured["display_name"])
+    configured=actor(p);expected=configured["canonical_id"]
     scope=OwnershipScope(p,mode) if creation else BucketScope(p,**({"create_operation":"bucket_create_acl","create_options":{"acl":"public-read"}} if mode=="BucketOwnerEnforced" else {}))
     with scope as bucket:
         if not creation:

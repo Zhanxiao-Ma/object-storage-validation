@@ -28,8 +28,8 @@ class MultipartSdkTest(unittest.TestCase):
                 self.assertEqual([{n.tag.rsplit("}",1)[-1]:n.text for n in part} for part in nodes],[{"PartNumber":"2","ETag":"from-part-two"},{"PartNumber":"1","ETag":"from-part-one"}])
                 self.assertEqual(parse_qs(urlsplit(server.requests[1][1]).query)["uploadId"],["server-id"])
 
-    def test_empty_body_and_missing_upload_errors_reach_sdk(self):
-        """Omit the complete body or abort a missing upload; expect one service request each and untouched HTTP/error codes instead of adapter-generated failures."""
+    def test_empty_xml_and_missing_upload_errors_reach_sdk(self):
+        """Send an explicit empty complete XML document or abort a missing upload; expect one service request each and untouched HTTP/error codes instead of adapter-generated failures."""
         responses=[(400,{"Content-Type":"application/xml"},b"<Error><Code>MalformedXML</Code><Message>empty</Message></Error>"),
                    (404,{"Content-Type":"application/xml"},b"<Error><Code>NoSuchUpload</Code><Message>missing</Message></Error>")]
         for language in os.environ.get("OSV_S3_TEST_LANGUAGES","java,cpp").split(","):
@@ -37,7 +37,9 @@ class MultipartSdkTest(unittest.TestCase):
                 for op,status,code in (("mp_complete_empty",400,"MalformedXML"),("mp_abort_raw",404,"NoSuchUpload")):
                     result=worker.call({"op":op,"key":"object","upload_id":"missing-id"})
                     self.assertFalse(result["ok"],result);self.assertEqual(result["status_code"],status);self.assertEqual(result["error_code"],code)
-                self.assertEqual(len(server.requests),2);self.assertEqual(server.requests[0][3],b"")
+                self.assertEqual(len(server.requests),2)
+                root=__import__("xml.etree.ElementTree",fromlist=["fromstring"]).fromstring(server.requests[0][3])
+                self.assertEqual(root.tag,"{http://s3.amazonaws.com/doc/2006-03-01/}CompleteMultipartUpload");self.assertEqual(list(root),[])
                 self.assertEqual([r[0] for r in server.requests],["POST","DELETE"])
 
     def test_copy_uses_opaque_source_key_and_actual_range_header(self):

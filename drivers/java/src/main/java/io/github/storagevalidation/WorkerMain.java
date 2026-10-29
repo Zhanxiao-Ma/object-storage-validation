@@ -77,7 +77,8 @@ public final class WorkerMain {
                         if(capabilities.contains("delete_many"))capabilities.add("delete_files");
                         result.put("capabilities",capabilities);
                         if("s3".equals(provider)) result.put("header_request_timeout_ms",env("HEADER_REQUEST_TIMEOUT_MS","30000"));
-                        result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
+                        if("s3".equals(provider))result.put("list_url_encoding","decoded");
+                    result.put("endpoint",env("ENDPOINT","")); result.put("region",env("REGION",""));
                         result.put("bucket",env("BUCKET","")); result.put("retries",env("RETRIES","0"));
                         result.put("connections_per_worker",env("CONNECTIONS","16"));
                         result.put("runtime", System.getProperty("java.version"));
@@ -495,7 +496,8 @@ public final class WorkerMain {
                 }
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.Builder b=software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest.builder().bucket(bucket).key(key).uploadId(text(q,"upload_id"));
                 if("mp_complete_sse_c".equals(op)) b.overrideConfiguration(EncryptionHeaders.fromRequest(q));
-                if(!"mp_complete_empty".equals(op)) b.multipartUpload(m->m.parts(parts));
+                if("mp_complete_empty".equals(op) && !parts.isEmpty()) throw new IllegalArgumentException("mp_complete_empty requires empty parts");
+                b.multipartUpload(m->m.parts(parts));
                 S3Checksums.apply((software.amazon.awssdk.core.SdkPojo)b,q);
                 software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse result=client.completeMultipartUpload(b.build());
                 Map<String,Object> observed=fields("etag",result.eTag());

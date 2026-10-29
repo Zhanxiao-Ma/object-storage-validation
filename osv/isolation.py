@@ -8,7 +8,7 @@ def bucket_required(name, operations):
     operations = set(operations)
     special = ('ceph_bucket_', 'ceph_names_', 'ceph_header_bucket_', 'ceph_state_recreate_',
                'ceph_basic_missing_', 'ceph_basic_literal_')
-    if name.startswith(special) and name != 'ceph_bucket_missing_key':
+    if name.startswith(special) and name not in {'ceph_bucket_missing_key','ceph_bucket_head'}:
         return True
     if name in {'bucket_create_idempotent', 'ceph_atomic_stream_bucket_gone',
                 'ceph_metadata_edges_recreate','ceph_raw_post_no_key',

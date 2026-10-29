@@ -53,25 +53,29 @@
       "source_id": "s3tests/functional/test_s3.py::test_ranged_request_response_code@L7564",
       "source_sha256": "ef1213c6ca4908d3cf3b96a5c59d1aec30572a63fb355851a6604b2ba19fbd24",
       "implementation": "ceph_http_range_closed",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "保留真实 HTTP 状态；除标准206外，接受实际请求协商且范围、尾部校验及完整内容均正确的 append-md5 200响应。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_ranged_request_skip_leading_bytes_response_code@L7597",
       "source_sha256": "d3ccf6f939646cf9f1730ad5a6edb1bda95bee192707350cbcdaa55f2cf5aced",
       "implementation": "ceph_http_range_open",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "保留真实 HTTP 状态；除标准206外，接受实际请求协商且范围、尾部校验及完整内容均正确的 append-md5 200响应。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_ranged_request_return_trailing_bytes_response_code@L7612",
       "source_sha256": "92a494a5c1ca47abb71b4062c8a162a1111d8734035776d6ecc9e6735169192b",
       "implementation": "ceph_http_range_suffix",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "保留真实 HTTP 状态；除标准206外，接受实际请求协商且范围、尾部校验及完整内容均正确的 append-md5 200响应。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_ranged_big_request_response_code@L7582",
       "source_sha256": "de5fccfe5bbcb7a0e7120ac8a1b430f2d7c433b02a49d4a42e1d4d8c4bc464b4",
       "implementation": "ceph_http_range_big",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "保留真实 HTTP 状态；除标准206外，接受实际请求协商且范围、尾部校验及完整内容均正确的 append-md5 200响应。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_obj_tagging@L12029",
@@ -89,7 +93,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_put_excess_tags@L12072",
       "source_sha256": "ac378a8cee9cc8b5d9f47fbb28448edc308b79219ead656f982ae7b457469bc0",
       "implementation": "ceph_tags_excess",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "先建立有效标签，再验证非法覆盖被拒且原标签不变；数量超限允许明确相关400错误，错误结构/权限/成功响应仍失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_max_kvsize_tags@L12087",
@@ -101,13 +106,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_put_excess_key_tags@L12108",
       "source_sha256": "d84c454a43298d53c95f24671cae90e74c4d35261093dd2b3d98e08eec33286f",
       "implementation": "ceph_tags_key_overflow",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "先建立有效标签，再验证非法覆盖被拒且原标签不变；数量超限允许明确相关400错误，错误结构/权限/成功响应仍失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_excess_val_tags@L12130",
       "source_sha256": "310df5cf96634640f5cd4d666ba7fcc0a93d3cb132db11278ec1db764343b95e",
       "implementation": "ceph_tags_value_overflow",
-      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。"
+      "review": "逐项核对固定版本的输入约束和全部断言；Range 保留实际 HTTP 206/Content-Range/字节，标签保留数量/长度、原始顺序、修改删除及精确错误码。隔离对象前缀替代新桶；实际 SDK 覆盖与执行成败另见报告，能力不足明确 not_run。",
+      "contract_adjustment": "先建立有效标签，再验证非法覆盖被拒且原标签不变；数量超限允许明确相关400错误，错误结构/权限/成功响应仍失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_modify_tags@L12153",
@@ -341,7 +348,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_bucket_list_encoding_basic@L250",
       "source_sha256": "a13681732e47118c075386b09186c5de70ab5e65581ecaf1965a3b524f66bdf2",
       "implementation": "ceph_exact_list_v1_encoding_basic",
-      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。",
+      "contract_adjustment": "分别验证原始 XML 的 URL 编码与 SDK 解码表示，编码覆盖完整隔离前缀。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_delimiter_basic@L221",
@@ -479,7 +487,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_encoding_basic@L237",
       "source_sha256": "7f4ef2e104ac6adca4f19111b16130b7c71f704ad06c56bd96bf4bf335850a3b",
       "implementation": "ceph_exact_list_v2_encoding_basic",
-      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。",
+      "contract_adjustment": "分别验证原始 XML 的 URL 编码与 SDK 解码表示，编码覆盖完整隔离前缀。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_bucket_list_many@L162",
@@ -593,7 +602,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_continuationtoken_empty@L1278",
       "source_sha256": "a405ee8e0f6b32f2786677ea08ee75c25a56137b39ca7115f1ee040bc0377da6",
       "implementation": "ceph_exact_list_v2_continuationtoken_empty",
-      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。"
+      "review": "核对固定源码及 validate_bucket_list/listv2 helper 的全部断言。使用真实独立桶和原始输入，保留 V1/V2、空/省略参数、回显、字段有无、顺序和完整分页步骤；编码结果保持源预期且不改写 SDK 值。空桶资源迭代语义用实际 V1 列举验证。Java/C++ AWS SDK→Moto 已执行；原始差异保留为 fail，不能解释成云认证。",
+      "contract_adjustment": "显式空ContinuationToken按AWS实测要求400/InvalidArgument，不再要求成功和空串回显；参数省略与空串分别测试。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_bucket_listv2_continuationtoken@L1290",
@@ -683,19 +693,22 @@
       "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_complete_without_create@L6001",
       "source_sha256": "18c71d1f1955f785b1c17b27b3b27c6d39e2c25c289f841f091303e6e4a7a4f1",
       "implementation": "ceph_exact_multipart_missing_upload",
-      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。",
+      "contract_adjustment": "使用真实已终止UploadId及实际part ETag验证NoSuchUpload，并校验没有发布对象。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_small@L6020",
       "source_sha256": "ea219cb07d6d61fdf7a6a97c192445d700468d2182e0a7ea92529623b39f6743",
       "implementation": "ceph_exact_multipart_small",
-      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。",
+      "contract_adjustment": "成功完成后的重复请求允许相同结果或404/NoSuchUpload，仍必须完整读回校验，ETag视为不透明值。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_upload@L6226",
       "source_sha256": "06d832b8d1c7951aa3394867eaadfbbd05670d6b7297d867dd3123205abcdbaf",
       "implementation": "ceph_exact_multipart_full",
-      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。",
+      "contract_adjustment": "成功完成后的重复请求允许相同结果或404/NoSuchUpload，仍必须完整读回校验，ETag视为不透明值。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_resend_part@L6331",
@@ -737,7 +750,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_abort_multipart_upload_not_found@L6499",
       "source_sha256": "38ea2e212f83b72fce9e48d6cc60d8c8d9ca31212860e69f2568404b58d6dc2c",
       "implementation": "ceph_exact_multipart_abort_missing",
-      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。"
+      "review": "逐项核对锁定版本的分块大小、重传组合、完成重试、元数据、完整对象和逐段 Range、字段有无及精确 HTTP/错误码；保留实际 SDK 结果，独立桶及未完成上传强制清理。数据字节独立确定，保持原始长度和内容校验关系，未缩放。",
+      "contract_adjustment": "使用其他对象键的真实UploadId验证NoSuchUpload，保留原对象并确认源上传仍可列举，避免非法ID及重复Abort幂等语义混淆。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_upload_missing_part@L6587",
@@ -761,7 +775,7 @@
       "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_invalid_range@L6113",
       "source_sha256": "b789bedb9801247a7699bb7ebad3e54fb1b1f7d97ff61711d5762bb530f0a718",
       "implementation": "ceph_exact_multipart_copy_invalid",
-      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+      "review": "协议纠偏：用大于5MiB源对象和合法Range复制完成读回建立对照，再测试起点/终点越界。仅接受400/InvalidArgument或416/InvalidRange拒绝配对；意外成功、其他错误或最终对象出现均失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_copy_improper_range@L6135",
@@ -797,19 +811,22 @@
       "source_id": "s3tests/functional/test_s3.py::test_multipart_get_part@L6626",
       "source_sha256": "3dadefb193176e6b8c9d3ddcbd4ed92de547c343b4648e65aaf3bc04b7e50f93",
       "implementation": "ceph_get_part_multiple",
-      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。",
+      "contract_adjustment": "越界接受明确400/InvalidPart或416/InvalidRange、InvalidPartNumber，保留全部正向分片内容与数量校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_single_get_part@L6723",
       "source_sha256": "cfc455ecdd3522db077869fe7b70be90e733e745fee6889acab9960fd374b7da",
       "implementation": "ceph_get_part_single",
-      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。",
+      "contract_adjustment": "越界接受明确400/InvalidPart或416/InvalidRange、InvalidPartNumber，保留全部正向分片内容与数量校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_non_multipart_get_part@L6765",
       "source_sha256": "1fc544af9650ed084ca679a27b959676c6f91bf4bafb4a17c0fdec282f3f648c",
       "implementation": "ceph_get_part_ordinary",
-      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。"
+      "review": "核对固定版本完整输入及全部断言：跨桶复制、源键集合和大小矩阵、完整非法 Range 集合和错误码、上传 ID、PartNumber 的完成前 404、真实 PartsCount/ETag/长度/字节及越界 400；保留实际 SDK 值，不能用 Range 模拟 PartNumber 或下载上传替代服务端复制。未缩放数据，ASCII 分块形态保持；桶和上传均清理。",
+      "contract_adjustment": "越界接受明确400/InvalidPart或416/InvalidRange、InvalidPartNumber，保留全部正向分片内容与数量校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_versioning_bucket_create_suspend@L7654",
@@ -1121,7 +1138,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_other_key@L10756",
       "source_sha256": "6e9c105cf17a65444219e376c679669bccf6566fe6aba18bae843f279c71cbd7",
       "implementation": "ceph_sse_c_other",
-      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。"
+      "review": "核对固定源码的实际函数及共享写读 helper；保留独立桶、testobj、A 字节长度、原始 AES256/两组密钥与 MD5、故意缺失字段和全部服务端错误/读取断言。helper 文档中的 B 覆盖未出现在实际代码，不凭注释新增。无 MD5/无 key 源码仅要求 ClientError，不额外固定错误码。缺失头通过 SDK 公共逐请求自定义头发送并由真实 HTTP 测试核对，禁止模型自动补齐。",
+      "contract_adjustment": "错误密钥要求实际400相关错误或403/AccessDenied，前后均用正确密钥读取验证内容。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_invalid_md5@L10783",
@@ -1277,19 +1295,22 @@
       "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_multipart_bad_download@L11044",
       "source_sha256": "93af67854acdbf00f7857e13b7b82a63dd276a7e3490c6ce513ee128580e063e",
       "implementation": "ceph_sse_multipart_bad_download",
-      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。",
+      "contract_adjustment": "错误密钥拒绝前后正确密钥完整读回；不将单一400状态当作唯一合法拒绝。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_sse_c_get_part@L6669",
       "source_sha256": "2b032366574456a5fb88b4f13efad897994ae027b694545ef1a37fc55cc88837",
       "implementation": "ceph_sse_multipart_get_part",
-      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。",
+      "contract_adjustment": "越界请求携带正确SSE-C密钥，使用普通PartNumber相同的精确越界错误集合。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_non_multipart_sse_c_get_part@L6786",
       "source_sha256": "038b47bfe3b3528bbe4f73c21b6159bd80b9a1fe9fc5d07c8acd15c0d1ca6307",
       "implementation": "ceph_sse_multipart_ordinary",
-      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。"
+      "review": "核对固定源码与 _multipart_upload_enc/_check_content_using_range_enc：保留 30 MiB、5 MiB/5 MiB+1、不缩放各 Range 步长、两组 SSE-C 密钥/MD5、text/plain 和 foo=bar；错误分块按原 helper 上传直到实际失败或全部接受。按分块编号读取保留 5/5/5/1 MiB、重发第 3 块、完成前不可见、整体 ETag/PartsCount/长度/字节及原始越界请求故意不带 SSE-C 头；普通对象保留 body/PartNumber 2 与 1。真实 SDK 请求合约检查字段，独立桶与上传始终清理。",
+      "contract_adjustment": "使用普通PartNumber相同的400/InvalidPart或416精确错误集合，始终拒绝越界成功。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_upload_1b@L14654",
@@ -1409,7 +1430,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_sse_kms_no_key@L11278",
       "source_sha256": "49ae7977cd102a598544c3e6a60e5e603122dbfa25087a4868f0c7e12ab2aefe",
       "implementation": "ceph_encryption_no_key",
-      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。"
+      "review": "核对固定源码及 SSE-S3/KMS 默认/显式上传 helper：保留 A 字节长度、AES256/aws:kms、原始 HTTP 加密响应头、testkey-1/testkey-2、未提供 KMS key、HEAD/GET 附加加密头拒绝和源 ClientError 断言。有效 KMS 资源用 workload.kms_key_id 对应上游 main kms_keyid；缺失时四个 transfer/四个 default 保留源码显式 skip，head/present 的 main-key 环境依赖也显式 not_run，不填造 key 代替。真实 SDK HTTP 合约核对逐请求原始头与响应，实际 SDK 配置/无配置路径均执行。",
+      "contract_adjustment": "默认KMS密钥路径是正向能力；验证aws:kms与完整读回，而不是强制缺KeyId报错。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_kms_not_declared@L11294",
@@ -1619,7 +1641,7 @@
       "source_id": "s3tests/functional/test_s3.py::test_list_buckets_anonymous@L5379",
       "source_sha256": "e48cccaa91ef244ef9f5d36595639d767478c295faf930f4f0b07fc7ddfba070",
       "implementation": "ceph_inventory_anonymous",
-      "review": "核对固定源码函数及全部断言、输入和实际 SDK 调用。保留创建五桶后的真实服务级桶清单成员或 UTC 一日前创建时间断言，只检查源用例选择的新桶；匿名请求真实不签名，桶数零断言不筛选也不改成 AccessDenied。"
+      "review": "协议纠偏：匿名ListBuckets不以成功空桶数组证明鉴权正确；要求实际403/AccessDenied。重定向或非XML结果单列执行链路问题，不当服务端协议缺陷或兼容通过。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_bucket_policy_acl@L11650",
@@ -1661,7 +1683,7 @@
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_expect_mismatch@L185",
       "source_sha256": "faca820ae2e785b58656790d2d54bff192aef02086e03f4f4fa2d4176793a67d",
       "implementation": "ceph_header_object_expect_mismatch",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "协议纠偏：RFC9110允许未知Expect返回417，也可正常处理；两条路径分别校验实际对象内容或对象不存在，其他错误仍失败。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_expect_empty@L191",
@@ -1679,19 +1701,22 @@
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_empty@L205",
       "source_sha256": "6a338ae1a0f911d5319fdec242816b48d96901268c0e4e3178f0b8e87773ae2e",
       "implementation": "ceph_header_object_length_empty",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "签名或HTTP库会替换该输入，缺少已验证最终畸形报文时明确未执行，不能据此判断服务端协议。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_negative@L212",
       "source_sha256": "55040a6fa8fd3bd38e90b62daf2423843c7be5790fa771ce98e7ebf57f55050e",
       "implementation": "ceph_header_object_length_negative",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "签名或HTTP库会替换该输入，缺少已验证最终畸形报文时明确未执行，不能据此判断服务端协议。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contentlength_none@L226",
       "source_sha256": "b9212267d3d050181cfe267cde71976d93b7e5f2764e29c243705036a3ce679e",
       "implementation": "ceph_header_object_length_none",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "签名或HTTP库会替换该输入，缺少已验证最终畸形报文时明确未执行，不能据此判断服务端协议。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contenttype_invalid@L234",
@@ -1703,13 +1728,15 @@
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_empty@L258",
       "source_sha256": "4cc26c6b6c91daf8e3a5307365ee37c8e21fb266f7e52137d1572514fe41213a",
       "implementation": "ceph_header_object_authorization_empty",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "签名或HTTP库会替换该输入，缺少已验证最终畸形报文时明确未执行，不能据此判断服务端协议。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_authorization_none@L285",
       "source_sha256": "3209a5a162e35e55d5c047ff9874a2dca1f74a3b8cfb36553237a7d797f556a5",
       "implementation": "ceph_header_object_authorization_none",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "签名或HTTP库会替换该输入，缺少已验证最终畸形报文时明确未执行，不能据此判断服务端协议。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_contentlength_none@L293",
@@ -1721,7 +1748,7 @@
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_expect_mismatch@L327",
       "source_sha256": "6072e3fe2df1a4bbb70b070e2ee0d027563bc51ad14126deacc13d069ca85d4f",
       "implementation": "ceph_header_bucket_expect_mismatch",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "协议纠偏：未知Expect的417是合法拒绝，但必须确认桶没有创建；其他错误保持失败，已有桶所有权清理约束不变。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_expect_empty@L337",
@@ -1733,13 +1760,15 @@
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_empty@L345",
       "source_sha256": "8551fc5a8273a17aa60ddd5e4253fc81a68770d86acdc3dc1169469beee883e3",
       "implementation": "ceph_header_bucket_length_empty",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "官方SDK无法建立该最终畸形HTTP报文；缺少已验证最终请求时明确未执行，不判断服务端拒绝语义。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_negative@L353",
       "source_sha256": "876c8fbf5a86a44737edd3d118b1f503a20864133c3adb7fc87f93f4ac03557d",
       "implementation": "ceph_header_bucket_length_negative",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "官方SDK无法建立该最终畸形HTTP报文；缺少已验证最终请求时明确未执行，不判断服务端拒绝语义。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_contentlength_none@L362",
@@ -1751,13 +1780,15 @@
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_authorization_empty@L369",
       "source_sha256": "d4e34c53a478bcdbd8515aea300c1ed05b850b3cfea3216a5508376af4484c80",
       "implementation": "ceph_header_bucket_authorization_empty",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "官方SDK无法建立该最终畸形HTTP报文；缺少已验证最终请求时明确未执行，不判断服务端拒绝语义。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_bucket_create_bad_authorization_none@L379",
       "source_sha256": "13400de683c316ce9a6ea1011ca2af9a5b42dfa4add53cab1052b3f10a64da71",
       "implementation": "ceph_header_bucket_authorization_none",
-      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。"
+      "review": "核对固定源码全部输入与断言：保留空 body/bar、Bucket-only 创建、before-call 对应签名前头修改、类型化负长度与 WHEN_REQUIRED、动态日期、后续普通 PUT 和精确错误码；HTTP Expect 整数 200 按传输文本 200。官方 SDK 后续重写和客户端错误均保留，不伪造服务拒绝。独立 UUID 桶隔离，异常创建仅经独立已确认桶的实际 ACL Owner 匹配后清理；此证据不进入功能预期。SigV2 用例未计入。",
+      "contract_adjustment": "官方SDK无法建立该最终畸形HTTP报文；缺少已验证最终请求时明确未执行，不判断服务端拒绝语义。"
     },
     {
       "source_id": "s3tests/functional/test_headers.py::test_object_create_bad_contenttype_empty@L240",
@@ -1799,37 +1830,43 @@
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_good@L3119",
       "source_sha256": "6c1bf85a758517373e7dcaf31d436b588e2d5d08b093b6f7e0d389109082967f",
       "implementation": "ceph_put_condition_match_etag",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_failed@L3140",
       "source_sha256": "cd3c00b2dba432492325d57a12c6662be95e93be64fb596b9696d8e21f60b6fa",
       "implementation": "ceph_put_condition_match_bad",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_overwrite_existed_good@L3162",
       "source_sha256": "3e1c2a61a35282c5fac5fd618a63e60e869dcc4e93cb6117f69a56ece10b02bb",
       "implementation": "ceph_put_condition_match_existing",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifmatch_nonexisted_failed@L3180",
       "source_sha256": "05cbb04f76ca93d305f93bf347b248b72b803ed8d3a4e30abaf4b09d17f424aa",
       "implementation": "ceph_put_condition_match_absent",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_good@L3197",
       "source_sha256": "911e1a1c9a000a191b8ac67a50a747760665b375288d00fd571078e132298ed9",
       "implementation": "ceph_put_condition_none_bad",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "非*的If-None-Match没有通用S3接受契约，此源向量明确未执行，不计协议失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_failed@L3215",
       "source_sha256": "b38812be3a622c437e4428c0d78ba23664867db925ff041509d2717f660ca197",
       "implementation": "ceph_put_condition_none_etag",
-      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。"
+      "review": "逐项核对固定源码全部输入和断言；保留 foo/bar 与 bar/zar、实际 GET 的 ETag 去引号和源 PUT ETag 原引号、ABCORZ/带引号 ABCORZ、星号、精确 412/PreconditionFailed 与原缺对象 404/NoSuchKey 以及后续完整读取。源 before-call PUT 头改动经签名前扩展点传递；CopySourceIfMatch/IfNoneMatch 映射其精确标准 HTTP 头，实际官方 SDK 签名和 CopyObject 传输。源生产者实际返回值直接进入消费者。独立桶隔离清理，不协调 fails_on_aws/rgw 标注的预期。",
+      "contract_adjustment": "非*的If-None-Match没有通用S3接受契约，此源向量明确未执行，不计协议失败。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_ifnonmatch_nonexisted_good@L3239",
@@ -2183,7 +2220,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_object_set_get_unicode_metadata@L1890",
       "source_sha256": "64cf510fb2edc3968034359b62856c1008c66c0b4193dc47338d7cd80aeb2774",
       "implementation": "ceph_metadata_edges_unicode",
-      "review": "原始 before-call x-amz-meta-meta1=Hello Worldé、bar 内容与实际 GET 元数据严格相等；保留 SDK/HTTP Unicode 编码行为及原失败标记，不做编码归一化。"
+      "review": "原始 before-call x-amz-meta-meta1=Hello Worldé、bar 内容与实际 GET 元数据严格相等；保留 SDK/HTTP Unicode 编码行为及原失败标记，不做编码归一化。",
+      "contract_adjustment": "以RFC2047 ASCII头发送Unicode值，返回值解码后比较，并校验对象内容，避免签名编码混淆。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_object_write_file@L1934",
@@ -2297,31 +2335,36 @@
       "source_id": "s3tests/functional/test_s3.py::test_get_multipart_object_attributes@L19090",
       "source_sha256": "5675f34a9f414cfbd062c40df32881b50a9425df243781979cefab26f03a7ffd",
       "implementation": "ceph_attributes_multipart_ordinary",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "分片详情采用显式SHA256上传，校验真实分片摘要、完整读回和分页数量，不对未声明附加校验和的对象强求Parts明细。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_paginated_multipart_object_attributes@L19126",
       "source_sha256": "76cec76c62ac3495b079e4954435d6be296afc7bd09ee9f16f2b15c849a33151",
       "implementation": "ceph_attributes_multipart_paginated",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "分片详情采用显式SHA256上传，校验真实分片摘要、完整读回和分页数量，不对未声明附加校验和的对象强求Parts明细。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_single_multipart_object_attributes@L19187",
       "source_sha256": "35327763fb31b89e47df9973d50bae5505969d959ea6e5c1f8c17051c190132a",
       "implementation": "ceph_attributes_multipart_single",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "分片详情采用显式SHA256上传，校验真实分片摘要、完整读回和分页数量，不对未声明附加校验和的对象强求Parts明细。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_object_checksum_sha256@L14961",
       "source_sha256": "116bf3403390d6276890f11ca903fb6de9fa5a2b545701c7ab3ddb6230514a00",
       "implementation": "ceph_checksum_object_sha256",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "将格式错误的bad改为合法Base64且长度正确的不匹配摘要，区分格式错误与BadDigest；失败覆盖后真实GET确认原内容不变。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_object_checksum_crc64nvme@L14983",
       "source_sha256": "193883f7395f5dbefa54397e3f4c4e035875798f9b66bafd636325e3acbf8ac5",
       "implementation": "ceph_checksum_object_crc64nvme",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "将格式错误的bad改为合法Base64且长度正确的不匹配摘要，区分格式错误与BadDigest；失败覆盖后真实GET确认原内容不变。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_checksum_object_attributes@L19219",
@@ -2333,109 +2376,126 @@
       "source_id": "s3tests/functional/test_s3.py::test_multipart_checksum_sha256@L15006",
       "source_sha256": "0f2dfd81286b4e8c4e0971865c0cb0521b908b7184b1a79f3d656820bb9405d1",
       "implementation": "ceph_checksum_multipart_sha256",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "坏摘要使用合法Base64与正确分片数；缺分片摘要只删除该字段，保留正确复合摘要，拒绝后验证对象不存在。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_reupload_checksum_and_etag@L15071",
       "source_sha256": "ad5437aa2389c0860acf5fdef7176710c25906e29c1457ab6ecda7231d5614bd",
       "implementation": "ceph_checksum_multipart_reupload",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "成功完成后的重复请求允许相同结果或404/NoSuchUpload，仍必须完整读回校验，ETag视为不透明值。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_multipart_checksum_object_attributes@L19047",
       "source_sha256": "b74e4ac0f1542c83e6e7a1ca2ea6b5b89fa732efb30c485d4c4ad316009c3201",
       "implementation": "ceph_checksum_attributes_multipart",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "通用协议修正：显式发送独立计算的分片SHA256；独立核对复合摘要、完整读回和分片列表，属性摘要允许无计数后缀但另验真实分片数。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_sha256@L15180",
       "source_sha256": "2148091f90f366598f5a3ade9836c18a793e374f70194b73fed43488016b14da",
       "implementation": "ceph_checksum_helper_sha256",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "完成请求显式携带与创建相同的ChecksumType；属性复合摘要独立计算，允许省略正确计数后缀但拒绝错误后缀，并验证真实分片数、复合类型分片明细、完整及逐块内容。保留失败而非按厂商放宽。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc64nvme@L15204",
       "source_sha256": "a644314000fb18bf184ef7386995ae6d166dcbb235bcbf66e665ddeed948bb8b",
       "implementation": "ceph_checksum_helper_crc64nvme",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "完成请求显式携带与创建相同的ChecksumType；属性复合摘要独立计算，允许省略正确计数后缀但拒绝错误后缀，并验证真实分片数、复合类型分片明细、完整及逐块内容。保留失败而非按厂商放宽。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc32@L15228",
       "source_sha256": "cb862c6df3562b86b05c79fd28dd30d5b52ed096a067d4b3cf87c8a3fa82fb22",
       "implementation": "ceph_checksum_helper_crc32",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "完成请求显式携带与创建相同的ChecksumType；属性复合摘要独立计算，允许省略正确计数后缀但拒绝错误后缀，并验证真实分片数、复合类型分片明细、完整及逐块内容。保留失败而非按厂商放宽。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_crc32c@L15252",
       "source_sha256": "858a3db7d2a346e00df892ce5b036fa71c5d909df2855fa6476b3927c3db0dcd",
       "implementation": "ceph_checksum_helper_crc32c",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "完成请求显式携带与创建相同的ChecksumType；属性复合摘要独立计算，允许省略正确计数后缀但拒绝错误后缀，并验证真实分片数、复合类型分片明细、完整及逐块内容。保留失败而非按厂商放宽。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_use_cksum_helper_sha1@L15276",
       "source_sha256": "f1f6a92c9a61ca50b7f5510fcef7eae2ad69166a90153eeae3b63529f2542a3e",
       "implementation": "ceph_checksum_helper_sha1",
-      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。"
+      "review": "逐项核对固定版本的对象属性、VersionId/ETag、SSE-C、5 MiB/64 MiB 分块形状、固定 Base64 校验和和 ChecksumType；保留缺字段、分页和 BadDigest 全部原始断言。真实 Java/C++ SDK 执行与本地 Moto 差异另见报告；旧 Java 缺 CRC64NVME/ChecksumType 的场景明确 not_run。",
+      "contract_adjustment": "完成请求显式携带与创建相同的ChecksumType；属性复合摘要独立计算，允许省略正确计数后缀但拒绝错误后缀，并验证真实分片数、复合类型分片明细、完整及逐块内容。保留失败而非按厂商放宽。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_if_match@L19470",
       "source_sha256": "d6b90bcb6085928945dc3e7ded16acb21034de9dad589bd6687423066b1fe6ee",
       "implementation": "ceph_conditional_versions_put_basic",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。",
+      "contract_adjustment": "负向条件请求使用不同数据，并在每次拒绝后真实GET确认原对象不变或对象仍不存在；错误状态和状态变化分别记录，不因412而跳过状态校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_current_object_if_none_match@L19567",
       "source_sha256": "b6129cbf1e0d970ee6a875f397788fd4dbdc716d14c56a004b5a34ddcf483d2a",
       "implementation": "ceph_conditional_versions_put_current_none",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_current_object_if_match@L19623",
       "source_sha256": "b76df46d497fc14db6e0ed45c8f2d6156fc984951c6c09b61d0746316b9b7ec4",
       "implementation": "ceph_conditional_versions_put_current_match",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_put_object_if_match@L19532",
       "source_sha256": "351ac6b466fdbbabb14b89851270bc48f4a24bd40ac65520887d14bffaf175dc",
       "implementation": "ceph_conditional_versions_multipart_basic",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。",
+      "contract_adjustment": "负向条件请求使用不同数据，并在每次拒绝后真实GET确认原对象不变或对象仍不存在；错误状态和状态变化分别记录，不因412而跳过状态校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_put_current_object_if_none_match@L19596",
       "source_sha256": "a59386cec2596a8b906a1fc7df41e0d75d28f67e1e4460e9795f3b24231a44a5",
       "implementation": "ceph_conditional_versions_multipart_current_none",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。源 data1/data2 两代内容及历史ETag对当前对象条件，末尾实际DELETE保留。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_put_current_object_if_match@L19654",
       "source_sha256": "9e29f6bb90ded2c4b9fbd5c8429ef53b855c1b5604865a7791ce1285777d0108",
       "implementation": "ceph_conditional_versions_multipart_current_match",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。保留原缺对象两次404、data1/data2、第一代VersionId必须存在、旧ETag失配、当前ETag成功的全部断言。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_put_object_current_if_match@L19681",
       "source_sha256": "dc7f32c05101eef2e8c1c917ae05e4a63e1f366ab7db330c3129af0f85976b54",
       "implementation": "ceph_conditional_versions_put_marker",
-      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。实际DELETE的DeleteMarker必须真，标记后两次IfMatch缺对象404，源无额外后续断言不升级。"
+      "review": "保留源每次请求顺序和全部实际ETag生产者/消费者、IfMatch/IfNoneMatch原始引号/通配符/deadbeef/badetag；普通PUT缺Body为空，分块helper缺Body默认abc；每次MPU真实UploadId/part ETag进入完成，finally使用真实ID Abort并接受NoSuchUpload404；所有原始200、404/NoSuchKey、412/PreconditionFailed及版本/标记断言均保持。实际DELETE的DeleteMarker必须真，标记后两次IfMatch缺对象404，源无额外后续断言不升级。",
+      "contract_adjustment": "条件写使用实际带引号ETag或合法格式不匹配ETag；If-None-Match仅用*，不把If-Match:*、任意字符串和非*的If-None-Match当成通用契约。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match@L19709",
       "source_sha256": "8a0b0b630e7660116f8795c5d18870ebe35eb2d2ad245b0a0248edb474a2af5e",
       "implementation": "ceph_conditional_versions_delete_match",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "协议纠偏（普通对象）：错误ETag应412且读回内容不变；成功删除应204且GET确认不存在；不存在对象的条件DELETE应404/NoSuchKey。版本和删除标记用例另行保留，不把普通DELETE幂等套到条件DELETE。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match_last_modified_time@L19798",
       "source_sha256": "e4c804607c4457f3c0eacdb82aaa9df9bdc5051ec4ac92e1697fe6a9b1226bb4",
       "implementation": "ceph_conditional_versions_delete_mtime",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_if_match_size@L19866",
       "source_sha256": "230ecdd9892eb4f7824a349c1c614ca38363ce1bbbccd821fcb4aece92d19ad2",
       "implementation": "ceph_conditional_versions_delete_size",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match@L19933",
@@ -2447,13 +2507,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match_last_modified_time@L19998",
       "source_sha256": "3fa4b129367e845bdf10d8221ffaddb6e3bf08e8aa5d0309dd5aff2cc59a4975",
       "implementation": "ceph_conditional_versions_bulk_mtime",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_if_match_size@L20071",
       "source_sha256": "518797d30e0b447b24d257e2961c733194eb2cc6b6dffb7bf6aa7d710eb75c73",
       "implementation": "ceph_conditional_versions_bulk_size",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match@L19734",
@@ -2465,13 +2527,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match_last_modified_time@L19819",
       "source_sha256": "e89c62019cb36cfacb35231c33d10d470f252caa89da9f32b0fda7edb1c97251",
       "implementation": "ceph_conditional_versions_delete_mtime_current",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_current_if_match_size@L19887",
       "source_sha256": "d40c8d6997601642051cfe4eadd093c54f91b7cc1dd1adc4de3060383656bc91",
       "implementation": "ceph_conditional_versions_delete_size_current",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留DeleteMarker字段存在性断言，未升级为值必须true。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留DeleteMarker字段存在性断言，未升级为值必须true。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match@L19953",
@@ -2483,13 +2547,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match_last_modified_time@L20020",
       "source_sha256": "9abf493356567e4ec33012585d4d2b14c46d3a8e2afe3f693d4c26fa3857e9ed",
       "implementation": "ceph_conditional_versions_bulk_mtime_current",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_current_if_match_size@L20093",
       "source_sha256": "90fa3ce072a6e3df969a76525d0ed7750eafd1379c2b8d3bdf0bca9fabbcc0a5",
       "implementation": "ceph_conditional_versions_bulk_size_current",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match@L19769",
@@ -2501,13 +2567,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match_last_modified_time@L19843",
       "source_sha256": "d14f6cd8a499d07dbcf4ce9ff7a9182a3f81eefb6993ec29c424dc8d582c456e",
       "implementation": "ceph_conditional_versions_delete_mtime_version",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_object_version_if_match_size@L19910",
       "source_sha256": "6ce1c500090670c7bb095d17a1b55cfcfabf2aac792f9db0fb4bef2b955a2aa4",
       "implementation": "ceph_conditional_versions_delete_size_version",
-      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+      "review": "通过官方签名前wire_headers发送真实If-Match/x-amz-if-match-last-modified-time/x-amz-if-match-size，不谎称旧SDK具备typed字段；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match@L19975",
@@ -2519,13 +2587,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match_last_modified_time@L20045",
       "source_sha256": "5f59fd06bd1e87be191e41678de07edc95ad348fac136436f73645c5fc9c8f4b",
       "implementation": "ceph_conditional_versions_bulk_mtime_version",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留特有的HEAD历史版本后再次PUT形成不同当前版本，批量删除仍消费原历史VersionId/mtime。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。保留特有的HEAD历史版本后再次PUT形成不同当前版本，批量删除仍消费原历史VersionId/mtime。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_delete_objects_version_if_match_size@L20118",
       "source_sha256": "571aa014a045762c1eaeec2bf030fce0f46a89169cea8ec8c7cb98bfeeaa7b61",
       "implementation": "ceph_conditional_versions_bulk_size_version",
-      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。"
+      "review": "真实SDK对象XML条件（etag/last_modified_ms/size）及Errors/Deleted原始首条字段断言；缺typed模型能力明确not_run，不用头或自造XML冒充；保留普通、当前版本、指定实际VersionId的源原始分支和marker状态；条件0不能省略；bad ETag=badetag、bad mtime=2015-01-01 UTC、bad size=9999，真实HEAD时间进入正确条件；全部412/PreconditionFailed、缺对象204或批量200保持。DeleteMarker不存在的断言仅在源实际要求的分支执行，不给其他分支增删规则。",
+      "contract_adjustment": "目录桶专属大小/时间条件不能用于普通桶；缺少已验证目录桶fixture时明确未执行。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_bucket_policy_status@L14086",
@@ -2663,7 +2733,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_object_copy_to_itself@L5576",
       "source_sha256": "20b4aa4a07a86553b469ab21a182f6588f77d9976a6c006211066679ec649601",
       "implementation": "ceph_copy_contract_self",
-      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。"
+      "review": "核对固定源码的原始对象键、零/16MiB/3字节/1MiB/15MiB/30MiB输入、复制元数据和ContentType省略规则、三版本及跨桶复制链、Owner/Initiator顺序、原子可见性、百分号源键、实际服务端状态/错误码和全部断言；版本ID从真实SDK生产响应直接进入真实复制请求，独立桶/各自身份清理。Java/C++定向真实SDK与Moto结果另见报告，缺alt身份明确not_run。",
+      "contract_adjustment": "原地复制允许明确InvalidRequest拒绝或成功；两条路径均实际GET确认内容、元数据和Content-Type不变，成功还要求返回ETag匹配读回对象。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_object_copy_key_not_found@L5731",
@@ -2747,7 +2818,8 @@
       "source_id": "s3tests/functional/test_s3.py::test_get_object_ifmodifiedsince_failed@L3075",
       "source_sha256": "ff576e179a85c24e191fe2f319a2ccf2f4262a60ac9253195de84697111c6569",
       "implementation": "ceph_state_condition_not_modified",
-      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。"
+      "review": "核对固定源码的零字节ACL对象、匿名/认证访问和删除顺序、精确状态/错误码、304原始Error.Message与ETag、版本ACL独立身份和原check_grants规则、桶重建ACL、标签顺序及状态。1658通过单一持久worker同一默认SDK client并发五次消费真实ListObjectVersions输出，HTTP barrier证实五请求同时到达且禁止fork；12003用真实typed Tagging。原始差异保留，Java/C++定向验证与清理另见报告。",
+      "contract_adjustment": "直接复用真实GET返回的Last-Modified秒精度日期，不加一秒或等待，以避免未来时间和运行速度影响结果；仍严格要求304及ETag。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_get_object_ifunmodifiedsince_good@L3098",
@@ -2963,217 +3035,253 @@
       "source_id": "s3tests/functional/test_s3.py::test_post_object_anonymous_request@L1948",
       "source_sha256": "48b711b492e3b5bc8129980fef12ce2e2f6dec917606bcd5912fb01c54edc10a",
       "implementation": "ceph_raw_post_anonymous",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_request@L1962",
       "source_sha256": "4ba8a4d0366caad18d287e80e926595a3f75f2ac7e20542c74675c0d05e92839",
       "implementation": "ceph_raw_post_authenticated",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_no_content_type@L2000",
       "source_sha256": "1544b645bcef5329c63a82ff9e4d75a11d7574ea23842be92da367452d8e85d9",
       "implementation": "ceph_raw_post_no_content_type",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_authenticated_request_bad_access_key@L2037",
       "source_sha256": "5a645f5bdf3a0bd25b6c9b9b1e816afcd95c3b7f9d4deeb96848747938fd141a",
       "implementation": "ceph_raw_post_bad_access_key",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_set_success_code@L2072",
       "source_sha256": "dbf8cc9bb061d0ca1a1bd97a78e4eca5f6f56615f9db5cd0b5a369ae2cfc6e7d",
       "implementation": "ceph_raw_post_success",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_set_invalid_success_code@L2087",
       "source_sha256": "2d70d2d25a8202e7debc719ce936b635c891f039f96bb60085cb5b9e77238f7d",
       "implementation": "ceph_raw_post_invalid_success",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_larger_than_chunk@L2102",
       "source_sha256": "076197b0789c9c6e6793dba6b019f68e5178cba0bb3a07f7e8abaa879000b4ef",
       "implementation": "ceph_raw_post_large",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_set_key_from_filename@L2141",
       "source_sha256": "67fe2e0e84af2beddcd663ad2d9c8af35e47b76723decf6811c912cdfa0040d0",
       "implementation": "ceph_raw_post_filename",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_ignored_header@L2177",
       "source_sha256": "1e839e6898dca373525b967d0aef300fad498ca25caa82f1a5d692600d941ae5",
       "implementation": "ceph_raw_post_ignored",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_case_insensitive_condition_fields@L2211",
       "source_sha256": "076ef853345c875f33a7edd5715ae4c90c10759b1ff61e512c7ba39a8ad1e8e2",
       "implementation": "ceph_raw_post_case_insensitive",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_escaped_field_values@L2246",
       "source_sha256": "65855ff494b8cc1c722cb009f1abed45a33d430498619e1a2da1866363e9b201",
       "implementation": "ceph_raw_post_escaped",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_success_redirect_action@L2282",
       "source_sha256": "7f3da9770b752d702856d065823a0b59aaa9304633899e6b7a6dc0ab68ee60bd",
       "implementation": "ceph_raw_post_redirect",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_signature@L2324",
       "source_sha256": "9df538f1ed0b810b66d35d02dce674440e8cbc9e62ae6bcc017242d9913c801c",
       "implementation": "ceph_raw_post_invalid_signature",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_access_key@L2357",
       "source_sha256": "a6f9f9c41021b3a3bd2fcefd9ee2017f4635cf8aace98b78aa666c53c30a7ca1",
       "implementation": "ceph_raw_post_invalid_access_key",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_date_format@L2390",
       "source_sha256": "a27cc3c7dad25723b026ac8cb1d6e947e356a25bb2904a974cdde8eb99eafa55",
       "implementation": "ceph_raw_post_invalid_date",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_no_key_specified@L2423",
       "source_sha256": "10c739fbcde6e14f9f62e91bb1d53076aeb72fa0555dc225839717a86be4754a",
       "implementation": "ceph_raw_post_no_key",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_signature@L2455",
       "source_sha256": "39e862c5f4a531e4a10c421f8ce63c5ba9c71bf2b72f67eea7e388cfc42df224",
       "implementation": "ceph_raw_post_missing_signature",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_policy_condition@L2488",
       "source_sha256": "3c43126e3ef29cb4fd5129ab6dd8aff7c471d274c3b87b8187dd05528ed60cb7",
       "implementation": "ceph_raw_post_missing_bucket_condition",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_user_specified_header@L2520",
       "source_sha256": "f7f6b5640c62cd26f69e876257574909f1611baa72cbe9f67d939af4c2feca28",
       "implementation": "ceph_raw_post_metadata",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_request_missing_policy_specified_field@L2556",
       "source_sha256": "d548c1c76c3da1ea710d1172610c5590635bcf135f47e20f360a58788fa3d38b",
       "implementation": "ceph_raw_post_missing_metadata",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_condition_is_case_sensitive@L2590",
       "source_sha256": "c450cdd1f88dfe992c06277a8445e93bced1467e593caa38c7af884b007bcd28",
       "implementation": "ceph_raw_post_conditions_case",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_expires_is_case_sensitive@L2623",
       "source_sha256": "b2d770740d263c98fa4b1c1d4fefbb8ee3a8e14904ba0abe720e5e2fcc1cceec",
       "implementation": "ceph_raw_post_expiration_case",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_expired_policy@L2656",
       "source_sha256": "719180d3e8b47f41986b2a7c1a89f64f51dcd1b6534ac7a8565b217e866dabce",
       "implementation": "ceph_raw_post_expired",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_wrong_bucket@L2689",
       "source_sha256": "fef295eb39fa76ee2e06775d80845d70dab8467b00064674b8f5d7d2185c23dc",
       "implementation": "ceph_raw_post_wrong_bucket",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_request_field_value@L2725",
       "source_sha256": "69a1bee05c944db40528babd11f14173f78c160b47cc131ac7d213ee4b0b3b60",
       "implementation": "ceph_raw_post_invalid_metadata",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_expires_condition@L2758",
       "source_sha256": "a9ee829ca07fa5bf1c6ffcbc45804cbf20be7b1eae2acd566016aad3324f13e0",
       "implementation": "ceph_raw_post_no_expiration",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_conditions_list@L2791",
       "source_sha256": "7b871eab19af73538da89637189654bd39f2ef2cbb5d2c7455fe88ba95b837cc",
       "implementation": "ceph_raw_post_no_conditions",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_limit_exceeded@L2816",
       "source_sha256": "ab6a19f5ac97f9e134e054400a4bd3dab73a33d3b2a402094718b22bc8cfc21f",
       "implementation": "ceph_raw_post_above_maximum",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_missing_content_length_argument@L2849",
       "source_sha256": "c56dd54306aed7c12ec272e0335d30d94c974007473c9e874a3cf38037b0520c",
       "implementation": "ceph_raw_post_missing_length",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_invalid_content_length_argument@L2882",
       "source_sha256": "bf280967fdbc26ba17e454c25ac6ce11cc667447631e191ccf101d0f64233360",
       "implementation": "ceph_raw_post_negative_length",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_below_minimum@L2915",
       "source_sha256": "8a7ab688265ab1482d02e1b5724a7b7f9582ed2b0330418659c1a90510061dd1",
       "implementation": "ceph_raw_post_below_minimum",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_size_rgw_chunk_size_bug@L2948",
       "source_sha256": "42e479bfa454121bceeb5fd4c8bb4dff3817a02e8bf2e590c0bf285e61615a6d",
       "implementation": "ceph_raw_post_chunk_bug",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_empty_conditions@L2995",
       "source_sha256": "ba0a0502fb6245516c3836ef7307af2f5086b05cb58df4317399db535e1646bc",
       "implementation": "ceph_raw_post_empty_conditions",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_tags_anonymous_request@L12203",
       "source_sha256": "0b336fb7ca61f5321cd8a00402da143cb523cfed20a11404adf354fad8cc99f3",
       "implementation": "ceph_raw_post_tags_anonymous",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_tags_authenticated_request@L12234",
       "source_sha256": "f978fd4a9dab36f0928e6e5fe32c23ff81385d7d6c2b1d59e5463825ac3a598a",
       "implementation": "ceph_raw_post_tags_authenticated",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_post_object_upload_checksum@L15299",
       "source_sha256": "81b26315ee47942ac11d6e858843af8270f4d2acf0cbce012109a79b6f434715",
       "implementation": "ceph_raw_post_checksum",
-      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。"
+      "review": "源requests files=OrderedDict保留所有普通字段filename、file最后、原JSON编码/base64/HMAC-SHA1及全部原断言；真SDK创建/读取/清理，所有潜在POST写入预追踪；HTTP协议不计SDK性能。",
+      "contract_adjustment": "普通表单字段不携带filename，仅file为文件字段；保留POST V2签名标签及脱敏错误证据。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_cors_origin_response@L6916",
@@ -3947,31 +4055,35 @@
       "source_id": "s3tests/functional/test_s3.py::test_object_read_unreadable@L14078",
       "source_sha256": "edfec4842ec44666543e3c9f06fb287ca35ec92ba8c0c09b33376cb5475bf017",
       "implementation": "ceph_tail_unreadable",
-      "review": "原Unicode字面键必须返回400和精确URI解析错误消息；4881复用源check_grants全部字段/条件排序/额外字段拒绝，独立alt预期元数据、真实alt签名及finally恢复cleanup ACL；14078保留原Unicode字面、真实SDK一次UTF8编码、精确错误消息，无额外KMS/身份前提。"
+      "review": "协议纠偏：原Python Unicode字面量不是非法URI。实际SDK应编码合法UTF-8键；不存在时NoSuchKey，随后PUT/GET完整内容一致。保留来源追溯，不声称沿用原400/错误消息断言。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_encryption_sse_c_post_object_authenticated_request@L11091",
       "source_sha256": "5e933e78b29374e97532d1101a973e7d95006ff968aa0392dca429f0f2883c5c",
       "implementation": "ceph_encrypted_form_customer",
-      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。",
+      "contract_adjustment": "普通表单字段必须无filename，文件字段最后发送；SSE-C表单使用文档指定的key-MD5字段大小写；保留真实POST状态、服务响应及SDK读取内容校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_kms_post_object_authenticated_request@L11410",
       "source_sha256": "76169d2a49bb59dc18e0e476025187a8fceb9286751ef09075befeddddcd990c",
       "implementation": "ceph_encrypted_form_kms",
-      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。",
+      "contract_adjustment": "普通表单字段必须无filename，文件字段最后发送；SSE-C表单使用文档指定的key-MD5字段大小写；保留真实POST状态、服务响应及SDK读取内容校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_s3_default_post_object_authenticated_request@L14807",
       "source_sha256": "7127e34bd837ec20a0a07d06244c4a0da2ae33eadd758cf7b7ebe39b74c331af",
       "implementation": "ceph_encrypted_form_s3_default",
-      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。",
+      "contract_adjustment": "普通表单字段必须无filename，文件字段最后发送；SSE-C表单使用文档指定的key-MD5字段大小写；保留真实POST状态、服务响应及SDK读取内容校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_kms_default_post_object_authenticated_request@L14852",
       "source_sha256": "042345ee1901f3ef8151fcfb5b5ac2a229b50661302fdc362cb96f743e704efb",
       "implementation": "ceph_encrypted_form_kms_default",
-      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。"
+      "review": "保留四组原始HTTP form的OrderedDict files字段/filename、JSON policy/HMAC-SHA1/6000秒期限、原SSE-C常量与KMS/default配置、真实SDK GET字节/头全部断言和finally清理；传输证据明确raw HTTP不计SDK性能。",
+      "contract_adjustment": "普通表单字段必须无filename，文件字段最后发送；SSE-C表单使用文档指定的key-MD5字段大小写；保留真实POST状态、服务响应及SDK读取内容校验。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_sse_kms_multipart_upload@L11312",
@@ -4427,13 +4539,15 @@
       "source_id": "s3tests/functional/test_s3.py::test_atomic_conditional_write_1mb@L7409",
       "source_sha256": "7021d20a708d832af88938d30aaed2c84508e9132a74b2e5fe6ce2a37d4e5d25",
       "implementation": "ceph_atomic_stream_conditional_write_1mb",
-      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。"
+      "review": "核对原1/4/8MiB负载及全部helper断言。ordinary write初始A全验，conditional原无初次A GET、仅外B If-Match:*；dual初始空对象，每次外B真实正EOF read返回前同原client重置完整A写入；write/conditional每次EOF回调fresh真实client GET逐chunk全A及size。SDK预哈希/签名/重试读取次数均实际观察、未固定次数/延迟至上传完成后。独立fresh client最终全B及size，异常保留本地回调或原SDK真实错误而不伪造HTTP。唯一桶预登记key并真实清理。",
+      "contract_adjustment": "条件PUT使用初始化PUT返回的真实ETag；不将Ceph的If-Match通配符扩展当作通用S3 PUT要求，保持真实EOF回调及最终内容验证。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_multipart_resend_first_finishes_last@L7507",
       "source_sha256": "6b13dc3e238c87c93ae6989f382e40bd8e74bf127752ea2989e8cd51d3115970",
       "implementation": "ceph_atomic_stream_multipart_resend",
-      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。"
+      "review": "逐行核对源helper依赖和全部输入/断言：MP保持8字节、真实C dry-run EOF次数校准而非固定hash次数、真实新UploadId、B/A仅strip外引号ETag的重复PartNumber1顺序、原未要求B必触发；双条件保持同client初始A实际ETag删除全部引号、B/C共同If-Match、实际412后fresh全B；删除桶保留每次EOF同client真DELETE和实际404/NoSuchBucket来源；版本并发原三轮start3 PUT→立即List按真实ID启动DELETE，最后统一join及最终List/删除/join/List无Versions，后台错误只记录不额外判失败。独立桶/版本/MPU仅按真实ID清理，所有真实线程finally join，未知Create结果真实mp_list兜底。实际SDK执行及其HTTP/Moto差异见交接日志，不伪造服务响应。",
+      "contract_adjustment": "通用协议修正：并发同号上传的响应顺序不决定最终分片；核对实际分片与已确认的A/B ETag，再完成并验证胜出内容。"
     },
     {
       "source_id": "s3tests/functional/test_s3.py::test_atomic_dual_conditional_write_1mb@L7448",

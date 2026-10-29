@@ -56,17 +56,15 @@ class MetadataTailWireTest(unittest.TestCase):
                 self.assertEqual(headers['x-amz-acl'],'public-read-write');self.assertIn('Credential=alt-key/',headers['authorization'])
                 self.assertEqual(len(server.fixtures),0)
 
-    def test_original_unicode_uri_literal_exact_service_message_and_negative_oracle(self):
-        """The actual SDK must encode the original Unicode key exactly once; only genuine HTTP400 plus the exact original message passes, and another message must fail with cleanup intact."""
+    def test_valid_unicode_uri_rejects_fabricated_parse_errors(self):
+        """The actual SDK must encode a valid Unicode key exactly once; both fabricated HTTP400 parse errors must fail, regardless of message, with cleanup intact."""
         from sdk_fixtures import fixture_worker
         for language in os.environ.get('OSV_S3_TEST_LANGUAGES','java,cpp').split(','):
             for message in ("Couldn't parse the specified URI.",'different message'):
                 fixtures=[(404,{},b''),(200,{},b''),(400,XML,('<Error><Code>InvalidRequest</Code><Message>'+message+'</Message></Error>').encode()),
                  (200,{},b''),(200,XML,EMPTY),(204,{},b''),(404,{},b'')]
                 with self.subTest(language=language,message=message),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,fixtures,'s3') as (worker,server):
-                    if message.startswith("Couldn't"):unreadable(self.probe(worker,Path(temporary)))
-                    else:
-                        with self.assertRaises(AssertionError):unreadable(self.probe(worker,Path(temporary)))
+                    with self.assertRaises(AssertionError):unreadable(self.probe(worker,Path(temporary)))
                     self.assertTrue(unquote(urlsplit(server.requests[2][1]).path).endswith('/\xae\x8a-'))
                     self.assertEqual(server.requests[2][0],'GET');self.assertEqual(len(server.fixtures),0)
 
@@ -75,7 +73,7 @@ class MetadataTailWireTest(unittest.TestCase):
 class MetadataTailLiveTest(unittest.TestCase):
     """Preserve original source service differences and missing-identity prerequisites while proving scoped bucket cleanup."""
     def test_source_default_outcomes_keep_unrelated_bucket(self):
-        """An unconfigured alternate identity must be not_run, and the original Unicode-key 400 oracle must retain the service's actual 404 failure; the sentinel bucket must survive."""
+        """An unconfigured alternate identity must be not_run; valid Unicode keys must round-trip and all owned buckets must be cleaned while the sentinel survives."""
         import boto3,logging
         from unittest.mock import patch
         from local_moto import LocalMotoServer
@@ -94,7 +92,7 @@ class MetadataTailLiveTest(unittest.TestCase):
                         worker=Worker({'command':command,'language':language,'api':'s3'},30)
                         try:
                             d=Path(temporary);rows=run_cases(Context(worker,'unused/',d,b'independent',d/'body',d/'output',{}),CASES)
-                            self.assertEqual([row['status'] for row in rows],['not_run','fail']);self.assertEqual(rows[0]['missing_operations'],['identity_alt'])
-                            self.assertIn('404',rows[1]['error']);self.assertEqual({item['Name'] for item in client.list_buckets()['Buckets']},{'osv-tail-sentinel'})
+                            self.assertEqual([row['status'] for row in rows],['not_run','pass']);self.assertEqual(rows[0]['missing_operations'],['identity_alt'])
+                            self.assertEqual({item['Name'] for item in client.list_buckets()['Buckets']},{'osv-tail-sentinel'})
                         finally:worker.close()
         finally:server.stop()

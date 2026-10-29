@@ -5,6 +5,16 @@ from .ceph_multipart import uploading,source_data,MIB,assert_error
 from .scenarios import Suite,assert_equal
 from .suites import case,run_cases,CEPH
 
+def check_marker_response(result,expected):
+    """Require deleted-current HEAD404; plain deletion may omit the optional marker header."""
+    assert_equal(result["ok"],False)
+    assert_equal(result.get("status_code"),404)
+    headers={name.lower():value for name,value in result.get("http_headers",{}).items()}
+    value=headers.get("x-amz-delete-marker")
+    if isinstance(value,list):value=",".join(value)
+    if expected:assert_equal(value,"true")
+    elif value is not None:assert_equal(value,"false")
+
 def configure(bucket,status,**options):
     bucket.call("versioning_put",status=status,**options)
     for attempt in range(5):
@@ -119,9 +129,7 @@ def versioning(p,mode):
             if state=="suspended":configure(bucket,"Suspended")
             bucket.call("delete_version",key=key)
             result=bucket.raw("head_version",key=key)
-            value="none" if result["ok"] else result["http_headers"]["x-amz-delete-marker"]
-            if isinstance(value,list):value=",".join(value)
-            assert_equal(value,"false" if state=="plain" else "true");return
+            check_marker_response(result,state!="plain");return
         configure(bucket,"Enabled",**({"mfa_delete":"Disabled"} if mode in ("walks","head") else {}))
         key="testobj"
         if mode=="suspended_copy":return suspended_copy(bucket,p)

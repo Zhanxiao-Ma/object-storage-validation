@@ -2,7 +2,7 @@
 from datetime import datetime,timezone
 import json
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
-from .scenarios import Suite,assert_equal
+from .scenarios import Suite,assert_equal,SDKOperationError
 from .suites import case,run_cases,CaseNotRun,CEPH
 
 def raw(bucket,name,**parameters):
@@ -10,12 +10,15 @@ def raw(bucket,name,**parameters):
 
 def api(bucket,name,**parameters):
     result=raw(bucket,name,**parameters)
-    if not result["ok"]:raise AssertionError("actual SDK API failure: "+json.dumps(result,ensure_ascii=False))
+    if not result["ok"]:raise SDKOperationError(result)
     return result
 
 def rejected(result,status,code=None):
     if result["ok"] or result.get("status_code")!=status or (code is not None and result.get("error_code")!=code):
-        raise AssertionError("expected service rejection "+str((status,code))+"; actual="+json.dumps(result,ensure_ascii=False))
+        error=AssertionError("expected service rejection "+str((status,code))+"; actual="+json.dumps(result,ensure_ascii=False))
+        if not result["ok"]:
+            observed=SDKOperationError(result);error.evidence=observed.evidence;error.failure_category=observed.failure_category
+        raise error
 
 def tags(p):
     with BucketScope(p) as bucket:
@@ -78,7 +81,7 @@ def lifecycle(p,mode):
         result=raw(bucket,"PutBucketLifecycleConfiguration",LifecycleConfiguration={"Rules":rules})
         if mode in ("id_long","same_id"):return rejected(result,400,"InvalidArgument")
         if mode in ("invalid_date","transition_invalid_date"):return rejected(result,400)
-        if not result["ok"]:raise AssertionError("actual SDK API failure: "+json.dumps(result,ensure_ascii=False))
+        if not result["ok"]:raise SDKOperationError(result)
         if mode in ("get","no_id"):
             actual=api(bucket,"GetBucketLifecycleConfiguration")["data"]["Rules"]
             if mode=="get":assert_equal(actual,rules)

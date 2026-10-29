@@ -2,7 +2,7 @@
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import api
 from .ceph_buckets import rejected
-from .scenarios import Suite,assert_equal
+from .scenarios import Suite,assert_equal,require_ok,SDKOperationError
 from .suites import case,run_cases,CaseNotRun,CEPH
 
 ALGORITHM="x-amz-server-side-encryption"
@@ -36,7 +36,18 @@ def transfer(p,mode,size):
             put_headers={}
         else:put_headers=headers
         p.ctx.body.write_bytes(b"A"*size)
-        result=bucket.call("put_encryption",key="testobj",body_path=str(p.ctx.body),encryption_headers=put_headers)
+        try:result=bucket.call("put_encryption",key="testobj",body_path=str(p.ctx.body),encryption_headers=put_headers)
+        except SDKOperationError as error:
+            # A client checksum rejection can happen after a persisted PUT. Preserve
+            # the failure while collecting read-only evidence, never infer corruption.
+            if "checksum" in str(error).lower():
+                import hashlib
+                observed=bucket.raw("get_encryption",key="testobj",encryption_headers={},output_path=str(p.ctx.output))
+                error.evidence["post_failure_get"]={k:observed[k] for k in ("ok","http_headers","error","error_code") if k in observed}
+                if observed["ok"]:
+                    actual=p.ctx.output.read_bytes()
+                    error.evidence["independent_readback"]={"size":len(actual),"sha256":hashlib.sha256(actual).hexdigest(),"matches_input":actual==b"A"*size}
+            raise
         if mode in ("s3_default","s3_explicit","kms_default"):
             assert_equal(result["http_headers"][ALGORITHM],"aws:kms" if kms else "AES256")
             if kms:assert_equal(result["http_headers"][KMS_KEY],ident)
@@ -54,7 +65,7 @@ def transfer(p,mode,size):
     return {"isolated_bucket":bucket.name,"cleanup_confirmed":bucket.cleanup_completed}
 
 def invalid(p,mode):
-    """Preserve original missing KMS key, unannounced key testkey-2 and read declaration testkey-1; require real service errors."""
+    """Verify default KMS reads without a key ID; reject the separate invalid key declarations with actual service errors."""
     with BucketScope(p) as bucket:
         headers={ALGORITHM:"aws:kms"} if mode=="no_key" else {KMS_KEY:"testkey-2"}
         p.ctx.body.write_bytes(b"A"*100)
@@ -62,7 +73,12 @@ def invalid(p,mode):
             bucket.call("put_encryption",key="testobj",body_path=str(p.ctx.body),encryption_headers={})
             response=bucket.raw("get_encryption",key="testobj",encryption_headers={ALGORITHM:"aws:kms",KMS_KEY:"testkey-1"},output_path=str(p.ctx.output))
         else:response=bucket.raw("put_encryption",key="testobj",body_path=str(p.ctx.body),encryption_headers=headers)
-        if mode=="no_key":service_error(response)
+        if mode=="no_key":
+            require_ok(response)
+            assert_equal(response["http_headers"].get(ALGORITHM),"aws:kms")
+            observed,body=read(bucket,p)
+            assert_equal(observed["http_headers"].get(ALGORITHM),"aws:kms")
+            assert_equal(body,b"A"*100)
         else:rejected(p,response,400)
     return {"isolated_bucket":bucket.name,"cleanup_confirmed":bucket.cleanup_completed}
 
@@ -72,7 +88,7 @@ VECTORS+=tuple(("kms_transfer_"+name,"kms_transfer",size,"test_sse_kms_transfer_
 VECTORS+=(("kms_head","kms_head",1000,"test_sse_kms_method_head"),("kms_present","kms_present",100,"test_sse_kms_present"),("s3_head","s3_head",1000,"test_sse_s3_default_method_head"))
 INVALID=(("no_key","test_sse_kms_no_key"),("not_declared","test_sse_kms_not_declared"),("read_declare","test_sse_kms_read_declare"))
 CASES=tuple(case("ceph_encryption_"+name,"Ceph SSE-S3/KMS "+name,"保留原始 A 字节长度、默认/显式加密、KMS key ID 与原始 HTTP 响应/拒绝断言",SCOPE_OPERATIONS+" put_encryption get_encryption head_encryption"+(" api.PutBucketEncryption" if mode in ("s3_default","kms_default","s3_head") else ""),lambda p,mode=mode,size=size:transfer(p,mode,size),reference,CEPH) for name,mode,size,reference in VECTORS)
-CASES+=tuple(case("ceph_encryption_"+mode,"Ceph KMS 特殊请求 "+mode,"保留未提供密钥/未声明加密/读取附带加密头的原始输入和实际服务端 ClientError",SCOPE_OPERATIONS+" put_encryption get_encryption",lambda p,mode=mode:invalid(p,mode),reference,CEPH) for mode,reference in INVALID)
+CASES+=tuple(case("ceph_encryption_"+mode,"Ceph KMS 特殊请求 "+mode,"未提供KeyId时验证默认KMS密钥读写；其余无效声明验证真实服务拒绝",SCOPE_OPERATIONS+" put_encryption get_encryption",lambda p,mode=mode:invalid(p,mode),reference,CEPH) for mode,reference in INVALID)
 
 def register(registry):
     registry.add_suite(Suite("ceph_encryption_objects",frozenset().union(*(c.operations for c in CASES)),lambda ctx:run_cases(ctx,CASES),tuple(c.metadata() for c in CASES),case_capabilities=True))

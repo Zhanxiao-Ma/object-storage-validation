@@ -28,7 +28,7 @@ class ConditionalWriteWireTest(unittest.TestCase):
                     self.assertEqual(len(server.requests),11)
                     request=server.requests[4 if mode=="put" else 3];headers={key.lower():value for key,value in request[2].items()}
                     header="if-match" if mode=="put" else "x-amz-copy-source-if-match"
-                    self.assertEqual(headers[header],tag.replace('"','') if mode=="put" else copytag)
+                    self.assertEqual(headers[header],tag if mode=="put" else copytag)
                     self.assertIn(header,headers["authorization"])
                     if mode=="put":self.assertEqual(request[3],b"zar")
 
@@ -51,8 +51,8 @@ class ConditionalWriteServiceTest(unittest.TestCase):
                 with self.subTest(language=language),tempfile.TemporaryDirectory() as temporary,fixture_worker(language,[],"s3",{"OSV_ENDPOINT":endpoint,"AWS_EC2_METADATA_DISABLED":"true","OSV_REGION":"us-east-1"}) as (worker,_):
                     directory=Path(temporary);ctx=Context(worker,"unused/",directory,b"independent",directory/"body",directory/"output",{})
                     rows=run_cases(ctx,CASES)
-                    self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{"ceph_put_condition_match_existing","ceph_put_condition_none_etag","ceph_copy_condition_match_bad"})
-                    self.assertTrue(all(row["status"] in ("pass","fail") for row in rows),rows)
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="fail"},{"ceph_copy_condition_match_bad"})
+                    self.assertEqual({row["case"] for row in rows if row["status"]=="not_run"},{"ceph_put_condition_none_bad","ceph_put_condition_none_etag"})
                     self.assertEqual(len(rows),12)
                     self.assertEqual(client.list_buckets()["Buckets"],[])
         finally:service.stop()

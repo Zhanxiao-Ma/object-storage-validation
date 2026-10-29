@@ -3,7 +3,8 @@ from contextlib import contextmanager
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .version_scope import VersionScope,VERSION_SCOPE_OPERATIONS
 from .ceph_bucket_config import api,rejected
-from .ceph_acl import actor
+from .ceph_copy import check_self_copy
+from .ceph_acl import check_display_name,actor
 from .ceph_multipart import uploading,source_data,MIB
 from .ceph_versioning import configure,create_versions,multipart as multipart_upload
 from .scenarios import Suite,assert_equal
@@ -40,7 +41,10 @@ def basic(p,mode):
             bucket.call("put_metadata",key=source_key,body_path=str(p.ctx.body),content_type="text/bla",metadata={})
         else:bucket.put(source_key,payload)
         if mode=="self":
-            rejected(bucket.raw("copy",key=source_key,source_bucket=bucket.name,source_key=source_key),400,"InvalidRequest");return
+            before,body=read(bucket,p,source_key);assert_equal(body,payload)
+            response=bucket.raw("copy",key=source_key,source_bucket=bucket.name,source_key=source_key)
+            after,body=read(bucket,p,source_key)
+            check_self_copy(response,before,after,body,payload);return
         copy_to(bucket,bucket,source_key,target)
         result,body=read(bucket,p,target)
         if mode in ("zero","16m"):assert_equal(result["size"],len(payload))
@@ -171,7 +175,7 @@ def multipart_owners(p):
                     assert_equal(row["key"],key);assert_equal(row["upload_id"],ident)
                     for owner in ("initiator","owner"):
                         assert_equal(row[owner]["id"],expected["canonical_id"])
-                        assert_equal(row[owner]["display_name"],expected["display_name"])
+                        check_display_name(row[owner].get("display_name"),expected.get("display_name"))
 
 BASIC=(("zero","test_object_copy_zero_size"),("16m","test_object_copy_16m"),("same","test_object_copy_same_bucket"),("content_type","test_object_copy_verify_contenttype"),("self","test_object_copy_to_itself"),("missing","test_object_copy_key_not_found"))
 CASES=tuple(case("ceph_copy_contract_"+mode,"Ceph 完整复制契约 "+mode,"保留原始对象键、字节和 Content-Type 输入及服务端状态/错误码原始断言",SCOPE_OPERATIONS+" put copy get_metadata"+(" put_metadata" if mode=="content_type" else ""),lambda p,mode=mode:basic(p,mode),reference,CEPH) for mode,reference in BASIC)

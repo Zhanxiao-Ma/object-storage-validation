@@ -53,3 +53,22 @@ class ReferenceCopyTest(unittest.TestCase):
                 self.assertTrue(worker.call({"op":"tags_delete","key":"test"})["ok"])
                 self.assertNotIn("x-amz-tagging-count",worker.call({"op":"head_http","key":"test"})["http_headers"])
             finally:worker.close()
+
+    def test_empty_cursor_and_upload_key_binding(self):
+        """Create real reference upload state; expect wrong-key abort to preserve its ID, correct abort to remove it, and empty cursor to differ from omission."""
+        with tempfile.TemporaryDirectory() as temporary:
+            directory=Path(temporary);worker=Worker(config(directory)["targets"][0],5)
+            try:
+                absent=worker.call({"op":"list_v2_observed","prefix":""})
+                self.assertTrue(absent["ok"],absent)
+                empty=worker.call({"op":"list_v2_observed","prefix":"","token":""})
+                self.assertEqual((empty["ok"],empty["status_code"],empty["error_code"]),(False,400,"InvalidArgument"))
+                created=worker.call({"op":"mp_create_metadata","key":"source"})
+                self.assertTrue(created["ok"],created);ident=created["upload_id"]
+                wrong=worker.call({"op":"mp_abort_raw","key":"other","upload_id":ident})
+                self.assertEqual((wrong["ok"],wrong["status_code"],wrong["error_code"]),(False,404,"NoSuchUpload"))
+                listing=worker.call({"op":"mp_list","prefix":""})
+                self.assertEqual([(x["key"],x["upload_id"]) for x in listing["uploads"]],[("source",ident)])
+                self.assertTrue(worker.call({"op":"mp_abort_raw","key":"source","upload_id":ident})["ok"])
+                self.assertEqual(worker.call({"op":"mp_list","prefix":""})["uploads"],[])
+            finally:worker.close()

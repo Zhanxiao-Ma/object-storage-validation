@@ -8,7 +8,7 @@ import json
 from .bucket_scope import BucketScope,SCOPE_OPERATIONS
 from .ceph_bucket_config import api
 from .ceph_encryption_objects import key_id,ALGORITHM,KMS_KEY
-from .ceph_raw_http import SourceHttp
+from .ceph_raw_http import SourceHttp,post_form,check_post
 from .scenarios import Suite,assert_equal
 from .suites import case,run_cases,CEPH
 
@@ -25,7 +25,7 @@ def encrypted_form(p,mode):
             if kms:rule["KMSMasterKeyID"]=ident
             assert_equal(api(bucket,"PutBucketEncryption",ServerSideEncryptionConfiguration={"Rules":[{"ApplyServerSideEncryptionByDefault":rule}]})["status_code"],200)
         conditions=[{"bucket":bucket.name},["starts-with","$key",bucket.key("foo")],{"acl":"private"},["starts-with","$Content-Type","text/plain"]]
-        encryption=SSE_C if mode=="customer" else {ALGORITHM:"aws:kms",KMS_KEY:ident} if mode=="kms" else {}
+        encryption={name.removesuffix("-md5")+"-MD5" if name.endswith("-md5") else name:value for name,value in SSE_C.items()} if mode=="customer" else {ALGORITHM:"aws:kms",KMS_KEY:ident} if mode=="kms" else {}
         for field in encryption or {ALGORITHM:""}:conditions.append(["starts-with","$"+field,""])
         conditions.append(["content-length-range",0,1024])
         policy_document={"expiration":(datetime.now(timezone.utc)+timedelta(seconds=6000)).strftime("%Y-%m-%dT%H:%M:%SZ"),"conditions":conditions}
@@ -33,8 +33,8 @@ def encrypted_form(p,mode):
         signature=base64.b64encode(hmac.new(transport.secret.encode("utf-8"),policy,hashlib.sha1).digest())
         fields=OrderedDict([("key",bucket.key("foo.txt")),("AWSAccessKeyId",transport.access),("acl","private"),("signature",signature),("policy",policy),("Content-Type","text/plain"),*encryption.items(),("file","bar")])
         bucket.written_keys.add("foo.txt")
-        response=transport.request("POST",transport.url(bucket.name),files=fields)
-        assert_equal(response.status_code,204)
+        response=transport.request("POST",transport.url(bucket.name),files=post_form(fields))
+        check_post(response,204,transport,fields)
         result=bucket.call("get_encryption",key="foo.txt",encryption_headers=SSE_C if mode=="customer" else {},output_path=str(p.ctx.output))
         if mode in ("s3_default","kms_default"):
             assert_equal(result["http_headers"][ALGORITHM],"aws:kms" if kms else "AES256")

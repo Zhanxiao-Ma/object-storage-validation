@@ -70,8 +70,35 @@ class SourceHttp:
     def evidence():return {"request_transport":"raw_http","sdk_role":"bucket configuration, readback and cleanup only","sdk_performance_sample":False}
 
 
+class PostResponseError(AssertionError):
+    """Keep scrubbed raw HTTP evidence for a failed form request without retaining signatures or credential-bearing fields."""
+    def __init__(self,response,expected,transport,fields):
+        from .secrets import SecretRegistry
+        scrub=SecretRegistry();scrub.add(transport.access);scrub.add(transport.access[::-1]);scrub.add(transport.secret)
+        for name,value in fields.items():
+            if name.lower() in ("signature","policy"):
+                scrub.add(value.decode() if isinstance(value,bytes) else value)
+        body=scrub.redact(response.content[:16384].decode("utf-8",errors="replace"))
+        try:
+            root=ET.fromstring(body);code=root.findtext("Code");message=root.findtext("Message")
+        except ET.ParseError:code=None;message=None
+        self.evidence={"request_transport":"raw_http","signing":"anonymous" if "signature" not in fields else "s3_post_v2",
+            "form_field_names":list(fields),"status_code":response.status_code,"expected_status":expected,
+            "error_code":code,"error_message":message,"response_body":body,"body_truncated":len(response.content)>16384}
+        self.failure_category="access_rejected" if response.status_code==403 else "service_error"
+        super().__init__("POST response: "+json.dumps(self.evidence,ensure_ascii=False))
+
+
+def check_post(response,expected,transport,fields):
+    if response.status_code!=expected:raise PostResponseError(response,expected,transport,fields)
+
+def post_form(fields):
+    """Serialize scalar form fields without filenames; only the final file field is a file upload."""
+    return [(name,value if name.lower()=="file" else (None,value)) for name,value in fields.items()]
+
 def post_vector(p,mode):
     """Keep source form ordering/filenames, exact policy JSON/HMAC and every status/body/redirect/metadata oracle; real SDK scopes clean all possible writes on failed assertions."""
+    if mode=="case_insensitive":raise CaseNotRun("Mixed-case policy operators are not a generic S3 policy contract", "nonstandard policy operator contract")
     transport=SourceHttp(p)
     public=mode in {"anonymous","no_content_type","bad_access_key","success","invalid_success","redirect","tags_anonymous"}
     anonymous=mode in {"anonymous","success","invalid_success","tags_anonymous"}
@@ -92,6 +119,7 @@ def post_vector(p,mode):
         if mode in {"metadata","missing_metadata"}:conditions.append(["starts-with","$x-amz-meta-foo","bar"])
         if mode=="invalid_metadata":conditions.append(["eq","$x-amz-meta-foo",""])
         if mode=="tags_authenticated":conditions.append(["starts-with","$tagging",""])
+        if mode=="checksum":conditions.append(["starts-with","$x-amz-checksum-sha256",""])
         if mode=="redirect":conditions.insert(-1,["eq","$success_action_redirect",transport.url(bucket.name)])
         if mode=="case_insensitive":conditions=[{"bUcKeT":bucket.name},["StArTs-WiTh","$KeY",bucket.key("foo")],{"AcL":"private"},["StArTs-WiTh","$CoNtEnT-TyPe","text/plain"],["content-length-range",0,1024]]
         if mode=="empty_conditions":conditions=[{}]
@@ -121,14 +149,17 @@ def post_vector(p,mode):
         # Raw POST can write before a failing assertion. Record potential original
         # keys before transmission and rely on SDK listing for any service aliases.
         target.written_keys.add(key)
-        response=transport.request("POST",transport.url(target.name),files=fields)
+        response=transport.request("POST",transport.url(target.name),files=post_form(fields))
         forbidden={"bad_access_key","invalid_signature","invalid_access_key","missing_bucket_condition","missing_metadata","expired","wrong_bucket","invalid_metadata"}
         malformed={"invalid_date","no_key","missing_signature","conditions_case","expiration_case","no_expiration","no_conditions","above_maximum","missing_length","negative_length","below_minimum","empty_conditions"}
         expected=403 if mode in forbidden else 400 if mode in malformed else 201 if mode=="success" else 200 if mode=="redirect" else 204
-        assert_equal(response.status_code,expected)
+        if mode=="empty_conditions" and response.status_code==403:
+            root=ET.fromstring(response.content)
+            assert_equal(root.findtext("Code") in ("AccessDenied","InvalidPolicyDocument"),True)
+        else:check_post(response,expected,transport,fields)
         if mode=="success":assert_equal(ET.fromstring(response.content).find("Key").text,bucket.key("foo.txt"))
         if mode=="invalid_success":assert_equal(response.content.decode(),"")
-        reads={"anonymous","authenticated","no_content_type","large","filename","escaped","redirect","metadata","tags_anonymous","tags_authenticated"}
+        reads={"anonymous","authenticated","no_content_type","large","filename","escaped","redirect","metadata","tags_anonymous","tags_authenticated","checksum"}
         if mode in reads:
             observed=bucket.call("get_metadata",key=key,output_path=str(p.ctx.output))
             if mode=="metadata":assert_equal(observed["metadata"]["foo"],"barclamp")
@@ -136,9 +167,9 @@ def post_vector(p,mode):
             else:assert_equal(p.ctx.output.read_bytes().decode(),content.decode() if isinstance(content,bytes) else content)
         if mode=="tags_anonymous":assert_equal(bucket.call("tags_get",key=key)["tags"],[{"key":"0","value":"0"},{"key":"1","value":"1"}])
         if mode=="checksum":
-            fields["x-amz-checksum-sha256"]="sailorjerry"
-            assert_equal(transport.request("POST",transport.url(bucket.name),files=fields).status_code,400)
-    return transport.evidence()
+            fields["x-amz-checksum-sha256"]=base64.b64encode(bytes(32)).decode()
+            check_post(transport.request("POST",transport.url(bucket.name),files=post_form(fields)),400,transport,fields)
+    return {**transport.evidence(),"signing":"anonymous" if anonymous else "s3_post_v2"}
 
 
 POSTS=(("anonymous","test_post_object_anonymous_request"),("authenticated","test_post_object_authenticated_request"),("no_content_type","test_post_object_authenticated_no_content_type"),("bad_access_key","test_post_object_authenticated_request_bad_access_key"),("success","test_post_object_set_success_code"),("invalid_success","test_post_object_set_invalid_success_code"),("large","test_post_object_upload_larger_than_chunk"),("filename","test_post_object_set_key_from_filename"),("ignored","test_post_object_ignored_header"),("case_insensitive","test_post_object_case_insensitive_condition_fields"),("escaped","test_post_object_escaped_field_values"),("redirect","test_post_object_success_redirect_action"),("invalid_signature","test_post_object_invalid_signature"),("invalid_access_key","test_post_object_invalid_access_key"),("invalid_date","test_post_object_invalid_date_format"),("no_key","test_post_object_no_key_specified"),("missing_signature","test_post_object_missing_signature"),("missing_bucket_condition","test_post_object_missing_policy_condition"),("metadata","test_post_object_user_specified_header"),("missing_metadata","test_post_object_request_missing_policy_specified_field"),("conditions_case","test_post_object_condition_is_case_sensitive"),("expiration_case","test_post_object_expires_is_case_sensitive"),("expired","test_post_object_expired_policy"),("wrong_bucket","test_post_object_wrong_bucket"),("invalid_metadata","test_post_object_invalid_request_field_value"),("no_expiration","test_post_object_missing_expires_condition"),("no_conditions","test_post_object_missing_conditions_list"),("above_maximum","test_post_object_upload_size_limit_exceeded"),("missing_length","test_post_object_missing_content_length_argument"),("negative_length","test_post_object_invalid_content_length_argument"),("below_minimum","test_post_object_upload_size_below_minimum"),("chunk_bug","test_post_object_upload_size_rgw_chunk_size_bug"),("empty_conditions","test_post_object_empty_conditions"),("tags_anonymous","test_post_object_tags_anonymous_request"),("tags_authenticated","test_post_object_tags_authenticated_request"),("checksum","test_post_object_upload_checksum"))

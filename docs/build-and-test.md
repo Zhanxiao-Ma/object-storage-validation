@@ -329,7 +329,7 @@ OSV_RUN_ASYNC_SDK_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest tes
 OSV_RUN_AUXILIARY_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_auxiliary_sdk -v
 ```
 
-Select 使用官方 Java 异步 SDK / C++ SDK 解码真实 eventstream；固定响应测试提供独立 CRC 帧，不实现 SQL 引擎。Records 按实际事件分别解码 UTF-8，保留 Progress/Stats/End 与原生错误。原 Ceph `s3select_assert_result` 只检查非空，不比较结果相等，因此它通过不能证明 SQL 结果正确。Moto 上随机 SQL 的 pass/fail 单独记录，不属于旧版固定 Moto 诊断集合的兼容认证；结束后仍检查实际测试桶已清理。
+Select 使用官方 Java 异步 SDK / C++ SDK 解码真实 eventstream；固定响应测试提供独立 CRC 帧，不实现 SQL 引擎。Records 按实际事件分别解码 UTF-8，保留 Progress/Stats/End 与原生错误。迁移后的 `s3select_assert_result` 严格比较完整结果，服务拒绝和事件流错误直接传播；真实 SDK 回归覆盖错误计数、空响应和中途错误。部分源用例仍含 Ceph 特定 SQL 或错误文本预期，需逐项确认适用范围。Moto 上随机 SQL 的 pass/fail 单独记录，不属于旧版固定 Moto 诊断集合的兼容认证；结束后仍检查实际测试桶已清理。
 
 两个原聚合源包含固定桶 `testbuck2`，必须显式配置 `workload.ceph_literal_bucket_names_authorized: true`，源执行前及创建前均以真实 HEAD404 确认不存在；不会替换为 UUID。未授权或已存在时在任何源写入前 `not_run`。原输出格式 TODO 用例始终为 `not_run upstream_todo`。
 
@@ -342,3 +342,52 @@ Ceph 日志扩展要求显式启用 `workload.ceph_logging_wire_extensions`，�
 ## 本地性能验证
 
 本地性能测试使用 [性能说明](performance.md#本地-minio-对比) 中的 `scripts/run_minio_performance.py`。不要直接套用上面的 HTTPS 功能验证容器端口映射进行大量短连接性能测试。
+
+## 请求与判定正确性回归
+
+```bash
+OSV_RUN_FRAMEWORK_CORRECTNESS_TESTS=1 python3 -m unittest discover -s tests/integration -p test_framework_correctness_sdk.py -v
+```
+
+上述测试让真实 Java/C++ SDK 连接本机 HTTP fixture，再把 SDK 输出交给生产断言；不模拟存储状态机。
+检查最终 DeleteObjects XML 的 Content-MD5、特殊键/版本/空列表/1000 键、LIST 实际查询参数与严格回显、
+校验和必需字段缺失、Select 初始 HTTP 错误，以及条件批量删除的每对象结果数量/键/错误码。
+错误响应必须继续失败；缺少必需响应字段不得补默认值。失败诊断保留操作名、字段路径及实际结果。
+
+C++ DeleteObjects 通过 SDK 公共请求头 API，为 SDK 序列化的最终 XML 添加 Content-MD5；
+不改变请求键、版本、条件或 Quiet，也不因特定厂商选择不同断言。
+LIST 查询证据仅采集固定白名单，不采集签名、认证令牌或认证头；每次 RPC 结束清除。
+当前 C++ SDK 的 FetchOwner 布尔序列化差异仍保留实际值，不由测试器改写响应或放宽 Owner 断言。
+
+文档约定的 StartAfter 回显继续严格检查，即便 AWS 实测也失败。
+显式空 continuation-token 按非法参数检查；原地复制允许明确拒绝或保持对象内容与元数据的成功响应，
+两条路径均检查真实状态。具体字段缺失、错误码和内容变化分别保留诊断。参考 [ListObjectsV2](https://docs.aws.amazon.com/AmazonS3/latest/API/API_ListObjectsV2.html)
+和 [DeleteObjects](https://docs.aws.amazon.com/AmazonS3/latest/API/API_DeleteObjects.html)。
+
+`ceph_metadata_edges_content_encoding` 需要真实签名 aws-chunked 分块请求。
+当前该用例只有普通 PUT 的 Content-Encoding 声明，无法证明分块编码，因此明确未执行并列出缺失传输能力；
+不把伪造请求的拒绝计为服务端不兼容，也不把未执行计为通过。
+
+### 协议负向用例回归
+
+空分片完成使用明确的空 `CompleteMultipartUpload` XML，两套 SDK 的最终请求均在本地 HTTP 接收端校验；零字节请求体属于不同输入。条件 PUT、负向 COPY 和非法分片完成即使响应不符合预期，也继续 GET，分别记录响应与对象状态；连接中断（包括仅收到 `100 Continue`）归为传输失败。
+
+独立坏分片摘要用例使用显式 SHA-256 和按请求的 `checksum_when_required`，避免 SDK 自动计算覆盖错误输入。创建上传的算法回显仍由原用例检查。LIST 分页错误保留已脱敏的请求参数和原始响应证据，不因厂商返回差异放宽断言。
+
+```bash
+OSV_RUN_FRAMEWORK_CORRECTNESS_TESTS=1 python3 -m unittest discover -s tests/integration -p test_framework_correctness_sdk.py -v
+```
+
+协议预期修复的真实 SDK 回归（含错误响应、误删、内容错误、匿名成功及越界复制反例）：
+
+```bash
+OSV_RUN_PROTOCOL_ORACLE_TESTS=1 python3 -m unittest discover -s tests/integration -p test_protocol_oracles_sdk.py -v
+```
+
+HTTP 夹具只提供独立原始响应，实际 Java/C++ SDK 输出直接进入生产用例。云端运行仍保留服务端真实失败；SDK重定向/解析错误不构成兼容通过。
+
+校验和类型及读取内容回归：`OSV_RUN_CHECKSUM_HELPER_TESTS=1 python3 -m unittest discover -s tests/integration -p test_checksum_helper_sdk.py -v`。使用已构建的 C++ SDK，通过原始 HTTP 夹具验证完成请求参数、属性摘要表示及损坏内容拒绝。
+
+元数据、标签负向状态、分片上传ID、SSE-C错误密钥、原地复制和空游标回归：`OSV_RUN_METADATA_TAG_ORACLES=1 OSV_RUN_ENCRYPTED_FORM_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_metadata_tag_upload_oracles_sdk test_encrypted_forms_sdk -v`。通过真实 Java/C++ SDK 请求和独立原始 HTTP 响应，检查错误拒绝后状态以及表单线上编码。
+
+完整 SDK/Moto 回归将普通用例与原子流分开提供服务前提：`test_s3_sdk` 使用隔离串行 Moto，`OSV_RUN_ATOMIC_STREAM_TESTS=1 PYTHONPATH=tests/integration:. python3 -m unittest test_atomic_moto -v` 使用隔离并发 Moto 执行全部原子流。单线程服务无法处理上传回调中的嵌套请求，不能将其死锁当作存储失败；也不能把 Moto 并发共享缓冲竞态当作 SDK 数据损坏。

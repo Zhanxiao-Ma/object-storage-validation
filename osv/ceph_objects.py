@@ -11,7 +11,11 @@ def listing(p,names,options,keys,prefixes=(),truncated=False):
     args={"prefix":p.ctx.prefix+options.get("prefix",""),"max_keys":options.get("max_keys",1000)}
     if "marker" in options:args["marker"]=p.ctx.prefix+options["marker"]
     if "delimiter" in options:args["delimiter"]=options["delimiter"]
-    result=p.call("list_page",**args)
+    capture=options.get("delimiter") in (" ","\n") and "response_body_capture" in p.ctx.worker.capabilities
+    result=p.call("list_page",**args,**({"capture_response_body":True} if capture else {}))
+    if capture:
+        from .ceph_list_exact import check_wire_delimiter
+        check_wire_delimiter(result,options["delimiter"])
     assert_equal(result["keys"],[p.ctx.prefix+key for key in keys])
     assert_equal(result["common_prefixes"],[p.ctx.prefix+prefix for prefix in prefixes])
     assert_equal(result["truncated"],truncated)

@@ -11,28 +11,47 @@ AUTHENTICATED="http://acs.amazonaws.com/groups/global/AuthenticatedUsers"
 def actor(p,name="main",email=False):
     """Require independent expected identity metadata; never derive expected canonical IDs from the service under test."""
     configured=p.ctx.workload.get("identities",{}).get(name,{})
-    required=("canonical_id","display_name")+(("email",) if email else ())
-    missing=["workload.identities."+name+"."+key for key in required if configured.get(key) is None]
+    required=("canonical_id",)+(("email",) if email else ())
+    missing=["workload.identities."+name+"."+key for key in required if not isinstance(configured.get(key),str) or not configured[key]]
     if missing:raise CaseNotRun("Ceph ACL source requires configured identity metadata",*missing)
     return configured
 
 def grant(permission,identity=None,uri=None):
     return {"Permission":permission,"ID":identity["canonical_id"] if identity else None,
-        "DisplayName":identity["display_name"] if identity else None,"URI":uri,"EmailAddress":None,
+        "DisplayName":identity.get("display_name") if identity else None,"URI":uri,"EmailAddress":None,
         "Type":"CanonicalUser" if identity else "Group"}
 
+def owner_document(identity):
+    """Construct owner input from independent ID and only a configured optional display name."""
+    result={"ID":identity["canonical_id"]}
+    if identity.get("display_name"):result["DisplayName"]=identity["display_name"]
+    return result
+
+def check_display_name(actual,expected):
+    """Validate a display label only when both observations provide it; identity uses ID."""
+    if actual and expected:assert_equal(actual,expected)
+
+def check_owner(actual,expected):
+    """Keep the independently configured canonical owner authoritative despite an absent label."""
+    assert_equal(actual["ID"],expected["canonical_id"])
+    check_display_name(actual.get("DisplayName"),expected.get("display_name"))
+
 def check_grants(actual,expected):
-    """Retain the pinned source helper's conditional sort, field absence handling and rejection of extra grant fields, including its original ordering limitations."""
-    actual=deepcopy(actual);expected=deepcopy(expected)
-    assert_equal(len(actual),len(expected))
-    if actual[0]["Grantee"].get("DisplayName"):
-        actual.sort(key=lambda value:value["Grantee"].get("DisplayName"))
-        expected.sort(key=lambda value:value["DisplayName"])
-    for got,want in zip(actual,expected):
-        assert_equal(got.pop("Permission",None),want["Permission"])
-        for field in ("DisplayName","ID","Type","URI","EmailAddress"):
-            assert_equal(got["Grantee"].pop(field,None),want[field])
-        assert_equal(got,{"Grantee":{}})
+    """Compare grant multiplicity by stable identity and permission, independently of order/optional labels."""
+    fields=("Type","ID","URI","EmailAddress")
+    def key(row):return tuple(str(row.get(field) or "") for field in ("Permission",)+fields)
+    observed=[]
+    for original in actual:
+        got=deepcopy(original);permission=got.pop("Permission")
+        grantee=got.pop("Grantee");assert_equal(got,{})
+        row={"Permission":permission,"DisplayName":grantee.pop("DisplayName",None)}
+        for field in fields:row[field]=grantee.pop(field,None)
+        assert_equal(grantee,{})
+        observed.append(row)
+    assert_equal(len(observed),len(expected))
+    for got,want in zip(sorted(observed,key=key),sorted(expected,key=key)):
+        for field in ("Permission",)+fields:assert_equal(got.get(field),want.get(field))
+        check_display_name(got.get("DisplayName"),want.get("DisplayName"))
 
 def wanted(identity,acl):
     public=[]
@@ -53,7 +72,7 @@ def canned(p,kind,mode):
         options={"Key":"foo"} if kind=="object" else {}
         result=api(bucket,"GetBucketAcl" if kind=="bucket" else "GetObjectAcl",**options)["data"]
         if kind=="bucket" and mode=="default":
-            assert_equal(result["Owner"]["DisplayName"],identity["display_name"]);assert_equal(result["Owner"]["ID"],identity["canonical_id"])
+            check_owner(result["Owner"],identity)
         check_grants(result["Grants"],wanted(identity,acl))
         if mode=="cycle":
             api(bucket,"PutBucketAcl" if kind=="bucket" else "PutObjectAcl",ACL="private",**options)
@@ -78,7 +97,7 @@ def append_grant(bucket,identity,value):
     """Use actual SDK grants as the producer output, appending only the original source input and its independently configured owner."""
     observed=api(bucket,"GetBucketAcl")["data"]["Grants"]
     observed.append(value)
-    return {"Grants":observed,"Owner":{"DisplayName":identity["display_name"],"ID":identity["canonical_id"]}}
+    return {"Grants":observed,"Owner":owner_document(identity)}
 
 def explicit_bucket(p,mode):
     identity=actor(p)
@@ -124,7 +143,7 @@ def user_grant(p,permission):
             else:rejected(observed,403)
         if permission=="FULL_CONTROL":
             observed=api(bucket,"GetBucketAcl")["data"]["Owner"]
-            assert_equal(observed["ID"],identity["canonical_id"]);assert_equal(observed["DisplayName"],identity["display_name"])
+            check_owner(observed,identity)
 
 CANNED=(("default","default"),("public","canned_during_create"),("cycle","canned"),("readwrite","canned_publicreadwrite"),("authenticated","canned_authenticatedread"))
 CASES=tuple(case("ceph_acl_"+kind+"_"+mode,"Ceph 预置 ACL "+kind+" "+mode,"保留源创建时 ACL、转换、完整授权字段及原始 check_grants 规则",SCOPE_OPERATIONS+" api.Get"+kind.title()+"Acl"+(" api.Put"+kind.title()+"Acl" if mode=="cycle" else "")+(" bucket_create_acl" if kind=="bucket" and mode!="default" else " put" if kind=="object" and mode=="default" else " put_acl" if kind=="object" else ""),lambda p,kind=kind,mode=mode:canned(p,kind,mode),"test_"+kind+"_acl_"+suffix,CEPH) for kind in ("bucket","object") for mode,suffix in CANNED)
